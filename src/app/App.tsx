@@ -364,22 +364,20 @@ export default function App() {
               
               <div className="relative z-10 space-y-1 pointer-events-auto">
                 {/* Single compact row: Level + Name + Currencies + Menu */}
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2.5">
                   {/* Level badge — filled XP bar pill */}
                   <motion.button
                     onClick={() => setShowXPBar(!showXPBar)}
-                    className="relative flex-shrink-0 rounded-lg overflow-hidden border border-white/30 backdrop-blur-sm"
-                    style={{ width: 70, height: 27.5 }}
+                    className="relative flex-shrink-0 rounded-lg overflow-hidden border border-white/30 bg-transparent"
+                    style={{ width: 81, height: 32 }}
                     whileTap={{ scale: 0.95 }}
                   >
-                    {/* Track */}
-                    <div className="absolute inset-0 bg-white/15" />
-                    {/* Fill */}
+                    {/* XP Fill — transparent empty, teal filled */}
                     <div
                       className="absolute inset-y-0 left-0 bg-gradient-to-r from-teal-400/80 via-cyan-400/80 to-sky-400/80 transition-all duration-700"
                       style={{ width: `${(currentLevelXP / nextLevelXP) * 100}%` }}
                     />
-                    {/* Shimmer */}
+                    {/* Shimmer on fill */}
                     <motion.div
                       className="absolute inset-y-0 bg-gradient-to-r from-transparent via-white/40 to-transparent"
                       animate={{ x: ['-100%', '250%'] }}
@@ -387,50 +385,45 @@ export default function App() {
                       style={{ width: '40%' }}
                     />
                     {/* Label */}
-                    <span className="absolute inset-0 flex items-center justify-center text-white font-black tracking-tight drop-shadow-[0_0_4px_rgba(0,0,0,0.4)]" style={{ fontSize: '12.5px' }}>
+                    <span className="absolute inset-0 flex items-center justify-center text-white font-black tracking-tight drop-shadow-[0_0_4px_rgba(0,0,0,0.4)]" style={{ fontSize: '14.5px' }}>
                       Lv.{currentLevel}
                     </span>
                   </motion.button>
 
                   {/* Axolotl Name */}
-                  <h1 className="font-bold text-white tracking-tight truncate flex-1 min-w-0 drop-shadow-[0_1px_4px_rgba(0,0,0,0.5)]" style={{ fontSize: '20px' }}>{axolotl.name}</h1>
+                  <h1 className="font-bold text-white tracking-tight truncate flex-1 min-w-0 drop-shadow-[0_1px_4px_rgba(0,0,0,0.5)]" style={{ fontSize: '23px' }}>{axolotl.name}</h1>
 
-                  {/* Compact currency counters */}
-                  <div className="flex items-center gap-1.5 flex-shrink-0">
-                    <motion.button
-                      onClick={() => { setShopSection('opals'); setActiveModal('shop'); }}
-                      className="flex items-center gap-0.5 bg-white/15 backdrop-blur-sm rounded-md border border-white/20 hover:bg-white/25 transition-colors cursor-pointer"
-                      style={{ padding: '0.15625rem 0.46875rem' }}
-                      whileTap={{ scale: 0.95 }}
-                    >
-                      <Sparkles className="text-cyan-200" style={{ width: '15px', height: '15px' }} strokeWidth={2.5} />
-                      <span className="text-white font-semibold tabular-nums" style={{ fontSize: '13.75px' }}>{opals}</span>
-                    </motion.button>
-                    <motion.button
-                      onClick={() => { setShopSection('coins'); setActiveModal('shop'); }}
-                      className="flex items-center gap-0.5 bg-white/15 backdrop-blur-sm rounded-md border border-white/20 hover:bg-white/25 transition-colors cursor-pointer"
-                      style={{ padding: '0.15625rem 0.46875rem' }}
-                      whileTap={{ scale: 0.95 }}
-                    >
-                      <Coins className="text-amber-200" style={{ width: '15px', height: '15px' }} strokeWidth={2.5} />
-                      <span className="text-white font-semibold tabular-nums" style={{ fontSize: '13.75px' }}>{coins}</span>
-                    </motion.button>
-                  </div>
-                  
+                  {/* Combined stacked currency tile */}
+                  <motion.button
+                    onClick={() => setActiveModal('shop')}
+                    className="flex flex-col items-center gap-0.5 bg-transparent rounded-md border border-white/30 hover:bg-white/[0.08] transition-colors cursor-pointer flex-shrink-0"
+                    style={{ padding: '0.25rem 0.54rem' }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <div className="flex items-center gap-1">
+                      <Sparkles className="text-cyan-200" style={{ width: '17px', height: '17px' }} strokeWidth={2.5} />
+                      <span className="text-white font-semibold tabular-nums" style={{ fontSize: '16px' }}>{opals}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Coins className="text-amber-200" style={{ width: '17px', height: '17px' }} strokeWidth={2.5} />
+                      <span className="text-white font-semibold tabular-nums" style={{ fontSize: '16px' }}>{coins}</span>
+                    </div>
+                  </motion.button>
+
                   {/* Hamburger Menu Button */}
                   <motion.button
                     ref={menuButtonRef}
                     onClick={() => setShowHamburgerMenu(!showHamburgerMenu)}
-                    className="relative bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-lg transition-all border border-white/30 flex-shrink-0"
-                    style={{ padding: '0.46875rem' }}
+                    className="relative bg-transparent hover:bg-white/[0.08] rounded-lg transition-all border border-white/30 flex-shrink-0"
+                    style={{ padding: '0.54rem' }}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     title="Menu"
                   >
                     {showHamburgerMenu ? (
-                      <X className="text-white" style={{ width: '20px', height: '20px' }} strokeWidth={2.5} />
+                      <X className="text-white" style={{ width: '23px', height: '23px' }} strokeWidth={2.5} />
                     ) : (
-                      <Menu className="text-white" style={{ width: '20px', height: '20px' }} strokeWidth={2.5} />
+                      <Menu className="text-white" style={{ width: '23px', height: '23px' }} strokeWidth={2.5} />
                     )}
                     {/* Notification dot */}
                     {hasNotifications && !showHamburgerMenu && (
@@ -494,61 +487,54 @@ export default function App() {
                   )}
                 </AnimatePresence>
                 {/* Home, Mini Games, Shop buttons - evenly spaced */}
-                <div className="flex justify-between items-center mt-1 gap-3">
+                <div className="flex justify-center items-center mt-1">
+                  <div className="flex items-center gap-6 w-3/4">
                   <motion.button
                     onClick={() => { setCurrentScreen('home'); setShowHamburgerMenu(false); }}
-                    className="relative bg-white/[0.02] backdrop-blur-md border-2 border-white/50 rounded-xl active:bg-white/15 transition-all flex-1 overflow-hidden"
-                    style={{ 
-                      padding: '5.6px',
-                      boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.3), 0 2px 8px rgba(0,0,0,0.1)'
-                    }}
+                    className="relative bg-transparent border border-white/30 rounded-xl active:bg-white/[0.08] transition-all flex-1"
+                    style={{ padding: '5.6px' }}
                     whileTap={{ scale: 0.93 }}
                     animate={{ rotate: [0, -5, 5, 0] }}
                     transition={{ duration: 3, repeat: Infinity, repeatDelay: 2, delay: 3 }}
                     title="Home"
                   >
-                    {/* Glass highlight effect */}
-                    <div className="absolute inset-0 bg-gradient-to-b from-white/20 via-transparent to-transparent pointer-events-none rounded-xl" />
-                    {/* Inner border for glass depth */}
-                    <div className="absolute inset-[2px] border border-white/20 rounded-lg pointer-events-none" />
-                    <Home className="relative z-10 text-white mx-auto drop-shadow-lg" style={{ width: '40px', height: '40px' }} strokeWidth={2.5} />
+                    <Home className="text-white mx-auto drop-shadow-lg" style={{ width: '40px', height: '40px' }} strokeWidth={2.5} />
                   </motion.button>
                   <motion.button
                     onClick={() => setCurrentScreen('games')}
-                    className={`relative bg-white/[0.02] backdrop-blur-md border-2 border-white/50 rounded-xl active:bg-white/15 transition-all flex-1 overflow-hidden ${currentScreen === 'games' ? 'opacity-60' : ''}`}
-                    style={{ 
-                      padding: '8.4px',
-                      boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.3), 0 2px 8px rgba(0,0,0,0.1)'
-                    }}
+                    className={`relative bg-transparent border border-white/30 rounded-xl active:bg-white/[0.08] transition-all flex-1 overflow-hidden ${currentScreen === 'games' ? 'opacity-50' : ''}`}
+                    style={{ padding: '5.6px' }}
                     whileTap={{ scale: 0.93 }}
                     animate={{ rotate: [0, -5, 5, 0] }}
                     transition={{ duration: 3, repeat: Infinity, repeatDelay: 2 }}
                     title="Mini Games"
                   >
-                    {/* Glass highlight effect */}
-                    <div className="absolute inset-0 bg-gradient-to-b from-white/20 via-transparent to-transparent pointer-events-none rounded-xl" />
-                    {/* Inner border for glass depth */}
-                    <div className="absolute inset-[2px] border border-white/20 rounded-lg pointer-events-none" />
-                    <Gamepad2 className="relative z-10 text-white mx-auto drop-shadow-lg" style={{ width: '40px', height: '40px' }} strokeWidth={2.5} />
+                    {/* Border shimmer */}
+                    <motion.div
+                      className="absolute inset-0 rounded-xl pointer-events-none"
+                      style={{
+                        border: '1px solid',
+                        borderColor: 'transparent',
+                        background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent)',
+                        backgroundSize: '200% 100%',
+                      }}
+                      animate={{ backgroundPosition: ['0% 0%', '100% 0%'] }}
+                      transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+                    />
+                    <Gamepad2 className="text-white mx-auto drop-shadow-lg relative z-10" style={{ width: '40px', height: '40px' }} strokeWidth={2.5} />
                   </motion.button>
                   <motion.button
                     onClick={() => setActiveModal('shop')}
-                    className="relative bg-white/[0.02] backdrop-blur-md border-2 border-white/50 rounded-xl active:bg-white/15 transition-all flex-1 overflow-hidden"
-                    style={{ 
-                      padding: '5.6px',
-                      boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.3), 0 2px 8px rgba(0,0,0,0.1)'
-                    }}
+                    className="relative bg-transparent border border-white/30 rounded-xl active:bg-white/[0.08] transition-all flex-1"
+                    style={{ padding: '5.6px' }}
                     whileTap={{ scale: 0.93 }}
                     animate={{ rotate: [0, -5, 5, 0] }}
                     transition={{ duration: 3, repeat: Infinity, repeatDelay: 2, delay: 1.5 }}
                     title="Shop"
                   >
-                    {/* Glass highlight effect */}
-                    <div className="absolute inset-0 bg-gradient-to-b from-white/20 via-transparent to-transparent pointer-events-none rounded-xl" />
-                    {/* Inner border for glass depth */}
-                    <div className="absolute inset-[2px] border border-white/20 rounded-lg pointer-events-none" />
-                    <ShoppingCart className="relative z-10 text-white mx-auto drop-shadow-lg" style={{ width: '40px', height: '40px' }} strokeWidth={2.5} />
+                    <ShoppingCart className="text-white mx-auto drop-shadow-lg" style={{ width: '40px', height: '40px' }} strokeWidth={2.5} />
                   </motion.button>
+                  </div>
                 </div>
               </div>
             </div>

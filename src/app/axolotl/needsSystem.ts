@@ -11,7 +11,7 @@ export const STAT_DECAY_RATE = {
   hunger: 0.5, // per minute
   happiness: 0.3,
   cleanliness: 0.2,
-  waterQuality: 0.1,
+  waterQuality: 0.0139, // ~5 days to fully deplete (100 / 7200 min)
 };
 
 /**
@@ -56,23 +56,27 @@ export function updateWellbeingStats(axolotl: Axolotl, gameState?: GameState): {
   // Track when cleanliness drops below 50%
   let cleanlinessLowSince = gameState?.cleanlinessLowSince;
   if (newCleanliness < 50) {
-    // If it just dropped below 50%, record the timestamp
-    if (!cleanlinessLowSince) {
-      cleanlinessLowSince = now;
-    }
+    if (!cleanlinessLowSince) cleanlinessLowSince = now;
   } else {
-    // If it's above 50%, reset the tracker
     cleanlinessLowSince = undefined;
   }
-  
+
+  // Track when cleanliness drops below 10%
+  let cleanlinessVeryLowSince = gameState?.cleanlinessVeryLowSince;
+  if (newCleanliness < 10) {
+    if (!cleanlinessVeryLowSince) cleanlinessVeryLowSince = now;
+  } else {
+    cleanlinessVeryLowSince = undefined;
+  }
+
   // Calculate water quality decay multiplier
-  // If cleanliness has been below 50% for more than a day (1440 minutes), increase decay by 20%
+  // <10% for >48 hours → 2x decay (takes priority)
+  // <50% for >24 hours → 1.2x decay
   let waterQualityDecayMultiplier = filterMultiplier;
-  if (cleanlinessLowSince) {
-    const minutesBelow50 = (now - cleanlinessLowSince) / (1000 * 60);
-    if (minutesBelow50 > 1440) { // More than 1 day
-      waterQualityDecayMultiplier = filterMultiplier * 1.2; // 20% increase
-    }
+  if (cleanlinessVeryLowSince && (now - cleanlinessVeryLowSince) / (1000 * 60) > 2880) {
+    waterQualityDecayMultiplier = filterMultiplier * 2.0; // 2x if critically dirty for >48 hrs
+  } else if (cleanlinessLowSince && (now - cleanlinessLowSince) / (1000 * 60) > 1440) {
+    waterQualityDecayMultiplier = filterMultiplier * 1.2; // 20% increase if dirty for >24 hrs
   }
   
   const newStats: AxolotlStats = {
@@ -94,9 +98,12 @@ export function updateWellbeingStats(axolotl: Axolotl, gameState?: GameState): {
     lastUpdated: now,
   };
   
-  // Return both axolotl and gameState updates if cleanlinessLowSince changed
-  const gameStateUpdate = cleanlinessLowSince !== gameState?.cleanlinessLowSince 
-    ? { cleanlinessLowSince } 
+  // Return gameState updates if either cleanliness tracker changed
+  const trackersChanged =
+    cleanlinessLowSince !== gameState?.cleanlinessLowSince ||
+    cleanlinessVeryLowSince !== gameState?.cleanlinessVeryLowSince;
+  const gameStateUpdate = trackersChanged
+    ? { cleanlinessLowSince, cleanlinessVeryLowSince }
     : undefined;
 
   return { axolotl: updatedAxolotl, gameState: gameStateUpdate };

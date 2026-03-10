@@ -71,7 +71,7 @@ export function ActionButtons({
       value: stats.cleanliness,
     },
     {
-      icon: Droplets, label: 'Water', onClick: onWaterChange,
+      icon: Droplets, label: 'Water Quality', onClick: onWaterChange,
       gradient: 'from-indigo-400 to-blue-500',
       emptyGradient: 'from-indigo-900/30 to-blue-950/35',
       fillColor: 'from-indigo-400 via-sky-400 to-blue-300',

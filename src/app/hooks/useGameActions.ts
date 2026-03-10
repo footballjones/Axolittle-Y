@@ -106,14 +106,14 @@ export function useGameActions({
         },
       };
       
-      // Reset cleanlinessLowSince if cleanliness is now above 50%
+      // Reset cleanliness trackers based on new value
       const newCleanliness = Math.min(100, prev.axolotl.stats.cleanliness + 35);
-      const shouldResetTracker = newCleanliness >= 50;
-      
+
       return {
         ...prev,
         axolotl: updated,
-        cleanlinessLowSince: shouldResetTracker ? undefined : prev.cleanlinessLowSince,
+        cleanlinessLowSince: newCleanliness >= 50 ? undefined : prev.cleanlinessLowSince,
+        cleanlinessVeryLowSince: newCleanliness >= 10 ? undefined : prev.cleanlinessVeryLowSince,
       };
     });
   }, []);
