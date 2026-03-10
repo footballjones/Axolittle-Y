@@ -46,12 +46,55 @@ export function updateWellbeingStats(axolotl: Axolotl, gameState?: GameState): {
   
   // Shrimp effects
   const hasShrimp = (gameState?.shrimpCount || 0) > 0;
-  const shrimpCleanlinessBonus = hasShrimp 
+  const shrimpCleanlinessBonus = hasShrimp
     ? Math.min(0.5, (gameState?.shrimpCount || 0) * GAME_CONFIG.shrimpCleanlinessBonus) // Max 50% reduction
     : 0;
-  
+
+  // Poop-driven cleanliness decay: 10 points per 8 hours (480 min) per poop present
+  const poopCount = (gameState?.poopItems || []).length;
+  const poopDecay = poopCount * (10 / 480) * minutesPassed;
+
   // Calculate cleanliness first to check if it's below 50%
-  const newCleanliness = Math.max(0, axolotl.stats.cleanliness - STAT_DECAY_RATE.cleanliness * minutesPassed * (1 - shrimpCleanlinessBonus) * (waterQualityMultiplier < 0.5 ? 1.5 : waterQualityMultiplier > 0.7 ? 0.8 : 1));
+  const baseCleanDecay = STAT_DECAY_RATE.cleanliness * minutesPassed * (1 - shrimpCleanlinessBonus) * (waterQualityMultiplier < 0.5 ? 1.5 : waterQualityMultiplier > 0.7 ? 0.8 : 1);
+  const newCleanliness = Math.max(0, axolotl.stats.cleanliness - baseCleanDecay - poopDecay);
+
+  // ── Poop generation & promotion ───────────────────────────────────────────
+  const MAX_POOPS = 7;
+
+  // 1. Promote pending feed-based poops that are now due
+  const pending = gameState?.pendingPoops || [];
+  const ready      = pending.filter(p => p.showAt <= now);
+  const stillPending = pending.filter(p => p.showAt > now);
+  let currentPoops = [
+    ...(gameState?.poopItems || []),
+    ...ready.map(p => ({ id: p.id, x: p.x, createdAt: p.showAt })),
+  ];
+
+  // 2. Time-based generation: 1 poop every 10 hours (600 min)
+  const POOP_INTERVAL_MIN = 600;
+  let lastPoopTime = gameState?.lastPoopTime;
+  if (!lastPoopTime) {
+    // First run: start the clock now (first time-based poop in 10 hours)
+    lastPoopTime = now;
+  } else if (currentPoops.length < MAX_POOPS) {
+    const minutesSinceLastPoop = (now - lastPoopTime) / (1000 * 60);
+    const newPoopCount = Math.floor(minutesSinceLastPoop / POOP_INTERVAL_MIN);
+    if (newPoopCount > 0) {
+      const allowed = Math.min(newPoopCount, MAX_POOPS - currentPoops.length);
+      const generated = Array.from({ length: allowed }, (_, i) => ({
+        id: `poop-t-${now}-${i}`,
+        x: Math.random() * 70 + 15,
+        createdAt: lastPoopTime! + (i + 1) * POOP_INTERVAL_MIN * 60 * 1000,
+      }));
+      currentPoops = [...currentPoops, ...generated];
+      lastPoopTime = lastPoopTime + newPoopCount * POOP_INTERVAL_MIN * 60 * 1000;
+    }
+  }
+
+  // Enforce cap across both sources
+  if (currentPoops.length > MAX_POOPS) {
+    currentPoops = currentPoops.slice(0, MAX_POOPS);
+  }
   
   // Track when cleanliness drops below 50%
   let cleanlinessLowSince = gameState?.cleanlinessLowSince;
@@ -91,19 +134,75 @@ export function updateWellbeingStats(axolotl: Axolotl, gameState?: GameState): {
     waterQuality: Math.max(5, axolotl.stats.waterQuality - STAT_DECAY_RATE.waterQuality * minutesPassed * waterQualityDecayMultiplier),
   };
 
+  // ── Trait decay ───────────────────────────────────────────────────────────
+  // If hunger, happiness AND cleanliness are all 0 for >9 days (12,960 min),
+  // decay each secondary stat by 1 (min 0) every 18 hours (1,080 min).
+  const allZero =
+    newStats.hunger === 0 &&
+    newStats.happiness === 0 &&
+    newStats.cleanliness === 0;
+
+  let allStatsZeroSince = gameState?.allStatsZeroSince;
+  if (allZero) {
+    if (!allStatsZeroSince) allStatsZeroSince = now;
+  } else {
+    allStatsZeroSince = undefined;
+  }
+
+  const NINE_DAYS_MIN   = 12960; // 9 * 24 * 60
+  const DECAY_INTERVAL  = 1080;  // 18 * 60
+
+  let lastTraitDecayTime = gameState?.lastTraitDecayTime;
+  let updatedSecondaryStats = axolotl.secondaryStats;
+
+  if (
+    allStatsZeroSince &&
+    (now - allStatsZeroSince) / (1000 * 60) > NINE_DAYS_MIN
+  ) {
+    const lastDecay = lastTraitDecayTime ?? allStatsZeroSince;
+    const minutesSinceDecay = (now - lastDecay) / (1000 * 60);
+
+    if (minutesSinceDecay >= DECAY_INTERVAL) {
+      const ticks = Math.floor(minutesSinceDecay / DECAY_INTERVAL);
+      updatedSecondaryStats = {
+        strength:  Math.max(2, axolotl.secondaryStats.strength  - ticks),
+        intellect: Math.max(2, axolotl.secondaryStats.intellect - ticks),
+        stamina:   Math.max(2, axolotl.secondaryStats.stamina   - ticks),
+        speed:     Math.max(2, axolotl.secondaryStats.speed     - ticks),
+      };
+      lastTraitDecayTime = lastDecay + ticks * DECAY_INTERVAL * 60 * 1000;
+    }
+  }
+
   const updatedAxolotl = {
     ...axolotl,
     stats: newStats,
+    secondaryStats: updatedSecondaryStats,
     age: axolotl.age + minutesPassed,
     lastUpdated: now,
   };
-  
-  // Return gameState updates if either cleanliness tracker changed
+
+  // Return gameState updates if any tracker changed
+  const poopsChanged =
+    ready.length > 0 ||
+    lastPoopTime !== gameState?.lastPoopTime ||
+    currentPoops.length !== (gameState?.poopItems || []).length;
+
   const trackersChanged =
-    cleanlinessLowSince !== gameState?.cleanlinessLowSince ||
-    cleanlinessVeryLowSince !== gameState?.cleanlinessVeryLowSince;
+    cleanlinessLowSince     !== gameState?.cleanlinessLowSince     ||
+    cleanlinessVeryLowSince !== gameState?.cleanlinessVeryLowSince ||
+    allStatsZeroSince       !== gameState?.allStatsZeroSince       ||
+    lastTraitDecayTime      !== gameState?.lastTraitDecayTime      ||
+    poopsChanged;
+
   const gameStateUpdate = trackersChanged
-    ? { cleanlinessLowSince, cleanlinessVeryLowSince }
+    ? {
+        cleanlinessLowSince,
+        cleanlinessVeryLowSince,
+        allStatsZeroSince,
+        lastTraitDecayTime,
+        ...(poopsChanged ? { poopItems: currentPoops, pendingPoops: stillPending, lastPoopTime } : {}),
+      }
     : undefined;
 
   return { axolotl: updatedAxolotl, gameState: gameStateUpdate };

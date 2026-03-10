@@ -1,6 +1,6 @@
 import { motion } from 'motion/react';
 import { Axolotl, FoodItem } from '../types/game';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 
 interface AxolotlDisplayProps {
   axolotl: Axolotl;
@@ -10,25 +10,39 @@ interface AxolotlDisplayProps {
 }
 
 export function AxolotlDisplay({ axolotl, foodItems, onEatFood, clickTarget }: AxolotlDisplayProps) {
-  // Start in center column (center third: 33-66%, so 50% is perfect)
   const [position, setPosition] = useState({ x: 50, y: 50 });
   const [facingLeft, setFacingLeft] = useState(false);
   const foodFirstSeenRef = useRef<number | null>(null);
 
-  // Reset to center column when component mounts (returning to aquarium screen)
+  // Track previous position + move start time so we can interpolate visual position
+  const prevPosRef = useRef({ x: 50, y: 50 });
+  const moveStartRef = useRef<number>(Date.now());
+  const MOVE_DURATION = 4000; // matches Framer Motion transition duration (ms)
+
+  // Refs so the polling interval always sees fresh values without re-creating
+  const positionRef = useRef(position);
+  const foodItemsRef = useRef(foodItems);
+  const onEatFoodRef = useRef(onEatFood);
+  useEffect(() => { positionRef.current = position; }, [position]);
+  useEffect(() => { foodItemsRef.current = foodItems; }, [foodItems]);
+  useEffect(() => { onEatFoodRef.current = onEatFood; }, [onEatFood]);
+
+  // Reset to center on mount
   useEffect(() => {
     setPosition({ x: 50, y: 50 });
-  }, []); // Empty dependency array - only on mount
+  }, []);
 
   // Handle click target - move axolotl to clicked position
   useEffect(() => {
     if (clickTarget) {
-      setFacingLeft(clickTarget.x < position.x);
+      prevPosRef.current = positionRef.current;
+      moveStartRef.current = Date.now();
+      setFacingLeft(clickTarget.x < positionRef.current.x);
       setPosition({ x: clickTarget.x, y: clickTarget.y });
     }
-  }, [clickTarget?.timestamp]); // Only trigger when timestamp changes (new click)
+  }, [clickTarget?.timestamp]);
 
-  // Track when food first appears for 7-second delay
+  // Track when food first appears for auto-seek delay
   useEffect(() => {
     if (foodItems.length > 0 && foodFirstSeenRef.current === null) {
       foodFirstSeenRef.current = Date.now();
@@ -37,55 +51,74 @@ export function AxolotlDisplay({ axolotl, foodItems, onEatFood, clickTarget }: A
     }
   }, [foodItems.length]);
 
-  // Check for nearby food - can eat while falling or settled
+  // Compute food's visual Y. While falling (y===0), interpolate 10%→75% over ~4s easeIn.
+  const getFoodVisualY = useCallback((food: FoodItem): number => {
+    if (food.y > 0) return food.y;
+    const elapsed = (Date.now() - food.createdAt) / 1000;
+    const progress = Math.min(1, elapsed / 4);
+    return 10 + progress * progress * 65;
+  }, []);
+
+  // Compute axolotl's actual visual position (interpolated between prev and target).
+  const getAxolotlVisualPos = useCallback(() => {
+    const elapsed = Date.now() - moveStartRef.current;
+    const t = Math.min(1, elapsed / MOVE_DURATION);
+    // Approximate easeOut cubic
+    const eased = 1 - Math.pow(1 - t, 3);
+    const prev = prevPosRef.current;
+    const tgt = positionRef.current;
+    return {
+      x: prev.x + (tgt.x - prev.x) * eased,
+      y: prev.y + (tgt.y - prev.y) * eased,
+    };
+  }, []);
+
+  // Continuous proximity check (every 200ms) — axolotl eats food when it physically reaches it.
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const items = foodItemsRef.current;
+      if (items.length === 0) return;
+
+      const axPos = getAxolotlVisualPos();
+
+      for (const food of items) {
+        const distX = food.x - axPos.x;
+        const distY = getFoodVisualY(food) - axPos.y;
+        if (Math.sqrt(distX * distX + distY * distY) < 12) {
+          onEatFoodRef.current(food.id);
+          return;
+        }
+      }
+    }, 200);
+
+    return () => clearInterval(interval);
+  }, [getFoodVisualY, getAxolotlVisualPos]);
+
+  // Auto-seek: after 7s swim toward closest food
   useEffect(() => {
     if (foodItems.length === 0) return;
 
-    // Check all food items (including falling ones) for eating
-    const allFood = foodItems;
-    
-    // First, check if axolotl is close enough to eat any food (even while falling)
-    for (const food of allFood) {
-      const distX = food.x - position.x;
-      const distY = food.y - position.y;
-      const distance = Math.sqrt(distX * distX + distY * distY);
-      
-      if (distance < 7) {
-        // Close enough to eat, regardless of whether it's falling or settled
-        onEatFood(food.id);
-        return;
-      }
-    }
-
-    // For auto-seeking, only check settled food and wait 7 seconds
-    const settledFood = foodItems.filter(f => f.y > 10);
-    if (settledFood.length === 0) return;
-
-    // Check if 7 seconds have passed since food first appeared
     const now = Date.now();
-    const timeSinceFoodAppeared = foodFirstSeenRef.current 
-      ? (now - foodFirstSeenRef.current) / 1000 
+    const timeSince = foodFirstSeenRef.current
+      ? (now - foodFirstSeenRef.current) / 1000
       : Infinity;
-    
-    // Only auto-seek food after 7 seconds
-    if (timeSinceFoodAppeared < 7) return;
+    if (timeSince < 7) return;
 
-    const closestFood = settledFood.reduce((closest, food) => {
-      const distX = food.x - position.x;
-      const distY = food.y - position.y;
-      const distance = Math.sqrt(distX * distX + distY * distY);
+    const closest = foodItems.reduce((acc, food) => {
+      const vy = getFoodVisualY(food);
+      const dx = food.x - position.x;
+      const dy = vy - position.y;
+      const d = Math.sqrt(dx * dx + dy * dy);
+      return (!acc.food || d < acc.d) ? { food, d, vy } : acc;
+    }, { food: null as FoodItem | null, d: Infinity, vy: 0 });
 
-      if (!closest.food || distance < closest.distance) {
-        return { food, distance };
-      }
-      return closest;
-    }, { food: null as FoodItem | null, distance: Infinity });
-
-    if (closestFood.food) {
-      setFacingLeft(closestFood.food.x < position.x);
-      setPosition({ x: closestFood.food.x, y: closestFood.food.y });
+    if (closest.food) {
+      prevPosRef.current = positionRef.current;
+      moveStartRef.current = Date.now();
+      setFacingLeft(closest.food.x < position.x);
+      setPosition({ x: closest.food.x, y: closest.vy });
     }
-  }, [foodItems, position.x, position.y, onEatFood]);
+  }, [foodItems, position.x, position.y, getFoodVisualY]);
 
   // Random swimming
   useEffect(() => {

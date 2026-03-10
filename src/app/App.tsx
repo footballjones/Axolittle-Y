@@ -30,6 +30,7 @@ import { StatsModal } from './components/StatsModal';
 import { SettingsModal } from './components/SettingsModal';
 import { XPBar } from './components/XPBar';
 import { FoodDisplay } from './components/FoodDisplay';
+import { PoopDisplay } from './components/PoopDisplay';
 import { EggsPanel } from './components/EggsPanel';
 import { DecorationsPanel } from './components/DecorationsPanel';
 import { SpinWheel } from './components/SpinWheel';
@@ -1030,6 +1031,10 @@ export default function App() {
                       {/* Food Items */}
                       {(gameState.foodItems || []).map(food => (
                         <FoodDisplay key={food.id} food={food} />
+                      ))}
+                      {/* Poop Items */}
+                      {(gameState.poopItems || []).map(poop => (
+                        <PoopDisplay key={poop.id} poop={poop} />
                       ))}
                       
                       {/* Axolotl */}

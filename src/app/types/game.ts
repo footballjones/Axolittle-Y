@@ -85,6 +85,12 @@ export interface GameState {
   lastLoginBonusDate?: string; // YYYY-MM-DD format for login bonus tracking
   cleanlinessLowSince?: number; // Timestamp when cleanliness first dropped below 50%
   cleanlinessVeryLowSince?: number; // Timestamp when cleanliness first dropped below 10%
+  allStatsZeroSince?: number; // Timestamp when hunger, happiness AND cleanliness all hit 0 simultaneously
+  lastTraitDecayTime?: number; // Timestamp of last secondary-stat decay tick
+  poopItems?: PoopItem[]; // Active visible poop items in the tank
+  pendingPoops?: PendingPoop[]; // Poops scheduled to appear after 5-min delay
+  feedCount?: number; // Feeds since last feed-poop was scheduled (resets at 6)
+  lastPoopTime?: number; // Timestamp when last time-based poop was generated
 }
 
 export interface Friend {
@@ -107,4 +113,16 @@ export interface FoodItem {
   x: number; // position as percentage (0-100)
   y: number; // position as percentage (0-100)
   createdAt: number;
+}
+
+export interface PoopItem {
+  id: string;
+  x: number; // position as percentage (0-100) — always sits at bottom
+  createdAt: number;
+}
+
+export interface PendingPoop {
+  id: string;
+  x: number;
+  showAt: number; // timestamp when poop becomes visible (5 min after 6th feed)
 }

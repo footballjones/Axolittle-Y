@@ -4,7 +4,7 @@
  */
 
 import { useCallback } from 'react';
-import { GameState, Axolotl, Friend, FoodItem } from '../types/game';
+import { GameState, Axolotl, Friend, FoodItem, PendingPoop } from '../types/game';
 import { 
   feedAxolotl, 
   playWithAxolotl,
@@ -37,11 +37,6 @@ export function useGameActions({
     setGameState(prev => {
       if (!prev?.axolotl) return prev;
 
-      // Don't drop food if hunger is at 100
-      if (prev.axolotl.stats.hunger >= 100) {
-        return prev;
-      }
-
       // Drop food at a random x position at the TOP
       const newFood: FoodItem = {
         id: `food-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`, // More unique ID
@@ -67,7 +62,19 @@ export function useGameActions({
         });
       }, 5000); // Match the maximum animation duration
 
-      return { ...prev, foodItems };
+      // Track feed count; every 6th feed schedules a poop to appear 5 min later
+      const newFeedCount = ((prev.feedCount || 0) + 1) % 6;
+      let pendingPoops = prev.pendingPoops || [];
+      if (newFeedCount === 0) {
+        const newPending: PendingPoop = {
+          id: `poop-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+          x: Math.random() * 70 + 15,
+          showAt: Date.now() + 5 * 60 * 1000, // 5 minutes from now
+        };
+        pendingPoops = [...pendingPoops, newPending];
+      }
+
+      return { ...prev, foodItems, feedCount: newFeedCount, pendingPoops };
     });
   }, []);
 
@@ -97,21 +104,25 @@ export function useGameActions({
   const handleClean = useCallback(() => {
     setGameState(prev => {
       if (!prev?.axolotl) return prev;
-      
-      const updated = {
-        ...prev.axolotl,
-        stats: {
-          ...prev.axolotl.stats,
-          cleanliness: Math.min(100, prev.axolotl.stats.cleanliness + 35),
-        },
-      };
-      
-      // Reset cleanliness trackers based on new value
-      const newCleanliness = Math.min(100, prev.axolotl.stats.cleanliness + 35);
+
+      const poops = prev.poopItems || [];
+      const poopCount = poops.length;
+
+      if (poopCount === 0) return prev; // Nothing to clean
+
+      // Remove the first poop; restore cleanliness by (100 - current) / poopCount
+      const currentCleanliness = prev.axolotl.stats.cleanliness;
+      const gain = (100 - currentCleanliness) / poopCount;
+      const newCleanliness = Math.min(100, currentCleanliness + gain);
+      const remainingPoops = poops.slice(1);
 
       return {
         ...prev,
-        axolotl: updated,
+        axolotl: {
+          ...prev.axolotl,
+          stats: { ...prev.axolotl.stats, cleanliness: newCleanliness },
+        },
+        poopItems: remainingPoops,
         cleanlinessLowSince: newCleanliness >= 50 ? undefined : prev.cleanlinessLowSince,
         cleanlinessVeryLowSince: newCleanliness >= 10 ? undefined : prev.cleanlinessVeryLowSince,
       };

@@ -65,10 +65,10 @@ export function FoodDisplay({ food }: FoodDisplayProps) {
         >
           <defs>
             <linearGradient id={`worm-gradient-${food.id}`} x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#ff3333" />
-              <stop offset="30%" stopColor="#ff5555" />
-              <stop offset="70%" stopColor="#ff3333" />
-              <stop offset="100%" stopColor="#cc2222" />
+              <stop offset="0%" stopColor="#ff0000" />
+              <stop offset="30%" stopColor="#ff2020" />
+              <stop offset="70%" stopColor="#ff0000" />
+              <stop offset="100%" stopColor="#cc0000" />
             </linearGradient>
             <filter id={`worm-shadow-${food.id}`}>
               <feGaussianBlur in="SourceAlpha" stdDeviation="1.5"/>
