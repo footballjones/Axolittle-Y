@@ -361,8 +361,8 @@ export function SpinWheel({ isOpen, onClose, onSpin, lastSpinDate }: SpinWheelPr
               {/* ── Spin button ── */}
               <div className="px-5 pt-3 pb-6">
                 <motion.button
-                  onClick={handleSpin}
-                  disabled={!eligible}
+                  onClick={eligible ? handleSpin : onClose}
+                  disabled={spinning}
                   className="w-full py-3.5 rounded-xl font-black text-base text-white transition-all disabled:cursor-not-allowed"
                   style={{
                     background: eligible

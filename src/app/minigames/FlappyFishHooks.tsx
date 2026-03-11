@@ -86,8 +86,8 @@ export function FlappyFishHooks({ onEnd, energy }: MiniGameProps) {
       difficulty = 1.0; // Max at 60+
     }
     
-    const gravity = GRAVITY_BASE * (1 + difficulty * 0.4); // +40% max
-    const hookSpeed = HOOK_SPEED_BASE * (1 + difficulty * 0.5); // +50% max
+    const gravity = GRAVITY_BASE * (1 + difficulty * 0.48); // +48% max (was 40%, +20%)
+    const hookSpeed = HOOK_SPEED_BASE * (1 + difficulty * 0.6); // +60% max (was 50%, +20%)
     // Hook gap and interval stay constant - only speed and gravity change
 
     // Clear - single operation

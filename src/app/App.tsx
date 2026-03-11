@@ -1036,6 +1036,20 @@ export default function App() {
                       {(gameState.poopItems || []).map(poop => (
                         <PoopDisplay key={poop.id} poop={poop} />
                       ))}
+                      {/* Ghost Shrimp — emoji placeholders, stable positions derived from index */}
+                      {(gameState.shrimpCount || 0) > 0 && Array.from({ length: Math.min(6, gameState.shrimpCount || 0) }).map((_, i) => {
+                        const x = 8 + (i * 15 + ((i * 7) % 11)) % 84;
+                        const bottom = 14 + (i % 3) * 5;
+                        return (
+                          <div
+                            key={`shrimp-${i}`}
+                            className="absolute pointer-events-none select-none"
+                            style={{ left: `${x}%`, bottom: `${bottom}%`, fontSize: 14, zIndex: 18, opacity: 0.85 }}
+                          >
+                            🦐
+                          </div>
+                        );
+                      })}
                       
                       {/* Axolotl */}
                       <div className="absolute inset-0 z-10 pointer-events-none">

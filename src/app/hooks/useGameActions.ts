@@ -4,7 +4,7 @@
  */
 
 import { useCallback } from 'react';
-import { GameState, Axolotl, Friend, FoodItem, PendingPoop } from '../types/game';
+import { GameState, Axolotl, Friend, FoodItem, PendingPoop, PoopItem } from '../types/game';
 import { 
   feedAxolotl, 
   playWithAxolotl,
@@ -393,11 +393,19 @@ export function useGameActions({
         if (!isEggReady(prev.incubatorEgg)) return prev;
         
         const newAxolotl = hatchEgg(prev.incubatorEgg, name);
-        
+
+        const welcomePoop: PoopItem = {
+          id: `poop-initial-${Date.now()}`,
+          x: Math.random() * 60 + 20,
+          createdAt: Date.now(),
+        };
+
         return {
           ...prev,
           axolotl: newAxolotl,
           incubatorEgg: null,
+          poopItems: [welcomePoop],
+          lastPoopTime: Date.now(),
         };
       }
       
