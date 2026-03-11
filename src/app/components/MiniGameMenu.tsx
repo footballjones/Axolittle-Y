@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { User, Users, ArrowLeft, Info, Zap } from 'lucide-react';
+import { User, Users, Info, Zap } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { GAME_CONFIG } from '../config/game';
 
@@ -21,11 +21,8 @@ interface GameTileProps {
   energy?: number;
 }
 
-function GameTile({ game, index, delayOffset = 0, expandedId, onToggleInfo, onSelectGame, energy = 0 }: GameTileProps) {
+function GameTile({ game, index, delayOffset = 0, expandedId, onToggleInfo, onSelectGame, energy: _energy = 0 }: GameTileProps) {
   const isExpanded = expandedId === game.id;
-  // Safely handle energy prop with multiple fallbacks to prevent undefined errors
-  const safeEnergy = typeof energy === 'number' ? energy : 0;
-  const hasEnergy = safeEnergy > 0;
 
   return (
     <motion.div
@@ -114,7 +111,7 @@ function GameTile({ game, index, delayOffset = 0, expandedId, onToggleInfo, onSe
   );
 }
 
-export function MiniGameMenu({ onClose, onSelectGame, energy = 10, maxEnergy = 10, lastEnergyUpdate }: MiniGameMenuProps) {
+export function MiniGameMenu({ onClose: _onClose, onSelectGame, energy = 10, maxEnergy = 10, lastEnergyUpdate }: MiniGameMenuProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [energyTimeText, setEnergyTimeText] = useState<string>('');
   const initialCalculationRef = useRef<{ baseTime: number; targetEnergy: number; secondsUntilNext: number } | null>(null);
@@ -226,6 +223,7 @@ export function MiniGameMenu({ onClose, onSelectGame, energy = 10, maxEnergy = 1
     return () => {
       clearInterval(interval);
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [energy, maxEnergy]); // Only depend on energy, NOT lastEnergyUpdate
 
   const soloGames = [

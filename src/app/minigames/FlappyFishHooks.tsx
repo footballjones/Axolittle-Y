@@ -30,7 +30,7 @@ export function FlappyFishHooks({ onEnd, energy }: MiniGameProps) {
   const [score, setScore] = useState(0);
   const [showOverlay, setShowOverlay] = useState(true);
   const [gameEnded, setGameEnded] = useState(false);
-  const [hadEnergyAtStart, setHadEnergyAtStart] = useState(false);
+  const [_hadEnergyAtStart, _setHadEnergyAtStart] = useState(false);
   const [finalRewards, setFinalRewards] = useState<{ tier: string; xp: number; coins: number; opals?: number } | null>(null);
   
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -105,7 +105,7 @@ export function FlappyFishHooks({ onEnd, energy }: MiniGameProps) {
         // Simple random gap - constant size
         const gapY = 80 + Math.random() * (CANVAS_H - 200);
         // Reuse hook object if available
-        let hook = hooks.find(h => h.x < -100);
+        const hook = hooks.find(h => h.x < -100);
         if (hook) {
           hook.x = CANVAS_W;
           hook.gapY = gapY;
@@ -238,11 +238,12 @@ export function FlappyFishHooks({ onEnd, energy }: MiniGameProps) {
     canvas.addEventListener('touchstart', handleTap, { passive: false });
     canvas.addEventListener('click', handleTap);
 
+    const gameRefSnapshot = gameRef;
     return () => {
       canvas.removeEventListener('touchstart', handleTap);
       canvas.removeEventListener('click', handleTap);
-      if (gameRef.current.frameId) {
-        cancelAnimationFrame(gameRef.current.frameId);
+      if (gameRefSnapshot.current.frameId) {
+        cancelAnimationFrame(gameRefSnapshot.current.frameId);
       }
     };
   }, []);

@@ -4,17 +4,16 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { motion } from 'motion/react';
 import { GameWrapper } from './GameWrapper';
-import { MiniGameProps, GameResult } from './types';
+import { MiniGameProps } from './types';
 import { calculateRewards } from './config';
 
 // Game constants
 const GAME_ID = 'your-game-id'; // Change this!
 
 export function Template({ onEnd, energy }: MiniGameProps) {
-  const [score, setScore] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(true);
+  const [score, _setScore] = useState(0);
+  const [isPlaying, _setIsPlaying] = useState(true);
   const [isPaused, setIsPaused] = useState(false);
   
   // Game-specific state
@@ -28,7 +27,6 @@ export function Template({ onEnd, energy }: MiniGameProps) {
     if (!isPlaying || isPaused) return;
 
     const now = Date.now();
-    const deltaTime = (now - lastFrameTimeRef.current) / 16.67; // Normalize to ~60fps
     lastFrameTimeRef.current = now;
 
     // TODO: Add your game logic here
@@ -73,6 +71,7 @@ export function Template({ onEnd, energy }: MiniGameProps) {
       onPause={() => setIsPaused(!isPaused)}
       isPaused={isPaused}
       onEnd={onEnd}
+      energy={energy}
     >
       {/* Your game content here */}
       <div className="absolute inset-0 flex items-center justify-center">

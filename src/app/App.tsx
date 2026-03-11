@@ -1,22 +1,13 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { GameState, Axolotl, Friend, FoodItem } from './types/game';
-import { 
-  generateAxolotl, 
-  updateStats, 
-  feedAxolotl, 
-  playWithAxolotl, 
-  cleanAquarium,
-  checkEvolution,
+import { GameState } from './types/game';
+import {
+  generateAxolotl,
   canRebirth,
-  breedAxolotls,
   calculateLevel,
   getXPForNextLevel,
   getCurrentLevelXP,
-  updateShrimp,
 } from './utils/gameLogic';
-import { createRebirthEgg, createBreedingEgg, hatchEgg, isEggReady } from './utils/eggs';
-import { loadGameState, saveGameState, getInitialGameState, generateFriendCode } from './utils/storage';
-import { BACKGROUND_COLORS, getDecorationById, DECORATIONS } from './data/decorations';
+import { loadGameState, saveGameState, getInitialGameState } from './utils/storage';
 import { GAME_CONFIG } from './config/game';
 import { WelcomeScreen } from './components/WelcomeScreen';
 import { AxolotlDisplay } from './components/AxolotlDisplay';
@@ -28,7 +19,6 @@ import { SocialModal } from './components/SocialModal';
 import { RebirthModal } from './components/RebirthModal';
 import { StatsModal } from './components/StatsModal';
 import { SettingsModal } from './components/SettingsModal';
-import { XPBar } from './components/XPBar';
 import { FoodDisplay } from './components/FoodDisplay';
 import { PoopDisplay } from './components/PoopDisplay';
 import { EggsPanel } from './components/EggsPanel';
@@ -37,7 +27,6 @@ import { SpinWheel } from './components/SpinWheel';
 import { DailyLoginBonus } from './components/DailyLoginBonus';
 import { Coins, Sparkles, Menu, X, Check, ChevronDown, ShoppingCart, Gamepad2, Home } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { INITIAL_NOTIFICATIONS, GameNotification } from './data/notifications';
 import { KeepeyUpey } from './minigames/KeepeyUpey';
 import { FlappyFishHooks } from './minigames/FlappyFishHooks';
 import { MathRush } from './minigames/MathRush';
@@ -46,27 +35,43 @@ import { CoralCode } from './minigames/CoralCode';
 import { TreasureHuntCave } from './minigames/TreasureHuntCave';
 import { Fishing } from './minigames/Fishing';
 import { BiteTag } from './minigames/BiteTag';
-import { GameResult } from './minigames/types';
 import { useGameActions } from './hooks/useGameActions';
 import { useMenuState } from './hooks/useMenuState';
-import { getTodayDateString, calculateLoginStreak, canSpinToday, canClaimDailyLogin } from './utils/dailySystem';
+import { useWellbeingEngine } from './hooks/useWellbeingEngine';
+import { useEconomyActions } from './hooks/useEconomyActions';
+import { useSocialState } from './hooks/useSocialState';
+import { getTodayDateString, canSpinToday, canClaimDailyLogin } from './utils/dailySystem';
 
 export default function App() {
   const [gameState, setGameState] = useState<GameState | null>(null);
-  const [hasPendingPokes, setHasPendingPokes] = useState(true);
-  const [notifications, setNotifications] = useState<GameNotification[]>(INITIAL_NOTIFICATIONS);
-  const [notificationsExpanded, setNotificationsExpanded] = useState(true);
-  const [showSpinWheel, setShowSpinWheel] = useState(false);
-  const [showDailyLogin, setShowDailyLogin] = useState(false);
   const [clickTarget, setClickTarget] = useState<{ x: number; y: number; timestamp: number } | null>(null);
-  
+
+  // Domain hooks
+  const {
+    notifications,
+    setNotifications,
+    hasPendingPokes,
+    setHasPendingPokes,
+    unreadCount,
+    hasNotifications,
+  } = useSocialState();
+
+  const {
+    showSpinWheel,
+    setShowSpinWheel,
+    showDailyLogin,
+    setShowDailyLogin,
+    handleSpinWheel,
+    handleDailyLoginClaim,
+  } = useEconomyActions({ setGameState, setNotifications });
+
+  useWellbeingEngine({ axolotlId: gameState?.axolotl?.id, setGameState });
+
   // Menu state from hook
   const menuState = useMenuState();
   const {
     activeModal,
     setActiveModal,
-    showInfo,
-    setShowInfo,
     showHamburgerMenu,
     setShowHamburgerMenu,
     showXPBar,
@@ -87,7 +92,6 @@ export default function App() {
     setActiveGame,
     shopSection,
     setShopSection,
-    closeAllPanels,
   } = menuState;
   
   // Game actions from hook
@@ -206,6 +210,7 @@ export default function App() {
         setShowDailyLogin(true);
       }, 2000);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Auto-save game state
@@ -215,53 +220,7 @@ export default function App() {
     }
   }, [gameState]);
 
-  // Update stats periodically
-  useEffect(() => {
-    if (!gameState?.axolotl) return;
-
-    const interval = setInterval(() => {
-      setGameState(prev => {
-        if (!prev?.axolotl) return prev;
-        
-        // Update shrimp consumption first
-        const stateWithUpdatedShrimp = updateShrimp(prev);
-        
-        // Update stats (pass gameState for shrimp effects)
-        const statsResult = updateStats(prev.axolotl, stateWithUpdatedShrimp);
-        let updated = checkEvolution(statsResult.axolotl);
-        
-        // Merge any gameState updates (like cleanlinessLowSince)
-        const gameStateUpdates = statsResult.gameState || {};
-
-        // Energy regen using timestamp-based calculation to preserve fractional energy
-        const now = Date.now();
-        const lastUpdate = stateWithUpdatedShrimp.lastEnergyUpdate || now;
-        const elapsedSeconds = (now - lastUpdate) / 1000;
-        
-        const energyRegenRate = GAME_CONFIG.energyRegenRate / 3600; // per second
-        const maxEnergy = stateWithUpdatedShrimp.maxEnergy || GAME_CONFIG.energyMax;
-        const currentEnergy = stateWithUpdatedShrimp.energy || 0;
-        
-        // Calculate new energy with fractional precision
-        const energyGained = energyRegenRate * elapsedSeconds;
-        const newEnergy = Math.min(maxEnergy, currentEnergy + energyGained);
-        
-        // Only floor when storing (for display), but track fractional progress via timestamp
-        // This ensures energy accumulates properly even with small increments
-
-        return {
-          ...stateWithUpdatedShrimp,
-          ...gameStateUpdates, // Merge cleanlinessLowSince and any other gameState updates
-          axolotl: updated,
-          energy: Math.floor(newEnergy), // Floor only for display/storage
-          maxEnergy: maxEnergy,
-          lastEnergyUpdate: now, // Update timestamp to track fractional progress
-        };
-      });
-    }, 5000); // Update every 5 seconds
-
-    return () => clearInterval(interval);
-  }, [gameState?.axolotl?.id]);
+  // Stats decay, evolution, and energy regen are handled by useWellbeingEngine
 
   const handleStart = useCallback((name: string) => {
     const newAxolotl = generateAxolotl(name);
@@ -271,78 +230,16 @@ export default function App() {
     }));
   }, []);
 
-  const handleSpinWheel = useCallback((reward: { type: 'coins' | 'opals'; amount: number }) => {
-    setGameState(prev => {
-      if (!prev) return prev;
-      
-      const today = getTodayDateString();
-      const newCoins = reward.type === 'coins' ? prev.coins + reward.amount : prev.coins;
-      const newOpals = reward.type === 'opals' ? (prev.opals || 0) + reward.amount : prev.opals;
-      
-      setNotifications(prevNotifs => [...prevNotifs, {
-        id: `notif-${Date.now()}`,
-        type: 'milestone',
-        emoji: reward.type === 'opals' ? '🪬' : '🪙',
-        message: `Won ${reward.amount} ${reward.type === 'opals' ? 'Opals' : 'Coins'} from spin wheel!`,
-        time: 'now',
-        read: false,
-      }]);
-      
-      return {
-        ...prev,
-        coins: newCoins,
-        opals: newOpals,
-        lastSpinDate: today,
-      };
-    });
-  }, []);
-
-  const handleDailyLoginClaim = useCallback((reward: { coins: number; opals?: number; decoration?: string }) => {
-    setGameState(prev => {
-      if (!prev) return prev;
-      
-      const today = getTodayDateString();
-      const { streak: newStreak } = calculateLoginStreak(prev.lastLoginDate, prev.loginStreak || 0);
-      
-      const newCoins = prev.coins + reward.coins;
-      const newOpals = (prev.opals || 0) + (reward.opals || 0);
-      const newUnlockedDecorations = reward.decoration 
-        ? [...prev.unlockedDecorations, reward.decoration]
-        : prev.unlockedDecorations;
-      
-      setNotifications(prevNotifs => [...prevNotifs, {
-        id: `notif-${Date.now()}`,
-        type: 'milestone',
-        emoji: '🎁',
-        message: `Daily login bonus: ${reward.coins} coins${reward.opals ? ` + ${reward.opals} opals` : ''}!`,
-        time: 'now',
-        read: false,
-      }]);
-      
-      return {
-        ...prev,
-        coins: newCoins,
-        opals: newOpals,
-        lastLoginDate: today,
-        lastLoginBonusDate: today,
-        loginStreak: newStreak,
-        unlockedDecorations: newUnlockedDecorations,
-      };
-    });
-  }, []);
-
-  // All other handlers are now in useGameActions hook
+  // All other handlers are now in useGameActions, useEconomyActions, or useWellbeingEngine
 
   // Show welcome screen if no axolotl
   if (!gameState || !gameState.axolotl) {
     return <WelcomeScreen onStart={handleStart} />;
   }
 
-  const { axolotl, coins, unlockedDecorations, customization, friends, lineage } = gameState;
+  const { axolotl, coins, customization, friends, lineage } = gameState;
   const opals = gameState.opals || 0; // Default to 0 if not set
   const showRebirthButton = axolotl ? canRebirth(axolotl) : false;
-  const unreadCount = notifications.filter(n => !n.read).length;
-  const hasNotifications = unreadCount > 0 || hasPendingPokes;
 
   // Calculate XP and level
   const currentLevel = calculateLevel(axolotl.experience);
@@ -1206,10 +1103,6 @@ export default function App() {
           onClose={() => { setActiveModal(null); setShopSection(null); }}
           coins={coins}
           opals={opals}
-          unlockedDecorations={unlockedDecorations}
-          onPurchase={handlePurchase}
-          onEquip={handleEquipDecoration}
-          equippedDecorations={customization.decorations}
           onBuyCoins={handleBuyCoins}
           onBuyOpals={handleBuyOpals}
           onBuyFilter={handleBuyFilter}

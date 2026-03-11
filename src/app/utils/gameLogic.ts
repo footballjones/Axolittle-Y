@@ -1,4 +1,4 @@
-import { Axolotl, AxolotlStats, SecondaryStats, LifeStage, GameState } from '../types/game';
+import { Axolotl, LifeStage, GameState } from '../types/game';
 import { GAME_CONFIG } from '../config/game';
 import { updateWellbeingStats } from '../axolotl/needsSystem';
 
@@ -292,8 +292,8 @@ export function getCurrentLevelXP(experience: number): number {
   if (level === 1) return experience;
   
   // Total XP needed for current level
-  const prevLevelTotalXP = level === 2 
-    ? 0 
+  const prevLevelTotalXP = level === 2
+    ? GAME_CONFIG.level2XP
     : GAME_CONFIG.level2XP + (level - 2) * GAME_CONFIG.xpPerLevel;
   
   return experience - prevLevelTotalXP;

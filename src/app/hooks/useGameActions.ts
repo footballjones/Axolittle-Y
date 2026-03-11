@@ -26,7 +26,7 @@ interface UseGameActionsProps {
 }
 
 export function useGameActions({
-  gameState,
+  gameState: _gameState,
   setGameState,
   setNotifications,
   setActiveModal,
@@ -478,7 +478,7 @@ export function useGameActions({
     });
   }, []);
 
-  const handleGiftEgg = useCallback((eggId: string) => {
+  const handleGiftEgg = useCallback((_eggId: string) => {
     setNotifications(prev => [...prev, {
       id: `notif-${Date.now()}`,
       type: 'gift',
@@ -561,7 +561,7 @@ export function useGameActions({
       
       // Check if energy was available when game started (stored in _lastGameHadEnergy)
       // This flag is set when game starts, before energy is deducted
-      const hadEnergy = (prev as any)._lastGameHadEnergy === true;
+      const hadEnergy = prev._lastGameHadEnergy === true;
       
       const newXP = hadEnergy ? prev.axolotl.experience + result.xp : prev.axolotl.experience;
       const newCoins = hadEnergy ? prev.coins + result.coins : prev.coins;
@@ -603,7 +603,7 @@ export function useGameActions({
       }
       
       // Clean up the temporary flag
-      const { _lastGameHadEnergy, ...restState } = prev as any;
+      const { _lastGameHadEnergy: _flag, ...restState } = prev;
       
       return {
         ...restState,

@@ -3,7 +3,7 @@ import { motion } from 'motion/react';
 import { AxolotlStats } from '../types/game';
 
 // Custom poop icon component
-const PoopIcon = ({ className, strokeWidth }: { className?: string; strokeWidth?: number }) => (
+const PoopIcon = ({ className }: { className?: string; strokeWidth?: number }) => (
   <svg className={className} viewBox="0 0 24 24" fill="none" stroke="none">
     {/* Main poop shape */}
     <path d="M12 2c-1.5 0-2.5 1.5-2 3 .3.8.1 1.5-.5 2C8.5 8 7 9 7 11c-2 0-4 1.5-4 4s2 4 4 4h10c2 0 4-1.5 4-4s-2-4-4-4c0-2-1.5-3-2.5-4-.6-.5-.8-1.2-.5-2 .5-1.5-.5-3-2-3z" fill="currentColor"/>

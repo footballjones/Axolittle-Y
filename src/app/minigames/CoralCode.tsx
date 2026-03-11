@@ -7,7 +7,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { GameWrapper } from './GameWrapper';
-import { MiniGameProps, GameResult } from './types';
+import { MiniGameProps } from './types';
 import { calculateRewards } from './config';
 
 const MAX_GUESSES = 10;
@@ -200,6 +200,7 @@ export function CoralCode({ onEnd, energy }: MiniGameProps) {
       return newGuesses;
     });
     setCurrentGuess([]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentGuess.length, secretCode, codeLength, isPlaying, isPaused, hasEnded, onEnd]);
 
 

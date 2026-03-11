@@ -7,6 +7,7 @@ const CURRENT_STORAGE_VERSION = 2;
 
 interface StoredState {
   version?: number;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any;
 }
 
@@ -32,7 +33,9 @@ function migrateV1toV2(state: StoredState): StoredState {
   
   // Migrate health to waterQuality
   if (state.axolotl && state.axolotl.stats && 'health' in state.axolotl.stats) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     state.axolotl.stats.waterQuality = (state.axolotl.stats as any).health;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     delete (state.axolotl.stats as any).health;
   }
   
@@ -137,7 +140,7 @@ export function loadGameState(): GameState | null {
       const migratedState = runMigrations(state);
       
       // Remove version from state before returning (it's not part of GameState type)
-      const { version, ...gameState } = migratedState;
+      const { version: _version, ...gameState } = migratedState;
       return gameState as GameState;
     }
   } catch (error) {

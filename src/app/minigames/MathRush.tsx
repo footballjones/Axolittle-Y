@@ -8,11 +8,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion } from 'motion/react';
 import { GameWrapper } from './GameWrapper';
-import { MiniGameProps, GameResult } from './types';
+import { MiniGameProps } from './types';
 import { calculateRewards } from './config';
 
 const INITIAL_TIMER = 10; // seconds per question
-const MIN_TIMER = 3; // Minimum timer as difficulty increases
 
 const THEMES = [
   { emoji: '🦐', name: 'ghost shrimp' },
@@ -97,7 +96,7 @@ function generateQuestion(level: number): Question {
   const wrongSet = new Set<number>();
   const range = actualLevel < 2 ? 5 : 7; // Smaller range for easier questions
   while (wrongSet.size < 3) {
-    let wrong = answer + (Math.floor(Math.random() * (range * 2 + 1)) - range);
+    const wrong = answer + (Math.floor(Math.random() * (range * 2 + 1)) - range);
     if (wrong !== answer && wrong >= 0 && !wrongSet.has(wrong)) {
       wrongSet.add(wrong);
     }
