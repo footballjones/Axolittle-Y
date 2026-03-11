@@ -24,8 +24,6 @@ export function createRebirthEgg(parent: Axolotl, pendingName?: string): Egg {
   // Rarity hierarchy for comparison
   const rarityOrder: ('Common' | 'Rare' | 'Epic' | 'Legendary' | 'Mythic')[] = 
     ['Common', 'Rare', 'Epic', 'Legendary', 'Mythic'];
-  const parentRarityIndex = rarityOrder.indexOf(parentRarity);
-  
   // Neglect decay logic: higher rarities can drop if intellect is too low
   let minRarity = parentRarity;
   const intellect = parent.secondaryStats.intellect;
@@ -115,7 +113,7 @@ export function createRebirthEgg(parent: Axolotl, pendingName?: string): Egg {
  * Create an egg from breeding (two parents)
  */
 export function createBreedingEgg(parent1: Axolotl, parent2: Axolotl): Egg {
-  const { color, pattern, recessiveGenes } = breedAxolotls(parent1, parent2);
+  const { color, pattern, recessiveGenes: _recessiveGenes } = breedAxolotls(parent1, parent2);
   
   // Determine rarity (higher with both parents having high intellect or high generation)
   const avgIntellect = (parent1.secondaryStats.intellect + parent2.secondaryStats.intellect) / 2;

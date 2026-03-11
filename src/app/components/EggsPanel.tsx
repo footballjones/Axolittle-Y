@@ -2,7 +2,6 @@ import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ChevronDown, X, Lock } from 'lucide-react';
 import { Egg, Axolotl } from '../types/game';
-import { isEggReady } from '../utils/eggs';
 import { GAME_CONFIG } from '../config/game';
 import { EggHatchModal } from './EggHatchModal';
 import { ReleaseAxolotlModal } from './ReleaseAxolotlModal';
@@ -120,7 +119,7 @@ export function EggsPanel({
   onGift,
   onDiscard,
   opals = 0,
-  hasAxolotl,
+  hasAxolotl: _hasAxolotl,
 }: Props) {
   const [selectedEgg, setSelectedEgg] = useState<DisplayEgg | null>(null);
   const [showUnlockToast, setShowUnlockToast] = useState(false);
@@ -142,7 +141,6 @@ export function EggsPanel({
       generation: incubatorEgg.generation,
       parentName: `Gen ${incubatorEgg.generation - 1}`,
       hatchesIn: formatTimeRemaining(incubatorEgg.incubationEndsAt),
-      emoji: style.emoji,
       rarity: incubatorEgg.rarity,
       ...style,
       egg: incubatorEgg,
@@ -160,7 +158,6 @@ export function EggsPanel({
         generation: egg.generation,
         parentName: `Gen ${egg.generation - 1}`,
         hatchesIn: formatTimeRemaining(egg.incubationEndsAt),
-        emoji: style.emoji,
         rarity: egg.rarity,
         ...style,
         egg,

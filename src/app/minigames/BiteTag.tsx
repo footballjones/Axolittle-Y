@@ -8,7 +8,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion } from 'motion/react';
 import { GameWrapper } from './GameWrapper';
-import { MiniGameProps, GameResult } from './types';
+import { MiniGameProps } from './types';
 import { calculateRewards } from './config';
 
 const CANVAS_W = 360;
@@ -365,6 +365,7 @@ export function BiteTag({ onEnd, energy, speed = 0, stamina = 0 }: MiniGameProps
     gameStateRef.current.hazardRadius = 120 * ((HAZARD_START_TIME - timeLeft) / HAZARD_START_TIME);
     const alive = getAlive();
     for (const e of alive) pushFromHazard(e);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timeLeft, getAlive]);
 
   const pushFromHazard = useCallback((e: Entity) => {
@@ -548,7 +549,7 @@ export function BiteTag({ onEnd, energy, speed = 0, stamina = 0 }: MiniGameProps
 
       const chaseDist = Math.sqrt((b.x - chaseTarget.x) ** 2 + (b.y - chaseTarget.y) ** 2);
 
-      let n = norm(chaseTarget.x - b.x, chaseTarget.y - b.y);
+      const n = norm(chaseTarget.x - b.x, chaseTarget.y - b.y);
       let dx = n.dx, dy = n.dy;
 
       const wa = applyWallAvoidance(b, dx, dy, chaseTarget, now);
@@ -562,9 +563,9 @@ export function BiteTag({ onEnd, energy, speed = 0, stamina = 0 }: MiniGameProps
       const { sepX, sepY } = getBotSeparation(b);
       dx += sepX * 0.3;
       dy += sepY * 0.3;
-      n = norm(dx, dy);
-      dx = n.dx;
-      dy = n.dy;
+      const n2 = norm(dx, dy);
+      dx = n2.dx;
+      dy = n2.dy;
 
       b.dx = dx;
       b.dy = dy;
@@ -625,7 +626,7 @@ export function BiteTag({ onEnd, energy, speed = 0, stamina = 0 }: MiniGameProps
       dx += sepX;
       dy += sepY;
 
-      let n = norm(dx, dy);
+      const n = norm(dx, dy);
       dx = n.dx;
       dy = n.dy;
 
@@ -659,7 +660,7 @@ export function BiteTag({ onEnd, energy, speed = 0, stamina = 0 }: MiniGameProps
     } else if (alive.length >= 2 && timeLeft <= 0) {
       // Timer ran out - least bites wins
       const minBites = Math.min(...alive.map(e => e.bites));
-      won = playerAlive && player && player.bites === minBites;
+      won = !!(playerAlive && player && player.bites === minBites);
     }
     
     const score = won ? 90 - (player?.bites || 0) * 10 : 0;

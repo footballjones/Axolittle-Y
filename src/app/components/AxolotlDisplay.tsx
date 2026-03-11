@@ -40,6 +40,7 @@ export function AxolotlDisplay({ axolotl, foodItems, onEatFood, clickTarget }: A
       setFacingLeft(clickTarget.x < positionRef.current.x);
       setPosition({ x: clickTarget.x, y: clickTarget.y });
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clickTarget?.timestamp]);
 
   // Track when food first appears for auto-seek delay

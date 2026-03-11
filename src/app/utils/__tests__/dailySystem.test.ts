@@ -17,7 +17,7 @@ describe('dailySystem', () => {
     it('should return date in YYYY-MM-DD format', () => {
       vi.setSystemTime(new Date('2024-03-15T10:30:00Z'));
       const result = getTodayDateString();
-      expect(result).toBe('2024-3-15');
+      expect(result).toBe('2024-03-15');
     });
 
     it('should pad single digit months and days', () => {

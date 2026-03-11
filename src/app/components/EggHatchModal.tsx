@@ -10,11 +10,11 @@ interface EggHatchModalProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: (name: string) => void;
-  eggRarity?: 'Common' | 'Rare' | 'Legendary';
+  eggRarity?: 'Common' | 'Rare' | 'Epic' | 'Legendary' | 'Mythic';
   pendingName?: string; // Name provided during rebirth (pre-filled)
 }
 
-export function EggHatchModal({ isOpen, onClose, onConfirm, eggRarity = 'Common', pendingName }: EggHatchModalProps) {
+export function EggHatchModal({ isOpen, onClose, onConfirm, eggRarity: _eggRarity = 'Common', pendingName }: EggHatchModalProps) {
   const [name, setName] = useState(pendingName || '');
   
   // Update name when modal opens with pendingName (from rebirth)

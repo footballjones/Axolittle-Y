@@ -7,7 +7,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion } from 'motion/react';
 import { GameWrapper } from './GameWrapper';
-import { MiniGameProps, GameResult } from './types';
+import { MiniGameProps } from './types';
 import { calculateRewards } from './config';
 
 const CANVAS_W = 360;
@@ -66,6 +66,7 @@ export function TreasureHuntCave({ onEnd, energy }: MiniGameProps) {
     stamina: number;
     distance: number;
     gemsCollected: number;
+    score: number;
     obstacleId: number;
     gemId: number;
     rng: SeededRandom;
@@ -80,6 +81,7 @@ export function TreasureHuntCave({ onEnd, energy }: MiniGameProps) {
     stamina: STAMINA_MAX,
     distance: 0,
     gemsCollected: 0,
+    score: 0,
     obstacleId: 0,
     gemId: 0,
     rng: new SeededRandom(Date.now()),
@@ -376,16 +378,6 @@ export function TreasureHuntCave({ onEnd, energy }: MiniGameProps) {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-
-    const handleTop = (e: Event) => {
-      e.preventDefault();
-      handleMove('up');
-    };
-
-    const handleBottom = (e: Event) => {
-      e.preventDefault();
-      handleMove('down');
-    };
 
     // Split canvas into top and bottom halves
     const rect = canvas.getBoundingClientRect();

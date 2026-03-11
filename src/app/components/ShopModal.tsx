@@ -92,22 +92,6 @@ function SectionHeader({ icon: Icon, iconBg, iconShadow, title, titleGradient, w
   );
 }
 
-/* ── Section divider ── */
-function SectionDivider({ label }: { label: string }) {
-  return (
-    <div className="flex items-center gap-3 py-1">
-      <div className="flex-1 h-px" style={{ background: 'linear-gradient(90deg, transparent, rgba(196,181,253,0.5), transparent)' }} />
-      <motion.span
-        className="text-[9px] font-black uppercase tracking-[0.18em] text-violet-400/60"
-        animate={{ opacity: [0.5, 0.9, 0.5] }}
-        transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-      >
-        {label}
-      </motion.span>
-      <div className="flex-1 h-px" style={{ background: 'linear-gradient(90deg, transparent, rgba(196,181,253,0.5), transparent)' }} />
-    </div>
-  );
-}
 
 /* ── Shared row tile ── */
 function ShopRowTile({

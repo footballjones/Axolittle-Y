@@ -1,0 +1,95 @@
+import { useState, useCallback } from 'react';
+import { GameState } from '../types/game';
+import { GameNotification } from '../data/notifications';
+import { getTodayDateString, calculateLoginStreak } from '../utils/dailySystem';
+
+interface UseEconomyActionsProps {
+  setGameState: React.Dispatch<React.SetStateAction<GameState | null>>;
+  setNotifications: React.Dispatch<React.SetStateAction<GameNotification[]>>;
+}
+
+interface UseEconomyActionsReturn {
+  showSpinWheel: boolean;
+  setShowSpinWheel: React.Dispatch<React.SetStateAction<boolean>>;
+  showDailyLogin: boolean;
+  setShowDailyLogin: React.Dispatch<React.SetStateAction<boolean>>;
+  handleSpinWheel: (reward: { type: 'coins' | 'opals'; amount: number }) => void;
+  handleDailyLoginClaim: (reward: { coins: number; opals?: number; decoration?: string }) => void;
+}
+
+/**
+ * Manages economy-related daily features: spin wheel and daily login bonus.
+ */
+export function useEconomyActions({ setGameState, setNotifications }: UseEconomyActionsProps): UseEconomyActionsReturn {
+  const [showSpinWheel, setShowSpinWheel] = useState(false);
+  const [showDailyLogin, setShowDailyLogin] = useState(false);
+
+  const handleSpinWheel = useCallback((reward: { type: 'coins' | 'opals'; amount: number }) => {
+    setGameState(prev => {
+      if (!prev) return prev;
+
+      const today = getTodayDateString();
+      const newCoins = reward.type === 'coins' ? prev.coins + reward.amount : prev.coins;
+      const newOpals = reward.type === 'opals' ? (prev.opals || 0) + reward.amount : prev.opals;
+
+      setNotifications(prevNotifs => [...prevNotifs, {
+        id: `notif-${Date.now()}`,
+        type: 'milestone',
+        emoji: reward.type === 'opals' ? '🪬' : '🪙',
+        message: `Won ${reward.amount} ${reward.type === 'opals' ? 'Opals' : 'Coins'} from spin wheel!`,
+        time: 'now',
+        read: false,
+      }]);
+
+      return {
+        ...prev,
+        coins: newCoins,
+        opals: newOpals,
+        lastSpinDate: today,
+      };
+    });
+  }, [setGameState, setNotifications]);
+
+  const handleDailyLoginClaim = useCallback((reward: { coins: number; opals?: number; decoration?: string }) => {
+    setGameState(prev => {
+      if (!prev) return prev;
+
+      const today = getTodayDateString();
+      const { streak: newStreak } = calculateLoginStreak(prev.lastLoginDate, prev.loginStreak || 0);
+
+      const newCoins = prev.coins + reward.coins;
+      const newOpals = (prev.opals || 0) + (reward.opals || 0);
+      const newUnlockedDecorations = reward.decoration
+        ? [...prev.unlockedDecorations, reward.decoration]
+        : prev.unlockedDecorations;
+
+      setNotifications(prevNotifs => [...prevNotifs, {
+        id: `notif-${Date.now()}`,
+        type: 'milestone',
+        emoji: '🎁',
+        message: `Daily login bonus: ${reward.coins} coins${reward.opals ? ` + ${reward.opals} opals` : ''}!`,
+        time: 'now',
+        read: false,
+      }]);
+
+      return {
+        ...prev,
+        coins: newCoins,
+        opals: newOpals,
+        lastLoginDate: today,
+        lastLoginBonusDate: today,
+        loginStreak: newStreak,
+        unlockedDecorations: newUnlockedDecorations,
+      };
+    });
+  }, [setGameState, setNotifications]);
+
+  return {
+    showSpinWheel,
+    setShowSpinWheel,
+    showDailyLogin,
+    setShowDailyLogin,
+    handleSpinWheel,
+    handleDailyLoginClaim,
+  };
+}

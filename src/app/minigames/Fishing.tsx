@@ -8,7 +8,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion } from 'motion/react';
 import { GameWrapper } from './GameWrapper';
-import { MiniGameProps, GameResult } from './types';
+import { MiniGameProps } from './types';
 import { calculateRewards } from './config';
 
 const CANVAS_W = 360;
@@ -381,7 +381,7 @@ export function Fishing({ onEnd, energy, strength = 0, speed = 0 }: MiniGameProp
   }, [playerScore, botScore, hadEnergyAtStart]);
 
   const draw = useCallback((ctx: CanvasRenderingContext2D, now: number) => {
-    const { playerState, playerLineY, playerHooked, playerHookTime, botState, botLineY, botHooked, fish, escapeEffects } = gameStateRef.current;
+    const { playerState, playerLineY, playerHooked, playerHookTime, botState: _botState, botLineY, botHooked, fish, escapeEffects } = gameStateRef.current;
     
     // Sky
     const sky = ctx.createLinearGradient(0, 0, 0, WATERLINE_Y);
@@ -485,6 +485,7 @@ export function Fishing({ onEnd, energy, strength = 0, speed = 0 }: MiniGameProp
       ctx.fillStyle = pct > 0.7 ? '#ef5350' : '#ffd54f';
       ctx.fillRect(barX, barY, barW * pct, 5);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [playerScore, botScore, timeLeft]);
 
   const drawBoat = useCallback((ctx: CanvasRenderingContext2D, x: number, y: number) => {

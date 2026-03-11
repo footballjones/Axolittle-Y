@@ -6,7 +6,7 @@
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Sparkles } from 'lucide-react';
 import { GAME_CONFIG } from '../config/game';
-import { canClaimDailyLogin, calculateLoginStreak, checkLoginStreakMilestone, getTodayDateString } from '../utils/dailySystem';
+import { canClaimDailyLogin, calculateLoginStreak, checkLoginStreakMilestone } from '../utils/dailySystem';
 
 interface DailyLoginBonusProps {
   isOpen: boolean;
@@ -24,11 +24,11 @@ export function DailyLoginBonus({
   onClaim, 
   lastLoginDate, 
   loginStreak = 0,
-  coins,
-  opals,
+  coins: _coins,
+  opals: _opals,
 }: DailyLoginBonusProps) {
   const canClaim = canClaimDailyLogin(lastLoginDate);
-  const { streak: newStreak, wasBroken } = calculateLoginStreak(lastLoginDate, loginStreak);
+  const { streak: newStreak } = calculateLoginStreak(lastLoginDate, loginStreak);
   const milestone = checkLoginStreakMilestone(newStreak);
   const milestoneReward = milestone ? GAME_CONFIG.loginStreakRewards[milestone as keyof typeof GAME_CONFIG.loginStreakRewards] : null;
 

@@ -66,15 +66,15 @@ describe('gameLogic', () => {
     });
 
     it('should return XP within level 2', () => {
-      // At 10 XP (level 2 start), should return 10
-      expect(getCurrentLevelXP(10)).toBe(10);
+      // At 10 XP (level 2 start), should return 0 (just entered level 2)
+      expect(getCurrentLevelXP(10)).toBe(0);
       // At 12 XP (level 2, 2 XP into level), should return 2
       expect(getCurrentLevelXP(12)).toBe(2);
     });
 
     it('should return XP within current level for higher levels', () => {
-      // At 20 XP (level 4 start), should return 5 (20 - 15)
-      expect(getCurrentLevelXP(20)).toBe(5);
+      // At 20 XP (level 4 start), should return 0 (just entered level 4)
+      expect(getCurrentLevelXP(20)).toBe(0);
     });
   });
 });
