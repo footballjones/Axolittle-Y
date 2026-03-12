@@ -122,14 +122,28 @@ function runMigrations(state: StoredState): StoredState {
   return state;
 }
 
+/** Millisecond timestamp stored alongside every save — used for cloud conflict resolution. */
+const UPDATED_AT_KEY = 'axolotl-updated-at';
+
 export function saveGameState(state: GameState): void {
   try {
+    const now = Date.now();
     const stateWithVersion = { ...state, version: CURRENT_STORAGE_VERSION };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(stateWithVersion));
     localStorage.setItem(STORAGE_VERSION_KEY, CURRENT_STORAGE_VERSION.toString());
+    localStorage.setItem(UPDATED_AT_KEY, String(now));
   } catch (error) {
     console.error('Failed to save game state:', error);
   }
+}
+
+/**
+ * Returns the Unix-ms timestamp of the last local save, or 0 if no save exists.
+ * Used by {@link useCloudSync} to decide whether cloud state is newer.
+ */
+export function getLocalUpdatedAt(): number {
+  const raw = localStorage.getItem(UPDATED_AT_KEY);
+  return raw ? parseInt(raw, 10) : 0;
 }
 
 export function loadGameState(): GameState | null {

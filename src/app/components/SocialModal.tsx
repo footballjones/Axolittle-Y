@@ -53,6 +53,8 @@ export function SocialModal({ onClose, axolotl, friends, onAddFriend, onRemoveFr
   const [activeTab, setActiveTab] = useState<'friends' | 'lineage'>('friends');
   const [expandedFriend, setExpandedFriend] = useState<string | null>(null);
   const [showAddFriendModal, setShowAddFriendModal] = useState(false);
+  const [visitingFriend, setVisitingFriend] = useState<Friend | null>(null);
+  const [viewingStatsFriend, setViewingStatsFriend] = useState<Friend | null>(null);
   // Short-lived visual feedback states (2–2.5s after action)
   const [justPoked, setJustPoked] = useState<Set<string>>(new Set());
   const [justGifted, setJustGifted] = useState<Record<string, GiftResult>>({});
@@ -320,7 +322,35 @@ export function SocialModal({ onClose, axolotl, friends, onAddFriend, onRemoveFr
                                         </span>
                                       </div>
 
-                                      {/* Action tiles */}
+                                      {/* Action tiles — row 1: Visit + Stats */}
+                                      <div className="grid grid-cols-2 gap-2 mb-2">
+                                        <motion.button
+                                          onClick={(e) => { e.stopPropagation(); setVisitingFriend(friend); }}
+                                          className="flex flex-col items-center justify-center gap-1 py-3 rounded-xl"
+                                          style={{
+                                            background: 'linear-gradient(135deg, rgba(14,165,233,0.18), rgba(6,182,212,0.14))',
+                                            border: '1px solid rgba(14,165,233,0.35)',
+                                          }}
+                                          whileTap={{ scale: 0.9 }}
+                                        >
+                                          <span className="text-[1.2rem]">🏊</span>
+                                          <span className="text-[9px] font-black tracking-wide uppercase text-sky-600">Visit Aquarium</span>
+                                        </motion.button>
+                                        <motion.button
+                                          onClick={(e) => { e.stopPropagation(); setViewingStatsFriend(friend); }}
+                                          className="flex flex-col items-center justify-center gap-1 py-3 rounded-xl"
+                                          style={{
+                                            background: 'linear-gradient(135deg, rgba(99,102,241,0.18), rgba(139,92,246,0.14))',
+                                            border: '1px solid rgba(99,102,241,0.35)',
+                                          }}
+                                          whileTap={{ scale: 0.9 }}
+                                        >
+                                          <span className="text-[1.2rem]">📊</span>
+                                          <span className="text-[9px] font-black tracking-wide uppercase text-indigo-600">View Stats</span>
+                                        </motion.button>
+                                      </div>
+
+                                      {/* Action tiles — row 2: Poke + Breed */}
                                       <div className="grid grid-cols-2 gap-2 mb-2">
                                         {/* Poke — 18h cooldown */}
                                         {(() => {
@@ -636,6 +666,289 @@ export function SocialModal({ onClose, axolotl, friends, onAddFriend, onRemoveFr
           </div>
         </div>
       </motion.div>
+
+      {/* ── Visit Aquarium Overlay ─────────────────────────────────────── */}
+      <AnimatePresence>
+        {visitingFriend && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[60] flex items-center justify-center p-4"
+            style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(10px)' }}
+            onClick={() => setVisitingFriend(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.88, opacity: 0, y: 24 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.88, opacity: 0, y: 24 }}
+              transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+              className="relative w-full max-w-sm overflow-hidden rounded-3xl"
+              style={{
+                background: 'linear-gradient(160deg, #0c4a6e 0%, #075985 40%, #0369a1 100%)',
+                border: '1.5px solid rgba(56,189,248,0.4)',
+                boxShadow: '0 24px 64px -12px rgba(2,132,199,0.5)',
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Bubbles decoration */}
+              {[
+                { size: 'w-24 h-24', pos: '-top-8 -right-8', opacity: 0.08 },
+                { size: 'w-16 h-16', pos: 'top-4 -left-6', opacity: 0.06 },
+                { size: 'w-32 h-32', pos: '-bottom-12 -left-10', opacity: 0.07 },
+              ].map((b, i) => (
+                <div
+                  key={i}
+                  className={`absolute ${b.size} ${b.pos} rounded-full pointer-events-none`}
+                  style={{ background: 'white', opacity: b.opacity }}
+                />
+              ))}
+
+              {/* Aquarium scene */}
+              <div className="relative px-5 pt-6 pb-4">
+                {/* Header */}
+                <div className="flex items-center justify-between mb-5">
+                  <div>
+                    <div className="text-sky-200/70 text-[10px] font-bold tracking-widest uppercase mb-0.5">🏊 Visiting</div>
+                    <h3 className="text-white font-black text-lg leading-tight">{visitingFriend.name}'s Aquarium</h3>
+                  </div>
+                  <motion.button
+                    onClick={() => setVisitingFriend(null)}
+                    className="rounded-full p-1.5 flex-shrink-0"
+                    style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)' }}
+                    whileTap={{ scale: 0.85 }}
+                  >
+                    <X className="w-4 h-4 text-white/80" strokeWidth={2.5} />
+                  </motion.button>
+                </div>
+
+                {/* Tank window */}
+                <div
+                  className="relative rounded-2xl overflow-hidden mb-4"
+                  style={{
+                    background: 'linear-gradient(180deg, rgba(6,182,212,0.25) 0%, rgba(2,132,199,0.15) 60%, rgba(12,74,110,0.4) 100%)',
+                    border: '1.5px solid rgba(56,189,248,0.3)',
+                    height: '160px',
+                  }}
+                >
+                  {/* Water shimmer */}
+                  <motion.div
+                    className="absolute inset-0 pointer-events-none"
+                    style={{
+                      background: 'linear-gradient(135deg, rgba(255,255,255,0.04) 0%, transparent 50%, rgba(255,255,255,0.03) 100%)',
+                    }}
+                    animate={{ opacity: [0.5, 1, 0.5] }}
+                    transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+                  />
+                  {/* Floating bubbles */}
+                  {[15, 40, 65, 82].map((x, i) => (
+                    <motion.div
+                      key={i}
+                      className="absolute bottom-0 rounded-full"
+                      style={{
+                        left: `${x}%`,
+                        width: `${6 + i * 2}px`,
+                        height: `${6 + i * 2}px`,
+                        background: 'rgba(255,255,255,0.15)',
+                        border: '1px solid rgba(255,255,255,0.25)',
+                      }}
+                      animate={{ y: [0, -130, 0], opacity: [0, 0.8, 0] }}
+                      transition={{
+                        duration: 3 + i * 0.7,
+                        repeat: Infinity,
+                        delay: i * 0.9,
+                        ease: 'easeInOut',
+                      }}
+                    />
+                  ))}
+                  {/* Floor seaweed */}
+                  <div className="absolute bottom-2 left-4 text-2xl select-none" style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' }}>🌿</div>
+                  <div className="absolute bottom-2 right-6 text-xl select-none" style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' }}>🪸</div>
+                  {/* Axolotl */}
+                  <motion.div
+                    className="absolute inset-0 flex flex-col items-center justify-center gap-1"
+                    animate={{ y: [-4, 4, -4] }}
+                    transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut' }}
+                  >
+                    <span className="text-5xl select-none" style={{ filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.4))' }}>🦎</span>
+                    <div
+                      className="text-white font-black text-[11px] px-2.5 py-0.5 rounded-full"
+                      style={{ background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(255,255,255,0.2)' }}
+                    >
+                      {visitingFriend.axolotlName}
+                    </div>
+                  </motion.div>
+                </div>
+
+                {/* Friend info pills */}
+                <div className="flex gap-2 flex-wrap">
+                  {[
+                    { label: visitingFriend.axolotlName, icon: '🦎' },
+                    { label: `Gen ${visitingFriend.generation}`, icon: '🌿' },
+                    { label: visitingFriend.stage.charAt(0).toUpperCase() + visitingFriend.stage.slice(1), icon: '⭐' },
+                  ].map(({ label, icon }) => (
+                    <div
+                      key={label}
+                      className="flex items-center gap-1.5 px-2.5 py-1 rounded-full"
+                      style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.18)' }}
+                    >
+                      <span className="text-[10px]">{icon}</span>
+                      <span className="text-white/80 text-[10px] font-bold capitalize">{label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── View Stats Overlay ─────────────────────────────────────────── */}
+      <AnimatePresence>
+        {viewingStatsFriend && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[60] flex items-center justify-center p-4"
+            style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(10px)' }}
+            onClick={() => setViewingStatsFriend(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.88, opacity: 0, y: 24 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.88, opacity: 0, y: 24 }}
+              transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+              className="relative w-full max-w-sm overflow-hidden rounded-3xl"
+              style={{
+                background: 'linear-gradient(160deg, #faf5ff 0%, #ede9fe 50%, #fce7f3 100%)',
+                border: '1.5px solid rgba(167,139,250,0.45)',
+                boxShadow: '0 24px 64px -12px rgba(139,92,246,0.3)',
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div
+                className="relative px-5 py-4 flex-shrink-0"
+                style={{ background: 'linear-gradient(135deg, #7c3aed 0%, #6d28d9 50%, #4f46e5 100%)' }}
+              >
+                <div className="absolute inset-0 opacity-10" style={{
+                  backgroundImage: 'radial-gradient(circle at 1px 1px, white 1px, transparent 1px)',
+                  backgroundSize: '28px 28px',
+                }} />
+                <div className="relative flex items-center justify-between">
+                  <div>
+                    <div className="text-violet-200/70 text-[10px] font-bold tracking-widest uppercase mb-0.5">📊 Profile</div>
+                    <h3 className="text-white font-black text-lg leading-tight">{viewingStatsFriend.name}</h3>
+                  </div>
+                  <motion.button
+                    onClick={() => setViewingStatsFriend(null)}
+                    className="rounded-full p-1.5 flex-shrink-0"
+                    style={{ background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.25)' }}
+                    whileTap={{ scale: 0.85 }}
+                  >
+                    <X className="w-4 h-4 text-white/80" strokeWidth={2.5} />
+                  </motion.button>
+                </div>
+              </div>
+
+              {/* Body */}
+              <div className="px-5 py-4 space-y-3">
+                {/* Axolotl profile row */}
+                <div
+                  className="flex items-center gap-3 rounded-2xl p-3"
+                  style={{ background: 'rgba(255,255,255,0.65)', border: '1px solid rgba(216,180,254,0.4)' }}
+                >
+                  <div
+                    className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl flex-shrink-0"
+                    style={{ background: 'linear-gradient(135deg, rgba(216,180,254,0.5), rgba(167,139,250,0.4))', border: '1.5px solid rgba(167,139,250,0.4)' }}
+                  >
+                    🦎
+                  </div>
+                  <div>
+                    <div className="text-violet-900 font-black text-sm">{viewingStatsFriend.axolotlName}</div>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <span
+                        className="text-[9px] font-black text-violet-500 px-2 py-0.5 rounded-full capitalize"
+                        style={{ background: 'rgba(237,233,254,0.8)', border: '1px solid rgba(196,181,253,0.4)' }}
+                      >
+                        {viewingStatsFriend.stage}
+                      </span>
+                      <span
+                        className="text-[9px] font-black text-indigo-500 px-2 py-0.5 rounded-full"
+                        style={{ background: 'rgba(238,242,255,0.8)', border: '1px solid rgba(165,180,252,0.4)' }}
+                      >
+                        Gen {viewingStatsFriend.generation}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Stage progress */}
+                {(() => {
+                  const stages: Friend['stage'][] = ['baby', 'juvenile', 'adult', 'elder'];
+                  const currentIdx = stages.indexOf(viewingStatsFriend.stage);
+                  return (
+                    <div
+                      className="rounded-2xl p-3"
+                      style={{ background: 'rgba(255,255,255,0.65)', border: '1px solid rgba(216,180,254,0.4)' }}
+                    >
+                      <div className="text-[10px] font-black text-violet-500/80 tracking-widest uppercase mb-2.5">Life Stage</div>
+                      <div className="flex items-center justify-between gap-1">
+                        {stages.map((s, i) => {
+                          const isActive = i === currentIdx;
+                          const isPast = i < currentIdx;
+                          const stageEmojis = ['🥚', '🌱', '🦎', '👑'];
+                          return (
+                            <div key={s} className="flex-1 flex flex-col items-center gap-1">
+                              <div
+                                className="w-full h-1.5 rounded-full"
+                                style={{
+                                  background: isPast || isActive
+                                    ? 'linear-gradient(90deg, #7c3aed, #a78bfa)'
+                                    : 'rgba(216,180,254,0.3)',
+                                }}
+                              />
+                              <span className="text-[14px]">{stageEmojis[i]}</span>
+                              <span
+                                className="text-[8px] font-bold capitalize"
+                                style={{ color: isActive ? '#6d28d9' : isPast ? '#a78bfa' : 'rgba(139,92,246,0.35)' }}
+                              >
+                                {s}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* Last active */}
+                <div
+                  className="rounded-2xl p-3 flex items-center gap-3"
+                  style={{ background: 'rgba(255,255,255,0.65)', border: '1px solid rgba(216,180,254,0.4)' }}
+                >
+                  <span className="text-lg">🕐</span>
+                  <div>
+                    <div className="text-[10px] font-black text-violet-500/80 tracking-widest uppercase">Last Active</div>
+                    <div className="text-violet-800 font-bold text-xs mt-0.5">
+                      {(() => {
+                        const mins = Math.floor((Date.now() - viewingStatsFriend.lastSync) / 60_000);
+                        if (mins < 1) return 'Just now';
+                        if (mins < 60) return `${mins}m ago`;
+                        const hrs = Math.floor(mins / 60);
+                        if (hrs < 24) return `${hrs}h ago`;
+                        return `${Math.floor(hrs / 24)}d ago`;
+                      })()}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Add Friend Modal */}
       <AnimatePresence>

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { GameState } from './types/game';
+import { GameState, SecondaryStats } from './types/game';
 import {
   generateAxolotl,
   canRebirth,
@@ -45,6 +45,10 @@ import { useWellbeingEngine } from './hooks/useWellbeingEngine';
 import { useEconomyActions } from './hooks/useEconomyActions';
 import { useSocialState } from './hooks/useSocialState';
 import { getTodayDateString, canSpinToday, canClaimDailyLogin } from './utils/dailySystem';
+import { useAuth } from './context/AuthContext';
+import { useCloudSync, SyncStatus } from './hooks/useCloudSync';
+import { LoginScreen } from './components/LoginScreen';
+import { SyncIndicator } from './components/SyncIndicator';
 
 export default function App() {
   const [gameState, setGameState] = useState<GameState | null>(null);
@@ -54,6 +58,9 @@ export default function App() {
   const cleaningModeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [playMode, setPlayMode] = useState(false);
   const playModeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  /** Set when the axolotl levels up mid-game; drives the level-up StatsModal */
+  const [levelUpData, setLevelUpData] = useState<{ level: number; prevStats: SecondaryStats } | null>(null);
 
   // Domain hooks
   const {
@@ -73,6 +80,20 @@ export default function App() {
     handleSpinWheel,
     handleDailyLoginClaim,
   } = useEconomyActions({ setGameState, setNotifications });
+
+  // ── Auth + Cloud Sync ──────────────────────────────────────────────────────
+  const { user, isLoading: authLoading, isGuest } = useAuth();
+  const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
+  /** True if a save already existed in localStorage when the app first launched.
+   *  Used to skip LoginScreen for existing / returning players. */
+  const [hasLocalSave] = useState(() => !!localStorage.getItem('axolotl-game-state'));
+
+  useCloudSync({
+    userId: user?.id ?? null,
+    gameState,
+    onCloudStateLoaded: setGameState,
+    onStatusChange: setSyncStatus,
+  });
 
   useWellbeingEngine({ axolotlId: gameState?.axolotl?.id, setGameState });
 
@@ -105,6 +126,12 @@ export default function App() {
     setShopSection,
   } = menuState;
   
+  // Level-up callback — navigates home and opens the stats modal with gain data
+  const handleLevelUp = useCallback((newLevel: number, prevStats: SecondaryStats) => {
+    setLevelUpData({ level: newLevel, prevStats });
+    setActiveModal('stats');
+  }, [setActiveModal]);
+
   // Game actions from hook
   const gameActions = useGameActions({
     gameState,
@@ -113,6 +140,7 @@ export default function App() {
     setActiveModal,
     setActiveGame,
     setCurrentScreen,
+    onLevelUp: handleLevelUp,
   });
   
   const {
@@ -342,6 +370,15 @@ export default function App() {
 
   // All other handlers are now in useGameActions, useEconomyActions, or useWellbeingEngine
 
+  // Wait for Supabase auth to resolve before rendering (avoids flash of LoginScreen for returning users)
+  if (authLoading) return null;
+
+  // Truly new player: no local save, not signed in, hasn't chosen guest — prompt to sign in or continue as guest.
+  // Existing players (hasLocalSave) are let through immediately for backwards-compatibility.
+  if (!user && !isGuest && !hasLocalSave) {
+    return <LoginScreen />;
+  }
+
   if (!gameState) return null;
 
   const _hasAnyEgg = !!(gameState.incubatorEgg || (gameState.nurseryEggs && gameState.nurseryEggs.length > 0));
@@ -481,6 +518,11 @@ export default function App() {
                       />
                     )}
                   </motion.button>
+                </div>
+
+                {/* Cloud sync status indicator */}
+                <div className="flex justify-end -mt-0.5 pointer-events-none">
+                  <SyncIndicator status={isGuest ? 'guest' : syncStatus} />
                 </div>
 
                 {/* XP Bar - toggleable via level badge */}
@@ -1527,9 +1569,10 @@ export default function App() {
 
       {activeModal === 'stats' && (
         <StatsModal
-          onClose={() => setActiveModal(null)}
+          onClose={() => { setActiveModal(null); setLevelUpData(null); }}
           stats={axolotl.secondaryStats}
           name={axolotl.name}
+          levelUp={levelUpData ?? undefined}
         />
       )}
 

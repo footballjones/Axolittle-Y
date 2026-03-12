@@ -4,10 +4,11 @@
  */
 
 import { useCallback } from 'react';
-import { GameState, Axolotl, Friend, FoodItem, PendingPoop, PoopItem } from '../types/game';
+import { GameState, Axolotl, Friend, FoodItem, PendingPoop, PoopItem, SecondaryStats } from '../types/game';
 import {
   feedAxolotl,
   checkEvolution,
+  calculateLevel,
 } from '../utils/gameLogic';
 import { createRebirthEgg, createBreedingEgg, hatchEgg, isEggReady } from '../utils/eggs';
 import { getDecorationById, BACKGROUND_COLORS } from '../data/decorations';
@@ -23,6 +24,8 @@ interface UseGameActionsProps {
   setActiveModal: React.Dispatch<React.SetStateAction<'shop' | 'social' | 'rebirth' | 'stats' | 'settings' | null>>;
   setActiveGame: React.Dispatch<React.SetStateAction<string | null>>;
   setCurrentScreen: React.Dispatch<React.SetStateAction<'home' | 'games'>>;
+  /** Called when the axolotl levels up — receives the new level and the pre-level-up secondary stats */
+  onLevelUp?: (newLevel: number, prevStats: SecondaryStats) => void;
 }
 
 export function useGameActions({
@@ -32,6 +35,7 @@ export function useGameActions({
   setActiveModal,
   setActiveGame,
   setCurrentScreen,
+  onLevelUp,
 }: UseGameActionsProps) {
 
   /**
@@ -624,10 +628,21 @@ export function useGameActions({
 
   const handleMiniGameEnd = useCallback((result: GameResult) => {
     setActiveGame(null);
-    setCurrentScreen('games'); // Return to games menu after game ends
+    // Navigation destination is decided after we know whether a level-up occurred.
+    // (setCurrentScreen is called below, outside the state updater.)
+
+    // These are written from inside the updater (which runs synchronously in an
+    // event-handler context) and read immediately after to drive navigation.
+    let didLevelUp = false;
+    let levelUpNewLevel = 0;
+    let levelUpPrevStats: SecondaryStats = { strength: 0, intellect: 0, stamina: 0, speed: 0 };
 
     setGameState(prev => {
       if (!prev || !prev.axolotl) return prev;
+
+      // Snapshot the level and stats BEFORE applying the new XP
+      const prevLevel = calculateLevel(prev.axolotl.experience);
+      levelUpPrevStats = { ...prev.axolotl.secondaryStats };
 
       // Games pass xp: 0 / coins: 0 when no energy was available at start,
       // so we always apply the result directly — no flag tracking needed.
@@ -647,6 +662,13 @@ export function useGameActions({
         },
       };
       const evolvedAxolotl = checkEvolution(updatedAxolotl);
+
+      // Detect level-up: checkEvolution sets lastLevel to the new level
+      const newLevel = calculateLevel(evolvedAxolotl.experience);
+      if (newLevel > prevLevel) {
+        didLevelUp = true;
+        levelUpNewLevel = newLevel;
+      }
 
       // Show appropriate notification based on whether rewards were actually earned
       const earnedRewards = result.xp > 0 || result.coins > 0;
@@ -683,7 +705,15 @@ export function useGameActions({
       };
       return withAchievements(next);
     });
-  }, []);
+
+    // Navigate and surface the level-up screen (runs after updater has executed)
+    if (didLevelUp) {
+      setCurrentScreen('home');
+      onLevelUp?.(levelUpNewLevel, levelUpPrevStats);
+    } else {
+      setCurrentScreen('games');
+    }
+  }, [onLevelUp]);
 
   const handleBuyCoins = useCallback((pack: { opals: number; coins: number }) => {
     setGameState(prev => {
