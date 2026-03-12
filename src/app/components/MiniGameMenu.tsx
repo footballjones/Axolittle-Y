@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { User, Users, Info, Zap, Lock } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { GAME_CONFIG } from '../config/game';
@@ -127,7 +127,6 @@ export function MiniGameMenu({ onClose: _onClose, onSelectGame, energy = 10, max
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [energyTimeText, setEnergyTimeText] = useState<string>('');
   const [lockTimeText, setLockTimeText] = useState<string>('');
-  const initialCalculationRef = useRef<{ baseTime: number; targetEnergy: number; secondsUntilNext: number } | null>(null);
 
   const isLocked = !!miniGamesLockedUntil && miniGamesLockedUntil > Date.now();
 
@@ -162,15 +161,18 @@ export function MiniGameMenu({ onClose: _onClose, onSelectGame, energy = 10, max
     setExpandedId(prev => prev === id ? null : id);
   };
 
-  const energyPercent = (energy / maxEnergy) * 100;
+  // energy is stored as a float in game state, floor it for display
+  const displayEnergy = Math.floor(energy);
+  const energyPercent = (displayEnergy / maxEnergy) * 100;
 
-  // Calculate time until next energy - updates live, always visible
+  // Calculate time until next energy — derives directly from float energy + elapsed time.
+  // Because energy is stored as a float (fractional progress is preserved), this is always
+  // accurate even after the component remounts or the wellbeing engine ticks.
   useEffect(() => {
-    // Only recalculate when ENERGY changes (not when lastEnergyUpdate changes)
-    // This prevents the timer from resetting when lastEnergyUpdate updates every 5 seconds
-    if (!initialCalculationRef.current || initialCalculationRef.current.targetEnergy !== energy) {
+    const energyRegenRate = GAME_CONFIG.energyRegenRate / 3600; // per second
+
+    const updateTimer = () => {
       if (energy >= maxEnergy) {
-        initialCalculationRef.current = null;
         setEnergyTimeText('Energy is full!');
         return;
       }
@@ -180,93 +182,32 @@ export function MiniGameMenu({ onClose: _onClose, onSelectGame, energy = 10, max
         return;
       }
 
-      // Calculate initial time when energy changes
-      const now = Date.now();
-      const elapsedSinceLastUpdate = Math.max(0, (now - lastEnergyUpdate) / 1000);
-      const energyRegenRate = GAME_CONFIG.energyRegenRate / 3600; // per second
-      const currentEnergy = energy || 0;
-      const energyGained = energyRegenRate * elapsedSinceLastUpdate;
-      const fractionalEnergy = currentEnergy + energyGained;
-      
+      // Compute exact fractional energy right now
+      const elapsedSinceLastUpdate = Math.max(0, (Date.now() - lastEnergyUpdate) / 1000);
+      const fractionalEnergy = Math.min(maxEnergy, energy + energyRegenRate * elapsedSinceLastUpdate);
+
       if (fractionalEnergy >= maxEnergy) {
-        initialCalculationRef.current = null;
         setEnergyTimeText('Energy is full!');
         return;
       }
-      
-      const currentFloor = Math.floor(fractionalEnergy);
-      const nextFullPoint = currentFloor + 1;
-      const energyNeeded = nextFullPoint - fractionalEnergy;
-      const secondsUntilNext = energyNeeded / energyRegenRate;
-      
-      if (secondsUntilNext > 0 && secondsUntilNext <= 3600) {
-        initialCalculationRef.current = {
-          baseTime: now,
-          targetEnergy: energy,
-          secondsUntilNext: secondsUntilNext
-        };
-      } else if (secondsUntilNext > 3600) {
-        initialCalculationRef.current = {
-          baseTime: now,
-          targetEnergy: energy,
-          secondsUntilNext: 3600
-        };
-      } else {
-        initialCalculationRef.current = null;
-        setEnergyTimeText('Energy is full!');
-        return;
-      }
-    }
 
-    const updateTimer = () => {
-      if (energy >= maxEnergy) {
-        setEnergyTimeText('Energy is full!');
-        initialCalculationRef.current = null;
-        return;
-      }
+      const nextFullPoint = Math.floor(fractionalEnergy) + 1;
+      const secondsUntilNext = Math.floor((nextFullPoint - fractionalEnergy) / energyRegenRate);
 
-      if (!initialCalculationRef.current) {
-        setEnergyTimeText('Calculating...');
-        return;
-      }
-
-      // Simply count down from the stored calculation
-      const elapsed = (Date.now() - initialCalculationRef.current.baseTime) / 1000;
-      const remainingSeconds = Math.max(0, initialCalculationRef.current.secondsUntilNext - elapsed);
-      const totalSeconds = Math.floor(remainingSeconds);
-      
-      if (totalSeconds <= 0) {
-        // Timer reached 0, but energy hasn't updated yet - show 0s
+      if (secondsUntilNext <= 0) {
         setEnergyTimeText('0s until next energy');
         return;
       }
-      
-      if (totalSeconds >= 3600) {
-        setEnergyTimeText('60m 0s until next energy');
-        return;
-      }
 
-      const minutes = Math.floor(totalSeconds / 60);
-      const seconds = totalSeconds % 60;
-      
-      if (minutes > 0) {
-        setEnergyTimeText(`${minutes}m ${seconds}s until next energy`);
-      } else {
-        setEnergyTimeText(`${seconds}s until next energy`);
-      }
+      const minutes = Math.floor(secondsUntilNext / 60);
+      const seconds = secondsUntilNext % 60;
+      setEnergyTimeText(minutes > 0 ? `${minutes}m ${seconds}s until next energy` : `${seconds}s until next energy`);
     };
 
-    // Update immediately
     updateTimer();
-
-    // Update every second to show live countdown
     const interval = setInterval(updateTimer, 1000);
-
-    return () => {
-      clearInterval(interval);
-    };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [energy, maxEnergy]); // Only depend on energy, NOT lastEnergyUpdate
+    return () => clearInterval(interval);
+  }, [energy, maxEnergy, lastEnergyUpdate]);
 
   const soloGames = [
     {
@@ -356,7 +297,7 @@ export function MiniGameMenu({ onClose: _onClose, onSelectGame, energy = 10, max
             <Zap className="w-3 h-3 text-yellow-400 fill-yellow-400 drop-shadow-[0_0_4px_rgba(250,204,21,0.6)]" />
           </motion.div>
           <span className="text-[10px] font-bold text-white/80">Energy</span>
-          <span className="ml-auto text-[10px] font-bold text-yellow-300">{energy}/{maxEnergy}</span>
+          <span className="ml-auto text-[10px] font-bold text-yellow-300">{displayEnergy}/{maxEnergy}</span>
         </div>
         <div className="h-1.5 rounded-full bg-black/30 border border-white/5 overflow-hidden relative">
           <motion.div

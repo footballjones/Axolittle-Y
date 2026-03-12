@@ -201,8 +201,8 @@ export default function App() {
       const energyGained = energyRegenRate * elapsedSeconds;
       const newEnergy = Math.min(maxEnergy, currentEnergy + energyGained);
       
-      // Update energy and timestamp
-      loaded.energy = Math.floor(newEnergy);
+      // Update energy and timestamp (keep as float to preserve fractional progress)
+      loaded.energy = newEnergy;
       loaded.lastEnergyUpdate = now;
       
       setGameState(loaded);
@@ -1443,7 +1443,7 @@ export default function App() {
                       
                       return {
                         ...prev,
-                        energy: Math.max(0, Math.floor(energyBeforeDeduction) - 1),
+                        energy: Math.max(0, energyBeforeDeduction - 1), // Subtract 1 whole point, preserve fraction
                         lastEnergyUpdate: now, // Update timestamp after energy consumption
                         // Store flag to track if energy was used (for reward calculation)
                         _lastGameHadEnergy: true,

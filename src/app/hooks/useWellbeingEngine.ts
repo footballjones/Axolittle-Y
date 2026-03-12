@@ -39,7 +39,7 @@ export function useWellbeingEngine({ axolotlId, setGameState }: UseWellbeingEngi
           ...stateWithUpdatedShrimp,
           ...gameStateUpdates,
           axolotl: updated,
-          energy: Math.floor(newEnergy),
+          energy: newEnergy, // Store as float so fractional progress is preserved
           maxEnergy,
           lastEnergyUpdate: now,
         };
