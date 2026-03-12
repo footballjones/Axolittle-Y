@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import axolotlNameScreenImg from '../../assets/axolotlnamescreen.png';
 import { motion, AnimatePresence } from 'motion/react';
 import { Sparkles, Star, Gem, Wand2, Heart, HelpCircle, X } from 'lucide-react';
 
@@ -571,76 +572,31 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
             transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut' }}
             className="relative z-10 mb-4"
           >
-            <svg
-              width="176"
-              height="176"
-              viewBox="0 0 200 200"
-              className="mx-auto"
-              style={{ filter: 'drop-shadow(0 0 25px rgba(56,189,248,0.35)) drop-shadow(0 0 50px rgba(168,85,247,0.2))' }}
-            >
-              {/* Body */}
-              <ellipse
-                cx="100"
-                cy="120"
-                rx="60"
-                ry="50"
-                fill="#FFB5E8"
-                stroke="rgba(255,255,255,0.3)"
-                strokeWidth="2"
-              />
-              
-              {/* Head */}
-              <ellipse
-                cx="100"
-                cy="80"
-                rx="50"
-                ry="45"
-                fill="#FFB5E8"
-                stroke="rgba(255,255,255,0.3)"
-                strokeWidth="2"
-              />
-              
-              {/* Gills (left side) */}
-              <ellipse cx="50" cy="85" rx="8" ry="20" fill="rgba(255,200,200,0.6)" />
-              <ellipse cx="45" cy="95" rx="8" ry="20" fill="rgba(255,200,200,0.6)" />
-              <ellipse cx="50" cy="105" rx="8" ry="20" fill="rgba(255,200,200,0.6)" />
-              
-              {/* Gills (right side) */}
-              <ellipse cx="150" cy="85" rx="8" ry="20" fill="rgba(255,200,200,0.6)" />
-              <ellipse cx="155" cy="95" rx="8" ry="20" fill="rgba(255,200,200,0.6)" />
-              <ellipse cx="150" cy="105" rx="8" ry="20" fill="rgba(255,200,200,0.6)" />
-              
-              {/* Eyes */}
-              <circle cx="85" cy="75" r="12" fill="white" />
-              <circle cx="115" cy="75" r="12" fill="white" />
-              <circle cx="88" cy="78" r="6" fill="black" />
-              <circle cx="118" cy="78" r="6" fill="black" />
-              
-              {/* Smile */}
-              <path
-                d="M 85 95 Q 100 105 115 95"
-                stroke="rgba(0,0,0,0.3)"
-                strokeWidth="2"
-                fill="none"
-                strokeLinecap="round"
-              />
-              
-              {/* Tail */}
-              <ellipse
-                cx="100"
-                cy="165"
-                rx="35"
-                ry="25"
-                fill="#FFB5E8"
-                stroke="rgba(255,255,255,0.3)"
-                strokeWidth="2"
-              />
-              
-              {/* Spots pattern */}
-              <circle cx="100" cy="100" r="8" fill="rgba(255,255,255,0.4)" />
-              <circle cx="120" cy="130" r="6" fill="rgba(255,255,255,0.4)" />
-              <circle cx="80" cy="140" r="7" fill="rgba(255,255,255,0.4)" />
-            </svg>
+            {/* Outer glow ring */}
+            <motion.div
+              className="absolute inset-0 rounded-[28px]"
+              animate={{ opacity: [0.4, 0.75, 0.4] }}
+              transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+              style={{
+                background: 'radial-gradient(ellipse, rgba(56,189,248,0.25) 0%, rgba(168,85,247,0.15) 60%, transparent 80%)',
+                filter: 'blur(18px)',
+                transform: 'scale(1.15)',
+              }}
+            />
+            <img
+              src={axolotlNameScreenImg}
+              alt="Axolotl"
+              className="mx-auto relative"
+              style={{
+                width: 260,
+                height: 'auto',
+                objectFit: 'contain',
+                borderRadius: 24,
+                boxShadow: '0 0 40px rgba(56,189,248,0.2), 0 0 80px rgba(168,85,247,0.12)',
+                maskImage: 'radial-gradient(ellipse 90% 90% at 50% 50%, black 60%, transparent 100%)',
+                WebkitMaskImage: 'radial-gradient(ellipse 90% 90% at 50% 50%, black 60%, transparent 100%)',
+              }}
+            />
           </motion.div>
 
           {/* Title */}

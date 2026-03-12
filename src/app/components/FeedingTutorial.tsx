@@ -24,19 +24,21 @@ export function FeedingTutorial({ step, axolotlName }: FeedingTutorialProps) {
             style={{ background: 'rgba(0,0,0,0.42)' }}
           />
 
-          {/* Speech bubble + bouncing hand, anchored just above the action buttons */}
+          {/* Speech bubble + bouncing hand, aligned to the Feed button (leftmost of 4) */}
+          {/* Feed button center ≈ 52px from left (8px padding + first-of-4-button midpoint) */}
           <motion.div
-            className="absolute bottom-[72px] left-0 right-0 flex flex-col items-center gap-0.5 px-4"
+            className="absolute bottom-[72px] left-0 right-0 flex flex-col items-start gap-0.5 pl-2"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.35, duration: 0.4 }}
           >
             <div
-              className="rounded-2xl px-5 py-3 shadow-2xl text-center max-w-[230px]"
+              className="rounded-2xl px-4 py-3 shadow-2xl"
               style={{
                 background: 'rgba(255,255,255,0.97)',
                 border: '2.5px solid rgba(52,211,153,0.7)',
                 boxShadow: '0 8px 32px rgba(52,211,153,0.35)',
+                maxWidth: 195,
               }}
             >
               <p className="text-slate-800 text-[13px] font-bold leading-snug">
@@ -44,18 +46,20 @@ export function FeedingTutorial({ step, axolotlName }: FeedingTutorialProps) {
                 Tap <span className="text-emerald-600">Feed</span> to drop some food 🍖
               </p>
             </div>
-            {/* Downward caret */}
+            {/* Downward caret — offset to center on the Feed button */}
             <div
               className="w-0 h-0"
               style={{
+                marginLeft: 35,
                 borderLeft: '9px solid transparent',
                 borderRight: '9px solid transparent',
                 borderTop: '9px solid rgba(255,255,255,0.97)',
               }}
             />
-            {/* Bouncing hand pointing down at Feed button */}
+            {/* Bouncing hand pointing at Feed button */}
             <motion.span
               className="text-2xl select-none"
+              style={{ marginLeft: 30 }}
               animate={{ y: [0, 8, 0] }}
               transition={{ duration: 0.85, repeat: Infinity, ease: 'easeInOut' }}
             >

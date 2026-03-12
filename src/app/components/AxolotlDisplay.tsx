@@ -1,6 +1,7 @@
 import { motion } from 'motion/react';
 import { Axolotl, FoodItem } from '../types/game';
 import { useEffect, useState, useRef, useCallback } from 'react';
+import axolotlImg from '../../assets/axolotl.png';
 
 interface AxolotlDisplayProps {
   axolotl: Axolotl;
@@ -259,7 +260,7 @@ export function AxolotlDisplay({ axolotl, foodItems, onEatFood, clickTarget, pla
 
         {/* Axolotl image — tappable in play mode */}
         <img
-          src="/axolotl.png"
+          src={axolotlImg}
           alt="Axolotl"
           width={size}
           height={size}
@@ -271,7 +272,7 @@ export function AxolotlDisplay({ axolotl, foodItems, onEatFood, clickTarget, pla
             }
           } : undefined}
           style={{
-            transform: facingLeft ? 'scaleX(1)' : 'scaleX(-1)',
+            transform: facingLeft ? 'scaleX(-1)' : 'scaleX(1)',
             filter: 'drop-shadow(0 0 8px rgba(160,120,255,0.4)) drop-shadow(0 0 20px rgba(100,180,255,0.3)) drop-shadow(0 4px 12px rgba(0,0,0,0.25))',
             objectFit: 'contain',
             pointerEvents: playMode ? 'auto' : 'none',

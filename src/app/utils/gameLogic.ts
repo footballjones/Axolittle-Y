@@ -79,8 +79,8 @@ export function generateAxolotl(
     name,
     stage: 'baby' as LifeStage,
     stats: {
-      hunger: 100,
-      happiness: 100,
+      hunger: 50,
+      happiness: 50,
       cleanliness: 100,
       waterQuality: 100,
     },
