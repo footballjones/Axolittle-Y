@@ -37,7 +37,7 @@ const COLORS = [
   '#FFB7B2', '#B5B9FF', '#FFDAC1', '#E2F0CB', '#C7CEEA',
 ];
 
-export function AxolotlStacker({ onEnd, energy }: MiniGameProps) {
+export function AxolotlStacker({ onEnd, onDeductEnergy, energy }: MiniGameProps) {
   const [score, setScore] = useState(0);
   const [showOverlay, setShowOverlay] = useState(true);
   const [gameEnded, setGameEnded] = useState(false);
@@ -217,7 +217,9 @@ export function AxolotlStacker({ onEnd, energy }: MiniGameProps) {
   }, [hadEnergyAtStart]);
 
   const startGame = useCallback(() => {
-    setHadEnergyAtStart(energy > 0);
+    const hadEnergy = Math.floor(energy) >= 1;
+    if (hadEnergy) onDeductEnergy?.();
+    setHadEnergyAtStart(hadEnergy);
     const game = gameRef.current;
     game.isPlaying = true;
     game.isPaused = false;
@@ -247,7 +249,7 @@ export function AxolotlStacker({ onEnd, energy }: MiniGameProps) {
     if (ctx && !animationFrameRef.current) {
       animationFrameRef.current = requestAnimationFrame(gameLoop);
     }
-  }, [energy, spawnBlock, draw, gameLoop]);
+  }, [energy, onDeductEnergy, spawnBlock, draw, gameLoop]);
 
   // Initialize canvas
   useEffect(() => {

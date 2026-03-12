@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Users, Copy, Check, ChevronDown, Heart, Waves, Plus } from 'lucide-react';
 import { Axolotl, Friend } from '../types/game';
 import { generateFriendCode } from '../utils/storage';
@@ -14,6 +14,26 @@ function rollGift(): GiftResult {
   if (r < 0.75) return { coins: 15, opals: 0 };
   if (r < 0.95) return { coins: 40, opals: 0 };
   return { coins: 0, opals: 3 };
+}
+
+// ── 18-hour cooldown helpers (localStorage-backed) ────────────────────────────
+const SOCIAL_COOLDOWN_MS = 18 * 60 * 60 * 1000; // 18 hours
+
+function getCooldownRemaining(key: string): number {
+  const ts = localStorage.getItem(key);
+  if (!ts) return 0;
+  return Math.max(0, SOCIAL_COOLDOWN_MS - (Date.now() - parseInt(ts, 10)));
+}
+
+function recordCooldown(key: string) {
+  localStorage.setItem(key, Date.now().toString());
+}
+
+function formatCooldown(ms: number): string {
+  const h = Math.floor(ms / 3_600_000);
+  const m = Math.floor((ms % 3_600_000) / 60_000);
+  if (h > 0) return `${h}h ${m}m`;
+  return `${m}m`;
 }
 
 interface SocialModalProps {
@@ -32,9 +52,16 @@ export function SocialModal({ onClose, axolotl, friends, onAddFriend, onRemoveFr
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<'friends' | 'lineage'>('friends');
   const [expandedFriend, setExpandedFriend] = useState<string | null>(null);
-  const [pokedFriends, setPokedFriends] = useState<Set<string>>(new Set());
-  const [giftResults, setGiftResults] = useState<Record<string, GiftResult>>({});
   const [showAddFriendModal, setShowAddFriendModal] = useState(false);
+  // Short-lived visual feedback states (2–2.5s after action)
+  const [justPoked, setJustPoked] = useState<Set<string>>(new Set());
+  const [justGifted, setJustGifted] = useState<Record<string, GiftResult>>({});
+  // Tick so cooldown timers refresh every minute
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setTick(t => t + 1), 60_000);
+    return () => clearInterval(id);
+  }, []);
 
   const myCode = generateFriendCode(axolotl);
 
@@ -295,39 +322,43 @@ export function SocialModal({ onClose, axolotl, friends, onAddFriend, onRemoveFr
 
                                       {/* Action tiles */}
                                       <div className="grid grid-cols-2 gap-2 mb-2">
-                                        {/* Poke */}
-                                        <motion.button
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            setPokedFriends(prev => {
-                                              const next = new Set(prev);
-                                              next.add(friend.id);
-                                              return next;
-                                            });
-                                            setTimeout(() => {
-                                              setPokedFriends(prev => {
-                                                const next = new Set(prev);
-                                                next.delete(friend.id);
-                                                return next;
-                                              });
-                                            }, 2000);
-                                          }}
-                                          className="flex flex-col items-center justify-center gap-1 py-3 rounded-xl"
-                                          style={{
-                                            background: pokedFriends.has(friend.id)
-                                              ? 'linear-gradient(135deg, rgba(134,239,172,0.4), rgba(74,222,128,0.3))'
-                                              : 'linear-gradient(135deg, rgba(254,240,138,0.5), rgba(253,224,71,0.35))',
-                                            border: pokedFriends.has(friend.id)
-                                              ? '1px solid rgba(74,222,128,0.4)'
-                                              : '1px solid rgba(250,204,21,0.4)',
-                                          }}
-                                          whileTap={{ scale: 0.9 }}
-                                        >
-                                          <span className="text-[1.2rem]">{pokedFriends.has(friend.id) ? '✨' : '👉'}</span>
-                                          <span className="text-[9px] font-black tracking-wide uppercase text-amber-600">
-                                            {pokedFriends.has(friend.id) ? 'Poked!' : 'Poke'}
-                                          </span>
-                                        </motion.button>
+                                        {/* Poke — 18h cooldown */}
+                                        {(() => {
+                                          const pokeRemaining = getCooldownRemaining(`poke_${friend.id}`);
+                                          const isPokeOnCooldown = pokeRemaining > 0;
+                                          const justPokedThis = justPoked.has(friend.id);
+                                          const pokeActive = justPokedThis || isPokeOnCooldown;
+                                          return (
+                                            <motion.button
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                if (isPokeOnCooldown || justPokedThis) return;
+                                                recordCooldown(`poke_${friend.id}`);
+                                                setJustPoked(prev => { const next = new Set(prev); next.add(friend.id); return next; });
+                                                setTimeout(() => {
+                                                  setJustPoked(prev => { const next = new Set(prev); next.delete(friend.id); return next; });
+                                                  setTick(t => t + 1);
+                                                }, 2000);
+                                              }}
+                                              className="flex flex-col items-center justify-center gap-1 py-3 rounded-xl"
+                                              style={{
+                                                background: pokeActive
+                                                  ? 'linear-gradient(135deg, rgba(134,239,172,0.4), rgba(74,222,128,0.3))'
+                                                  : 'linear-gradient(135deg, rgba(254,240,138,0.5), rgba(253,224,71,0.35))',
+                                                border: pokeActive
+                                                  ? '1px solid rgba(74,222,128,0.4)'
+                                                  : '1px solid rgba(250,204,21,0.4)',
+                                                opacity: isPokeOnCooldown && !justPokedThis ? 0.6 : 1,
+                                              }}
+                                              whileTap={pokeActive ? {} : { scale: 0.9 }}
+                                            >
+                                              <span className="text-[1.2rem]">{justPokedThis ? '✨' : '👉'}</span>
+                                              <span className="text-[9px] font-black tracking-wide uppercase text-amber-600" style={{ lineHeight: 1.2 }}>
+                                                {justPokedThis ? 'Poked!' : isPokeOnCooldown ? formatCooldown(pokeRemaining) : 'Poke'}
+                                              </span>
+                                            </motion.button>
+                                          );
+                                        })()}
 
                                         {/* Breed */}
                                         <motion.button
@@ -350,45 +381,52 @@ export function SocialModal({ onClose, axolotl, friends, onAddFriend, onRemoveFr
                                         </motion.button>
                                       </div>
 
-                                      {/* Send Gift - full width */}
+                                      {/* Send Gift - full width, 18h cooldown */}
                                       {(() => {
-                                        const result = giftResults[friend.id];
-                                        const giftLabel = result
-                                          ? result.opals > 0
-                                            ? `+${result.opals} Opals! ✨`
-                                            : `+${result.coins} Coins! 🪙`
-                                          : null;
+                                        const giftRemaining = getCooldownRemaining(`gift_${friend.id}`);
+                                        const isGiftOnCooldown = giftRemaining > 0;
+                                        const justGiftedThis = justGifted[friend.id];
+                                        const giftLabel = justGiftedThis
+                                          ? justGiftedThis.opals > 0
+                                            ? `+${justGiftedThis.opals} Opals! ✨`
+                                            : `+${justGiftedThis.coins} Coins! 🪙`
+                                          : isGiftOnCooldown
+                                            ? formatCooldown(giftRemaining)
+                                            : null;
                                         return (
                                           <motion.button
                                             onClick={(e) => {
                                               e.stopPropagation();
-                                              if (result) return; // cooldown
+                                              if (isGiftOnCooldown || justGiftedThis) return;
                                               const gift = rollGift();
                                               onGiftFriend(friend.id, gift.coins, gift.opals);
-                                              setGiftResults(prev => ({ ...prev, [friend.id]: gift }));
+                                              recordCooldown(`gift_${friend.id}`);
+                                              setJustGifted(prev => ({ ...prev, [friend.id]: gift }));
                                               setTimeout(() => {
-                                                setGiftResults(prev => {
+                                                setJustGifted(prev => {
                                                   const next = { ...prev };
                                                   delete next[friend.id];
                                                   return next;
                                                 });
+                                                setTick(t => t + 1);
                                               }, 2500);
                                             }}
                                             className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl mb-2"
                                             style={{
-                                              background: result
+                                              background: justGiftedThis || isGiftOnCooldown
                                                 ? 'linear-gradient(135deg, rgba(134,239,172,0.45), rgba(74,222,128,0.35))'
                                                 : 'linear-gradient(135deg, rgba(99,102,241,0.18), rgba(139,92,246,0.14))',
-                                              border: result
+                                              border: justGiftedThis || isGiftOnCooldown
                                                 ? '1px solid rgba(74,222,128,0.45)'
                                                 : '1px solid rgba(139,92,246,0.35)',
+                                              opacity: isGiftOnCooldown && !justGiftedThis ? 0.6 : 1,
                                             }}
-                                            whileTap={result ? {} : { scale: 0.95 }}
+                                            whileTap={justGiftedThis || isGiftOnCooldown ? {} : { scale: 0.95 }}
                                           >
-                                            <span className="text-[1rem]">{result ? '✅' : '🎁'}</span>
+                                            <span className="text-[1rem]">{justGiftedThis || isGiftOnCooldown ? '✅' : '🎁'}</span>
                                             <span
                                               className="text-[10px] font-black tracking-wide uppercase"
-                                              style={{ color: result ? '#16a34a' : '#6d28d9' }}
+                                              style={{ color: justGiftedThis || isGiftOnCooldown ? '#16a34a' : '#6d28d9' }}
                                             >
                                               {giftLabel ?? 'Send Gift'}
                                             </span>

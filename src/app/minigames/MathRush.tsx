@@ -112,7 +112,7 @@ function generateQuestion(level: number): Question {
   return { question: questionText, answer, options, themeEmoji: theme.emoji };
 }
 
-export function MathRush({ onEnd, energy }: MiniGameProps) {
+export function MathRush({ onEnd, onDeductEnergy, energy }: MiniGameProps) {
   const [score, setScore] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false); // Start with false, show overlay first
   const [isPaused, setIsPaused] = useState(false);
@@ -145,8 +145,9 @@ export function MathRush({ onEnd, energy }: MiniGameProps) {
   }, [score, getTimerForScore]);
 
   const startGame = useCallback(() => {
-    // Store whether energy was available when game started
-    setHadEnergyAtStart(energy > 0);
+    const hadEnergy = Math.floor(energy) >= 1;
+    if (hadEnergy) onDeductEnergy?.();
+    setHadEnergyAtStart(hadEnergy);
     setScore(0);
     setShowOverlay(false);
     setGameEnded(false);
@@ -154,7 +155,7 @@ export function MathRush({ onEnd, energy }: MiniGameProps) {
     setIsPlaying(true);
     setIsPaused(false);
     loadNewQuestion();
-  }, [loadNewQuestion, energy]);
+  }, [loadNewQuestion, energy, onDeductEnergy]);
 
   // Timer countdown - only when playing and question is loaded
   useEffect(() => {

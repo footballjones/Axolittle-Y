@@ -625,22 +625,19 @@ export function useGameActions({
   const handleMiniGameEnd = useCallback((result: GameResult) => {
     setActiveGame(null);
     setCurrentScreen('games'); // Return to games menu after game ends
-    
+
     setGameState(prev => {
       if (!prev || !prev.axolotl) return prev;
-      
-      // Check if energy was available when game started (stored in _lastGameHadEnergy)
-      // This flag is set when game starts, before energy is deducted
-      const hadEnergy = prev._lastGameHadEnergy === true;
-      
-      const newXP = hadEnergy ? prev.axolotl.experience + result.xp : prev.axolotl.experience;
-      const newCoins = hadEnergy ? prev.coins + result.coins : prev.coins;
-      const newOpals = hadEnergy && result.opals ? (prev.opals || 0) + result.opals : prev.opals;
-      
+
+      // Games pass xp: 0 / coins: 0 when no energy was available at start,
+      // so we always apply the result directly — no flag tracking needed.
+      const newXP = prev.axolotl.experience + result.xp;
+      const newCoins = prev.coins + result.coins;
+      const newOpals = result.opals ? (prev.opals || 0) + result.opals : prev.opals;
+
       // Playing mini games makes the axolotl hungry - reduce hunger by 15 points
-      const hungerReduction = 15;
-      const newHunger = Math.max(0, prev.axolotl.stats.hunger - hungerReduction);
-      
+      const newHunger = Math.max(0, prev.axolotl.stats.hunger - 15);
+
       const updatedAxolotl = {
         ...prev.axolotl,
         experience: newXP,
@@ -650,9 +647,10 @@ export function useGameActions({
         },
       };
       const evolvedAxolotl = checkEvolution(updatedAxolotl);
-      
-      // Show appropriate notification based on whether rewards were earned
-      if (hadEnergy) {
+
+      // Show appropriate notification based on whether rewards were actually earned
+      const earnedRewards = result.xp > 0 || result.coins > 0;
+      if (earnedRewards) {
         setNotifications(prevNotifs => [...prevNotifs, {
           id: `notif-${Date.now()}`,
           type: 'milestone',
@@ -671,12 +669,9 @@ export function useGameActions({
           read: false,
         }]);
       }
-      
-      // Clean up the temporary flag
-      const { _lastGameHadEnergy: _flag, ...restState } = prev;
 
       const next: GameState = {
-        ...restState,
+        ...prev,
         axolotl: evolvedAxolotl,
         coins: newCoins,
         opals: newOpals,

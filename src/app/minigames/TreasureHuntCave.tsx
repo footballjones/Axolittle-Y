@@ -47,7 +47,7 @@ class SeededRandom {
   }
 }
 
-export function TreasureHuntCave({ onEnd, energy }: MiniGameProps) {
+export function TreasureHuntCave({ onEnd, onDeductEnergy, energy }: MiniGameProps) {
   const [score, setScore] = useState(0);
   const [showOverlay, setShowOverlay] = useState(true);
   const [gameEnded, setGameEnded] = useState(false);
@@ -317,7 +317,9 @@ export function TreasureHuntCave({ onEnd, energy }: MiniGameProps) {
   }, [hadEnergyAtStart]);
 
   const startGame = useCallback(() => {
-    setHadEnergyAtStart(energy > 0);
+    const hadEnergy = Math.floor(energy) >= 1;
+    if (hadEnergy) onDeductEnergy?.();
+    setHadEnergyAtStart(hadEnergy);
     const game = gameRef.current;
     const ctx = ctxRef.current;
     
@@ -350,7 +352,7 @@ export function TreasureHuntCave({ onEnd, energy }: MiniGameProps) {
       game.lastFrameTime = performance.now();
       animationFrameRef.current = requestAnimationFrame(gameLoop);
     }
-  }, [energy, draw, gameLoop]);
+  }, [energy, onDeductEnergy, draw, gameLoop]);
 
   // Initialize canvas
   useEffect(() => {

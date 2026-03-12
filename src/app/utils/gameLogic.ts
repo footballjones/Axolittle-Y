@@ -135,7 +135,7 @@ export function feedAxolotl(axolotl: Axolotl, amount: number = 25): Axolotl {
       ...axolotl.stats,
       hunger: Math.min(100, axolotl.stats.hunger + amount),
     },
-    experience: axolotl.experience + 2,
+    // No XP for feeding — XP is only earned through mini-games
   };
 }
 

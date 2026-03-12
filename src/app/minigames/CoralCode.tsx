@@ -65,7 +65,7 @@ interface Guess {
   feedback: { correct: number; wrongPosition: number };
 }
 
-export function CoralCode({ onEnd, energy }: MiniGameProps) {
+export function CoralCode({ onEnd, onDeductEnergy, energy }: MiniGameProps) {
   const [difficulty, setDifficulty] = useState<Difficulty | null>(null);
   const [codeLength, setCodeLength] = useState<number>(4);
   const [availableColors, setAvailableColors] = useState<string[]>(COLORS.slice(0, 5));
@@ -85,7 +85,9 @@ export function CoralCode({ onEnd, energy }: MiniGameProps) {
   const guessesContainerRef = useRef<HTMLDivElement>(null);
 
   const startGame = useCallback((selectedDifficulty: Difficulty) => {
-    setHadEnergyAtStart(energy > 0);
+    const hadEnergy = Math.floor(energy) >= 1;
+    if (hadEnergy) onDeductEnergy?.();
+    setHadEnergyAtStart(hadEnergy);
     const config = DIFFICULTY_CONFIG[selectedDifficulty];
     const colors = getAvailableColors(selectedDifficulty);
     setDifficulty(selectedDifficulty);
@@ -101,7 +103,7 @@ export function CoralCode({ onEnd, energy }: MiniGameProps) {
     setShowOverlay(false);
     setSelectedColor(colors[0]);
     guessIdRef.current = 0;
-  }, [energy]);
+  }, [energy, onDeductEnergy]);
 
   // Auto-scroll to bottom when new guess is added
   useEffect(() => {

@@ -106,7 +106,7 @@ interface Joystick {
   touchId: number | null;
 }
 
-export function BiteTag({ onEnd, energy, speed = 0, stamina = 0 }: MiniGameProps) {
+export function BiteTag({ onEnd, onDeductEnergy, energy, speed = 0, stamina = 0 }: MiniGameProps) {
   const [timeLeft, setTimeLeft] = useState(MATCH_DURATION);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
@@ -1018,14 +1018,16 @@ export function BiteTag({ onEnd, energy, speed = 0, stamina = 0 }: MiniGameProps
   }, [isPlaying, isPaused, getAlive, getJoystickInput, getKeyboardInput, updateMovement, updateBotAI, checkTag, updateHazard, draw, endGame]);
 
   const startGame = useCallback(() => {
-    setHadEnergyAtStart(energy > 0);
+    const hadEnergy = Math.floor(energy) >= 1;
+    if (hadEnergy) onDeductEnergy?.();
+    setHadEnergyAtStart(hadEnergy);
     reset();
     setShowOverlay(false);
     setGameEnded(false);
     setFinalRewards(null);
     setIsPlaying(true);
     setIsPaused(false);
-  }, [reset, energy]);
+  }, [reset, energy, onDeductEnergy]);
 
   // Start game loop
   useEffect(() => {

@@ -147,6 +147,28 @@ export default function App() {
   const hasInitiallyScrolled = useRef(false);
   const isCenteringScroll = useRef(false);
 
+  // Deducts 1 energy when a mini-game attempt begins.
+  // Uses functional updater so it's always reading fresh state.
+  // Called by each game's startGame(), including "Play Again" attempts.
+  const handleDeductEnergy = useCallback(() => {
+    setGameState(prev => {
+      if (!prev) return prev;
+      const now = Date.now();
+      const lastUpdate = prev.lastEnergyUpdate || now;
+      const elapsedSeconds = (now - lastUpdate) / 1000;
+      const energyRegenRate = GAME_CONFIG.energyRegenRate / 3600;
+      const maxEnergy = prev.maxEnergy || GAME_CONFIG.energyMax;
+      const currentEnergy = Math.min(maxEnergy, prev.energy + energyRegenRate * elapsedSeconds);
+      // Only deduct if there is at least 1 whole energy point
+      if (Math.floor(currentEnergy) < 1) return prev;
+      return {
+        ...prev,
+        energy: Math.max(0, currentEnergy - 1),
+        lastEnergyUpdate: now,
+      };
+    });
+  }, []);
+
   // Center aquarium scroll on first load
   useEffect(() => {
     if (gameState?.axolotl && aquariumScrollRef.current && !hasInitiallyScrolled.current) {
@@ -1423,38 +1445,7 @@ export default function App() {
                   miniGamesLockedUntil={gameState.miniGamesLockedUntil}
                   onSelectGame={(gameId) => {
                     if (!gameState) return;
-                    
-                    // Store whether energy was available when game started
-                    const hadEnergyAtStart = gameState.energy > 0;
-                    
-                    // Deduct energy when game starts (only if energy > 0)
-                    setGameState(prev => {
-                      if (!prev || prev.energy <= 0) return prev;
-                      
-                      // Calculate current energy with fractional precision before deducting
-                      const now = Date.now();
-                      const lastUpdate = prev.lastEnergyUpdate || now;
-                      const elapsedSeconds = (now - lastUpdate) / 1000;
-                      const energyRegenRate = GAME_CONFIG.energyRegenRate / 3600; // per second
-                      const maxEnergy = prev.maxEnergy || GAME_CONFIG.energyMax;
-                      const currentEnergy = prev.energy || 0;
-                      const energyGained = energyRegenRate * elapsedSeconds;
-                      const energyBeforeDeduction = Math.min(maxEnergy, currentEnergy + energyGained);
-                      
-                      return {
-                        ...prev,
-                        energy: Math.max(0, energyBeforeDeduction - 1), // Subtract 1 whole point, preserve fraction
-                        lastEnergyUpdate: now, // Update timestamp after energy consumption
-                        // Store flag to track if energy was used (for reward calculation)
-                        _lastGameHadEnergy: true,
-                      };
-                    });
-                    
-                    // If no energy, still set flag to false
-                    if (!hadEnergyAtStart) {
-                      setGameState(prev => prev ? { ...prev, _lastGameHadEnergy: false } : prev);
-                    }
-                    
+
                     // Track unique games played for "All-Rounder" achievement
                     setGameState(prev => {
                       if (!prev) return prev;
@@ -1463,9 +1454,9 @@ export default function App() {
                       return { ...prev, uniqueGamesPlayed: [...already, gameId] };
                     });
 
-                    // Start the game - change screen to hide menu
+                    // Start the game - energy is deducted inside each game's startGame()
                     setActiveGame(gameId);
-                    setCurrentScreen('home'); // Hide games menu when game starts
+                    setCurrentScreen('home');
                   }}
                   energy={gameState.energy}
                   maxEnergy={gameState.maxEnergy}
@@ -1557,42 +1548,49 @@ export default function App() {
         {activeGame === 'keepey-upey' && gameState && (
           <KeepeyUpey
             onEnd={handleMiniGameEnd}
+            onDeductEnergy={handleDeductEnergy}
             energy={gameState.energy}
           />
         )}
         {activeGame === 'fish-hooks' && gameState && (
           <FlappyFishHooks
             onEnd={handleMiniGameEnd}
+            onDeductEnergy={handleDeductEnergy}
             energy={gameState.energy}
           />
         )}
         {activeGame === 'math-rush' && gameState && (
           <MathRush
             onEnd={handleMiniGameEnd}
+            onDeductEnergy={handleDeductEnergy}
             energy={gameState.energy}
           />
         )}
         {activeGame === 'axolotl-stacker' && gameState && (
           <AxolotlStacker
             onEnd={handleMiniGameEnd}
+            onDeductEnergy={handleDeductEnergy}
             energy={gameState.energy}
           />
         )}
         {activeGame === 'coral-code' && gameState && (
           <CoralCode
             onEnd={handleMiniGameEnd}
+            onDeductEnergy={handleDeductEnergy}
             energy={gameState.energy}
           />
         )}
         {activeGame === 'treasure-hunt' && gameState && (
           <TreasureHuntCave
             onEnd={handleMiniGameEnd}
+            onDeductEnergy={handleDeductEnergy}
             energy={gameState.energy}
           />
         )}
         {activeGame === 'fishing' && gameState && (
           <Fishing
             onEnd={handleMiniGameEnd}
+            onDeductEnergy={handleDeductEnergy}
             energy={gameState.energy}
             strength={gameState.axolotl?.secondaryStats?.strength || 0}
             speed={gameState.axolotl?.secondaryStats?.speed || 0}
@@ -1601,6 +1599,7 @@ export default function App() {
         {activeGame === 'bite-tag' && gameState && (
           <BiteTag
             onEnd={handleMiniGameEnd}
+            onDeductEnergy={handleDeductEnergy}
             energy={gameState.energy}
             speed={gameState.axolotl?.secondaryStats?.speed || 0}
             stamina={gameState.axolotl?.secondaryStats?.stamina || 0}

@@ -77,7 +77,7 @@ function pickFishType(): FishTypeName {
   return 'minnow';
 }
 
-export function Fishing({ onEnd, energy, strength = 0, speed = 0 }: MiniGameProps) {
+export function Fishing({ onEnd, onDeductEnergy, energy, strength = 0, speed = 0 }: MiniGameProps) {
   const [playerScore, setPlayerScore] = useState(0);
   const [botScore, setBotScore] = useState(0);
   const [timeLeft, setTimeLeft] = useState(GAME_DURATION);
@@ -630,14 +630,16 @@ export function Fishing({ onEnd, energy, strength = 0, speed = 0 }: MiniGameProp
   }, [isPlaying, isPaused, spawnFish, updatePlayer, updateBot, draw, endGame]);
 
   const startGame = useCallback(() => {
-    setHadEnergyAtStart(energy > 0);
+    const hadEnergy = Math.floor(energy) >= 1;
+    if (hadEnergy) onDeductEnergy?.();
+    setHadEnergyAtStart(hadEnergy);
     reset();
     setShowOverlay(false);
     setGameEnded(false);
     setFinalRewards(null);
     setIsPlaying(true);
     setIsPaused(false);
-  }, [reset, energy]);
+  }, [reset, energy, onDeductEnergy]);
 
   // Start game loop
   useEffect(() => {

@@ -35,7 +35,7 @@ interface Bubble {
   life: number;
 }
 
-export function KeepeyUpey({ onEnd, energy }: MiniGameProps) {
+export function KeepeyUpey({ onEnd, onDeductEnergy, energy }: MiniGameProps) {
   const [score, setScore] = useState(0); // Time survived in seconds
   const [isPlaying, setIsPlaying] = useState(false); // Start with false, show overlay first
   const [isPaused, setIsPaused] = useState(false);
@@ -293,8 +293,10 @@ export function KeepeyUpey({ onEnd, energy }: MiniGameProps) {
   }, [isPlaying, isPaused, score, spawnObstacle, endGame, draw]);
 
   const startGame = useCallback(() => {
-    // Store whether energy was available when game started
-    setHadEnergyAtStart(energy > 0);
+    // Deduct 1 energy for this attempt (also covers "Play Again"); rewards only if energy was available
+    const hadEnergy = Math.floor(energy) >= 1;
+    if (hadEnergy) onDeductEnergy?.();
+    setHadEnergyAtStart(hadEnergy);
     reset();
     setShowOverlay(false);
     setGameEnded(false);
@@ -310,7 +312,7 @@ export function KeepeyUpey({ onEnd, energy }: MiniGameProps) {
         draw(ctx);
       }
     }
-  }, [reset, draw, energy]);
+  }, [reset, draw, energy, onDeductEnergy]);
 
   // Start game loop
   useEffect(() => {

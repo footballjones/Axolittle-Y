@@ -52,6 +52,7 @@ function GameTile({ game, index, delayOffset = 0, expandedId, onToggleInfo, onSe
         <div className="flex flex-col items-center text-center gap-1.5">
           <div className={`bg-gradient-to-br ${game.color} rounded-xl w-11 h-11 flex items-center justify-center transition-transform shadow-lg ring-1 ring-white/30`}>
             {game.id === 'fish-hooks' ? (
+              // 🪝 Hook swings like a pendulum
               <motion.span
                 className="text-xl leading-none inline-block"
                 style={{ transformOrigin: 'top center' }}
@@ -61,6 +62,7 @@ function GameTile({ game, index, delayOffset = 0, expandedId, onToggleInfo, onSe
                 {game.emoji}
               </motion.span>
             ) : game.id === 'keepey-upey' ? (
+              // 🎈 Balloon drifts and bobs like floating
               <motion.span
                 className="text-xl leading-none inline-block"
                 animate={{ x: [-5, 4, -3, 6, -5], y: [-4, 5, -6, 2, -4] }}
@@ -68,6 +70,61 @@ function GameTile({ game, index, delayOffset = 0, expandedId, onToggleInfo, onSe
                   x: { duration: 9, repeat: Infinity, ease: 'easeInOut' },
                   y: { duration: 7, repeat: Infinity, ease: 'easeInOut' },
                 }}
+              >
+                {game.emoji}
+              </motion.span>
+            ) : game.id === 'math-rush' ? (
+              // 🔢 Numbers pulse — quiz urgency
+              <motion.span
+                className="text-xl leading-none inline-block"
+                animate={{ scale: [1, 1.2, 1], opacity: [1, 0.7, 1] }}
+                transition={{ duration: 0.8, repeat: Infinity, repeatDelay: 1.4, ease: 'easeInOut' }}
+              >
+                {game.emoji}
+              </motion.span>
+            ) : game.id === 'axolotl-stacker' ? (
+              // 🥞 Stack wobbles side to side — balancing
+              <motion.span
+                className="text-xl leading-none inline-block"
+                animate={{ rotate: [-6, 6, -6] }}
+                transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
+              >
+                {game.emoji}
+              </motion.span>
+            ) : game.id === 'treasure-hunt' ? (
+              // 💎 Gem sparkles with a scale pulse
+              <motion.span
+                className="text-xl leading-none inline-block"
+                animate={{ scale: [1, 1.25, 1], filter: ['brightness(1)', 'brightness(1.5)', 'brightness(1)'] }}
+                transition={{ duration: 1.6, repeat: Infinity, repeatDelay: 0.8, ease: 'easeInOut' }}
+              >
+                {game.emoji}
+              </motion.span>
+            ) : game.id === 'coral-code' ? (
+              // 🪸 Coral sways gently in the current
+              <motion.span
+                className="text-xl leading-none inline-block"
+                style={{ transformOrigin: 'bottom center' }}
+                animate={{ rotate: [-5, 5, -5] }}
+                transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
+              >
+                {game.emoji}
+              </motion.span>
+            ) : game.id === 'fishing' ? (
+              // 🎣 Rod bobs up and down — waiting for a bite
+              <motion.span
+                className="text-xl leading-none inline-block"
+                animate={{ y: [-3, 3, -3], rotate: [-4, 4, -4] }}
+                transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+              >
+                {game.emoji}
+              </motion.span>
+            ) : game.id === 'bite-tag' ? (
+              // 🦷 Tooth chomps with a quick scale squeeze
+              <motion.span
+                className="text-xl leading-none inline-block"
+                animate={{ scaleY: [1, 0.75, 1], scaleX: [1, 1.1, 1] }}
+                transition={{ duration: 0.35, repeat: Infinity, repeatDelay: 2, ease: 'easeInOut' }}
               >
                 {game.emoji}
               </motion.span>

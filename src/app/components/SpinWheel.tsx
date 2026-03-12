@@ -39,16 +39,16 @@ interface SectionDef {
 
 // 4 coins → opal → 4 coins → opal
 const DEFS: SectionDef[] = [
-  { type: 'coins', amount: 50  },
-  { type: 'coins', amount: 100 },
-  { type: 'coins', amount: 150 },
-  { type: 'coins', amount: 200 },
-  { type: 'opals', amount: 5   },
-  { type: 'coins', amount: 250 },
-  { type: 'coins', amount: 300 },
-  { type: 'coins', amount: 350 },
-  { type: 'coins', amount: 400 },
-  { type: 'opals', amount: 10  },
+  { type: 'coins', amount: 15 },
+  { type: 'coins', amount: 20 },
+  { type: 'coins', amount: 25 },
+  { type: 'coins', amount: 30 },
+  { type: 'opals', amount: 5  },
+  { type: 'coins', amount: 35 },
+  { type: 'coins', amount: 40 },
+  { type: 'coins', amount: 45 },
+  { type: 'coins', amount: 50 },
+  { type: 'opals', amount: 10 },
 ];
 
 // Alternating amber shades for coin sections

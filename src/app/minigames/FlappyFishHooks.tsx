@@ -26,7 +26,7 @@ interface Hook {
   scored: boolean;
 }
 
-export function FlappyFishHooks({ onEnd, energy }: MiniGameProps) {
+export function FlappyFishHooks({ onEnd, onDeductEnergy, energy }: MiniGameProps) {
   const [score, setScore] = useState(0);
   const [showOverlay, setShowOverlay] = useState(true);
   const [gameEnded, setGameEnded] = useState(false);
@@ -253,7 +253,9 @@ export function FlappyFishHooks({ onEnd, energy }: MiniGameProps) {
 
   const startGame = () => {
     const g = gameRef.current;
-    g.hadEnergy = energy > 0;
+    const hadEnergy = Math.floor(energy) >= 1;
+    if (hadEnergy) onDeductEnergy?.();
+    g.hadEnergy = hadEnergy;
     g.running = true;
     g.paused = false;
     g.score = 0;

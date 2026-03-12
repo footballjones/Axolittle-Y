@@ -91,7 +91,6 @@ export interface GameState {
   pendingPoops?: PendingPoop[]; // Poops scheduled to appear after 5-min delay
   feedCount?: number; // Feeds since last feed-poop was scheduled (resets at 6)
   lastPoopTime?: number; // Timestamp when last time-based poop was generated
-  _lastGameHadEnergy?: boolean; // Ephemeral flag: energy status when mini-game started
   miniGamesLockedUntil?: number; // Timestamp (ms) until which mini-games are locked after a water change
   // ── Achievement tracking ─────────────────────────────────────────────────
   achievements?: string[];         // IDs of unlocked achievements
