@@ -4,9 +4,10 @@ import { useMemo } from 'react';
 
 interface FoodDisplayProps {
   food: FoodItem;
+  tutorialActive?: boolean;
 }
 
-export function FoodDisplay({ food }: FoodDisplayProps) {
+export function FoodDisplay({ food, tutorialActive }: FoodDisplayProps) {
   // Generate random sink rate and wiggle pattern for each worm
   const animationProps = useMemo(() => ({
     sinkDuration: 3 + Math.random() * 2, // 3-5 seconds to sink
@@ -34,6 +35,25 @@ export function FoodDisplay({ food }: FoodDisplayProps) {
         pointerEvents: 'none',
       }}
     >
+      {/* Tutorial: pulsing ring around the worm */}
+      {tutorialActive && (
+        <motion.div
+          style={{
+            position: 'absolute',
+            width: 64,
+            height: 36,
+            top: -8,
+            left: -7,
+            transform: 'translateX(-50%)',
+            borderRadius: '50%',
+            border: '2.5px solid rgba(239,68,68,0.85)',
+            pointerEvents: 'none',
+          }}
+          animate={{ opacity: [0.4, 1, 0.4], scale: [0.85, 1.15, 0.85] }}
+          transition={{ duration: 1, repeat: Infinity, ease: 'easeInOut' }}
+        />
+      )}
+
       {/* Bloodworm - curved shape with brighter red */}
       <motion.div
         animate={{

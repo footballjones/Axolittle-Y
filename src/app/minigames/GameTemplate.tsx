@@ -19,7 +19,7 @@ export function Template({ onEnd, energy }: MiniGameProps) {
   // Game-specific state
   // Add your game state here
   
-  const animationFrameRef = useRef<number>();
+  const animationFrameRef = useRef<number | null>(null);
   const lastFrameTimeRef = useRef<number>(Date.now());
 
   // Game loop
@@ -46,6 +46,7 @@ export function Template({ onEnd, energy }: MiniGameProps) {
     return () => {
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
       }
     };
   }, [isPlaying, isPaused, gameLoop]);

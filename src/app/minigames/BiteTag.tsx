@@ -118,7 +118,7 @@ export function BiteTag({ onEnd, energy, speed = 0, stamina = 0 }: MiniGameProps
   const [isWinner, setIsWinner] = useState(false);
   
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const animationFrameRef = useRef<number>();
+  const animationFrameRef = useRef<number | null>(null);
   const gameStateRef = useRef<{
     player: Entity | null;
     bot: Entity | null;
@@ -1035,6 +1035,7 @@ export function BiteTag({ onEnd, energy, speed = 0, stamina = 0 }: MiniGameProps
     return () => {
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
       }
     };
   }, [isPlaying, isPaused, gameLoop]);

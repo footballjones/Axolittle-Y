@@ -1,27 +1,76 @@
+import { motion } from 'motion/react';
 import { PoopItem } from '../types/game';
 import { useMemo } from 'react';
 
 interface PoopDisplayProps {
   poop: PoopItem;
+  cleaningMode?: boolean;
+  onClean?: (id: string) => void;
 }
 
-export function PoopDisplay({ poop }: PoopDisplayProps) {
+export function PoopDisplay({ poop, cleaningMode, onClean }: PoopDisplayProps) {
   // Slight random tilt per poop instance, stable across renders
   const tilt = useMemo(() => (((parseInt(poop.id.slice(-4), 16) % 40) - 20)), [poop.id]);
   // Slightly randomise scale so poops don't all look identical
   const scale = useMemo(() => 0.85 + (parseInt(poop.id.slice(-2), 16) % 30) / 100, [poop.id]);
 
+  const handleClick = (e: React.MouseEvent) => {
+    if (!cleaningMode || !onClean) return;
+    e.stopPropagation(); // Don't trigger aquarium click-to-move
+    onClean(poop.id);
+  };
+
   return (
     <div
-      className="absolute"
+      className={cleaningMode ? 'cursor-pointer' : undefined}
+      onClick={handleClick}
       style={{
+        position: 'absolute',
         left: `${poop.x}%`,
         bottom: '10%',
         transform: `translateX(-50%) rotate(${tilt}deg) scale(${scale})`,
         zIndex: 20,
-        pointerEvents: 'none',
+        pointerEvents: cleaningMode ? 'auto' : 'none',
       }}
     >
+      {/* Cleaning mode: pulsing amber ring + "🧹 tap!" badge */}
+      {cleaningMode && (
+        <>
+          <motion.div
+            style={{
+              position: 'absolute',
+              inset: -10,
+              borderRadius: '50%',
+              border: '2.5px solid rgba(251,191,36,0.9)',
+              pointerEvents: 'none',
+            }}
+            animate={{ opacity: [0.4, 1, 0.4], scale: [0.88, 1.12, 0.88] }}
+            transition={{ duration: 0.85, repeat: Infinity, ease: 'easeInOut' }}
+          />
+          <motion.div
+            style={{
+              position: 'absolute',
+              top: -28,
+              left: '50%',
+              transform: 'translateX(-50%)',
+              background: 'rgba(254,243,199,0.97)',
+              border: '1.5px solid rgba(251,191,36,0.7)',
+              borderRadius: 12,
+              padding: '2px 8px',
+              fontSize: 10,
+              fontWeight: 800,
+              color: '#92400e',
+              whiteSpace: 'nowrap',
+              pointerEvents: 'none',
+              boxShadow: '0 2px 8px rgba(251,191,36,0.3)',
+            }}
+            animate={{ y: [0, -3, 0] }}
+            transition={{ duration: 0.8, repeat: Infinity, ease: 'easeInOut' }}
+          >
+            🧹 Tap!
+          </motion.div>
+        </>
+      )}
       {/* Real axolotl poop: long coiled/curved sausage, dark olive-brown */}
       <svg
         width="62"

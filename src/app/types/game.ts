@@ -92,6 +92,23 @@ export interface GameState {
   feedCount?: number; // Feeds since last feed-poop was scheduled (resets at 6)
   lastPoopTime?: number; // Timestamp when last time-based poop was generated
   _lastGameHadEnergy?: boolean; // Ephemeral flag: energy status when mini-game started
+  miniGamesLockedUntil?: number; // Timestamp (ms) until which mini-games are locked after a water change
+  // ── Achievement tracking ─────────────────────────────────────────────────
+  achievements?: string[];         // IDs of unlocked achievements
+  totalFeedsEver?: number;         // Cumulative feed count (all time)
+  totalCleansEver?: number;        // Cumulative poop-clean count (all time)
+  totalWaterChanges?: number;      // Cumulative water-change count
+  totalMinigamesPlayed?: number;   // Cumulative minigames played
+  totalExceptionalScores?: number; // Cumulative "exceptional" tier scores
+  totalGiftsSent?: number;         // Cumulative gifts sent to friends
+  totalEggsHatched?: number;       // Cumulative eggs hatched
+  uniqueGamesPlayed?: string[];    // Game IDs ever played (for all-rounder achievement)
+  recessiveExpressed?: boolean;    // Ephemeral: set true in handleHatchEgg when recessive genes expressed
+  // ── Tutorial ────────────────────────────────────────────────────────────────
+  // undefined = existing save (skip tutorial). 'feed'→'eat'→'done' on new games.
+  tutorialStep?: 'feed' | 'eat' | 'done';
+  // undefined = existing save (skip). false = new game, not yet seen. true = completed.
+  cleanTutorialSeen?: boolean;
 }
 
 export interface Friend {

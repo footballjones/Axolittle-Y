@@ -56,7 +56,7 @@ export function TreasureHuntCave({ onEnd, energy }: MiniGameProps) {
   
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
-  const animationFrameRef = useRef<number>();
+  const animationFrameRef = useRef<number | null>(null);
   const gameRef = useRef<{
     isPlaying: boolean;
     isPaused: boolean;
@@ -416,14 +416,14 @@ export function TreasureHuntCave({ onEnd, energy }: MiniGameProps) {
       // Stop loop
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
-        animationFrameRef.current = undefined;
+        animationFrameRef.current = null;
       }
     }
-    
+
     return () => {
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
-        animationFrameRef.current = undefined;
+        animationFrameRef.current = null;
       }
     };
   }, [showOverlay, gameEnded, gameLoop]);

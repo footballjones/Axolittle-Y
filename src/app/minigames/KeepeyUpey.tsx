@@ -45,7 +45,7 @@ export function KeepeyUpey({ onEnd, energy }: MiniGameProps) {
   const [finalRewards, setFinalRewards] = useState<{ tier: string; xp: number; coins: number; opals?: number } | null>(null);
   
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const animationFrameRef = useRef<number>();
+  const animationFrameRef = useRef<number | null>(null);
   const lastTouchTimeRef = useRef<number>(0);
   const gameStateRef = useRef<{
     axo: { x: number; y: number; vy: number; size: number };
@@ -320,6 +320,7 @@ export function KeepeyUpey({ onEnd, energy }: MiniGameProps) {
     return () => {
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
       }
     };
   }, [isPlaying, isPaused, gameLoop]);

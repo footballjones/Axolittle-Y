@@ -30,6 +30,10 @@ interface ActionButtonsProps {
   canRebirth: boolean;
   isHungerFull?: boolean;
   stats: AxolotlStats;
+  tutorialFeedActive?: boolean;
+  cleaningMode?: boolean;
+  cleanTutorialActive?: boolean;
+  playMode?: boolean;
 }
 
 export function ActionButtons({
@@ -41,6 +45,10 @@ export function ActionButtons({
   canRebirth,
   isHungerFull,
   stats,
+  tutorialFeedActive,
+  cleaningMode,
+  cleanTutorialActive,
+  playMode,
 }: ActionButtonsProps) {
   const buttons = [
     {
@@ -126,6 +134,80 @@ export function ActionButtons({
                   animate={{ opacity: [0, 0.7, 0] }}
                   transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
                 />
+              )}
+
+              {/* Tutorial highlight ring — Feed button only */}
+              {tutorialFeedActive && label === 'Feed' && (
+                <>
+                  {/* Outer glow */}
+                  <motion.div
+                    className="absolute -inset-1 rounded-2xl pointer-events-none"
+                    style={{ background: 'rgba(52,211,153,0.45)', filter: 'blur(6px)' }}
+                    animate={{ opacity: [0.5, 1, 0.5] }}
+                    transition={{ duration: 0.9, repeat: Infinity, ease: 'easeInOut' }}
+                  />
+                  {/* Bright border ring */}
+                  <motion.div
+                    className="absolute inset-0 rounded-xl border-2 border-emerald-300 pointer-events-none"
+                    animate={{ opacity: [0.7, 1, 0.7], scale: [1, 1.04, 1] }}
+                    transition={{ duration: 0.9, repeat: Infinity, ease: 'easeInOut' }}
+                  />
+                </>
+              )}
+
+              {/* Cleaning mode active ring — Clean button only */}
+              {cleaningMode && label === 'Clean' && (
+                <>
+                  {/* Outer glow */}
+                  <motion.div
+                    className="absolute -inset-1 rounded-2xl pointer-events-none"
+                    style={{ background: 'rgba(251,113,133,0.45)', filter: 'blur(6px)' }}
+                    animate={{ opacity: [0.5, 1, 0.5] }}
+                    transition={{ duration: 0.75, repeat: Infinity, ease: 'easeInOut' }}
+                  />
+                  {/* Bright border ring */}
+                  <motion.div
+                    className="absolute inset-0 rounded-xl border-2 border-rose-300 pointer-events-none"
+                    animate={{ opacity: [0.7, 1, 0.7], scale: [1, 1.05, 1] }}
+                    transition={{ duration: 0.75, repeat: Infinity, ease: 'easeInOut' }}
+                  />
+                </>
+              )}
+
+              {/* First-time cleaning tutorial ring — amber, pre-tap state */}
+              {cleanTutorialActive && !cleaningMode && label === 'Clean' && (
+                <>
+                  {/* Outer amber glow */}
+                  <motion.div
+                    className="absolute -inset-1 rounded-2xl pointer-events-none"
+                    style={{ background: 'rgba(251,191,36,0.5)', filter: 'blur(6px)' }}
+                    animate={{ opacity: [0.5, 1, 0.5] }}
+                    transition={{ duration: 0.9, repeat: Infinity, ease: 'easeInOut' }}
+                  />
+                  {/* Amber border ring */}
+                  <motion.div
+                    className="absolute inset-0 rounded-xl border-2 border-amber-300 pointer-events-none"
+                    animate={{ opacity: [0.7, 1, 0.7], scale: [1, 1.05, 1] }}
+                    transition={{ duration: 0.9, repeat: Infinity, ease: 'easeInOut' }}
+                  />
+                </>
+              )}
+
+              {/* Play mode active ring — Playtime button only */}
+              {playMode && label === 'Playtime' && (
+                <>
+                  <motion.div
+                    className="absolute -inset-1 rounded-2xl pointer-events-none"
+                    style={{ background: 'rgba(167,139,250,0.5)', filter: 'blur(6px)' }}
+                    animate={{ opacity: [0.5, 1, 0.5] }}
+                    transition={{ duration: 0.8, repeat: Infinity, ease: 'easeInOut' }}
+                  />
+                  <motion.div
+                    className="absolute inset-0 rounded-xl border-2 border-violet-300 pointer-events-none"
+                    animate={{ opacity: [0.7, 1, 0.7], scale: [1, 1.05, 1] }}
+                    transition={{ duration: 0.8, repeat: Infinity, ease: 'easeInOut' }}
+                  />
+                </>
               )}
 
               {/* Content */}

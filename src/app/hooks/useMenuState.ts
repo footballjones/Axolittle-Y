@@ -14,6 +14,7 @@ export function useMenuState() {
   const [showHowToPlayPanel, setShowHowToPlayPanel] = useState(false);
   const [showInventoryPanel, setShowInventoryPanel] = useState(false);
   const [showEggsPanel, setShowEggsPanel] = useState(false);
+  const [showAchievementsPanel, setShowAchievementsPanel] = useState(false);
   const [decorationsTab, setDecorationsTab] = useState<'store' | 'owned'>('store');
   const [currentScreen, setCurrentScreen] = useState<'home' | 'games'>('home');
   const [shopSection, setShopSection] = useState<'coins' | 'opals' | null>(null);
@@ -25,6 +26,7 @@ export function useMenuState() {
     setShowHowToPlayPanel(false);
     setShowInventoryPanel(false);
     setShowEggsPanel(false);
+    setShowAchievementsPanel(false);
   };
 
   return {
@@ -47,7 +49,9 @@ export function useMenuState() {
     setShowInventoryPanel,
     showEggsPanel,
     setShowEggsPanel,
-    
+    showAchievementsPanel,
+    setShowAchievementsPanel,
+
     // Tab/section state
     decorationsTab,
     setDecorationsTab,

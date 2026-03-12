@@ -19,13 +19,17 @@ import { SocialModal } from './components/SocialModal';
 import { RebirthModal } from './components/RebirthModal';
 import { StatsModal } from './components/StatsModal';
 import { SettingsModal } from './components/SettingsModal';
+import { WaterChangeModal } from './components/WaterChangeModal';
+import { AchievementCenter } from './components/AchievementCenter';
+import { ALL_ACHIEVEMENTS } from './data/achievements';
 import { FoodDisplay } from './components/FoodDisplay';
+import { FeedingTutorial } from './components/FeedingTutorial';
 import { PoopDisplay } from './components/PoopDisplay';
 import { EggsPanel } from './components/EggsPanel';
 import { DecorationsPanel } from './components/DecorationsPanel';
 import { SpinWheel } from './components/SpinWheel';
 import { DailyLoginBonus } from './components/DailyLoginBonus';
-import { Coins, Sparkles, Menu, X, Check, ChevronDown, ShoppingCart, Gamepad2, Home } from 'lucide-react';
+import { Coins, Sparkles, Menu, X, Check, ChevronDown, ShoppingCart, Gamepad2, Home, Settings } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { KeepeyUpey } from './minigames/KeepeyUpey';
 import { FlappyFishHooks } from './minigames/FlappyFishHooks';
@@ -45,6 +49,11 @@ import { getTodayDateString, canSpinToday, canClaimDailyLogin } from './utils/da
 export default function App() {
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [clickTarget, setClickTarget] = useState<{ x: number; y: number; timestamp: number } | null>(null);
+  const [showWaterChangeModal, setShowWaterChangeModal] = useState(false);
+  const [cleaningMode, setCleaningMode] = useState(false);
+  const cleaningModeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [playMode, setPlayMode] = useState(false);
+  const playModeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Domain hooks
   const {
@@ -84,6 +93,8 @@ export default function App() {
     setShowInventoryPanel,
     showEggsPanel,
     setShowEggsPanel,
+    showAchievementsPanel,
+    setShowAchievementsPanel,
     decorationsTab,
     setDecorationsTab,
     currentScreen,
@@ -107,8 +118,8 @@ export default function App() {
   const {
     handleFeed,
     handleEatFood,
-    handlePlay,
-    handleClean,
+    handlePlayTap,
+    handleCleanPoop,
     handleWaterChange,
     handlePurchase,
     handleEquipDecoration,
@@ -128,6 +139,7 @@ export default function App() {
     handleBuyFilter,
     handleBuyShrimp,
     handleBuyTreatment,
+    handleUnlockGames,
   } = gameActions;
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const aquariumScrollRef = useRef<HTMLDivElement>(null);
@@ -230,16 +242,131 @@ export default function App() {
     }));
   }, []);
 
+  /** Applied after a rebirth egg hatches: sets the name on the freshly-created axolotl. */
+  const handleNameAxolotl = useCallback((name: string) => {
+    setGameState(prev => {
+      if (!prev?.axolotl) return prev;
+      return { ...prev, axolotl: { ...prev.axolotl, name } };
+    });
+  }, []);
+
+  // Cleaning mode: user taps Clean button, then taps individual poops to remove them.
+  // Auto-exits after 3 s of inactivity.
+  const exitCleaningMode = useCallback(() => {
+    setCleaningMode(false);
+    if (cleaningModeTimerRef.current) {
+      clearTimeout(cleaningModeTimerRef.current);
+      cleaningModeTimerRef.current = null;
+    }
+  }, []);
+
+  const enterCleaningMode = useCallback(() => {
+    // Toggle off if already active
+    if (cleaningMode) {
+      exitCleaningMode();
+      return;
+    }
+    setCleaningMode(true);
+    if (cleaningModeTimerRef.current) clearTimeout(cleaningModeTimerRef.current);
+    cleaningModeTimerRef.current = setTimeout(() => {
+      setCleaningMode(false);
+      cleaningModeTimerRef.current = null;
+    }, 3000);
+  }, [cleaningMode, exitCleaningMode]);
+
+  const handleCleanPoopAndReset = useCallback((poopId: string) => {
+    handleCleanPoop(poopId);
+    // After cleaning one poop, restart the 3-second timer so consecutive taps feel natural
+    if (cleaningModeTimerRef.current) clearTimeout(cleaningModeTimerRef.current);
+    cleaningModeTimerRef.current = setTimeout(() => {
+      setCleaningMode(false);
+      cleaningModeTimerRef.current = null;
+    }, 3000);
+  }, [handleCleanPoop]);
+
+  // Play mode: user taps Playtime button, then taps the aquarium to make the axolotl swim (+10 happiness).
+  // Tapping the axolotl itself triggers a wiggle (cosmetic only). Auto-exits after 5 s of inactivity.
+  const exitPlayMode = useCallback(() => {
+    setPlayMode(false);
+    if (playModeTimerRef.current) {
+      clearTimeout(playModeTimerRef.current);
+      playModeTimerRef.current = null;
+    }
+  }, []);
+
+  const enterPlayMode = useCallback(() => {
+    // Toggle off if already active
+    if (playMode) {
+      exitPlayMode();
+      return;
+    }
+    setPlayMode(true);
+    if (playModeTimerRef.current) clearTimeout(playModeTimerRef.current);
+    playModeTimerRef.current = setTimeout(() => {
+      setPlayMode(false);
+      playModeTimerRef.current = null;
+    }, 5000);
+  }, [playMode, exitPlayMode]);
+
+  // Called on every aquarium tap in play mode — give happiness and reset the 5-second idle timer
+  const handleAquariumPlayTap = useCallback(() => {
+    handlePlayTap();
+    if (playModeTimerRef.current) clearTimeout(playModeTimerRef.current);
+    playModeTimerRef.current = setTimeout(() => {
+      setPlayMode(false);
+      playModeTimerRef.current = null;
+    }, 5000);
+  }, [handlePlayTap]);
+
   // All other handlers are now in useGameActions, useEconomyActions, or useWellbeingEngine
 
-  // Show welcome screen if no axolotl
-  if (!gameState || !gameState.axolotl) {
+  if (!gameState) return null;
+
+  const _hasAnyEgg = !!(gameState.incubatorEgg || (gameState.nurseryEggs && gameState.nurseryEggs.length > 0));
+
+  // ── No axolotl, no eggs → genuine first-start or post-release ──
+  if (!gameState.axolotl && !_hasAnyEgg) {
     return <WelcomeScreen onStart={handleStart} />;
   }
 
+  // ── No axolotl, but egg(s) are waiting (post-rebirth) → nursery screen ──
+  if (!gameState.axolotl && _hasAnyEgg) {
+    return (
+      <div className="h-screen overflow-hidden bg-gradient-to-br from-slate-50 via-indigo-50 to-purple-50 flex items-center justify-center p-0 sm:p-4">
+        <div className="w-full h-full sm:max-h-[calc(100vh-2rem)] max-w-md relative" style={{ height: '100%', maxHeight: '100vh' }}>
+          <div className="absolute -inset-0.5 bg-gradient-to-br from-indigo-200 via-purple-200 to-pink-200 rounded-none sm:rounded-[2rem] blur opacity-40 z-0" />
+          <div className="relative z-10 bg-white rounded-none sm:rounded-[2rem] shadow-2xl border-0 sm:border border-white/60 overflow-hidden" style={{ height: '100%' }}>
+            <EggsPanel
+              onClose={() => {}} // Cannot close — must hatch to continue
+              incubatorEgg={gameState.incubatorEgg}
+              nurseryEggs={gameState.nurseryEggs || []}
+              axolotl={null}
+              onHatch={(eggId) => handleHatchEgg(eggId, '')}
+              onMoveToIncubator={handleMoveToIncubator}
+              onBoost={handleBoostEgg}
+              onGift={handleGiftEgg}
+              onDiscard={handleDiscardEgg}
+              opals={gameState.opals ?? 0}
+              hasAxolotl={false}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Axolotl exists but has no name (just hatched from a rebirth egg) → naming screen ──
+  if (gameState.axolotl && gameState.axolotl.name === '') {
+    return <WelcomeScreen onStart={handleNameAxolotl} />;
+  }
+
+  // All three null-axolotl cases are handled above; this guard exists only to
+  // satisfy the TypeScript compiler so that `axolotl` is narrowed to Axolotl.
+  if (!gameState.axolotl) return null;
+
   const { axolotl, coins, customization, friends, lineage } = gameState;
   const opals = gameState.opals || 0; // Default to 0 if not set
-  const showRebirthButton = axolotl ? canRebirth(axolotl) : false;
+  const showRebirthButton = canRebirth(axolotl);
 
   // Calculate XP and level
   const currentLevel = calculateLevel(axolotl.experience);
@@ -434,6 +561,81 @@ export default function App() {
                   </motion.button>
                   </div>
                 </div>
+
+                {/* Mode banners — sit naturally below nav buttons, inside header so z-ordering is automatic */}
+                <AnimatePresence>
+                  {cleaningMode && (
+                    <motion.div
+                      key="cleaning-banner"
+                      className="flex justify-center pt-1.5 pointer-events-none"
+                      initial={{ opacity: 0, y: -8, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -6, scale: 0.95 }}
+                      transition={{ duration: 0.25, ease: 'easeOut' }}
+                    >
+                      <div
+                        style={{
+                          background: 'rgba(254,243,199,0.97)',
+                          border: '2px solid rgba(251,113,133,0.75)',
+                          borderRadius: 16,
+                          padding: '5px 14px',
+                          boxShadow: '0 4px 20px rgba(251,113,133,0.4)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 6,
+                        }}
+                      >
+                        <motion.span
+                          animate={{ rotate: [-10, 10, -10] }}
+                          transition={{ duration: 0.7, repeat: Infinity, ease: 'easeInOut' }}
+                          style={{ fontSize: 15 }}
+                        >
+                          🧹
+                        </motion.span>
+                        <span style={{ fontSize: 12, fontWeight: 800, color: '#9f1239', whiteSpace: 'nowrap' }}>
+                          Tap a poop to clean it!
+                        </span>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                <AnimatePresence>
+                  {playMode && (
+                    <motion.div
+                      key="play-banner"
+                      className="flex justify-center pt-1.5 pointer-events-none"
+                      initial={{ opacity: 0, y: -8, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -6, scale: 0.95 }}
+                      transition={{ duration: 0.25, ease: 'easeOut' }}
+                    >
+                      <div
+                        style={{
+                          background: 'rgba(245,240,255,0.97)',
+                          border: '2px solid rgba(167,139,250,0.75)',
+                          borderRadius: 16,
+                          padding: '5px 14px',
+                          boxShadow: '0 4px 20px rgba(167,139,250,0.4)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 6,
+                        }}
+                      >
+                        <motion.span
+                          animate={{ scale: [1, 1.25, 1], rotate: [0, 15, -15, 0] }}
+                          transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
+                          style={{ fontSize: 15 }}
+                        >
+                          ✨
+                        </motion.span>
+                        <span style={{ fontSize: 12, fontWeight: 800, color: '#5b21b6', whiteSpace: 'nowrap' }}>
+                          Tap the aquarium to play!
+                        </span>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             </div>
 
@@ -477,7 +679,7 @@ export default function App() {
                         <h2
                           className="font-black tracking-tight"
                           style={{
-                            fontSize: '1.65rem',
+                            fontSize: '1.9rem',
                             lineHeight: 1,
                             background: 'linear-gradient(110deg, #7c3aed 0%, #0ea5e9 55%, #ec4899 100%)',
                             WebkitBackgroundClip: 'text',
@@ -486,7 +688,7 @@ export default function App() {
                         >
                           Axopedia
                         </h2>
-                        <p className="text-indigo-400/70 text-[10px] tracking-widest uppercase mt-0.5 font-semibold">Your aquatic universe</p>
+                        <p className="text-indigo-400/70 text-[11.5px] tracking-widest uppercase mt-0.5 font-semibold">Your aquatic universe</p>
                       </div>
                       <div className="flex items-center gap-2">
                         {/* Alerts button */}
@@ -510,9 +712,17 @@ export default function App() {
                           )}
                           <span className="text-[1.1rem] leading-none">🔔</span>
                         </motion.button>
+                        {/* Settings button */}
+                        <motion.button
+                          onClick={() => { setActiveModal('settings'); setShowHamburgerMenu(false); setShowNotifPanel(false); }}
+                          className="rounded-full p-2 border border-indigo-200/60 bg-white/50 active:bg-white/80 backdrop-blur-sm"
+                          whileTap={{ scale: 0.85 }}
+                        >
+                          <Settings className="w-5 h-5 text-indigo-400" strokeWidth={2.5} />
+                        </motion.button>
                         {/* Close button */}
                         <motion.button
-                          onClick={() => { setShowHamburgerMenu(false); setShowNotifPanel(false); setShowHowToPlayPanel(false); setShowInventoryPanel(false); setShowEggsPanel(false); }}
+                          onClick={() => { setShowHamburgerMenu(false); setShowNotifPanel(false); setShowHowToPlayPanel(false); setShowInventoryPanel(false); setShowEggsPanel(false); setShowAchievementsPanel(false); }}
                           className="rounded-full p-2 border border-indigo-200/60 bg-white/50 active:bg-white/80 backdrop-blur-sm"
                           whileTap={{ scale: 0.85 }}
                         >
@@ -525,47 +735,13 @@ export default function App() {
                     <div className="h-px mx-5 flex-shrink-0" style={{ background: 'linear-gradient(90deg,transparent,rgba(139,92,246,0.4),transparent)' }} />
 
                     {/* ── Scrollable tile grid ── */}
-                    <div className="flex-1 overflow-y-auto overscroll-contain px-3.5 py-3.5" style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-y' }}>
-                      <div className="grid grid-cols-2 gap-2.5">
-
-                        {/* DECORATIONS */}
-                        <motion.button
-                          onClick={() => { setShowInventoryPanel(true); setDecorationsTab('store'); }}
-                          className="group relative flex flex-col items-center justify-center gap-2 py-5 rounded-2xl overflow-hidden"
-                          style={{
-                            background: showInventoryPanel
-                              ? 'linear-gradient(135deg, rgba(20,184,166,0.85) 0%, rgba(13,148,136,0.75) 100%)'
-                              : 'linear-gradient(135deg, rgba(20,184,166,0.7) 0%, rgba(13,148,136,0.55) 100%)',
-                            border: showInventoryPanel ? '1px solid rgba(13,148,136,0.6)' : '1px solid rgba(13,148,136,0.45)',
-                          }}
-                          whileTap={{ scale: 0.93 }}
-                        >
-                          <div className="absolute inset-0 opacity-0 group-active:opacity-100 transition-opacity rounded-2xl" style={{ background: 'rgba(255,255,255,0.35)' }} />
-                          <span className="text-[2rem]">🪸</span>
-                          <span className="text-[11px] font-bold text-teal-800 tracking-wider uppercase">Decorations</span>
-                        </motion.button>
-
-                        {/* EGGS */}
-                        <motion.button
-                          onClick={() => setShowEggsPanel(true)}
-                          className="group relative flex flex-col items-center justify-center gap-2 py-5 rounded-2xl overflow-hidden"
-                          style={{
-                            background: showEggsPanel
-                              ? 'linear-gradient(135deg, rgba(99,102,241,0.85) 0%, rgba(79,70,229,0.75) 100%)'
-                              : 'linear-gradient(135deg, rgba(99,102,241,0.7) 0%, rgba(79,70,229,0.55) 100%)',
-                            border: showEggsPanel ? '1px solid rgba(79,70,229,0.6)' : '1px solid rgba(79,70,229,0.45)',
-                          }}
-                          whileTap={{ scale: 0.93 }}
-                        >
-                          <div className="absolute inset-0 opacity-0 group-active:opacity-100 transition-opacity rounded-2xl" style={{ background: 'rgba(255,255,255,0.35)' }} />
-                          <span className="text-[2rem]">🥚</span>
-                          <span className="text-[11px] font-bold text-indigo-800 tracking-wider uppercase">Eggs</span>
-                        </motion.button>
+                    <div className="flex-1 overflow-y-auto overscroll-contain px-2.5 py-2.5" style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-y' }}>
+                      <div className="grid grid-cols-2 gap-4 w-4/5 mx-auto">
 
                         {/* SPIN WHEEL */}
                         <motion.button
                           onClick={() => setShowSpinWheel(true)}
-                          className="group relative flex flex-col items-center justify-center gap-2 py-5 rounded-2xl overflow-hidden"
+                          className="group relative flex flex-col items-center justify-center gap-1 py-3 rounded-2xl overflow-hidden"
                           style={{
                             background: 'linear-gradient(135deg, rgba(139,92,246,0.75) 0%, rgba(124,58,237,0.55) 100%)',
                             border: '1px solid rgba(124,58,237,0.45)',
@@ -587,7 +763,7 @@ export default function App() {
                         {/* DAILY LOGIN */}
                         <motion.button
                           onClick={() => setShowDailyLogin(true)}
-                          className="group relative flex flex-col items-center justify-center gap-2 py-5 rounded-2xl overflow-hidden"
+                          className="group relative flex flex-col items-center justify-center gap-1 py-3 rounded-2xl overflow-hidden"
                           style={{
                             background: 'linear-gradient(135deg, rgba(245,158,11,0.75) 0%, rgba(217,119,6,0.55) 100%)',
                             border: '1px solid rgba(217,119,6,0.45)',
@@ -609,7 +785,7 @@ export default function App() {
                         {/* STATS */}
                         <motion.button
                           onClick={() => { setActiveModal('stats'); setShowHamburgerMenu(false); setShowNotifPanel(false); }}
-                          className="group relative flex flex-col items-center justify-center gap-2 py-5 rounded-2xl overflow-hidden"
+                          className="group relative flex flex-col items-center justify-center gap-1 py-3 rounded-2xl overflow-hidden"
                           style={{ background: 'linear-gradient(135deg, rgba(14,165,233,0.75) 0%, rgba(2,132,199,0.6) 100%)', border: '1px solid rgba(2,132,199,0.45)' }}
                           whileTap={{ scale: 0.93 }}
                         >
@@ -618,10 +794,27 @@ export default function App() {
                           <span className="text-[11px] font-bold text-sky-800 tracking-wider uppercase">Stats</span>
                         </motion.button>
 
+                        {/* EGGS */}
+                        <motion.button
+                          onClick={() => setShowEggsPanel(true)}
+                          className="group relative flex flex-col items-center justify-center gap-1 py-3 rounded-2xl overflow-hidden"
+                          style={{
+                            background: showEggsPanel
+                              ? 'linear-gradient(135deg, rgba(99,102,241,0.85) 0%, rgba(79,70,229,0.75) 100%)'
+                              : 'linear-gradient(135deg, rgba(99,102,241,0.7) 0%, rgba(79,70,229,0.55) 100%)',
+                            border: showEggsPanel ? '1px solid rgba(79,70,229,0.6)' : '1px solid rgba(79,70,229,0.45)',
+                          }}
+                          whileTap={{ scale: 0.93 }}
+                        >
+                          <div className="absolute inset-0 opacity-0 group-active:opacity-100 transition-opacity rounded-2xl" style={{ background: 'rgba(255,255,255,0.35)' }} />
+                          <span className="text-[2rem]">🥚</span>
+                          <span className="text-[11px] font-bold text-indigo-800 tracking-wider uppercase">Eggs</span>
+                        </motion.button>
+
                         {/* SOCIAL */}
                         <motion.button
                           onClick={() => { setActiveModal('social'); setShowHamburgerMenu(false); setShowNotifPanel(false); setHasPendingPokes(false); }}
-                          className="group relative flex flex-col items-center justify-center gap-2 py-5 rounded-2xl overflow-hidden"
+                          className="group relative flex flex-col items-center justify-center gap-1 py-3 rounded-2xl overflow-hidden"
                           style={{ background: 'linear-gradient(135deg, rgba(236,72,153,0.75) 0%, rgba(219,39,119,0.6) 100%)', border: '1px solid rgba(219,39,119,0.45)' }}
                           whileTap={{ scale: 0.93 }}
                         >
@@ -637,10 +830,27 @@ export default function App() {
                           <span className="text-[11px] font-bold text-pink-800 tracking-wider uppercase">Social</span>
                         </motion.button>
 
+                        {/* DECORATIONS */}
+                        <motion.button
+                          onClick={() => { setShowInventoryPanel(true); setDecorationsTab('store'); }}
+                          className="group relative flex flex-col items-center justify-center gap-1 py-3 rounded-2xl overflow-hidden"
+                          style={{
+                            background: showInventoryPanel
+                              ? 'linear-gradient(135deg, rgba(20,184,166,0.85) 0%, rgba(13,148,136,0.75) 100%)'
+                              : 'linear-gradient(135deg, rgba(20,184,166,0.7) 0%, rgba(13,148,136,0.55) 100%)',
+                            border: showInventoryPanel ? '1px solid rgba(13,148,136,0.6)' : '1px solid rgba(13,148,136,0.45)',
+                          }}
+                          whileTap={{ scale: 0.93 }}
+                        >
+                          <div className="absolute inset-0 opacity-0 group-active:opacity-100 transition-opacity rounded-2xl" style={{ background: 'rgba(255,255,255,0.35)' }} />
+                          <span className="text-[2rem]">🪸</span>
+                          <span className="text-[11px] font-bold text-teal-800 tracking-wider uppercase">Decorations</span>
+                        </motion.button>
+
                         {/* HOW TO PLAY */}
                         <motion.button
                           onClick={() => setShowHowToPlayPanel(true)}
-                          className="group relative flex flex-col items-center justify-center gap-2 py-5 rounded-2xl overflow-hidden"
+                          className="group relative flex flex-col items-center justify-center gap-1 py-3 rounded-2xl overflow-hidden"
                           style={{
                             background: showHowToPlayPanel
                               ? 'linear-gradient(135deg, rgba(6,182,212,0.85) 0%, rgba(8,145,178,0.75) 100%)'
@@ -654,39 +864,62 @@ export default function App() {
                           <span className="text-[11px] font-bold text-cyan-800 tracking-wider uppercase">How to Play</span>
                         </motion.button>
 
-                        {/* SETTINGS */}
-                        <motion.button
-                          onClick={() => { setActiveModal('settings'); setShowHamburgerMenu(false); setShowNotifPanel(false); }}
-                          className="group relative flex flex-col items-center justify-center gap-2 py-5 rounded-2xl overflow-hidden"
-                          style={{ background: 'linear-gradient(135deg, rgba(100,116,139,0.75) 0%, rgba(71,85,105,0.6) 100%)', border: '1px solid rgba(71,85,105,0.45)' }}
-                          whileTap={{ scale: 0.93 }}
-                        >
-                          <div className="absolute inset-0 opacity-0 group-active:opacity-100 transition-opacity rounded-2xl" style={{ background: 'rgba(255,255,255,0.35)' }} />
-                          <span className="text-[2rem]">⚙️</span>
-                          <span className="text-[11px] font-bold text-slate-700 tracking-wider uppercase">Settings</span>
-                        </motion.button>
+                        {/* ACHIEVEMENTS */}
+                        {(() => {
+                          const unlockedCount = (gameState?.achievements ?? []).length;
+                          const totalCount = ALL_ACHIEVEMENTS.length;
+                          return (
+                            <motion.button
+                              onClick={() => { setShowAchievementsPanel(true); setShowHowToPlayPanel(false); setShowInventoryPanel(false); setShowEggsPanel(false); }}
+                              className="group relative flex flex-col items-center justify-center gap-1 py-3 rounded-2xl overflow-hidden"
+                              style={{
+                                background: showAchievementsPanel
+                                  ? 'linear-gradient(135deg, rgba(245,158,11,0.85) 0%, rgba(217,119,6,0.75) 100%)'
+                                  : 'linear-gradient(135deg, rgba(245,158,11,0.7) 0%, rgba(217,119,6,0.55) 100%)',
+                                border: showAchievementsPanel ? '1px solid rgba(217,119,6,0.6)' : '1px solid rgba(217,119,6,0.45)',
+                              }}
+                              whileTap={{ scale: 0.93 }}
+                            >
+                              <div className="absolute inset-0 opacity-0 group-active:opacity-100 transition-opacity rounded-2xl" style={{ background: 'rgba(255,255,255,0.35)' }} />
+                              <span className="text-[2rem]">🏆</span>
+                              <span className="text-[11px] font-bold text-amber-800 tracking-wider uppercase">Achievements</span>
+                              <span className="text-[9px] font-semibold text-amber-700/70">{unlockedCount}/{totalCount}</span>
+                            </motion.button>
+                          );
+                        })()}
 
-                        {/* REBIRTH — full-width when available */}
-                        {showRebirthButton && (
-                          <motion.button
-                            onClick={() => { setActiveModal('rebirth'); setShowHamburgerMenu(false); setShowNotifPanel(false); }}
-                            className="col-span-2 group relative flex flex-row items-center justify-center gap-3 py-4 rounded-2xl overflow-hidden"
-                            style={{ background: 'linear-gradient(110deg, rgba(233,213,255,0.88) 0%, rgba(216,180,254,0.82) 35%, rgba(251,207,232,0.82) 70%, rgba(253,186,116,0.75) 100%)', border: '1px solid rgba(192,132,252,0.5)' }}
-                            whileTap={{ scale: 0.96 }}
-                          >
+                        {/* REBIRTH — full-width, always visible; glows when available */}
+                        <motion.button
+                          onClick={() => { if (showRebirthButton) { setActiveModal('rebirth'); setShowHamburgerMenu(false); setShowNotifPanel(false); } }}
+                          className="col-span-2 group relative flex flex-row items-center justify-center gap-2.5 py-3 rounded-2xl overflow-hidden"
+                          style={showRebirthButton ? {
+                            background: 'linear-gradient(110deg, rgba(233,213,255,0.88) 0%, rgba(216,180,254,0.82) 35%, rgba(251,207,232,0.82) 70%, rgba(253,186,116,0.75) 100%)',
+                            border: '1px solid rgba(192,132,252,0.5)',
+                          } : {
+                            background: 'linear-gradient(110deg, rgba(200,200,215,0.45) 0%, rgba(210,210,225,0.4) 100%)',
+                            border: '1px solid rgba(160,160,180,0.3)',
+                            opacity: 0.7,
+                          }}
+                          whileTap={showRebirthButton ? { scale: 0.96 } : {}}
+                        >
+                          {showRebirthButton && (
                             <motion.div
                               className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-transparent"
                               animate={{ x: ['-100%', '180%'] }}
                               transition={{ duration: 2.4, repeat: Infinity, repeatDelay: 1.8, ease: 'easeInOut' }}
                               style={{ width: '40%' }}
                             />
-                            <span className="text-[2rem]">✨</span>
-                            <div className="flex flex-col items-start">
-                              <span className="text-[13px] font-black text-violet-700 tracking-wider uppercase">Rebirth Available</span>
-                              <span className="text-[9px] text-violet-500/80 font-medium">Start a new generation</span>
-                            </div>
-                          </motion.button>
-                        )}
+                          )}
+                          <span className="text-[2rem]">{showRebirthButton ? '✨' : '🔒'}</span>
+                          <div className="flex flex-col items-start">
+                            <span className={`text-[13px] font-black tracking-wider uppercase ${showRebirthButton ? 'text-violet-700' : 'text-slate-400'}`}>
+                              {showRebirthButton ? 'Rebirth Available' : 'Rebirth'}
+                            </span>
+                            <span className={`text-[9px] font-medium ${showRebirthButton ? 'text-violet-500/80' : 'text-slate-400/80'}`}>
+                              {showRebirthButton ? 'Start a new generation' : 'Reach Elder • Level 40'}
+                            </span>
+                          </div>
+                        </motion.button>
                       </div>
                     </div>
 
@@ -787,6 +1020,39 @@ export default function App() {
                           opals={opals}
                           hasAxolotl={!!gameState?.axolotl}
                         />
+                      )}
+                    </AnimatePresence>
+
+                    {/* ── Achievements sub-panel overlay ── */}
+                    <AnimatePresence>
+                      {showAchievementsPanel && gameState && (
+                        <motion.div
+                          initial={{ opacity: 0, y: '100%' }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: '100%' }}
+                          transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                          className="absolute inset-0 flex flex-col rounded-3xl overflow-hidden"
+                          style={{ background: 'linear-gradient(160deg, #1e1b4b 0%, #312e81 40%, #4c1d95 100%)' }}
+                        >
+                          {/* Panel header */}
+                          <div className="flex items-center justify-between px-5 pt-5 pb-3 flex-shrink-0">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xl">🏆</span>
+                              <h3 className="text-white font-bold text-base">Achievement Center</h3>
+                            </div>
+                            <motion.button
+                              onClick={() => setShowAchievementsPanel(false)}
+                              className="rounded-full p-2 border border-white/20 bg-white/10 active:bg-white/20"
+                              whileTap={{ scale: 0.85 }}
+                            >
+                              <X className="w-4 h-4 text-white/80" strokeWidth={2.5} />
+                            </motion.button>
+                          </div>
+                          {/* Scrollable content */}
+                          <div className="flex-1 overflow-y-auto overscroll-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
+                            <AchievementCenter gameState={gameState} />
+                          </div>
+                        </motion.div>
                       )}
                     </AnimatePresence>
 
@@ -908,7 +1174,7 @@ export default function App() {
                     }}
                   >
                     {/* Wider Aquarium Container */}
-                    <div 
+                    <div
                       className="relative h-full w-[250%] sm:w-[200%] cursor-pointer"
                       onClick={(e) => {
                         const rect = e.currentTarget.getBoundingClientRect();
@@ -917,8 +1183,10 @@ export default function App() {
                         // Clamp to valid aquarium bounds (0-100%)
                         const clampedX = Math.max(5, Math.min(95, x));
                         const clampedY = Math.max(5, Math.min(95, y));
-                        // Use timestamp to ensure each click is unique and triggers movement
+                        // Always swim to the tapped position
                         setClickTarget({ x: clampedX, y: clampedY, timestamp: Date.now() });
+                        // In play mode, also give +10 happiness and reset the idle timer
+                        if (playMode) handleAquariumPlayTap();
                       }}
                     >
                       <AquariumBackground
@@ -927,11 +1195,20 @@ export default function App() {
                       />
                       {/* Food Items */}
                       {(gameState.foodItems || []).map(food => (
-                        <FoodDisplay key={food.id} food={food} />
+                        <FoodDisplay
+                          key={food.id}
+                          food={food}
+                          tutorialActive={gameState.tutorialStep === 'eat'}
+                        />
                       ))}
                       {/* Poop Items */}
                       {(gameState.poopItems || []).map(poop => (
-                        <PoopDisplay key={poop.id} poop={poop} />
+                        <PoopDisplay
+                          key={poop.id}
+                          poop={poop}
+                          cleaningMode={cleaningMode}
+                          onClean={handleCleanPoopAndReset}
+                        />
                       ))}
                       {/* Ghost Shrimp — emoji placeholders, stable positions derived from index */}
                       {(gameState.shrimpCount || 0) > 0 && Array.from({ length: Math.min(6, gameState.shrimpCount || 0) }).map((_, i) => {
@@ -950,11 +1227,13 @@ export default function App() {
                       
                       {/* Axolotl */}
                       <div className="absolute inset-0 z-10 pointer-events-none">
-                        <AxolotlDisplay 
-                          axolotl={axolotl} 
+                        <AxolotlDisplay
+                          axolotl={axolotl}
                           foodItems={gameState.foodItems || []}
                           onEatFood={handleEatFood}
                           clickTarget={clickTarget}
+                          playMode={playMode}
+                          onAxolotlTap={handleAquariumPlayTap}
                         />
                       </div>
                     </div>
@@ -1013,24 +1292,117 @@ export default function App() {
                     )}
                   </AnimatePresence>
 
-                  {/* Floating Action Buttons */}
-                  <div className="absolute bottom-0 left-0 right-0 z-30 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-                    {/* Gradient fade behind buttons */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-indigo-900/50 via-purple-900/20 to-transparent pointer-events-none" />
-                    <div className="relative px-2">
-                      <ActionButtons
-                        onFeed={handleFeed}
-                        onPlay={handlePlay}
-                        onClean={handleClean}
-                        onWaterChange={handleWaterChange}
-                        onRebirth={() => setActiveModal('rebirth')}
-                        canRebirth={showRebirthButton}
-                        isHungerFull={axolotl.stats.hunger >= 100}
-                        stats={axolotl.stats}
-                      />
-                    </div>
-                  </div>
+                  {/* Tutorial overlay — rendered inside the aquarium relative container */}
+                  {(gameState.tutorialStep === 'feed' || gameState.tutorialStep === 'eat') && (
+                    <FeedingTutorial
+                      step={gameState.tutorialStep}
+                      axolotlName={axolotl.name}
+                    />
+                  )}
+
+                  {/* ── First-time poop cleaning tutorial ── */}
+                  {(() => {
+                    const showCleanTutorial =
+                      gameState.cleanTutorialSeen === false &&
+                      (gameState.poopItems?.length ?? 0) > 0;
+                    return (
+                      <AnimatePresence>
+                        {showCleanTutorial && !cleaningMode && (
+                          <motion.div
+                            key="clean-tutorial"
+                            className="absolute inset-0 pointer-events-none"
+                            style={{ zIndex: 45 }}
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.4 }}
+                          >
+                            {/* Dim overlay */}
+                            <div
+                              className="absolute inset-0"
+                              style={{ background: 'rgba(0,0,0,0.42)' }}
+                            />
+                            {/* Speech bubble anchored just above the action buttons */}
+                            <motion.div
+                              className="absolute bottom-[72px] left-0 right-0 flex flex-col items-center gap-0.5 px-4"
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ delay: 0.3, duration: 0.4 }}
+                            >
+                              <div
+                                className="rounded-2xl px-5 py-3 shadow-2xl text-center max-w-[230px]"
+                                style={{
+                                  background: 'rgba(255,255,255,0.97)',
+                                  border: '2.5px solid rgba(251,191,36,0.75)',
+                                  boxShadow: '0 8px 32px rgba(251,191,36,0.4)',
+                                }}
+                              >
+                                <p className="text-slate-800 text-[13px] font-bold leading-snug">
+                                  Yikes, there's poop!<br />
+                                  Tap <span className="text-rose-500">Clean</span> to start 🧹
+                                </p>
+                              </div>
+                              {/* Downward caret */}
+                              <div
+                                className="w-0 h-0"
+                                style={{
+                                  borderLeft: '9px solid transparent',
+                                  borderRight: '9px solid transparent',
+                                  borderTop: '9px solid rgba(255,255,255,0.97)',
+                                }}
+                              />
+                              {/* Bouncing finger pointing at Clean button */}
+                              <motion.span
+                                className="text-2xl select-none"
+                                animate={{ y: [0, 8, 0] }}
+                                transition={{ duration: 0.85, repeat: Infinity, ease: 'easeInOut' }}
+                              >
+                                👇
+                              </motion.span>
+                            </motion.div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    );
+                  })()}
+
+                  {/* Floating Action Buttons — lifted above tutorial overlays when needed */}
+                  {(() => {
+                    const cleanTutActive =
+                      gameState.cleanTutorialSeen === false &&
+                      (gameState.poopItems?.length ?? 0) > 0 &&
+                      !cleaningMode;
+                    const needsLift =
+                      gameState.tutorialStep === 'feed' || cleanTutActive;
+                    return (
+                      <div
+                        className={`absolute bottom-0 left-0 right-0 pb-[max(0.75rem,env(safe-area-inset-bottom))] ${
+                          needsLift ? 'z-50' : 'z-30'
+                        }`}
+                      >
+                        {/* Gradient fade behind buttons */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-indigo-900/50 via-purple-900/20 to-transparent pointer-events-none" />
+                        <div className="relative px-2">
+                          <ActionButtons
+                            onFeed={handleFeed}
+                            onPlay={enterPlayMode}
+                            onClean={enterCleaningMode}
+                            onWaterChange={() => setShowWaterChangeModal(true)}
+                            onRebirth={() => setActiveModal('rebirth')}
+                            canRebirth={showRebirthButton}
+                            isHungerFull={axolotl.stats.hunger >= 100}
+                            stats={axolotl.stats}
+                            tutorialFeedActive={gameState.tutorialStep === 'feed'}
+                            cleaningMode={cleaningMode}
+                            cleanTutorialActive={cleanTutActive}
+                            playMode={playMode}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
+
               </>
             ) : (
               /* Mini Games Screen */
@@ -1048,6 +1420,7 @@ export default function App() {
               >
                 <MiniGameMenu
                   onClose={() => setCurrentScreen('home')}
+                  miniGamesLockedUntil={gameState.miniGamesLockedUntil}
                   onSelectGame={(gameId) => {
                     if (!gameState) return;
                     
@@ -1082,6 +1455,14 @@ export default function App() {
                       setGameState(prev => prev ? { ...prev, _lastGameHadEnergy: false } : prev);
                     }
                     
+                    // Track unique games played for "All-Rounder" achievement
+                    setGameState(prev => {
+                      if (!prev) return prev;
+                      const already = prev.uniqueGamesPlayed ?? [];
+                      if (already.includes(gameId)) return prev;
+                      return { ...prev, uniqueGamesPlayed: [...already, gameId] };
+                    });
+
                     // Start the game - change screen to hide menu
                     setActiveGame(gameId);
                     setCurrentScreen('home'); // Hide games menu when game starts
@@ -1089,6 +1470,8 @@ export default function App() {
                   energy={gameState.energy}
                   maxEnergy={gameState.maxEnergy}
                   lastEnergyUpdate={gameState.lastEnergyUpdate}
+                  opals={opals}
+                  onUnlockGames={handleUnlockGames}
                 />
               </div>
             )}
@@ -1096,6 +1479,14 @@ export default function App() {
           </div>
         </div>
       </div>
+
+      {/* Water Change Confirmation Modal */}
+      {showWaterChangeModal && (
+        <WaterChangeModal
+          onClose={() => setShowWaterChangeModal(false)}
+          onConfirm={handleWaterChange}
+        />
+      )}
 
       {/* Modals */}
       {activeModal === 'shop' && (
@@ -1120,6 +1511,17 @@ export default function App() {
           onAddFriend={handleAddFriend}
           onRemoveFriend={handleRemoveFriend}
           onBreed={handleBreed}
+          onGiftFriend={(_friendId, coins, opals) => {
+            setGameState(prev => {
+              if (!prev) return prev;
+              return {
+                ...prev,
+                coins: prev.coins + coins,
+                opals: (prev.opals || 0) + opals,
+                totalGiftsSent: (prev.totalGiftsSent ?? 0) + 1,
+              };
+            });
+          }}
           lineage={lineage}
         />
       )}

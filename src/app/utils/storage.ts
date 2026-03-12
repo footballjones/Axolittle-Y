@@ -180,5 +180,7 @@ export function getInitialGameState(): GameState {
     lastLoginDate: undefined,
     loginStreak: 0,
     lastLoginBonusDate: undefined,
+    tutorialStep: 'feed',    // Show feeding tutorial on first ever play
+    cleanTutorialSeen: false, // Show cleaning tutorial on first poop appearance
   };
 }

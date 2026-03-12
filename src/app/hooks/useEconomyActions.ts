@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { GameState } from '../types/game';
 import { GameNotification } from '../data/notifications';
 import { getTodayDateString, calculateLoginStreak } from '../utils/dailySystem';
+import { checkAchievements, ALL_ACHIEVEMENTS } from '../data/achievements';
 
 interface UseEconomyActionsProps {
   setGameState: React.Dispatch<React.SetStateAction<GameState | null>>;
@@ -24,6 +25,24 @@ export function useEconomyActions({ setGameState, setNotifications }: UseEconomy
   const [showSpinWheel, setShowSpinWheel] = useState(false);
   const [showDailyLogin, setShowDailyLogin] = useState(false);
 
+  function withAchievements(newState: GameState): GameState {
+    const newIds = checkAchievements(newState);
+    if (newIds.length === 0) return newState;
+    newIds.forEach(id => {
+      const achievement = ALL_ACHIEVEMENTS.find(a => a.id === id);
+      if (!achievement) return;
+      setNotifications(prev => [...prev, {
+        id: `achievement-${id}-${Date.now()}`,
+        type: 'achievement' as const,
+        emoji: achievement.emoji,
+        message: `Achievement Unlocked: ${achievement.name}`,
+        time: 'now',
+        read: false,
+      }]);
+    });
+    return { ...newState, achievements: [...(newState.achievements ?? []), ...newIds] };
+  }
+
   const handleSpinWheel = useCallback((reward: { type: 'coins' | 'opals'; amount: number }) => {
     setGameState(prev => {
       if (!prev) return prev;
@@ -41,12 +60,12 @@ export function useEconomyActions({ setGameState, setNotifications }: UseEconomy
         read: false,
       }]);
 
-      return {
+      return withAchievements({
         ...prev,
         coins: newCoins,
         opals: newOpals,
         lastSpinDate: today,
-      };
+      });
     });
   }, [setGameState, setNotifications]);
 
@@ -72,7 +91,7 @@ export function useEconomyActions({ setGameState, setNotifications }: UseEconomy
         read: false,
       }]);
 
-      return {
+      return withAchievements({
         ...prev,
         coins: newCoins,
         opals: newOpals,
@@ -80,7 +99,7 @@ export function useEconomyActions({ setGameState, setNotifications }: UseEconomy
         lastLoginBonusDate: today,
         loginStreak: newStreak,
         unlockedDecorations: newUnlockedDecorations,
-      };
+      });
     });
   }, [setGameState, setNotifications]);
 

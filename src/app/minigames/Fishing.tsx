@@ -90,7 +90,7 @@ export function Fishing({ onEnd, energy, strength = 0, speed = 0 }: MiniGameProp
   const [isHolding, setIsHolding] = useState(false);
   
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const animationFrameRef = useRef<number>();
+  const animationFrameRef = useRef<number | null>(null);
   const gameStateRef = useRef<{
     playerState: PlayerState;
     playerLineY: number;
@@ -647,6 +647,7 @@ export function Fishing({ onEnd, energy, strength = 0, speed = 0 }: MiniGameProp
     return () => {
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
       }
     };
   }, [isPlaying, isPaused, gameLoop]);

@@ -125,7 +125,7 @@ export function MathRush({ onEnd, energy }: MiniGameProps) {
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [feedback, setFeedback] = useState<{ text: string; type: 'correct' | 'wrong' | '' }>({ text: '', type: '' });
   const [waitingForNext, setWaitingForNext] = useState(false);
-  const timerIntervalRef = useRef<number>();
+  const timerIntervalRef = useRef<number | null>(null);
 
   const getTimerForScore = useCallback((currentScore: number) => {
     // Timer gets faster: 6000ms - score * 100, minimum 3000ms (converted to seconds)
@@ -177,6 +177,7 @@ export function MathRush({ onEnd, energy }: MiniGameProps) {
     return () => {
       if (timerIntervalRef.current) {
         clearInterval(timerIntervalRef.current);
+        timerIntervalRef.current = null;
       }
     };
   }, [isPlaying, isPaused, currentQuestion, waitingForNext]);

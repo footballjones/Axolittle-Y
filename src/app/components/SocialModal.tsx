@@ -4,6 +4,18 @@ import { Axolotl, Friend } from '../types/game';
 import { generateFriendCode } from '../utils/storage';
 import { motion, AnimatePresence } from 'motion/react';
 
+interface GiftResult {
+  coins: number;
+  opals: number;
+}
+
+function rollGift(): GiftResult {
+  const r = Math.random();
+  if (r < 0.75) return { coins: 15, opals: 0 };
+  if (r < 0.95) return { coins: 40, opals: 0 };
+  return { coins: 0, opals: 3 };
+}
+
 interface SocialModalProps {
   onClose: () => void;
   axolotl: Axolotl;
@@ -11,15 +23,17 @@ interface SocialModalProps {
   onAddFriend: (code: string) => void;
   onRemoveFriend: (friendId: string) => void;
   onBreed: (friendId: string) => void;
+  onGiftFriend: (friendId: string, coins: number, opals: number) => void;
   lineage: Axolotl[];
 }
 
-export function SocialModal({ onClose, axolotl, friends, onAddFriend, onRemoveFriend, onBreed, lineage }: SocialModalProps) {
+export function SocialModal({ onClose, axolotl, friends, onAddFriend, onRemoveFriend, onBreed, onGiftFriend, lineage }: SocialModalProps) {
   const [friendCode, setFriendCode] = useState('');
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<'friends' | 'lineage'>('friends');
   const [expandedFriend, setExpandedFriend] = useState<string | null>(null);
   const [pokedFriends, setPokedFriends] = useState<Set<string>>(new Set());
+  const [giftResults, setGiftResults] = useState<Record<string, GiftResult>>({});
   const [showAddFriendModal, setShowAddFriendModal] = useState(false);
 
   const myCode = generateFriendCode(axolotl);
@@ -335,6 +349,52 @@ export function SocialModal({ onClose, axolotl, friends, onAddFriend, onRemoveFr
                                           <span className="text-[9px] font-black tracking-wide uppercase text-pink-500">Hatch Together</span>
                                         </motion.button>
                                       </div>
+
+                                      {/* Send Gift - full width */}
+                                      {(() => {
+                                        const result = giftResults[friend.id];
+                                        const giftLabel = result
+                                          ? result.opals > 0
+                                            ? `+${result.opals} Opals! ✨`
+                                            : `+${result.coins} Coins! 🪙`
+                                          : null;
+                                        return (
+                                          <motion.button
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              if (result) return; // cooldown
+                                              const gift = rollGift();
+                                              onGiftFriend(friend.id, gift.coins, gift.opals);
+                                              setGiftResults(prev => ({ ...prev, [friend.id]: gift }));
+                                              setTimeout(() => {
+                                                setGiftResults(prev => {
+                                                  const next = { ...prev };
+                                                  delete next[friend.id];
+                                                  return next;
+                                                });
+                                              }, 2500);
+                                            }}
+                                            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl mb-2"
+                                            style={{
+                                              background: result
+                                                ? 'linear-gradient(135deg, rgba(134,239,172,0.45), rgba(74,222,128,0.35))'
+                                                : 'linear-gradient(135deg, rgba(99,102,241,0.18), rgba(139,92,246,0.14))',
+                                              border: result
+                                                ? '1px solid rgba(74,222,128,0.45)'
+                                                : '1px solid rgba(139,92,246,0.35)',
+                                            }}
+                                            whileTap={result ? {} : { scale: 0.95 }}
+                                          >
+                                            <span className="text-[1rem]">{result ? '✅' : '🎁'}</span>
+                                            <span
+                                              className="text-[10px] font-black tracking-wide uppercase"
+                                              style={{ color: result ? '#16a34a' : '#6d28d9' }}
+                                            >
+                                              {giftLabel ?? 'Send Gift'}
+                                            </span>
+                                          </motion.button>
+                                        );
+                                      })()}
 
                                       {/* Delete friend button - full width */}
                                       <motion.button

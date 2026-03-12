@@ -173,6 +173,11 @@ export function EggsPanel({
     return all;
   }, [incubatorDisplayEgg, nurseryDisplayEggs]);
 
+  // True when there is no axolotl in the aquarium and this is the only remaining egg.
+  // In this state the player MUST hatch the egg to get an axolotl, so gifting or
+  // discarding it would leave them permanently stuck with nothing.
+  const isLastEggWithoutAxolotl = !axolotl && allDisplayEggs.length === 1;
+
   const handleUnlockSlot = () => {
     setShowUnlockToast(true);
     setTimeout(() => setShowUnlockToast(false), 2500);
@@ -540,6 +545,21 @@ export function EggsPanel({
 
                 <div className="h-px mb-4" style={{ background: 'linear-gradient(90deg,transparent,rgba(168,85,247,0.25),transparent)' }} />
 
+                {/* Warning banner: show when this is the last egg and there's no axolotl */}
+                {isLastEggWithoutAxolotl && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex items-center gap-2.5 rounded-2xl px-3.5 py-2.5 mb-3"
+                    style={{ background: 'rgba(254,243,199,0.85)', border: '1px solid rgba(245,158,11,0.4)' }}
+                  >
+                    <span className="text-lg flex-shrink-0">⚠️</span>
+                    <p className="text-[11px] font-semibold text-amber-800 leading-snug">
+                      This is your only egg and you have no axolotl. Hatch it to continue!
+                    </p>
+                  </motion.div>
+                )}
+
                 {/* Action tiles grid */}
                 <div className="grid grid-cols-2 gap-2.5">
                   {/* Hatch / Watch / Move to Incubator */}
@@ -556,9 +576,12 @@ export function EggsPanel({
                             setEggToHatch(selectedEgg.egg);
                             setShowReleaseModal(true);
                           } else {
-                            // No axolotl, proceed to hatch confirmation
-                            setEggToHatch(selectedEgg.egg);
-                            setShowHatchModal(true);
+                            // No axolotl (post-rebirth): hatch directly with empty name.
+                            // App.tsx will detect name === '' and show the naming screen.
+                            if (onHatch) {
+                              onHatch(selectedEgg.egg.id, '');
+                              setSelectedEgg(null);
+                            }
                           }
                         }
                       }}
@@ -643,39 +666,51 @@ export function EggsPanel({
                   {/* Gift */}
                   <motion.button
                     onClick={() => {
-                      if (onGift) {
+                      if (onGift && !isLastEggWithoutAxolotl) {
                         onGift(selectedEgg.egg.id);
                         setSelectedEgg(null);
                       }
                     }}
                     className="group relative flex flex-col items-center justify-center gap-1.5 py-4 rounded-2xl overflow-hidden"
-                    style={{ background: 'linear-gradient(135deg, rgba(251,207,232,0.75) 0%, rgba(249,168,212,0.6) 100%)', border: '1px solid rgba(244,114,182,0.35)' }}
+                    style={
+                      isLastEggWithoutAxolotl
+                        ? { background: 'linear-gradient(135deg, rgba(226,232,240,0.75) 0%, rgba(203,213,225,0.6) 100%)', border: '1px solid rgba(148,163,184,0.35)' }
+                        : { background: 'linear-gradient(135deg, rgba(251,207,232,0.75) 0%, rgba(249,168,212,0.6) 100%)', border: '1px solid rgba(244,114,182,0.35)' }
+                    }
                     whileTap={{ scale: 0.92 }}
-                    disabled={!onGift}
+                    disabled={!onGift || isLastEggWithoutAxolotl}
                   >
                     <div className="absolute inset-0 opacity-0 group-active:opacity-100 transition-opacity rounded-2xl" style={{ background: 'rgba(255,255,255,0.35)' }} />
-                    <span className="text-[1.6rem]">🎁</span>
-                    <span className="text-[10px] font-black tracking-wider uppercase text-pink-700">Gift</span>
-                    <span className="text-[9px] text-pink-400">Send to friend</span>
+                    <span className="text-[1.6rem]">{isLastEggWithoutAxolotl ? '🔒' : '🎁'}</span>
+                    <span className={`text-[10px] font-black tracking-wider uppercase ${isLastEggWithoutAxolotl ? 'text-slate-400' : 'text-pink-700'}`}>Gift</span>
+                    <span className={`text-[9px] ${isLastEggWithoutAxolotl ? 'text-slate-400' : 'text-pink-400'}`}>
+                      {isLastEggWithoutAxolotl ? 'Hatch first' : 'Send to friend'}
+                    </span>
                   </motion.button>
 
                   {/* Discard */}
                   <motion.button
                     onClick={() => {
-                      if (onDiscard) {
+                      if (onDiscard && !isLastEggWithoutAxolotl) {
                         onDiscard(selectedEgg.egg.id);
                         setSelectedEgg(null);
                       }
                     }}
                     className="group relative flex flex-col items-center justify-center gap-1.5 py-4 rounded-2xl overflow-hidden"
-                    style={{ background: 'linear-gradient(135deg, rgba(254,202,202,0.65) 0%, rgba(252,165,165,0.5) 100%)', border: '1px solid rgba(248,113,113,0.3)' }}
+                    style={
+                      isLastEggWithoutAxolotl
+                        ? { background: 'linear-gradient(135deg, rgba(226,232,240,0.75) 0%, rgba(203,213,225,0.6) 100%)', border: '1px solid rgba(148,163,184,0.35)' }
+                        : { background: 'linear-gradient(135deg, rgba(254,202,202,0.65) 0%, rgba(252,165,165,0.5) 100%)', border: '1px solid rgba(248,113,113,0.3)' }
+                    }
                     whileTap={{ scale: 0.92 }}
-                    disabled={!onDiscard}
+                    disabled={!onDiscard || isLastEggWithoutAxolotl}
                   >
                     <div className="absolute inset-0 opacity-0 group-active:opacity-100 transition-opacity rounded-2xl" style={{ background: 'rgba(255,255,255,0.35)' }} />
-                    <span className="text-[1.6rem]">🗑️</span>
-                    <span className="text-[10px] font-black tracking-wider uppercase text-red-500">Discard</span>
-                    <span className="text-[9px] text-red-300">Cannot undo</span>
+                    <span className="text-[1.6rem]">{isLastEggWithoutAxolotl ? '🔒' : '🗑️'}</span>
+                    <span className={`text-[10px] font-black tracking-wider uppercase ${isLastEggWithoutAxolotl ? 'text-slate-400' : 'text-red-500'}`}>Discard</span>
+                    <span className={`text-[9px] ${isLastEggWithoutAxolotl ? 'text-slate-400' : 'text-red-300'}`}>
+                      {isLastEggWithoutAxolotl ? 'Hatch first' : 'Cannot undo'}
+                    </span>
                   </motion.button>
                 </div>
               </div>

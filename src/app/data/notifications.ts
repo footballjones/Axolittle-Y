@@ -1,6 +1,6 @@
 export interface GameNotification {
   id: string;
-  type: 'poke' | 'evolution' | 'gift' | 'friend' | 'milestone';
+  type: 'poke' | 'evolution' | 'gift' | 'friend' | 'milestone' | 'achievement';
   emoji: string;
   message: string;
   time: string;

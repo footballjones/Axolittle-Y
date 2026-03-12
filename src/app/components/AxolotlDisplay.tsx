@@ -7,11 +7,14 @@ interface AxolotlDisplayProps {
   foodItems: FoodItem[];
   onEatFood: (foodId: string) => void;
   clickTarget?: { x: number; y: number; timestamp: number } | null;
+  playMode?: boolean;
+  onAxolotlTap?: () => void;
 }
 
-export function AxolotlDisplay({ axolotl, foodItems, onEatFood, clickTarget }: AxolotlDisplayProps) {
+export function AxolotlDisplay({ axolotl, foodItems, onEatFood, clickTarget, playMode, onAxolotlTap }: AxolotlDisplayProps) {
   const [position, setPosition] = useState({ x: 50, y: 50 });
   const [facingLeft, setFacingLeft] = useState(false);
+  const [wiggling, setWiggling] = useState(false);
   const foodFirstSeenRef = useRef<number | null>(null);
 
   // Track previous position + move start time so we can interpolate visual position
@@ -169,17 +172,17 @@ export function AxolotlDisplay({ axolotl, foodItems, onEatFood, clickTarget }: A
         zIndex: 10,
       }}
     >
-      {/* Gentle bob animation */}
+      {/* Bob animation — overrides to a happy wiggle when the axolotl is tapped in play mode */}
       <motion.div
-        animate={{
-          y: [0, -6, 0, 4, 0],
-          rotate: [0, -2, 0, 2, 0],
-        }}
-        transition={{
-          duration: 4,
-          repeat: Infinity,
-          ease: 'easeInOut',
-        }}
+        animate={wiggling
+          ? { x: [-10, 10, -8, 8, -4, 4, 0], rotate: [-9, 9, -7, 7, -3, 3, 0], scale: [1, 1.12, 0.93, 1.07, 0.97, 1.03, 1] }
+          : { x: 0, y: [0, -6, 0, 4, 0], rotate: [0, -2, 0, 2, 0] }
+        }
+        transition={wiggling
+          ? { duration: 0.55, ease: 'easeOut' }
+          : { duration: 4, repeat: Infinity, ease: 'easeInOut' }
+        }
+        onAnimationComplete={() => { if (wiggling) setWiggling(false); }}
         className="relative"
       >
         {/* Outer soft ambient glow */}
@@ -254,16 +257,25 @@ export function AxolotlDisplay({ axolotl, foodItems, onEatFood, clickTarget }: A
           />
         </motion.div>
 
-        {/* Axolotl image */}
+        {/* Axolotl image — tappable in play mode */}
         <img
           src="/axolotl.png"
           alt="Axolotl"
           width={size}
           height={size}
+          onClick={playMode ? (e) => {
+            e.stopPropagation(); // prevent aquarium onClick from also firing
+            if (!wiggling) {
+              setWiggling(true);
+              onAxolotlTap?.();
+            }
+          } : undefined}
           style={{
             transform: facingLeft ? 'scaleX(1)' : 'scaleX(-1)',
             filter: 'drop-shadow(0 0 8px rgba(160,120,255,0.4)) drop-shadow(0 0 20px rgba(100,180,255,0.3)) drop-shadow(0 4px 12px rgba(0,0,0,0.25))',
             objectFit: 'contain',
+            pointerEvents: playMode ? 'auto' : 'none',
+            cursor: playMode ? 'pointer' : 'default',
           }}
         />
       </motion.div>

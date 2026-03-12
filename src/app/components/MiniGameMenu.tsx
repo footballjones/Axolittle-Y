@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
-import { User, Users, Info, Zap } from 'lucide-react';
+import { User, Users, Info, Zap, Lock } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { GAME_CONFIG } from '../config/game';
+
+const UNLOCK_GAMES_COST = 5; // opals
 
 interface MiniGameMenuProps {
   onClose?: () => void;
@@ -9,6 +11,9 @@ interface MiniGameMenuProps {
   energy?: number;
   maxEnergy?: number;
   lastEnergyUpdate?: number;
+  miniGamesLockedUntil?: number;
+  opals?: number;
+  onUnlockGames?: () => void;
 }
 
 interface GameTileProps {
@@ -19,9 +24,10 @@ interface GameTileProps {
   onToggleInfo: (id: string) => void;
   onSelectGame: (id: string) => void;
   energy?: number;
+  isLocked?: boolean;
 }
 
-function GameTile({ game, index, delayOffset = 0, expandedId, onToggleInfo, onSelectGame, energy: _energy = 0 }: GameTileProps) {
+function GameTile({ game, index, delayOffset = 0, expandedId, onToggleInfo, onSelectGame, energy: _energy = 0, isLocked = false }: GameTileProps) {
   const isExpanded = expandedId === game.id;
 
   return (
@@ -30,12 +36,18 @@ function GameTile({ game, index, delayOffset = 0, expandedId, onToggleInfo, onSe
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: delayOffset + index * 0.05 }}
-      className="bg-white/50 backdrop-blur-sm rounded-2xl border border-white/50 shadow-lg shadow-purple-900/5 overflow-hidden"
+      className={`relative bg-white/50 backdrop-blur-sm rounded-2xl border border-white/50 shadow-lg shadow-purple-900/5 overflow-hidden ${isLocked ? 'opacity-50' : ''}`}
       style={{ transform: 'scale(0.65)' }}
     >
+      {isLocked && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/20 rounded-2xl cursor-not-allowed">
+          <Lock className="w-5 h-5 text-white/80" />
+        </div>
+      )}
       <button
-        onClick={() => onSelectGame(game.id)}
-        className="w-full p-3 text-left group transition-colors active:bg-white/20 cursor-pointer"
+        onClick={() => !isLocked && onSelectGame(game.id)}
+        disabled={isLocked}
+        className={`w-full p-3 text-left group transition-colors active:bg-white/20 ${isLocked ? 'cursor-not-allowed' : 'cursor-pointer'}`}
       >
         <div className="flex flex-col items-center text-center gap-1.5">
           <div className={`bg-gradient-to-br ${game.color} rounded-xl w-11 h-11 flex items-center justify-center transition-transform shadow-lg ring-1 ring-white/30`}>
@@ -111,10 +123,40 @@ function GameTile({ game, index, delayOffset = 0, expandedId, onToggleInfo, onSe
   );
 }
 
-export function MiniGameMenu({ onClose: _onClose, onSelectGame, energy = 10, maxEnergy = 10, lastEnergyUpdate }: MiniGameMenuProps) {
+export function MiniGameMenu({ onClose: _onClose, onSelectGame, energy = 10, maxEnergy = 10, lastEnergyUpdate, miniGamesLockedUntil, opals = 0, onUnlockGames }: MiniGameMenuProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [energyTimeText, setEnergyTimeText] = useState<string>('');
+  const [lockTimeText, setLockTimeText] = useState<string>('');
   const initialCalculationRef = useRef<{ baseTime: number; targetEnergy: number; secondsUntilNext: number } | null>(null);
+
+  const isLocked = !!miniGamesLockedUntil && miniGamesLockedUntil > Date.now();
+
+  // Live countdown for the mini-game lock
+  useEffect(() => {
+    if (!miniGamesLockedUntil) return;
+
+    const updateLockTimer = () => {
+      const remaining = Math.max(0, Math.ceil((miniGamesLockedUntil - Date.now()) / 1000));
+      if (remaining <= 0) {
+        setLockTimeText('');
+        return;
+      }
+      const h = Math.floor(remaining / 3600);
+      const m = Math.floor((remaining % 3600) / 60);
+      const s = remaining % 60;
+      if (h > 0) {
+        setLockTimeText(`${h}h ${m}m ${s}s remaining`);
+      } else if (m > 0) {
+        setLockTimeText(`${m}m ${s}s remaining`);
+      } else {
+        setLockTimeText(`${s}s remaining`);
+      }
+    };
+
+    updateLockTimer();
+    const interval = setInterval(updateLockTimer, 1000);
+    return () => clearInterval(interval);
+  }, [miniGamesLockedUntil]);
 
   const toggleInfo = (id: string) => {
     setExpandedId(prev => prev === id ? null : id);
@@ -299,10 +341,10 @@ export function MiniGameMenu({ onClose: _onClose, onSelectGame, energy = 10, max
   ];
 
   return (
-    <div className="pt-16 px-4 sm:px-6 pb-32 space-y-4 sm:space-y-6 min-h-full">
+    <div className="pt-32 px-4 sm:px-6 pb-32 space-y-4 sm:space-y-6 min-h-full">
       {/* Energy Bar */}
       <motion.div
-        className="relative bg-white/[0.08] backdrop-blur-2xl rounded-xl border border-white/10 px-2.5 py-1.5 overflow-visible mt-8"
+        className="relative bg-white/[0.08] backdrop-blur-2xl rounded-xl border border-white/10 px-2.5 py-1.5 overflow-visible"
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
       >
@@ -342,6 +384,48 @@ export function MiniGameMenu({ onClose: _onClose, onSelectGame, energy = 10, max
         )}
       </motion.div>
 
+      {/* Mini-Games Lock Banner */}
+      <AnimatePresence>
+        {isLocked && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            className="bg-amber-500/20 border border-amber-400/40 backdrop-blur-sm rounded-2xl px-4 py-3"
+          >
+            <div className="flex gap-3 items-start">
+              <div className="shrink-0 bg-amber-400/30 rounded-xl p-1.5 mt-0.5">
+                <Lock className="w-4 h-4 text-amber-300" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold text-amber-200 leading-tight">Mini Games Locked</p>
+                <p className="text-xs text-amber-300/80 mt-0.5 leading-snug">
+                  Water change in progress — games unlock in{' '}
+                  <span className="font-semibold text-amber-200">{lockTimeText}</span>
+                </p>
+              </div>
+            </div>
+            {/* Unlock with opals */}
+            <motion.button
+              onClick={opals >= UNLOCK_GAMES_COST ? onUnlockGames : undefined}
+              whileTap={opals >= UNLOCK_GAMES_COST ? { scale: 0.96 } : {}}
+              disabled={opals < UNLOCK_GAMES_COST}
+              className={`mt-3 w-full flex items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold transition-all border ${
+                opals >= UNLOCK_GAMES_COST
+                  ? 'bg-violet-500/80 hover:bg-violet-500 border-violet-400/50 text-white cursor-pointer'
+                  : 'bg-white/10 border-white/10 text-white/40 cursor-not-allowed'
+              }`}
+            >
+              <span>✨</span>
+              <span>Unlock Now — {UNLOCK_GAMES_COST} Opals</span>
+              <span className={`ml-auto text-[10px] font-semibold ${opals >= UNLOCK_GAMES_COST ? 'text-violet-200' : 'text-white/30'}`}>
+                (you have {opals})
+              </span>
+            </motion.button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Solo Games Section */}
       <div>
         <div className="flex items-center gap-2 mb-4">
@@ -361,6 +445,7 @@ export function MiniGameMenu({ onClose: _onClose, onSelectGame, energy = 10, max
               onToggleInfo={toggleInfo}
               onSelectGame={onSelectGame}
               energy={energy}
+              isLocked={isLocked}
             />
           ))}
         </div>
@@ -374,7 +459,7 @@ export function MiniGameMenu({ onClose: _onClose, onSelectGame, energy = 10, max
           </div>
           <h3 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-white to-rose-100 drop-shadow-sm">Multiplayer Games</h3>
         </div>
-        
+
         <div className="grid grid-cols-2 gap-2">
           {multiplayerGames.map((game, index) => (
             <GameTile
@@ -386,6 +471,7 @@ export function MiniGameMenu({ onClose: _onClose, onSelectGame, energy = 10, max
               onToggleInfo={toggleInfo}
               onSelectGame={onSelectGame}
               energy={energy}
+              isLocked={isLocked}
             />
           ))}
         </div>

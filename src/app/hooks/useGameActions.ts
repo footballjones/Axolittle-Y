@@ -5,9 +5,8 @@
 
 import { useCallback } from 'react';
 import { GameState, Axolotl, Friend, FoodItem, PendingPoop, PoopItem } from '../types/game';
-import { 
-  feedAxolotl, 
-  playWithAxolotl,
+import {
+  feedAxolotl,
   checkEvolution,
 } from '../utils/gameLogic';
 import { createRebirthEgg, createBreedingEgg, hatchEgg, isEggReady } from '../utils/eggs';
@@ -15,6 +14,7 @@ import { getDecorationById, BACKGROUND_COLORS } from '../data/decorations';
 import { GAME_CONFIG } from '../config/game';
 import { GameNotification } from '../data/notifications';
 import { GameResult } from '../minigames/types';
+import { checkAchievements, ALL_ACHIEVEMENTS } from '../data/achievements';
 
 interface UseGameActionsProps {
   gameState: GameState | null;
@@ -33,6 +33,35 @@ export function useGameActions({
   setActiveGame,
   setCurrentScreen,
 }: UseGameActionsProps) {
+
+  /**
+   * Runs achievement checks against the new state, fires notifications for
+   * any newly unlocked achievements, and returns the state with the updated
+   * achievements array.  Call this at the end of every setGameState callback.
+   */
+  function withAchievements(newState: GameState): GameState {
+    const newIds = checkAchievements(newState);
+    if (newIds.length === 0) return newState;
+
+    newIds.forEach(id => {
+      const achievement = ALL_ACHIEVEMENTS.find(a => a.id === id);
+      if (!achievement) return;
+      setNotifications(prev => [...prev, {
+        id: `achievement-${id}-${Date.now()}`,
+        type: 'achievement' as const,
+        emoji: achievement.emoji,
+        message: `Achievement Unlocked: ${achievement.name}`,
+        time: 'now',
+        read: false,
+      }]);
+    });
+
+    return {
+      ...newState,
+      achievements: [...(newState.achievements ?? []), ...newIds],
+    };
+  }
+
   const handleFeed = useCallback(() => {
     setGameState(prev => {
       if (!prev?.axolotl) return prev;
@@ -74,7 +103,16 @@ export function useGameActions({
         pendingPoops = [...pendingPoops, newPending];
       }
 
-      return { ...prev, foodItems, feedCount: newFeedCount, pendingPoops };
+      const next: GameState = {
+        ...prev,
+        foodItems,
+        feedCount: newFeedCount,
+        pendingPoops,
+        totalFeedsEver: (prev.totalFeedsEver ?? 0) + 1,
+        // Advance tutorial: 'feed' → 'eat' on first feed
+        tutorialStep: prev.tutorialStep === 'feed' ? 'eat' : prev.tutorialStep,
+      };
+      return withAchievements(next);
     });
   }, []);
 
@@ -89,34 +127,43 @@ export function useGameActions({
         ...prev,
         axolotl: updated,
         foodItems,
+        // Advance tutorial: 'eat' → 'done' when first food is eaten
+        tutorialStep: prev.tutorialStep === 'eat' ? 'done' : prev.tutorialStep,
       };
     });
   }, []);
 
-  const handlePlay = useCallback(() => {
+  // Called on each aquarium tap during play mode — +10 happiness, no XP, no energy cost
+  const handlePlayTap = useCallback(() => {
     setGameState(prev => {
       if (!prev?.axolotl) return prev;
-      const updated = playWithAxolotl(prev.axolotl, 20);
-      return { ...prev, axolotl: updated };
+      const newHappiness = Math.min(100, prev.axolotl.stats.happiness + 10);
+      return {
+        ...prev,
+        axolotl: {
+          ...prev.axolotl,
+          stats: { ...prev.axolotl.stats, happiness: newHappiness },
+        },
+      };
     });
   }, []);
 
-  const handleClean = useCallback(() => {
+  const handleCleanPoop = useCallback((poopId: string) => {
     setGameState(prev => {
       if (!prev?.axolotl) return prev;
 
       const poops = prev.poopItems || [];
       const poopCount = poops.length;
 
-      if (poopCount === 0) return prev; // Nothing to clean
+      if (poopCount === 0) return prev;
 
-      // Remove the first poop; restore cleanliness by (100 - current) / poopCount
+      // Restore cleanliness by the same fraction as before (one-poop's share)
       const currentCleanliness = prev.axolotl.stats.cleanliness;
       const gain = (100 - currentCleanliness) / poopCount;
       const newCleanliness = Math.min(100, currentCleanliness + gain);
-      const remainingPoops = poops.slice(1);
+      const remainingPoops = poops.filter(p => p.id !== poopId);
 
-      return {
+      const next: GameState = {
         ...prev,
         axolotl: {
           ...prev.axolotl,
@@ -125,14 +172,18 @@ export function useGameActions({
         poopItems: remainingPoops,
         cleanlinessLowSince: newCleanliness >= 50 ? undefined : prev.cleanlinessLowSince,
         cleanlinessVeryLowSince: newCleanliness >= 10 ? undefined : prev.cleanlinessVeryLowSince,
+        totalCleansEver: (prev.totalCleansEver ?? 0) + 1,
+        // Mark cleaning tutorial as seen on first ever poop cleaned
+        cleanTutorialSeen: prev.cleanTutorialSeen === false ? true : prev.cleanTutorialSeen,
       };
+      return withAchievements(next);
     });
   }, []);
 
   const handleWaterChange = useCallback(() => {
     setGameState(prev => {
       if (!prev?.axolotl) return prev;
-      
+
       const updated = {
         ...prev.axolotl,
         stats: {
@@ -140,10 +191,27 @@ export function useGameActions({
           waterQuality: Math.min(100, prev.axolotl.stats.waterQuality + 30),
         },
       };
-      
-      return {
+
+      const next: GameState = {
         ...prev,
         axolotl: updated,
+        miniGamesLockedUntil: Date.now() + 2 * 60 * 60 * 1000, // lock for 2 hours
+        totalWaterChanges: (prev.totalWaterChanges ?? 0) + 1,
+      };
+      return withAchievements(next);
+    });
+  }, []);
+
+  const UNLOCK_GAMES_COST = 5; // opals
+
+  const handleUnlockGames = useCallback(() => {
+    setGameState(prev => {
+      if (!prev) return prev;
+      if ((prev.opals || 0) < UNLOCK_GAMES_COST) return prev;
+      return {
+        ...prev,
+        opals: (prev.opals || 0) - UNLOCK_GAMES_COST,
+        miniGamesLockedUntil: undefined,
       };
     });
   }, []);
@@ -244,10 +312,10 @@ export function useGameActions({
         read: false,
       }]);
       
-      return {
+      return withAchievements({
         ...prev,
         friends: [...prev.friends, mockFriend],
-      };
+      });
     });
   }, []);
 
@@ -312,11 +380,11 @@ export function useGameActions({
           read: false,
         }]);
         
-        return {
+        return withAchievements({
           ...prev,
           incubatorEgg: egg,
           coins: prev.coins + 50,
-        };
+        });
       } else {
         if (prev.nurseryEggs.length < GAME_CONFIG.nurserySlotsOpen) {
           setNotifications(prev => [...prev, {
@@ -327,12 +395,12 @@ export function useGameActions({
             time: 'now',
             read: false,
           }]);
-          
-          return {
+
+          return withAchievements({
             ...prev,
             nurseryEggs: [...prev.nurseryEggs, egg],
             coins: prev.coins + 50,
-          };
+          });
         } else {
           setNotifications(prev => [...prev, {
             id: `notif-${Date.now()}`,
@@ -348,23 +416,23 @@ export function useGameActions({
     });
   }, []);
 
-  const handleRebirth = useCallback((newName: string) => {
+  const handleRebirth = useCallback(() => {
     setGameState(prev => {
       if (!prev?.axolotl) return prev;
 
       const oldAxolotl = prev.axolotl;
       const bonusCoins = oldAxolotl.generation * 10;
 
-      // Store the name in the egg metadata for use at hatch
-      const egg = createRebirthEgg(oldAxolotl, newName);
+      // No name at rebirth — naming happens after the egg hatches
+      const egg = createRebirthEgg(oldAxolotl);
 
-      return {
+      return withAchievements({
         ...prev,
         axolotl: null,
         incubatorEgg: egg,
         coins: prev.coins + bonusCoins,
         lineage: [...prev.lineage, oldAxolotl],
-      };
+      });
     });
 
     setActiveModal(null);
@@ -400,13 +468,15 @@ export function useGameActions({
           createdAt: Date.now(),
         };
 
-        return {
+        const next: GameState = {
           ...prev,
           axolotl: newAxolotl,
           incubatorEgg: null,
           poopItems: [welcomePoop],
           lastPoopTime: Date.now(),
+          totalEggsHatched: (prev.totalEggsHatched ?? 0) + 1,
         };
+        return withAchievements(next);
       }
       
       // Nursery eggs cannot hatch directly - they must be moved to incubator first
@@ -604,13 +674,19 @@ export function useGameActions({
       
       // Clean up the temporary flag
       const { _lastGameHadEnergy: _flag, ...restState } = prev;
-      
-      return {
+
+      const next: GameState = {
         ...restState,
         axolotl: evolvedAxolotl,
         coins: newCoins,
         opals: newOpals,
+        totalMinigamesPlayed: (prev.totalMinigamesPlayed ?? 0) + 1,
+        totalExceptionalScores:
+          result.tier === 'exceptional'
+            ? (prev.totalExceptionalScores ?? 0) + 1
+            : (prev.totalExceptionalScores ?? 0),
       };
+      return withAchievements(next);
     });
   }, []);
 
@@ -644,18 +720,18 @@ export function useGameActions({
       
       if (filter.opals > 0) {
         if ((prev.opals || 0) < filter.opals) return prev;
-        return {
+        return withAchievements({
           ...prev,
           opals: (prev.opals || 0) - filter.opals,
           filterTier: filter.id,
-        };
+        });
       } else {
         if (prev.coins < filter.coins) return prev;
-        return {
+        return withAchievements({
           ...prev,
           coins: prev.coins - filter.coins,
           filterTier: filter.id,
-        };
+        });
       }
     });
   }, []);
@@ -709,8 +785,8 @@ export function useGameActions({
   return {
     handleFeed,
     handleEatFood,
-    handlePlay,
-    handleClean,
+    handlePlayTap,
+    handleCleanPoop,
     handleWaterChange,
     handlePurchase,
     handleEquipDecoration,
@@ -730,5 +806,6 @@ export function useGameActions({
     handleBuyFilter,
     handleBuyShrimp,
     handleBuyTreatment,
+    handleUnlockGames,
   };
 }
