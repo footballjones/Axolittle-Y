@@ -299,14 +299,7 @@ export function MiniGameMenu({ onClose: _onClose, onSelectGame, energy = 10, max
       description: 'Stack them high!',
       coins: '15-30',
     },
-    {
-      id: 'treasure-hunt',
-      name: 'Treasure Hunt',
-      emoji: '💎',
-      color: 'from-teal-400 to-emerald-500',
-      description: 'Find hidden treasures',
-      coins: '25-50',
-    },
+    // { id: 'treasure-hunt' } — hidden for now, code lives in TreasureHuntCave.tsx
     {
       id: 'coral-code',
       name: 'Coral Code',
