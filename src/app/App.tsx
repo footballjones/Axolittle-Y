@@ -44,7 +44,7 @@ import { useMenuState } from './hooks/useMenuState';
 import { useWellbeingEngine } from './hooks/useWellbeingEngine';
 import { useEconomyActions } from './hooks/useEconomyActions';
 import { useSocialState } from './hooks/useSocialState';
-import { useAquariumMusic } from './hooks/useAquariumMusic';
+import { useAquariumMusic, useContextMusic } from './hooks/useAquariumMusic';
 import { getTodayDateString, canSpinToday, canClaimDailyLogin } from './utils/dailySystem';
 import { useAuth } from './context/AuthContext';
 import { useCloudSync, SyncStatus } from './hooks/useCloudSync';
@@ -145,10 +145,19 @@ export default function App() {
   // Aquarium music — play everywhere except minigame page and Jimmy's aquarium
   // Music continues even when modals (shop, social, stats, settings) are open
   // Respects global musicEnabled setting from GameState
-  const shouldPlayMusic = gameState && !showJimmyAquarium && currentScreen === 'home';
+  const shouldPlayAquariumMusic = gameState && !showJimmyAquarium && currentScreen === 'home';
   useAquariumMusic({
-    enabled: !!shouldPlayMusic,
+    enabled: !!shouldPlayAquariumMusic,
     musicEnabled: gameState?.musicEnabled !== false, // Default to true
+    volume: 0.25,
+  });
+
+  // Minigame menu music — play on games screen when not actively playing a game
+  const shouldPlayMiniGameMenuMusic = gameState && !activeGame && currentScreen === 'games';
+  useContextMusic({
+    context: 'miniGames',
+    enabled: !!shouldPlayMiniGameMenuMusic,
+    musicEnabled: gameState?.musicEnabled !== false,
     volume: 0.25,
   });
   

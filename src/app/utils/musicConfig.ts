@@ -11,8 +11,7 @@ export const MUSIC_CONFIG = {
     '/music/aquarium/Axolotl Moonlight.mp3',
   ] as const,
   miniGames: [
-    // '/music/mini-games/track-1.mp3',
-    // '/music/mini-games/track-2.mp3',
+    '/music/mini-games/Axolittle mini game screen.mp3',
   ] as const,
   social: [
     // '/music/social/track-1.mp3',

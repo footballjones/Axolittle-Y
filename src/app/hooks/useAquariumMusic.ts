@@ -1,24 +1,26 @@
 /**
- * useAquariumMusic — manages background music playback in the aquarium.
- * Automatically rotates through tracks from the aquarium folder.
+ * useContextMusic — manages background music playback.
+ * Automatically rotates through tracks from a specified context (aquarium, miniGames, etc).
  */
 
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { getRandomTrack } from '../utils/musicConfig';
+import { getRandomTrack, MUSIC_CONFIG } from '../utils/musicConfig';
 
-interface UseAquariumMusicOptions {
-  enabled?: boolean; // Play on current page/context (e.g., not in minigame)
+interface UseContextMusicOptions {
+  context?: keyof typeof MUSIC_CONFIG; // Which music folder to play from ('aquarium' or 'miniGames')
+  enabled?: boolean; // Play on current page/context
   musicEnabled?: boolean; // Global master toggle from settings
   volume?: number;
   fadeDuration?: number;
 }
 
-export function useAquariumMusic({
+export function useContextMusic({
+  context = 'aquarium',
   enabled = true,
   musicEnabled = true, // Default to true if not provided (backwards compatibility)
   volume = 0.3,
   fadeDuration = 1000, // ms
-}: UseAquariumMusicOptions = {}) {
+}: UseContextMusicOptions = {}) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const fadeIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const currentVolumeRef = useRef(0);
@@ -87,13 +89,13 @@ export function useAquariumMusic({
     setIsPlaying(true);
   }, [setVolumeSmooth, volume]);
 
-  // Play next random track
+  // Play next random track from the specified context
   const playNextTrack = useCallback(() => {
-    const nextTrack = getRandomTrack('aquarium');
+    const nextTrack = getRandomTrack(context);
     if (nextTrack) {
       playTrack(nextTrack);
     }
-  }, [playTrack]);
+  }, [playTrack, context]);
 
   // Start playing (fade in and auto-rotate)
   const start = useCallback(() => {
@@ -158,4 +160,12 @@ export function useAquariumMusic({
       }
     },
   };
+}
+
+/**
+ * Backwards-compatible alias for useContextMusic with aquarium context.
+ * @deprecated Use useContextMusic instead
+ */
+export function useAquariumMusic(options?: Omit<UseContextMusicOptions, 'context'>) {
+  return useContextMusic({ ...options, context: 'aquarium' });
 }
