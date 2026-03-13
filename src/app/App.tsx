@@ -1677,6 +1677,17 @@ export default function App() {
           onClearPoops={() => {
             setGameState(prev => prev ? { ...prev, poopItems: [] } : null);
           }}
+          onRepositionPoops={() => {
+            setGameState(prev => {
+              if (!prev?.poopItems) return prev;
+              // Reposition all poops to the center visible area (30-70% of aquarium width)
+              const repositionedPoops = prev.poopItems.map(poop => ({
+                ...poop,
+                x: 30 + Math.random() * 40, // Random position between 30-70%
+              }));
+              return { ...prev, poopItems: repositionedPoops };
+            });
+          }}
         />
       )}
 
