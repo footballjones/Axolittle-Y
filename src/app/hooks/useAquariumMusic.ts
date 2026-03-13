@@ -24,23 +24,21 @@ export function useContextMusic({
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const fadeIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const currentVolumeRef = useRef(0);
+  const onEndedRef = useRef<() => void>(() => {});
   const [isPlaying, setIsPlaying] = useState(false);
 
-  // Create or get audio element
+  // Create audio element (once)
   useEffect(() => {
     if (!audioRef.current) {
       const audio = new Audio();
       audio.preload = 'auto';
       audio.loop = false;
       audioRef.current = audio;
-
-      // When track ends, play next one
-      audio.addEventListener('ended', playNextTrack);
     }
 
     return () => {
-      if (audioRef.current) {
-        audioRef.current.removeEventListener('ended', playNextTrack);
+      if (audioRef.current && onEndedRef.current) {
+        audioRef.current.removeEventListener('ended', onEndedRef.current);
       }
     };
   }, []);
@@ -96,6 +94,26 @@ export function useContextMusic({
       playTrack(nextTrack);
     }
   }, [playTrack, context]);
+
+  // Update event listener whenever playNextTrack changes (e.g., when context changes)
+  useEffect(() => {
+    if (!audioRef.current) return;
+
+    // Remove old handler
+    if (onEndedRef.current) {
+      audioRef.current.removeEventListener('ended', onEndedRef.current);
+    }
+
+    // Attach new handler
+    onEndedRef.current = playNextTrack;
+    audioRef.current.addEventListener('ended', onEndedRef.current);
+
+    return () => {
+      if (audioRef.current && onEndedRef.current) {
+        audioRef.current.removeEventListener('ended', onEndedRef.current);
+      }
+    };
+  }, [playNextTrack]);
 
   // Start playing (fade in and auto-rotate)
   const start = useCallback(() => {
@@ -154,9 +172,10 @@ export function useContextMusic({
     pause,
     resume,
     setVolume: (newVolume: number) => {
-      volume = Math.max(0, Math.min(1, newVolume));
+      const clampedVolume = Math.max(0, Math.min(1, newVolume));
       if (audioRef.current && currentVolumeRef.current > 0) {
-        audioRef.current.volume = volume;
+        audioRef.current.volume = clampedVolume;
+        currentVolumeRef.current = clampedVolume;
       }
     },
   };
