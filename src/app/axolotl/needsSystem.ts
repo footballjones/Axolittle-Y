@@ -54,10 +54,9 @@ export function updateWellbeingStats(axolotl: Axolotl, gameState?: GameState): {
   const poopCount = (gameState?.poopItems || []).length;
   const poopDecay = poopCount * (10 / 480) * minutesPassed;
 
-  // Cleanliness decays at a flat rate — water quality has no influence on it.
-  // Only the base rate, shrimp bonus, and visible poops affect cleanliness.
-  const baseCleanDecay = STAT_DECAY_RATE.cleanliness * minutesPassed * (1 - shrimpCleanlinessBonus);
-  const newCleanliness = Math.max(0, axolotl.stats.cleanliness - baseCleanDecay - poopDecay);
+  // Cleanliness only decays when poops are present — a clean tank stays clean.
+  // Shrimp reduce the poop-driven decay rate.
+  const newCleanliness = Math.max(0, axolotl.stats.cleanliness - poopDecay * (1 - shrimpCleanlinessBonus));
 
   // Poops sitting in the tank also directly degrade water quality:
   // each poop adds 5 points of water quality decay per 8 hours (480 min)
