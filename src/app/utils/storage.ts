@@ -1,5 +1,17 @@
-import { GameState, Axolotl } from '../types/game';
+import { GameState, Axolotl, Friend } from '../types/game';
 import { GAME_CONFIG } from '../config/game';
+
+export const JIMMY_CHUBS_ID = 'jimmy-chubs';
+
+export const JIMMY_CHUBS_FRIEND: Friend = {
+  id: JIMMY_CHUBS_ID,
+  friendCode: 'JIM-0CHBS',
+  name: 'Jimmy & Chubs',
+  axolotlName: 'Chubs',
+  stage: 'adult',
+  generation: 7,
+  lastSync: 0,
+};
 
 const STORAGE_KEY = 'axolotl-game-state';
 const STORAGE_VERSION_KEY = 'axolotl-storage-version';
@@ -152,10 +164,18 @@ export function loadGameState(): GameState | null {
     if (stored) {
       const state: StoredState = JSON.parse(stored);
       const migratedState = runMigrations(state);
-      
+
       // Remove version from state before returning (it's not part of GameState type)
       const { version: _version, ...gameState } = migratedState;
-      return gameState as GameState;
+
+      // Always ensure Jimmy & Chubs is present (non-deletable preset friend)
+      const gs = gameState as GameState;
+      if (!gs.friends) gs.friends = [];
+      if (!gs.friends.some(f => f.id === JIMMY_CHUBS_ID)) {
+        gs.friends = [JIMMY_CHUBS_FRIEND, ...gs.friends];
+      }
+
+      return gs;
     }
   } catch (error) {
     console.error('Failed to load game state:', error);
@@ -182,7 +202,7 @@ export function getInitialGameState(): GameState {
       decorations: [],
     },
     lineage: [],
-    friends: [],
+    friends: [JIMMY_CHUBS_FRIEND],
     foodItems: [],
     incubatorEgg: null,
     nurseryEggs: [],

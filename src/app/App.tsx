@@ -49,6 +49,18 @@ import { useAuth } from './context/AuthContext';
 import { useCloudSync, SyncStatus } from './hooks/useCloudSync';
 import { LoginScreen } from './components/LoginScreen';
 import { SyncIndicator } from './components/SyncIndicator';
+import { JimmyChubsAquarium } from './components/JimmyChubsAquarium';
+import { JIMMY_CHUBS_FRIEND } from './utils/storage';
+
+// Jimmy & Chubs sends a gift every 3.5 days (twice a week)
+const JIMMY_GIFT_INTERVAL_MS = 3.5 * 24 * 60 * 60 * 1000;
+
+function rollJimmyGift(): { coins: number; opals: number } {
+  const r = Math.random();
+  if (r < 0.75) return { coins: 20, opals: 0 };
+  if (r < 0.95) return { coins: 50, opals: 0 };
+  return { coins: 0, opals: 3 };
+}
 
 export default function App() {
   const [gameState, setGameState] = useState<GameState | null>(null);
@@ -61,6 +73,9 @@ export default function App() {
 
   /** Set when the axolotl levels up mid-game; drives the level-up StatsModal */
   const [levelUpData, setLevelUpData] = useState<{ level: number; prevStats: SecondaryStats } | null>(null);
+
+  /** Show Jimmy & Chubs's aquarium */
+  const [showJimmyAquarium, setShowJimmyAquarium] = useState(false);
 
   // Domain hooks
   const {
@@ -255,8 +270,36 @@ export default function App() {
       loaded.energy = newEnergy;
       loaded.lastEnergyUpdate = now;
       
+      // ── Jimmy & Chubs gift check (twice a week = every 3.5 days) ──────────
+      const jimmyLast = loaded.lastJimmyGift;
+      if (jimmyLast === undefined || (now - jimmyLast) >= JIMMY_GIFT_INTERVAL_MS) {
+        const gift = rollJimmyGift();
+        loaded.coins = (loaded.coins || 0) + gift.coins;
+        loaded.opals = (loaded.opals || 0) + gift.opals;
+        loaded.lastJimmyGift = now;
+        // Ensure Jimmy & Chubs is in friends
+        if (!loaded.friends) loaded.friends = [];
+        if (!loaded.friends.some(f => f.id === JIMMY_CHUBS_FRIEND.id)) {
+          loaded.friends = [JIMMY_CHUBS_FRIEND, ...loaded.friends];
+        }
+        const giftMsg = gift.opals > 0
+          ? `Jimmy & Chubs sent you ${gift.opals} opals! 💜`
+          : `Jimmy & Chubs sent you ${gift.coins} coins! 🪙`;
+        // Queue notification after state is set
+        setTimeout(() => {
+          setNotifications(prev => [{
+            id: `jimmy-gift-${now}`,
+            type: 'gift',
+            emoji: '🎁',
+            message: giftMsg,
+            time: 'Just now',
+            read: false,
+          }, ...prev]);
+        }, 800);
+      }
+
       setGameState(loaded);
-      
+
       // Check for daily login bonus on app open
       const today = getTodayDateString();
       if (loaded.lastLoginDate !== today) {
@@ -1555,9 +1598,28 @@ export default function App() {
               };
             });
           }}
+          onVisitJimmy={() => {
+            setActiveModal(null);
+            setShowJimmyAquarium(true);
+          }}
           lineage={lineage}
         />
       )}
+
+      {/* Jimmy & Chubs aquarium */}
+      <AnimatePresence>
+        {showJimmyAquarium && (
+          <motion.div
+            key="jimmy-aquarium"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 30 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 28 }}
+          >
+            <JimmyChubsAquarium onBack={() => setShowJimmyAquarium(false)} />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {activeModal === 'rebirth' && showRebirthButton && (
         <RebirthModal

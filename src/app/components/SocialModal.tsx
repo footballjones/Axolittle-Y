@@ -36,6 +36,8 @@ function formatCooldown(ms: number): string {
   return `${m}m`;
 }
 
+const JIMMY_CHUBS_ID = 'jimmy-chubs';
+
 interface SocialModalProps {
   onClose: () => void;
   axolotl: Axolotl;
@@ -44,10 +46,11 @@ interface SocialModalProps {
   onRemoveFriend: (friendId: string) => void;
   onBreed: (friendId: string) => void;
   onGiftFriend: (friendId: string, coins: number, opals: number) => void;
+  onVisitJimmy: () => void;
   lineage: Axolotl[];
 }
 
-export function SocialModal({ onClose, axolotl, friends, onAddFriend, onRemoveFriend, onBreed, onGiftFriend, lineage }: SocialModalProps) {
+export function SocialModal({ onClose, axolotl, friends, onAddFriend, onRemoveFriend, onBreed, onGiftFriend, onVisitJimmy, lineage }: SocialModalProps) {
   const [friendCode, setFriendCode] = useState('');
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<'friends' | 'lineage'>('friends');
@@ -222,6 +225,79 @@ export function SocialModal({ onClose, axolotl, friends, onAddFriend, onRemoveFr
                     ) : (
                       <div className="space-y-2">
                         {friends.map((friend, index) => {
+                          // ── Special card for Jimmy & Chubs ──────────────────
+                          if (friend.id === JIMMY_CHUBS_ID) {
+                            return (
+                              <motion.div
+                                key={friend.id}
+                                className="overflow-hidden rounded-2xl"
+                                initial={{ opacity: 0, y: 12 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: index * 0.06, type: 'spring', stiffness: 320, damping: 26 }}
+                                style={{
+                                  background: 'linear-gradient(135deg, rgba(14,165,233,0.12) 0%, rgba(139,92,246,0.10) 100%)',
+                                  border: '1.5px solid rgba(56,189,248,0.35)',
+                                  boxShadow: '0 2px 12px -3px rgba(56,189,248,0.15)',
+                                }}
+                              >
+                                {/* Shimmer top line */}
+                                <motion.div
+                                  className="h-[1.5px] w-full"
+                                  style={{ background: 'linear-gradient(90deg, transparent, rgba(56,189,248,0.6), rgba(139,92,246,0.4), transparent)' }}
+                                  animate={{ opacity: [0.4, 0.9, 0.4] }}
+                                  transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+                                />
+                                <div className="px-3.5 py-3 flex items-center gap-3">
+                                  {/* Avatar */}
+                                  <div className="relative shrink-0">
+                                    <div
+                                      className="w-9 h-9 rounded-full flex items-center justify-center"
+                                      style={{
+                                        background: 'linear-gradient(135deg, rgba(56,189,248,0.3) 0%, rgba(139,92,246,0.25) 100%)',
+                                        border: '1.5px solid rgba(56,189,248,0.4)',
+                                        boxShadow: '0 2px 10px rgba(56,189,248,0.2)',
+                                      }}
+                                    >
+                                      <span className="text-base">🦎</span>
+                                    </div>
+                                    {/* Star badge */}
+                                    <div
+                                      className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full flex items-center justify-center"
+                                      style={{ background: 'linear-gradient(135deg, #f59e0b, #fbbf24)', border: '1.5px solid white', fontSize: 7 }}
+                                    >
+                                      ⭐
+                                    </div>
+                                  </div>
+
+                                  {/* Name */}
+                                  <div className="flex-1 min-w-0">
+                                    <div className="text-[13px] font-black" style={{ color: '#38bdf8' }}>
+                                      Jimmy &amp; Chubs
+                                    </div>
+                                    <div className="text-[10px] font-semibold" style={{ color: 'rgba(139,92,246,0.8)' }}>
+                                      Preset Friend · Always here for you 💙
+                                    </div>
+                                  </div>
+
+                                  {/* Visit button */}
+                                  <motion.button
+                                    onClick={(e) => { e.stopPropagation(); onVisitJimmy(); }}
+                                    whileTap={{ scale: 0.9 }}
+                                    className="flex flex-col items-center justify-center gap-0.5 px-3 py-2 rounded-xl shrink-0"
+                                    style={{
+                                      background: 'linear-gradient(135deg, rgba(14,165,233,0.22), rgba(56,189,248,0.16))',
+                                      border: '1px solid rgba(56,189,248,0.4)',
+                                    }}
+                                  >
+                                    <span className="text-base">🏊</span>
+                                    <span className="text-[8px] font-black tracking-wide uppercase text-sky-500">Visit</span>
+                                  </motion.button>
+                                </div>
+                              </motion.div>
+                            );
+                          }
+
+                          // ── Regular friend card ──────────────────────────────
                           const isExpanded = expandedFriend === friend.id;
                           return (
                             <motion.div

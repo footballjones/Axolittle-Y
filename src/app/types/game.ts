@@ -110,6 +110,8 @@ export interface GameState {
   tutorialStep?: 'feed' | 'eat' | 'done';
   // undefined = existing save (skip). false = new game, not yet seen. true = completed.
   cleanTutorialSeen?: boolean;
+  // ── Jimmy & Chubs ────────────────────────────────────────────────────────────
+  lastJimmyGift?: number; // Unix-ms timestamp of last gift received from Jimmy & Chubs
 }
 
 export interface Friend {

@@ -13,7 +13,7 @@ import { calculateRewards } from './config';
 const CANVAS_W = 360;
 const CANVAS_H = 640;
 const PLAYER_SPEED = 1.2; // Slower speed
-const OBSTACLE_SPAWN_RATE = 0.012; // Slower spawn rate
+const OBSTACLE_SPAWN_RATE = 0.006; // Spawn half as often
 const GEM_SPAWN_RATE = 0.01; // Slower spawn rate
 const STAMINA_MAX = 100;
 const STAMINA_DECAY = 0.06; // Slower decay
@@ -93,7 +93,7 @@ export function TreasureHuntCave({ onEnd, onDeductEnergy, energy }: MiniGameProp
     const game = gameRef.current;
     if (!game.isPlaying || game.isPaused) return;
     
-    const moveAmount = direction === 'up' ? -2.5 : 2.5; // Slower movement
+    const moveAmount = direction === 'up' ? -6 : 6; // More responsive movement
     game.playerY = Math.max(10, Math.min(85, game.playerY + moveAmount));
   }, []);
 
@@ -233,7 +233,7 @@ export function TreasureHuntCave({ onEnd, onDeductEnergy, energy }: MiniGameProp
     // Spawn obstacles
     if (game.rng.next() < OBSTACLE_SPAWN_RATE) {
       const obstacleY = 20 + game.rng.next() * 60;
-      const obstacleHeight = 10 + game.rng.next() * 20;
+      const obstacleHeight = 8 + game.rng.next() * 12;
       const obstacleType = game.rng.next() < 0.5 ? 'rock' : 'creature';
       
       game.obstacles.push({
