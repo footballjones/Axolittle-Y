@@ -54,9 +54,14 @@ export function updateWellbeingStats(axolotl: Axolotl, gameState?: GameState): {
   const poopCount = (gameState?.poopItems || []).length;
   const poopDecay = poopCount * (10 / 480) * minutesPassed;
 
-  // Calculate cleanliness first to check if it's below 50%
-  const baseCleanDecay = STAT_DECAY_RATE.cleanliness * minutesPassed * (1 - shrimpCleanlinessBonus) * (waterQualityMultiplier < 0.5 ? 1.5 : waterQualityMultiplier > 0.7 ? 0.8 : 1);
+  // Cleanliness decays at a flat rate — water quality has no influence on it.
+  // Only the base rate, shrimp bonus, and visible poops affect cleanliness.
+  const baseCleanDecay = STAT_DECAY_RATE.cleanliness * minutesPassed * (1 - shrimpCleanlinessBonus);
   const newCleanliness = Math.max(0, axolotl.stats.cleanliness - baseCleanDecay - poopDecay);
+
+  // Poops sitting in the tank also directly degrade water quality:
+  // each poop adds 5 points of water quality decay per 8 hours (480 min)
+  const poopWaterDecay = poopCount * (5 / 480) * minutesPassed;
 
   // ── Poop generation & promotion ───────────────────────────────────────────
   const MAX_POOPS = 7;
@@ -130,8 +135,9 @@ export function updateWellbeingStats(axolotl: Axolotl, gameState?: GameState): {
     happiness: Math.max(0, axolotl.stats.happiness - STAT_DECAY_RATE.happiness * minutesPassed * (waterQualityMultiplier < 0.5 ? 1.5 : waterQualityMultiplier > 0.7 ? 0.8 : 1)),
     // Cleanliness: shrimp reduce decay
     cleanliness: newCleanliness,
-    // Water Quality: filter affects decay rate, and low cleanliness for >1 day increases decay
-    waterQuality: Math.max(5, axolotl.stats.waterQuality - STAT_DECAY_RATE.waterQuality * minutesPassed * waterQualityDecayMultiplier),
+    // Water Quality: filter affects base decay, low cleanliness for >1 day multiplies it,
+    // and any poops in the tank add direct additional decay
+    waterQuality: Math.max(5, axolotl.stats.waterQuality - STAT_DECAY_RATE.waterQuality * minutesPassed * waterQualityDecayMultiplier - poopWaterDecay),
   };
 
   // ── Trait decay ───────────────────────────────────────────────────────────
