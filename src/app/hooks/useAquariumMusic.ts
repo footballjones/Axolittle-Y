@@ -7,13 +7,15 @@ import { useEffect, useRef, useState } from 'react';
 import { getRandomTrack } from '../utils/musicConfig';
 
 interface UseAquariumMusicOptions {
-  enabled?: boolean;
+  enabled?: boolean; // Play on current page/context (e.g., not in minigame)
+  musicEnabled?: boolean; // Global master toggle from settings
   volume?: number;
   fadeDuration?: number;
 }
 
 export function useAquariumMusic({
   enabled = true,
+  musicEnabled = true, // Default to true if not provided (backwards compatibility)
   volume = 0.3,
   fadeDuration = 1000, // ms
 }: UseAquariumMusicOptions = {}) {
@@ -128,9 +130,9 @@ export function useAquariumMusic({
     }
   };
 
-  // Start or stop based on enabled state
+  // Start or stop based on both enabled AND musicEnabled (global setting)
   useEffect(() => {
-    if (enabled) {
+    if (enabled && musicEnabled) {
       start();
     } else {
       stop();
@@ -139,7 +141,7 @@ export function useAquariumMusic({
     return () => {
       stop();
     };
-  }, [enabled]);
+  }, [enabled, musicEnabled]);
 
   // Cleanup on unmount
   useEffect(() => {

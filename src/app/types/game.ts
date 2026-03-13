@@ -112,6 +112,8 @@ export interface GameState {
   cleanTutorialSeen?: boolean;
   // ── Jimmy & Chubs ────────────────────────────────────────────────────────────
   lastJimmyGift?: number; // Unix-ms timestamp of last gift received from Jimmy & Chubs
+  // ── Audio Settings ────────────────────────────────────────────────────────────
+  musicEnabled?: boolean; // Master toggle for all background music (default: true)
 }
 
 export interface Friend {

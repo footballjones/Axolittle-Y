@@ -5,6 +5,8 @@ import { motion } from 'motion/react';
 interface SettingsModalProps {
   onClose: () => void;
   onResetGame: () => void;
+  musicEnabled?: boolean;
+  onMusicToggle?: (enabled: boolean) => void;
 }
 
 // Move ToggleSwitch outside component to prevent recreation on every render
@@ -23,11 +25,22 @@ const ToggleSwitch = ({ enabled, onToggle }: { enabled: boolean; onToggle: () =>
   </button>
 );
 
-export function SettingsModal({ onClose, onResetGame }: SettingsModalProps) {
+export function SettingsModal({
+  onClose,
+  onResetGame,
+  musicEnabled: initialMusicEnabled = true,
+  onMusicToggle,
+}: SettingsModalProps) {
   const [soundEnabled, setSoundEnabled] = useState(true);
-  const [musicEnabled, setMusicEnabled] = useState(true);
+  const [musicEnabled, setMusicEnabled] = useState(initialMusicEnabled);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+
+  const handleMusicToggle = () => {
+    const newValue = !musicEnabled;
+    setMusicEnabled(newValue);
+    onMusicToggle?.(newValue);
+  };
 
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-md z-50 flex items-center justify-center p-3 sm:p-4">
@@ -98,9 +111,9 @@ export function SettingsModal({ onClose, onResetGame }: SettingsModalProps) {
                     ) : (
                       <VolumeX className="w-4 h-4 text-slate-500" />
                     )}
-                    <span className="text-white text-sm">Music</span>
+                    <span className="text-white text-sm">Background Music</span>
                   </div>
-                  <ToggleSwitch enabled={musicEnabled} onToggle={() => setMusicEnabled(!musicEnabled)} />
+                  <ToggleSwitch enabled={musicEnabled} onToggle={handleMusicToggle} />
                 </div>
               </div>
             </div>

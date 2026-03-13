@@ -142,9 +142,14 @@ export default function App() {
     setShopSection,
   } = menuState;
 
-  // Aquarium music — play when in main aquarium (not in modal, not in minigame, not visiting Jimmy)
-  const isInOwnAquarium = gameState && !activeModal && !activeGame && !showJimmyAquarium;
-  useAquariumMusic({ enabled: !!isInOwnAquarium, volume: 0.25 });
+  // Aquarium music — play everywhere except minigame page and modals
+  // Respects global musicEnabled setting from GameState
+  const shouldPlayMusic = gameState && !activeModal && !showJimmyAquarium && currentScreen === 'home';
+  useAquariumMusic({
+    enabled: !!shouldPlayMusic,
+    musicEnabled: gameState?.musicEnabled !== false, // Default to true
+    volume: 0.25,
+  });
   
   // Level-up callback — navigates home and opens the stats modal with gain data
   const handleLevelUp = useCallback((newLevel: number, prevStats: SecondaryStats) => {
@@ -1649,6 +1654,10 @@ export default function App() {
           onResetGame={() => {
             localStorage.clear();
             setGameState(null);
+          }}
+          musicEnabled={gameState?.musicEnabled !== false}
+          onMusicToggle={(enabled) => {
+            setGameState(prev => prev ? { ...prev, musicEnabled: enabled } : null);
           }}
         />
       )}
