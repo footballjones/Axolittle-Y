@@ -70,10 +70,10 @@ export function useGameActions({
     setGameState(prev => {
       if (!prev?.axolotl) return prev;
 
-      // Drop food at a random x position at the TOP
+      // Drop food at the center during the tutorial, random otherwise
       const newFood: FoodItem = {
         id: `food-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`, // More unique ID
-        x: Math.random() * 80 + 10, // 10-90% from left
+        x: prev.tutorialStep === 'feed' ? 50 : Math.random() * 80 + 10, // center on first tutorial feed, 10-90% otherwise
         y: 0, // Start at top (will animate down)
         createdAt: Date.now(),
       };
