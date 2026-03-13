@@ -3,7 +3,7 @@
  * Automatically rotates through tracks from the aquarium folder.
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { getRandomTrack } from '../utils/musicConfig';
 
 interface UseAquariumMusicOptions {
@@ -44,7 +44,7 @@ export function useAquariumMusic({
   }, []);
 
   // Fade in/out helper
-  const setVolumeSmooth = (targetVolume: number) => {
+  const setVolumeSmooth = useCallback((targetVolume: number) => {
     if (fadeIntervalRef.current) clearInterval(fadeIntervalRef.current);
 
     const steps = Math.ceil(fadeDuration / 50); // 50ms per step
@@ -66,10 +66,10 @@ export function useAquariumMusic({
         fadeIntervalRef.current = null;
       }
     }, 50);
-  };
+  }, [fadeDuration]);
 
   // Play a specific track
-  const playTrack = (src: string) => {
+  const playTrack = useCallback((src: string) => {
     if (!audioRef.current) return;
 
     audioRef.current.src = src;
@@ -85,34 +85,29 @@ export function useAquariumMusic({
 
     setVolumeSmooth(volume);
     setIsPlaying(true);
-  };
+  }, [setVolumeSmooth, volume]);
 
   // Play next random track
-  const playNextTrack = () => {
+  const playNextTrack = useCallback(() => {
     const nextTrack = getRandomTrack('aquarium');
     if (nextTrack) {
       playTrack(nextTrack);
     }
-  };
+  }, [playTrack]);
 
   // Start playing (fade in and auto-rotate)
-  const start = () => {
-    if (isPlaying) return;
+  const start = useCallback(() => {
+    if (!audioRef.current) return;
     playNextTrack();
-  };
+  }, [playNextTrack]);
 
-  // Stop playing (fade out and pause)
-  const stop = () => {
-    if (!isPlaying || !audioRef.current) return;
-
+  // Stop playing (immediately pause and fade out)
+  const stop = useCallback(() => {
+    if (!audioRef.current) return;
+    audioRef.current.pause();
     setVolumeSmooth(0);
-    setTimeout(() => {
-      if (audioRef.current) {
-        audioRef.current.pause();
-      }
-      setIsPlaying(false);
-    }, fadeDuration);
-  };
+    setIsPlaying(false);
+  }, []);
 
   // Pause (no fade, just stop)
   const pause = () => {
@@ -137,11 +132,7 @@ export function useAquariumMusic({
     } else {
       stop();
     }
-
-    return () => {
-      stop();
-    };
-  }, [enabled, musicEnabled]);
+  }, [enabled, musicEnabled, start, stop]);
 
   // Cleanup on unmount
   useEffect(() => {
