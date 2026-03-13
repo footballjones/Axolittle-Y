@@ -156,11 +156,13 @@ export default function App() {
   });
 
   // Minigame music — play on entire games screen (menu and during gameplay)
+  // Always starts with the first track, then cycles randomly through all mini-game tracks
   useContextMusic({
     context: 'miniGames',
     enabled: !!shouldPlayMiniGameMusic,
     musicEnabled: gameState?.musicEnabled !== false,
     volume: 0.25,
+    startingTrack: '/music/mini-games/Axolittle mini game screen.mp3',
   });
   
   // Level-up callback — navigates home and opens the stats modal with gain data

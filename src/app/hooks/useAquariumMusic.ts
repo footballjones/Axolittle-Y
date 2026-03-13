@@ -12,6 +12,7 @@ interface UseContextMusicOptions {
   musicEnabled?: boolean; // Global master toggle from settings
   volume?: number;
   fadeDuration?: number;
+  startingTrack?: string; // Specific track to play first (e.g., first track of mini-game context)
 }
 
 export function useContextMusic({
@@ -20,11 +21,13 @@ export function useContextMusic({
   musicEnabled = true, // Default to true if not provided (backwards compatibility)
   volume = 0.3,
   fadeDuration = 1000, // ms
+  startingTrack,
 }: UseContextMusicOptions = {}) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const fadeIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const currentVolumeRef = useRef(0);
   const onEndedRef = useRef<() => void>(() => {});
+  const startingTrackUsedRef = useRef(false); // Track if we've used the starting track
   const [isPlaying, setIsPlaying] = useState(false);
 
   // Create audio element (once)
@@ -88,12 +91,28 @@ export function useContextMusic({
   }, [setVolumeSmooth, volume]);
 
   // Play next random track from the specified context
+  // On first play, uses startingTrack if provided, then falls back to random selection
   const playNextTrack = useCallback(() => {
-    const nextTrack = getRandomTrack(context);
-    if (nextTrack) {
-      playTrack(nextTrack);
+    let trackToPlay: string | undefined;
+
+    // Use starting track on first play if provided
+    if (startingTrack && !startingTrackUsedRef.current) {
+      trackToPlay = startingTrack;
+      startingTrackUsedRef.current = true;
+    } else {
+      // After first play, or if no starting track, use random selection
+      trackToPlay = getRandomTrack(context);
     }
-  }, [playTrack, context]);
+
+    if (trackToPlay) {
+      playTrack(trackToPlay);
+    }
+  }, [playTrack, context, startingTrack]);
+
+  // Reset starting track flag when context or starting track changes
+  useEffect(() => {
+    startingTrackUsedRef.current = false;
+  }, [context, startingTrack]);
 
   // Update event listener whenever playNextTrack changes (e.g., when context changes)
   useEffect(() => {

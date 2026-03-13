@@ -12,6 +12,7 @@ export const MUSIC_CONFIG = {
   ] as const,
   miniGames: [
     '/music/mini-games/Axolittle mini game screen.mp3',
+    '/music/mini-games/Axolittle mini game screen2.mp3',
   ] as const,
   social: [
     // '/music/social/track-1.mp3',
