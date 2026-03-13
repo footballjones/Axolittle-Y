@@ -1,0 +1,29 @@
+/**
+ * Music configuration — maps screens/contexts to their background music tracks.
+ * Add MP3 files to the corresponding public/music/ subfolder, then add the path here.
+ */
+
+export const MUSIC_CONFIG = {
+  aquarium: [
+    // '/music/aquarium/track-1.mp3',
+    // '/music/aquarium/track-2.mp3',
+  ] as const,
+  treasureHunt: [
+    // '/music/treasure-hunt/track-1.mp3',
+    // '/music/treasure-hunt/track-2.mp3',
+  ] as const,
+  social: [
+    // '/music/social/track-1.mp3',
+    // '/music/social/track-2.mp3',
+  ] as const,
+} as const;
+
+/**
+ * Pick a random track from the given context.
+ * Returns undefined if no tracks are configured.
+ */
+export function getRandomTrack(context: keyof typeof MUSIC_CONFIG): string | undefined {
+  const tracks = MUSIC_CONFIG[context];
+  if (!tracks.length) return undefined;
+  return tracks[Math.floor(Math.random() * tracks.length)];
+}
