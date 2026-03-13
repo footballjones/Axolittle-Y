@@ -44,6 +44,7 @@ import { useMenuState } from './hooks/useMenuState';
 import { useWellbeingEngine } from './hooks/useWellbeingEngine';
 import { useEconomyActions } from './hooks/useEconomyActions';
 import { useSocialState } from './hooks/useSocialState';
+import { useAquariumMusic } from './hooks/useAquariumMusic';
 import { getTodayDateString, canSpinToday, canClaimDailyLogin } from './utils/dailySystem';
 import { useAuth } from './context/AuthContext';
 import { useCloudSync, SyncStatus } from './hooks/useCloudSync';
@@ -140,6 +141,10 @@ export default function App() {
     shopSection,
     setShopSection,
   } = menuState;
+
+  // Aquarium music — play when in main aquarium (not in modal, not in minigame, not visiting Jimmy)
+  const isInOwnAquarium = gameState && !activeModal && !activeGame && !showJimmyAquarium;
+  useAquariumMusic({ enabled: !!isInOwnAquarium, volume: 0.25 });
   
   // Level-up callback — navigates home and opens the stats modal with gain data
   const handleLevelUp = useCallback((newLevel: number, prevStats: SecondaryStats) => {
