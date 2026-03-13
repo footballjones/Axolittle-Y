@@ -152,11 +152,11 @@ export default function App() {
     volume: 0.25,
   });
 
-  // Minigame menu music — play on games screen when not actively playing a game
-  const shouldPlayMiniGameMenuMusic = gameState && !activeGame && currentScreen === 'games';
+  // Minigame music — play on entire games screen (menu and during gameplay)
+  const shouldPlayMiniGameMusic = gameState && currentScreen === 'games';
   useContextMusic({
     context: 'miniGames',
-    enabled: !!shouldPlayMiniGameMenuMusic,
+    enabled: !!shouldPlayMiniGameMusic,
     musicEnabled: gameState?.musicEnabled !== false,
     volume: 0.25,
   });
