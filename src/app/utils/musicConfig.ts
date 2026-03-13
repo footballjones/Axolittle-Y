@@ -5,8 +5,9 @@
 
 export const MUSIC_CONFIG = {
   aquarium: [
-    // '/music/aquarium/track-1.mp3',
-    // '/music/aquarium/track-2.mp3',
+    '/music/aquarium/Axolotl Keeper.mp3',
+    '/music/aquarium/Axolotl Dream Tank.mp3',
+    '/music/aquarium/Axolotl Dream Tank (1).mp3',
   ] as const,
   treasureHunt: [
     // '/music/treasure-hunt/track-1.mp3',
