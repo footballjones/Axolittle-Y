@@ -142,9 +142,10 @@ export default function App() {
     setShopSection,
   } = menuState;
 
-  // Aquarium music — play everywhere except minigame page and modals
+  // Aquarium music — play everywhere except minigame page and Jimmy's aquarium
+  // Music continues even when modals (shop, social, stats, settings) are open
   // Respects global musicEnabled setting from GameState
-  const shouldPlayMusic = gameState && !activeModal && !showJimmyAquarium && currentScreen === 'home';
+  const shouldPlayMusic = gameState && !showJimmyAquarium && currentScreen === 'home';
   useAquariumMusic({
     enabled: !!shouldPlayMusic,
     musicEnabled: gameState?.musicEnabled !== false, // Default to true
