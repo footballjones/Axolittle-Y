@@ -267,14 +267,7 @@ export function MiniGameMenu({ onClose: _onClose, onSelectGame, energy = 10, max
   }, [energy, maxEnergy, lastEnergyUpdate]);
 
   const soloGames = [
-    {
-      id: 'fish-hooks',
-      name: 'Fish Hooks',
-      emoji: '🪝',
-      color: 'from-sky-400 to-cyan-500',
-      description: 'Flappy Axolotl',
-      coins: '10-30',
-    },
+    // { id: 'fish-hooks' } — hidden for now, code lives in FlappyFishHooks.tsx
     {
       id: 'keepey-upey',
       name: 'Keepey Upey',
