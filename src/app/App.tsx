@@ -1673,6 +1673,10 @@ export default function App() {
           onMusicToggle={(enabled) => {
             setGameState(prev => prev ? { ...prev, musicEnabled: enabled } : null);
           }}
+          poopCount={gameState?.poopItems?.length ?? 0}
+          onClearPoops={() => {
+            setGameState(prev => prev ? { ...prev, poopItems: [] } : null);
+          }}
         />
       )}
 
