@@ -10,9 +10,9 @@ export const MUSIC_CONFIG = {
     '/music/aquarium/Axolotl Dream Tank (1).mp3',
     '/music/aquarium/Axolotl Moonlight.mp3',
   ] as const,
-  treasureHunt: [
-    // '/music/treasure-hunt/track-1.mp3',
-    // '/music/treasure-hunt/track-2.mp3',
+  miniGames: [
+    // '/music/mini-games/track-1.mp3',
+    // '/music/mini-games/track-2.mp3',
   ] as const,
   social: [
     // '/music/social/track-1.mp3',
