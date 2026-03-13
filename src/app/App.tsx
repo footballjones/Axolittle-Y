@@ -146,14 +146,16 @@ export default function App() {
   // Music continues even when modals (shop, social, stats, settings) are open
   // Respects global musicEnabled setting from GameState
   const shouldPlayAquariumMusic = gameState && !showJimmyAquarium && currentScreen === 'home';
+  const shouldPlayMiniGameMusic = gameState && currentScreen === 'games';
+
+  // Explicitly disable aquarium music when minigame music should play
   useAquariumMusic({
-    enabled: !!shouldPlayAquariumMusic,
+    enabled: !!shouldPlayAquariumMusic && !shouldPlayMiniGameMusic,
     musicEnabled: gameState?.musicEnabled !== false, // Default to true
     volume: 0.25,
   });
 
   // Minigame music — play on entire games screen (menu and during gameplay)
-  const shouldPlayMiniGameMusic = gameState && currentScreen === 'games';
   useContextMusic({
     context: 'miniGames',
     enabled: !!shouldPlayMiniGameMusic,
