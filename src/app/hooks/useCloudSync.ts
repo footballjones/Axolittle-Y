@@ -78,6 +78,22 @@ export function useCloudSync({
         { onConflict: 'player_id' },
       );
 
+      // Publish discoverable profile info so other players can look up this user
+      // by friend code. Only written when the player has an axolotl and friend code.
+      if (!error && state.axolotl && state.friendCode) {
+        await supabase.from('profiles').upsert(
+          {
+            id: userId,
+            username: state.axolotl.name,
+            friend_code: state.friendCode,
+            axolotl_name: state.axolotl.name,
+            generation: state.axolotl.generation,
+            stage: state.axolotl.stage,
+          },
+          { onConflict: 'id' },
+        );
+      }
+
       onStatusChange(error ? 'error' : 'synced');
     },
     [userId, onStatusChange],

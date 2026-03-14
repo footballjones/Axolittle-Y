@@ -180,6 +180,7 @@ export default function App() {
     setActiveGame,
     setCurrentScreen,
     onLevelUp: handleLevelUp,
+    userId: user?.id ?? null,
   });
   
   const {

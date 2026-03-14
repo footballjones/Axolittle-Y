@@ -42,7 +42,7 @@ interface SocialModalProps {
   onClose: () => void;
   axolotl: Axolotl;
   friends: Friend[];
-  onAddFriend: (code: string) => void;
+  onAddFriend: (code: string) => Promise<string | null>;
   onRemoveFriend: (friendId: string) => void;
   onBreed: (friendId: string) => void;
   onGiftFriend: (friendId: string, coins: number, opals: number) => void;
@@ -56,6 +56,8 @@ export function SocialModal({ onClose, axolotl, friends, onAddFriend, onRemoveFr
   const [activeTab, setActiveTab] = useState<'friends' | 'lineage'>('friends');
   const [expandedFriend, setExpandedFriend] = useState<string | null>(null);
   const [showAddFriendModal, setShowAddFriendModal] = useState(false);
+  const [addFriendLoading, setAddFriendLoading] = useState(false);
+  const [addFriendError, setAddFriendError] = useState<string | null>(null);
   const [visitingFriend, setVisitingFriend] = useState<Friend | null>(null);
   const [viewingStatsFriend, setViewingStatsFriend] = useState<Friend | null>(null);
   // Short-lived visual feedback states (2–2.5s after action)
@@ -76,10 +78,17 @@ export function SocialModal({ onClose, axolotl, friends, onAddFriend, onRemoveFr
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleAddFriend = () => {
-    if (friendCode.trim()) {
-      onAddFriend(friendCode.trim());
+  const handleAddFriend = async () => {
+    if (!friendCode.trim() || addFriendLoading) return;
+    setAddFriendLoading(true);
+    setAddFriendError(null);
+    const error = await onAddFriend(friendCode.trim());
+    setAddFriendLoading(false);
+    if (error) {
+      setAddFriendError(error);
+    } else {
       setFriendCode('');
+      setAddFriendError(null);
       setShowAddFriendModal(false);
     }
   };
@@ -1074,7 +1083,7 @@ export function SocialModal({ onClose, axolotl, friends, onAddFriend, onRemoveFr
                   <input
                     type="text"
                     value={friendCode}
-                    onChange={e => setFriendCode(e.target.value.toUpperCase())}
+                    onChange={e => { setFriendCode(e.target.value.toUpperCase()); setAddFriendError(null); }}
                     placeholder="Enter friend code…"
                     className="flex-1 min-w-0 rounded-xl px-3 py-2.5 text-sky-800 text-sm placeholder-sky-300/70 focus:outline-none focus:ring-2 focus:ring-sky-300/50 transition-all"
                     style={{ background: 'rgba(224,242,254,0.8)', border: '1px solid rgba(186,230,253,0.6)' }}
@@ -1087,21 +1096,24 @@ export function SocialModal({ onClose, axolotl, friends, onAddFriend, onRemoveFr
                   />
                   <motion.button
                     onClick={handleAddFriend}
-                    disabled={!friendCode.trim()}
+                    disabled={!friendCode.trim() || addFriendLoading}
                     className="rounded-xl px-4 py-2.5 text-xs font-black tracking-wide shrink-0"
                     style={{
-                      background: friendCode.trim()
+                      background: friendCode.trim() && !addFriendLoading
                         ? 'linear-gradient(135deg, #38bdf8, #0ea5e9)'
                         : 'rgba(186,230,253,0.4)',
-                      color: friendCode.trim() ? '#fff' : 'rgba(14,165,233,0.4)',
+                      color: friendCode.trim() && !addFriendLoading ? '#fff' : 'rgba(14,165,233,0.4)',
                       border: '1px solid rgba(56,189,248,0.35)',
-                      boxShadow: friendCode.trim() ? '0 4px 12px -2px rgba(14,165,233,0.3)' : 'none',
+                      boxShadow: friendCode.trim() && !addFriendLoading ? '0 4px 12px -2px rgba(14,165,233,0.3)' : 'none',
                     }}
-                    whileTap={friendCode.trim() ? { scale: 0.92 } : {}}
+                    whileTap={friendCode.trim() && !addFriendLoading ? { scale: 0.92 } : {}}
                   >
-                    Add
+                    {addFriendLoading ? 'Checking…' : 'Add'}
                   </motion.button>
                 </div>
+                {addFriendError && (
+                  <p className="text-xs text-red-400 font-medium mt-2 px-1">{addFriendError}</p>
+                )}
               </div>
             </motion.div>
           </motion.div>

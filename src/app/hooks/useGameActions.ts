@@ -16,6 +16,7 @@ import { GAME_CONFIG } from '../config/game';
 import { GameNotification } from '../data/notifications';
 import { GameResult } from '../minigames/types';
 import { checkAchievements, ALL_ACHIEVEMENTS } from '../data/achievements';
+import { supabase, isSupabaseConfigured } from '../services/supabase';
 
 interface UseGameActionsProps {
   gameState: GameState | null;
@@ -26,6 +27,8 @@ interface UseGameActionsProps {
   setCurrentScreen: React.Dispatch<React.SetStateAction<'home' | 'games'>>;
   /** Called when the axolotl levels up — receives the new level and the pre-level-up secondary stats */
   onLevelUp?: (newLevel: number, prevStats: SecondaryStats) => void;
+  /** Authenticated user's Supabase ID — used to validate friend codes and prevent self-adds. */
+  userId?: string | null;
 }
 
 export function useGameActions({
@@ -36,6 +39,7 @@ export function useGameActions({
   setActiveGame,
   setCurrentScreen,
   onLevelUp,
+  userId,
 }: UseGameActionsProps) {
 
   /**
@@ -277,51 +281,61 @@ export function useGameActions({
     });
   }, []);
 
-  const handleAddFriend = useCallback((code: string) => {
-    // Normalize friend code for duplicate detection (uppercase, trimmed)
+  const handleAddFriend = useCallback(async (code: string): Promise<string | null> => {
     const normalizedCode = code.trim().toUpperCase();
-    
-    const mockFriend: Friend = {
-      id: `friend-${Date.now()}`,
-      friendCode: normalizedCode, // Store normalized code for duplicate detection
-      name: code.split('-')[0],
-      axolotlName: 'Mystery Axo',
-      stage: 'adult',
-      generation: parseInt(code.split('-')[1]?.[0] || '1'),
+
+    // Fast local duplicate check before any network call
+    if (_gameState?.friends.some(f => f.friendCode === normalizedCode)) {
+      return 'Friend already added!';
+    }
+
+    // Guests can't add real friends — they have no account to look up
+    if (!isSupabaseConfigured || !userId) {
+      return 'Sign in to add real friends.';
+    }
+
+    // Look up the code in the profiles table
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('id, username, axolotl_name, generation, stage')
+      .eq('friend_code', normalizedCode)
+      .maybeSingle();
+
+    if (error || !data) {
+      return "That code doesn't match any player — check it and try again!";
+    }
+
+    if (data.id === userId) {
+      return "That's your own code — share it with a friend instead!";
+    }
+
+    const realFriend: Friend = {
+      id: data.id,
+      friendCode: normalizedCode,
+      name: data.username ?? normalizedCode,
+      axolotlName: data.axolotl_name ?? 'Mystery Axo',
+      stage: (data.stage as Friend['stage']) ?? 'adult',
+      generation: data.generation ?? 1,
       lastSync: Date.now(),
     };
 
     setGameState(prev => {
       if (!prev) return prev;
-      
-      // Check for duplicates by normalized friend code, not by generated ID
-      if (prev.friends.some(f => f.friendCode === normalizedCode || (f.friendCode === undefined && f.id === mockFriend.id))) {
-        setNotifications(prev => [...prev, {
-          id: `notif-${Date.now()}`,
-          type: 'friend',
-          emoji: '⚠️',
-          message: 'Friend already added!',
-          time: 'now',
-          read: false,
-        }]);
-        return prev;
-      }
-
-      setNotifications(prev => [...prev, {
+      // Race-condition guard: check again inside the updater
+      if (prev.friends.some(f => f.friendCode === normalizedCode)) return prev;
+      setNotifications(n => [...n, {
         id: `notif-${Date.now()}`,
         type: 'friend',
         emoji: '🤝',
-        message: `Added ${mockFriend.name} as a friend!`,
+        message: `Added ${realFriend.name} as a friend!`,
         time: 'now',
         read: false,
       }]);
-      
-      return withAchievements({
-        ...prev,
-        friends: [...prev.friends, mockFriend],
-      });
+      return withAchievements({ ...prev, friends: [...prev.friends, realFriend] });
     });
-  }, []);
+
+    return null; // success
+  }, [_gameState, userId, setGameState, setNotifications]);
 
   const handleRemoveFriend = useCallback((friendId: string) => {
     setGameState(prev => {
