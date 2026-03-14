@@ -51,6 +51,7 @@ import { useCloudSync, SyncStatus } from './hooks/useCloudSync';
 import { LoginScreen } from './components/LoginScreen';
 import { SyncIndicator } from './components/SyncIndicator';
 import { JimmyChubsAquarium } from './components/JimmyChubsAquarium';
+import { LevelUpOverlay } from './components/LevelUpOverlay';
 import { JIMMY_CHUBS_FRIEND } from './utils/storage';
 
 // Jimmy & Chubs sends a gift every 3.5 days (twice a week)
@@ -73,6 +74,8 @@ export default function App() {
   const playModeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // (level-up stat data is now tracked via gameState.pendingStatPoints)
+  /** Level-up fanfare overlay: shows when the axolotl gains a level */
+  const [levelUpInfo, setLevelUpInfo] = useState<{ level: number } | null>(null);
 
   /** Show Jimmy & Chubs's aquarium */
   const [showJimmyAquarium, setShowJimmyAquarium] = useState(false);
@@ -172,10 +175,10 @@ export default function App() {
     startingTrack: '/music/mini-games/Axolittle mini game screen.mp3',
   });
   
-  // Level-up callback — navigates home and opens the stats modal so the player can allocate their point
-  const handleLevelUp = useCallback((_newLevel: number, _prevStats: SecondaryStats) => {
-    setActiveModal('stats');
-  }, [setActiveModal]);
+  // Level-up callback — shows the fanfare overlay; does NOT force open the stats modal
+  const handleLevelUp = useCallback((newLevel: number, _prevStats: SecondaryStats) => {
+    setLevelUpInfo({ level: newLevel });
+  }, []);
 
   // Game actions from hook
   const gameActions = useGameActions({
@@ -771,6 +774,48 @@ export default function App() {
                           Tap the aquarium to play!
                         </span>
                       </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Persistent stat-point nudge — guides without forcing */}
+                <AnimatePresence>
+                  {(gameState?.pendingStatPoints ?? 0) > 0 && currentScreen === 'home' && !activeModal && (
+                    <motion.div
+                      key="stat-point-banner"
+                      className="flex justify-center pt-1.5"
+                      initial={{ opacity: 0, y: -8, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -6, scale: 0.95 }}
+                      transition={{ duration: 0.3, ease: 'easeOut' }}
+                    >
+                      <motion.button
+                        onClick={() => { setActiveModal('stats'); setShowHamburgerMenu(false); }}
+                        whileTap={{ scale: 0.95 }}
+                        animate={{ boxShadow: ['0 4px 18px rgba(245,158,11,0.45)', '0 4px 28px rgba(245,158,11,0.75)', '0 4px 18px rgba(245,158,11,0.45)'] }}
+                        transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                        style={{
+                          background: 'rgba(251,191,36,0.94)',
+                          border: '2px solid rgba(245,158,11,0.85)',
+                          borderRadius: 16,
+                          padding: '5px 14px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 6,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        <motion.span
+                          animate={{ scale: [1, 1.35, 1] }}
+                          transition={{ duration: 1.1, repeat: Infinity, ease: 'easeInOut' }}
+                          style={{ fontSize: 14 }}
+                        >
+                          ⚡
+                        </motion.span>
+                        <span style={{ fontSize: 12, fontWeight: 800, color: '#78350f', whiteSpace: 'nowrap' }}>
+                          Stat point ready — tap to assign!
+                        </span>
+                      </motion.button>
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -1747,6 +1792,22 @@ export default function App() {
       {showAuthOverlay && (
         <LoginScreen onClose={() => setShowAuthOverlay(false)} />
       )}
+
+      {/* Level-up fanfare overlay */}
+      <AnimatePresence>
+        {levelUpInfo && (
+          <LevelUpOverlay
+            key={levelUpInfo.level}
+            level={levelUpInfo.level}
+            onAssignStat={() => {
+              setLevelUpInfo(null);
+              setActiveModal('stats');
+              setShowHamburgerMenu(false);
+            }}
+            onDismiss={() => setLevelUpInfo(null)}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Mini-Games */}
       <AnimatePresence>
