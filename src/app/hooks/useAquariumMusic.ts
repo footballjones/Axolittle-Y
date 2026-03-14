@@ -146,7 +146,7 @@ export function useContextMusic({
     audioRef.current.pause();
     setVolumeSmooth(0);
     setIsPlaying(false);
-  }, []);
+  }, [setVolumeSmooth]);
 
   // Pause (no fade, just stop)
   const pause = () => {

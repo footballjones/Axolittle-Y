@@ -25,7 +25,7 @@ export function useEconomyActions({ setGameState, setNotifications }: UseEconomy
   const [showSpinWheel, setShowSpinWheel] = useState(false);
   const [showDailyLogin, setShowDailyLogin] = useState(false);
 
-  function withAchievements(newState: GameState): GameState {
+  const withAchievements = useCallback((newState: GameState): GameState => {
     const newIds = checkAchievements(newState);
     if (newIds.length === 0) return newState;
     newIds.forEach(id => {
@@ -41,7 +41,7 @@ export function useEconomyActions({ setGameState, setNotifications }: UseEconomy
       }]);
     });
     return { ...newState, achievements: [...(newState.achievements ?? []), ...newIds] };
-  }
+  }, [setNotifications]);
 
   const handleSpinWheel = useCallback((reward: { type: 'coins' | 'opals'; amount: number }) => {
     setGameState(prev => {
@@ -67,7 +67,7 @@ export function useEconomyActions({ setGameState, setNotifications }: UseEconomy
         lastSpinDate: today,
       });
     });
-  }, [setGameState, setNotifications]);
+  }, [setGameState, setNotifications, withAchievements]);
 
   const handleDailyLoginClaim = useCallback((reward: { coins: number; opals?: number; decoration?: string }) => {
     setGameState(prev => {
@@ -101,7 +101,7 @@ export function useEconomyActions({ setGameState, setNotifications }: UseEconomy
         unlockedDecorations: newUnlockedDecorations,
       });
     });
-  }, [setGameState, setNotifications]);
+  }, [setGameState, setNotifications, withAchievements]);
 
   return {
     showSpinWheel,
