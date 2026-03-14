@@ -5,8 +5,8 @@
 
 export const GAME_CONFIG = {
   // Starter values
-  starterCoins: 10000,
-  starterOpals: 100,
+  starterCoins: 300,
+  starterOpals: 25,
   
   // Energy system
   energyMax: 10,
