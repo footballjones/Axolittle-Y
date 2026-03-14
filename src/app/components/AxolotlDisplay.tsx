@@ -13,13 +13,13 @@ interface AxolotlDisplayProps {
 }
 
 export function AxolotlDisplay({ axolotl, foodItems, onEatFood, clickTarget, playMode, onAxolotlTap }: AxolotlDisplayProps) {
-  const [position, setPosition] = useState({ x: 50, y: 50 });
+  const [position, setPosition] = useState({ x: 50, y: 75 });
   const [facingLeft, setFacingLeft] = useState(false);
   const [wiggling, setWiggling] = useState(false);
   const foodFirstSeenRef = useRef<number | null>(null);
 
   // Track previous position + move start time so we can interpolate visual position
-  const prevPosRef = useRef({ x: 50, y: 50 });
+  const prevPosRef = useRef({ x: 50, y: 75 });
   const moveStartRef = useRef<number>(Date.now());
   const MOVE_DURATION = 4000; // matches Framer Motion transition duration (ms)
 
@@ -31,9 +31,9 @@ export function AxolotlDisplay({ axolotl, foodItems, onEatFood, clickTarget, pla
   useEffect(() => { foodItemsRef.current = foodItems; }, [foodItems]);
   useEffect(() => { onEatFoodRef.current = onEatFood; }, [onEatFood]);
 
-  // Reset to center on mount
+  // Start at bottom-center on mount
   useEffect(() => {
-    setPosition({ x: 50, y: 50 });
+    setPosition({ x: 50, y: 75 });
   }, []);
 
   // Handle click target - move axolotl to clicked position
