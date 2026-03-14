@@ -19,9 +19,9 @@ export const GAME_CONFIG = {
   eggIncubationHours: 24,
   
   // XP/Level progression
-  // Level 2 = 10 XP, then +5 per level
-  level2XP: 10,
-  xpPerLevel: 5,
+  // Level 2 = 1 XP, each subsequent level costs 1 more than the last, capped at 10 XP/level
+  // e.g. L1→2: 1, L2→3: 2, ... L9→10: 9, L10→11: 10, L11→12: 10 ...
+  xpCapPerLevel: 10,
   
   // Life stages (by level)
   stages: {

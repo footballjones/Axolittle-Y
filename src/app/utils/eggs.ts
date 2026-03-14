@@ -106,6 +106,8 @@ export function createRebirthEgg(parent: Axolotl, pendingName?: string): Egg {
     pattern,
     rarity,
     pendingName, // Store name provided during rebirth
+    // Pass birth stats (not leveled stats) so the child's floor reflects genetic quality, not grind
+    parentStats: parent.birthStats,
   };
 }
 
@@ -188,10 +190,11 @@ export function hatchEgg(egg: Egg, name: string): Axolotl {
     name,
     egg.generation,
     egg.parentIds,
-    egg.color, // May already include recessive expression
-    egg.pattern, // May already include recessive expression
-    undefined, // New random recessive genes for this axolotl
-    egg.rarity // Use the egg's rarity to determine starting stats
+    egg.color,       // May already include recessive expression
+    egg.pattern,     // May already include recessive expression
+    undefined,       // New random recessive genes for this axolotl
+    egg.rarity,      // Use the egg's rarity to determine starting stats
+    egg.parentStats  // Parent's birth stats — enforces inheritance floor on child's stats
   );
 }
 

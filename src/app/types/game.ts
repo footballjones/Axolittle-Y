@@ -36,6 +36,7 @@ export interface Axolotl {
   recessiveGenes?: RecessiveGenes; // Hidden traits that can manifest on rebirth/breeding
   rarity?: 'Common' | 'Rare' | 'Epic' | 'Legendary' | 'Mythic'; // Rarity of egg this axolotl came from
   lastLevel?: number; // Track last level to detect level ups
+  birthStats?: SecondaryStats; // Secondary stats at birth (before any level-up gains) — used for inheritance floor
 }
 
 export interface DecorationItem {
@@ -62,6 +63,7 @@ export interface Egg {
   pattern: string; // from genetics (may include recessive expression)
   rarity: 'Common' | 'Rare' | 'Epic' | 'Legendary' | 'Mythic';
   pendingName?: string; // Name provided during rebirth (used at hatch)
+  parentStats?: SecondaryStats; // Parent's birth stats — used to apply inheritance floor on hatch
 }
 
 export interface GameState {

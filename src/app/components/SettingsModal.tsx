@@ -7,9 +7,6 @@ interface SettingsModalProps {
   onResetGame: () => void;
   musicEnabled?: boolean;
   onMusicToggle?: (enabled: boolean) => void;
-  poopCount?: number;
-  onClearPoops?: () => void;
-  onRepositionPoops?: () => void;
 }
 
 // Move ToggleSwitch outside component to prevent recreation on every render
@@ -33,9 +30,6 @@ export function SettingsModal({
   onResetGame,
   musicEnabled: initialMusicEnabled = true,
   onMusicToggle,
-  poopCount = 0,
-  onClearPoops,
-  onRepositionPoops,
 }: SettingsModalProps) {
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [musicEnabled, setMusicEnabled] = useState(initialMusicEnabled);
@@ -185,36 +179,6 @@ export function SettingsModal({
                 )}
               </div>
             </div>
-
-            {/* Debug Section */}
-            {poopCount > 0 && (
-              <div>
-                <h3 className="text-white/50 text-xs font-semibold uppercase tracking-wider mb-2">Debug</h3>
-                <div className="space-y-1">
-                  <div className="bg-white/5 rounded-xl px-4 py-3 border border-white/5">
-                    <p className="text-white/70 text-sm mb-2">Active Poops: <span className="text-cyan-400 font-bold">{poopCount}</span></p>
-                    {poopCount > 0 && (
-                      <div className="space-y-1.5">
-                        <motion.button
-                          onClick={onRepositionPoops}
-                          className="w-full text-xs bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 rounded-lg px-3 py-1.5 border border-blue-500/30 transition-colors"
-                          whileTap={{ scale: 0.95 }}
-                        >
-                          🎯 Find Invisible Poops
-                        </motion.button>
-                        <motion.button
-                          onClick={onClearPoops}
-                          className="w-full text-xs bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 rounded-lg px-3 py-1.5 border border-amber-500/30 transition-colors"
-                          whileTap={{ scale: 0.95 }}
-                        >
-                          🧹 Clear All Poops
-                        </motion.button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
 
             {/* Version info */}
             <div className="text-center pt-2">

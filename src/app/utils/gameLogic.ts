@@ -1,4 +1,4 @@
-import { Axolotl, LifeStage, GameState } from '../types/game';
+import { Axolotl, LifeStage, GameState, SecondaryStats } from '../types/game';
 import { GAME_CONFIG } from '../config/game';
 import { updateWellbeingStats } from '../axolotl/needsSystem';
 
@@ -22,6 +22,10 @@ export const COLORS = [
 ];
 
 export const PATTERNS = ['solid', 'spotted', 'striped', 'gradient'];
+
+// Minimum fraction of a parent's birth stat that a child is guaranteed to start with.
+// e.g. 0.75 means a child's stat will never be less than 75% of its parent's birth stat.
+const STAT_INHERITANCE_FLOOR = 0.75;
 
 /**
  * Get stat range for a given rarity
@@ -57,15 +61,31 @@ export function generateAxolotl(
   inheritedColor?: string,
   inheritedPattern?: string,
   recessiveGenes?: { color?: string; pattern?: string },
-  rarity: 'Common' | 'Rare' | 'Epic' | 'Legendary' | 'Mythic' = 'Common'
+  rarity: 'Common' | 'Rare' | 'Epic' | 'Legendary' | 'Mythic' = 'Common',
+  parentStats?: SecondaryStats // Parent's birth stats — used to enforce inheritance floor
 ): Axolotl {
-  // Generate secondary stats based on rarity
+  // Generate secondary stats based on rarity, with an optional inheritance floor.
+  // The floor ensures a child's stat is never less than 75% of its parent's birth stat,
+  // so players can't get a shockingly bad roll after a successful rebirth.
   const statRange = getRarityStatRange(rarity);
+
+  const generateStatWithFloor = (parentStat?: number): number => {
+    if (parentStat !== undefined) {
+      // Floor = 75% of parent's birth stat, clamped within this rarity's range
+      const floor = Math.min(
+        Math.max(Math.floor(parentStat * STAT_INHERITANCE_FLOOR), statRange.min),
+        statRange.max
+      );
+      return generateStatInRange(floor, statRange.max);
+    }
+    return generateStatInRange(statRange.min, statRange.max);
+  };
+
   const baseStats = {
-    strength: generateStatInRange(statRange.min, statRange.max),
-    intellect: generateStatInRange(statRange.min, statRange.max),
-    stamina: generateStatInRange(statRange.min, statRange.max),
-    speed: generateStatInRange(statRange.min, statRange.max),
+    strength: generateStatWithFloor(parentStats?.strength),
+    intellect: generateStatWithFloor(parentStats?.intellect),
+    stamina: generateStatWithFloor(parentStats?.stamina),
+    speed: generateStatWithFloor(parentStats?.speed),
   };
 
   // Assign random recessive genes if not provided
@@ -96,6 +116,7 @@ export function generateAxolotl(
     recessiveGenes: genes,
     rarity, // Store the rarity this axolotl came from
     lastLevel: 1, // Start at level 1
+    birthStats: { ...baseStats }, // Snapshot of stats at birth — used as inheritance floor for children
   };
 }
 
@@ -266,35 +287,58 @@ export function breedAxolotls(
   };
 }
 
+/**
+ * Total XP required to reach a given level from level 1.
+ *
+ * Per-level cost starts at 1 XP (L1→L2) and rises by 1 each level,
+ * capping at GAME_CONFIG.xpCapPerLevel (15) from L15→L16 onwards.
+ *
+ * Cumulative totals:
+ *   Level  2 →   1 XP total   (cost 1)
+ *   Level  3 →   3 XP total   (cost 2)
+ *   Level  4 →   6 XP total   (cost 3)
+ *   ...
+ *   Level 16 → 120 XP total   (cost 15 — cap first reached)
+ *   Level 17 → 135 XP total   (cost 15)
+ *   Level 40 → 480 XP total
+ */
+function getXPToReachLevel(level: number): number {
+  if (level <= 1) return 0;
+  const cap = GAME_CONFIG.xpCapPerLevel; // 15
+  const capLevel = cap + 1;              // 16 — first level where cap applies
+  if (level <= capLevel) {
+    // Triangular number: sum of 1+2+...+(level-1)
+    return ((level - 1) * level) / 2;
+  }
+  // After the cap kicks in, each level costs a flat `cap` XP
+  const xpAtCapLevel = ((capLevel - 1) * capLevel) / 2; // 120
+  return xpAtCapLevel + (level - capLevel) * cap;
+}
+
 export function calculateLevel(experience: number): number {
-  // Level 2 = 10 XP, then +5 per level
-  // Level 1: 0 XP
-  // Level 2: 10 XP
-  // Level 3: 15 XP (10 + 5)
-  // Level 4: 20 XP (15 + 5)
-  // etc.
-  if (experience < GAME_CONFIG.level2XP) return 1;
-  
-  // XP for level N = 10 + (N-2) * 5
-  // Solving for N: N = (XP - 10) / 5 + 2
-  const level = Math.floor((experience - GAME_CONFIG.level2XP) / GAME_CONFIG.xpPerLevel) + 2;
-  return Math.min(level, 40); // Cap at level 40
+  if (experience <= 0) return 1;
+
+  const cap = GAME_CONFIG.xpCapPerLevel; // 15
+  const xpAtCapLevel = ((cap * (cap + 1)) / 2); // 120 — XP to reach level 16
+
+  if (experience >= xpAtCapLevel) {
+    // Flat region: each level above 16 costs exactly `cap` XP
+    const level = (cap + 1) + Math.floor((experience - xpAtCapLevel) / cap);
+    return Math.min(level, 40);
+  }
+
+  // Progressive region: triangular numbers — solve (n-1)*n/2 <= XP
+  // Quadratic formula: n = floor((sqrt(8*XP + 1) - 1) / 2) + 1
+  return Math.floor((Math.sqrt(8 * experience + 1) - 1) / 2) + 1;
 }
 
+/** XP needed to advance from currentLevel to currentLevel + 1. */
 export function getXPForNextLevel(currentLevel: number): number {
-  // Level 2 needs 10 XP, then +5 per level
-  if (currentLevel === 1) return GAME_CONFIG.level2XP;
-  return GAME_CONFIG.xpPerLevel;
+  return Math.min(currentLevel, GAME_CONFIG.xpCapPerLevel);
 }
 
+/** XP accumulated within the current level (progress toward the next level). */
 export function getCurrentLevelXP(experience: number): number {
   const level = calculateLevel(experience);
-  if (level === 1) return experience;
-  
-  // Total XP needed for current level
-  const prevLevelTotalXP = level === 2
-    ? GAME_CONFIG.level2XP
-    : GAME_CONFIG.level2XP + (level - 2) * GAME_CONFIG.xpPerLevel;
-  
-  return experience - prevLevelTotalXP;
+  return experience - getXPToReachLevel(level);
 }

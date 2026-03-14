@@ -11,22 +11,68 @@ import { supabase, isSupabaseConfigured } from '../services/supabase';
 
 const GUEST_KEY = 'axolotl-guest-mode';
 
+/**
+ * Converts a username into a synthetic Supabase-compatible email.
+ * e.g. "axolotl_King 99" → "axolotl_king99@play.axolittle.app"
+ *
+ * NOTE: Email confirmation must be disabled in your Supabase project:
+ *   Dashboard → Authentication → Email → "Confirm email" → OFF
+ */
+function toSyntheticEmail(username: string): string {
+  const sanitized = username.toLowerCase().replace(/[^a-z0-9_]/g, '');
+  return `${sanitized}@play.axolittle.app`;
+}
+
+/**
+ * Pads a 4-digit PIN to meet Supabase's minimum password length of 6.
+ * The suffix is app-specific and never visible to users — they always
+ * enter exactly 4 digits on the PIN pad.
+ */
+function pinToPassword(pin: string): string {
+  return `${pin}-axo`;
+}
+
+/** Returns a user-friendly error message for common Supabase auth errors. */
+function friendlyError(message: string): string {
+  if (message.includes('already registered') || message.includes('already exists')) {
+    return 'That username is already taken — try a different one!';
+  }
+  if (message.includes('Invalid login credentials')) {
+    return 'Wrong username or PIN. Give it another go!';
+  }
+  if (message.includes('rate limit') || message.includes('too many')) {
+    return 'Too many attempts — wait a moment and try again.';
+  }
+  return message;
+}
+
 interface AuthContextValue {
-  /** Authenticated user, or null if signed out / not yet loaded. */
   user: User | null;
   session: Session | null;
   /** True while auth state is being determined on first mount. */
   isLoading: boolean;
-  /** True when user has explicitly chosen to play without an account. */
+  /** True when the user has explicitly chosen to play without an account. */
   isGuest: boolean;
   /**
-   * Sends a magic-link email.
-   * Returns { error: string } on failure or { error: null } on success.
+   * Creates a new account with a username + 4-digit PIN.
+   * recoveryEmail is optional but strongly encouraged (used if PIN is forgotten).
    */
-  signInWithEmail: (email: string) => Promise<{ error: string | null }>;
+  signUp: (
+    username: string,
+    pin: string,
+    recoveryEmail?: string
+  ) => Promise<{ error: string | null }>;
+  /**
+   * Signs into an existing account with a username + PIN.
+   */
+  signIn: (username: string, pin: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
   /** Opts the user into anonymous / local-only play. */
   continueAsGuest: () => void;
+  /** Signs in / up via Google OAuth (opens system browser on mobile). */
+  signInWithGoogle: () => Promise<{ error: string | null }>;
+  /** Signs in / up via Apple OAuth (opens system browser on mobile). */
+  signInWithApple: () => Promise<{ error: string | null }>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -41,19 +87,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!isSupabaseConfigured) {
-      // No credentials — treat as guest automatically, skip auth loading.
       setIsLoading(false);
       return;
     }
 
-    // Retrieve the existing session (if any) on first mount.
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
       setIsLoading(false);
     });
 
-    // Keep the context in sync with auth state changes (sign-in via magic link, etc.)
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -65,13 +108,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signInWithEmail = useCallback(async (email: string) => {
+  const signUp = useCallback(
+    async (username: string, pin: string, recoveryEmail?: string) => {
+      if (!isSupabaseConfigured) return { error: 'Supabase is not configured.' };
+
+      const { error } = await supabase.auth.signUp({
+        email: toSyntheticEmail(username),
+        password: pinToPassword(pin),
+        options: {
+          // Store the display username and optional recovery email in user metadata.
+          // The synthetic email is never shown to the user.
+          data: {
+            username,
+            recoveryEmail: recoveryEmail?.trim() || null,
+          },
+        },
+      });
+
+      if (error) return { error: friendlyError(error.message) };
+      return { error: null };
+    },
+    [],
+  );
+
+  const signIn = useCallback(async (username: string, pin: string) => {
     if (!isSupabaseConfigured) return { error: 'Supabase is not configured.' };
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: { shouldCreateUser: true },
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email: toSyntheticEmail(username),
+      password: pinToPassword(pin),
     });
-    if (error) return { error: error.message };
+
+    if (error) return { error: friendlyError(error.message) };
     return { error: null };
   }, []);
 
@@ -86,9 +154,50 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsGuest(true);
   }, []);
 
+  /**
+   * Shared OAuth helper. On web this performs a full-page redirect.
+   * On iOS/Android the native layer should intercept the OAuth URL and open
+   * it in ASWebAuthenticationSession / Chrome Custom Tab instead of the WebView.
+   */
+  const signInWithOAuth = useCallback(
+    async (provider: 'google' | 'apple') => {
+      if (!isSupabaseConfigured) return { error: 'Supabase is not configured.' };
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo: window.location.origin,
+        },
+      });
+      if (error) return { error: friendlyError(error.message) };
+      return { error: null };
+    },
+    [],
+  );
+
+  const signInWithGoogle = useCallback(
+    () => signInWithOAuth('google'),
+    [signInWithOAuth],
+  );
+
+  const signInWithApple = useCallback(
+    () => signInWithOAuth('apple'),
+    [signInWithOAuth],
+  );
+
   return (
     <AuthContext.Provider
-      value={{ user, session, isLoading, isGuest, signInWithEmail, signOut, continueAsGuest }}
+      value={{
+        user,
+        session,
+        isLoading,
+        isGuest,
+        signUp,
+        signIn,
+        signOut,
+        continueAsGuest,
+        signInWithGoogle,
+        signInWithApple,
+      }}
     >
       {children}
     </AuthContext.Provider>
