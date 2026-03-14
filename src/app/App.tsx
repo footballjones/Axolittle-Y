@@ -891,7 +891,7 @@ export default function App() {
                           <span className="text-[11px] font-bold text-violet-800 tracking-wider uppercase">Spin Wheel</span>
                           {gameState && canSpinToday(gameState.lastSpinDate) && (
                             <motion.div
-                              className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 border-2 border-white flex items-center justify-center"
+                              className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-red-500 border-2 border-white flex items-center justify-center"
                               style={{ boxShadow: '0 0 8px 2px rgba(239,68,68,0.7)' }}
                               animate={{ scale: [1, 1.2, 1] }}
                               transition={{ duration: 1.0, repeat: Infinity, ease: 'easeInOut' }}
@@ -916,7 +916,7 @@ export default function App() {
                           <span className="text-[11px] font-bold text-amber-800 tracking-wider uppercase">Daily Bonus</span>
                           {gameState && canClaimDailyLogin(gameState.lastLoginDate) && (
                             <motion.div
-                              className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 border-2 border-white flex items-center justify-center"
+                              className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-red-500 border-2 border-white flex items-center justify-center"
                               style={{ boxShadow: '0 0 8px 2px rgba(239,68,68,0.7)' }}
                               animate={{ scale: [1, 1.2, 1] }}
                               transition={{ duration: 1.0, repeat: Infinity, ease: 'easeInOut' }}
@@ -938,7 +938,7 @@ export default function App() {
                           <span className="text-[11px] font-bold text-sky-800 tracking-wider uppercase">Stats</span>
                           {(gameState?.pendingStatPoints ?? 0) > 0 && (
                             <motion.div
-                              className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-amber-400 border-2 border-white flex items-center justify-center"
+                              className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-amber-400 border-2 border-white flex items-center justify-center"
                               style={{ boxShadow: '0 0 8px 2px rgba(251,191,36,0.8)' }}
                               animate={{ scale: [1, 1.2, 1] }}
                               transition={{ duration: 1.0, repeat: Infinity, ease: 'easeInOut' }}
@@ -1755,6 +1755,7 @@ export default function App() {
             onEnd={handleMiniGameEnd}
             onDeductEnergy={handleDeductEnergy}
             energy={gameState.energy}
+            soundEnabled={gameState.soundEnabled !== false}
           />
         )}
         {activeGame === 'fish-hooks' && gameState && (

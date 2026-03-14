@@ -9,6 +9,7 @@ export const MUSIC_CONFIG = {
     '/music/aquarium/Axolotl Dream Tank.mp3',
     '/music/aquarium/Axolotl Dream Tank (1).mp3',
     '/music/aquarium/Axolotl Moonlight.mp3',
+    '/music/aquarium/Dream Cartridge.mp3',
   ] as const,
   miniGames: [
     '/music/mini-games/Axolittle mini game screen.mp3',

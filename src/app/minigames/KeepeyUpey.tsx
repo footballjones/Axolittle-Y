@@ -35,7 +35,7 @@ interface Bubble {
   life: number;
 }
 
-export function KeepeyUpey({ onEnd, onDeductEnergy, energy }: MiniGameProps) {
+export function KeepeyUpey({ onEnd, onDeductEnergy, energy, soundEnabled = true }: MiniGameProps) {
   const [score, setScore] = useState(0); // Time survived in seconds
   const [isPlaying, setIsPlaying] = useState(false); // Start with false, show overlay first
   const [isPaused, setIsPaused] = useState(false);
@@ -43,7 +43,18 @@ export function KeepeyUpey({ onEnd, onDeductEnergy, energy }: MiniGameProps) {
   const [gameEnded, setGameEnded] = useState(false);
   const [hadEnergyAtStart, setHadEnergyAtStart] = useState(false); // Track if energy was available when game started
   const [finalRewards, setFinalRewards] = useState<{ tier: string; xp: number; coins: number; opals?: number } | null>(null);
-  
+
+  const bounceSfxRef = useRef<HTMLAudioElement | null>(null);
+
+  // Pre-load the bounce sound once
+  useEffect(() => {
+    const audio = new Audio('/sounds/Axolittle Keepey Upey.mp3');
+    audio.preload = 'auto';
+    audio.volume = 0.6;
+    bounceSfxRef.current = audio;
+    return () => { audio.src = ''; };
+  }, []);
+
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationFrameRef = useRef<number | null>(null);
   const lastTouchTimeRef = useRef<number>(0);
@@ -84,7 +95,12 @@ export function KeepeyUpey({ onEnd, onDeductEnergy, energy }: MiniGameProps) {
       size: 4 + Math.random() * 6,
       life: 1,
     });
-  }, [isPlaying, isPaused, score]);
+    // Play bounce sound effect
+    if (soundEnabled && bounceSfxRef.current) {
+      bounceSfxRef.current.currentTime = 0;
+      bounceSfxRef.current.play().catch(() => {});
+    }
+  }, [isPlaying, isPaused, score, soundEnabled]);
 
   const spawnObstacle = useCallback(() => {
     const side = Math.random() < 0.5 ? 'left' : 'right';
