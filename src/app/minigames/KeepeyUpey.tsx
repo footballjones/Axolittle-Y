@@ -351,6 +351,7 @@ export function KeepeyUpey({ onEnd, onDeductEnergy, energy, soundEnabled = true 
       energy={energy}
       onPause={() => setIsPaused(!isPaused)}
       isPaused={isPaused}
+      gameEnded={gameEnded}
     >
       <div className="relative w-full h-full bg-gradient-to-br from-violet-100 via-purple-100 to-indigo-100 overflow-hidden">
         {/* Start/End Overlay */}

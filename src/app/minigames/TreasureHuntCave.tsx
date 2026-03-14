@@ -440,6 +440,7 @@ export function TreasureHuntCave({ onEnd, onDeductEnergy, energy }: MiniGameProp
         gameRef.current.isPaused = !gameRef.current.isPaused;
       }}
       isPaused={gameRef.current.isPaused}
+      gameEnded={gameEnded}
     >
       <div className="relative w-full h-full flex items-center justify-center bg-gradient-to-b from-amber-900 via-amber-800 to-amber-900">
         {showOverlay && (

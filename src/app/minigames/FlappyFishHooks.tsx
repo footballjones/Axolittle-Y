@@ -292,6 +292,7 @@ export function FlappyFishHooks({ onEnd, onDeductEnergy, energy }: MiniGameProps
       energy={energy}
       onPause={handlePause}
       isPaused={gameRef.current.paused}
+      gameEnded={gameEnded}
     >
       <div className="relative w-full h-full flex items-center justify-center bg-gradient-to-br from-violet-100 via-purple-100 to-indigo-100" style={{ margin: 0, padding: 0 }}>
         {showOverlay && (

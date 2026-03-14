@@ -247,6 +247,7 @@ export function MathRush({ onEnd, onDeductEnergy, energy }: MiniGameProps) {
       energy={energy}
       onPause={() => setIsPaused(!isPaused)}
       isPaused={isPaused}
+      gameEnded={gameEnded}
     >
       <div className="relative w-full h-full flex flex-col items-center justify-center p-6 bg-gradient-to-br from-violet-100 via-purple-100 to-indigo-100">
         {/* Start/End Overlay */}

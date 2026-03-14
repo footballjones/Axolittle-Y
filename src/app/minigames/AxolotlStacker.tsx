@@ -321,6 +321,7 @@ export function AxolotlStacker({ onEnd, onDeductEnergy, energy }: MiniGameProps)
         gameRef.current.isPaused = !gameRef.current.isPaused;
       }}
       isPaused={gameRef.current.isPaused}
+      gameEnded={gameEnded}
     >
       <div className="relative w-full h-full flex items-center justify-center bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100" style={{ margin: 0, padding: 0 }}>
         {showOverlay && (

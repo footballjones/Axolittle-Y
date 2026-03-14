@@ -214,6 +214,7 @@ export function CoralCode({ onEnd, onDeductEnergy, energy }: MiniGameProps) {
       energy={energy}
       onPause={() => setIsPaused(!isPaused)}
       isPaused={isPaused}
+      gameEnded={gameEnded}
     >
       <div className="relative w-full h-full flex flex-col p-4 bg-gradient-to-br from-purple-100 via-pink-100 to-violet-100">
         {/* Start/End Overlay */}

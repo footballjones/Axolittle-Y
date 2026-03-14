@@ -694,6 +694,7 @@ export function Fishing({ onEnd, onDeductEnergy, energy, strength = 0, speed = 0
       energy={energy}
       onPause={() => setIsPaused(!isPaused)}
       isPaused={isPaused}
+      gameEnded={gameEnded}
     >
       <div className="relative w-full h-full flex items-center justify-center bg-gradient-to-br from-sky-100 via-blue-100 to-cyan-100" style={{ margin: 0, padding: 0 }}>
         {/* Start/End Overlay */}

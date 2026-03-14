@@ -14,6 +14,9 @@ interface GameWrapperProps extends MiniGameProps {
   score?: number;
   onPause?: () => void;
   isPaused?: boolean;
+  /** When true the result screen is visible — hide the X so rewards
+   *  aren't discarded; the result screen's own buttons handle exit. */
+  gameEnded?: boolean;
 }
 
 export function GameWrapper({
@@ -23,19 +26,23 @@ export function GameWrapper({
   onPause,
   isPaused = false,
   onEnd,
+  gameEnded = false,
 }: GameWrapperProps) {
   return (
     <div className="fixed inset-0 bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 z-50 flex flex-col">
       {/* Header */}
       <div className="flex items-center justify-between px-4 pt-4 pb-2 flex-shrink-0">
         <div className="flex items-center gap-3">
-          <motion.button
-            onClick={() => onEnd({ score: score || 0, tier: 'normal', xp: 0, coins: 0 })}
-            className="rounded-full p-2 bg-white/20 backdrop-blur-sm border border-white/30 active:bg-white/30"
-            whileTap={{ scale: 0.9 }}
-          >
-            <X className="w-5 h-5 text-white" strokeWidth={2.5} />
-          </motion.button>
+          {/* X only shown during active play — result screen has its own exit buttons */}
+          {!gameEnded && (
+            <motion.button
+              onClick={() => onEnd({ score: score || 0, tier: 'normal', xp: 0, coins: 0 })}
+              className="rounded-full p-2 bg-white/20 backdrop-blur-sm border border-white/30 active:bg-white/30"
+              whileTap={{ scale: 0.9 }}
+            >
+              <X className="w-5 h-5 text-white" strokeWidth={2.5} />
+            </motion.button>
+          )}
           <h2 className="text-white font-bold text-lg">{gameName}</h2>
         </div>
         

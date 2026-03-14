@@ -1180,6 +1180,7 @@ export function BiteTag({ onEnd, onDeductEnergy, energy, speed = 0, stamina = 0 
       energy={energy}
       onPause={() => setIsPaused(!isPaused)}
       isPaused={isPaused}
+      gameEnded={gameEnded}
     >
       <div className="relative w-full h-full overflow-hidden bg-gradient-to-br from-green-200 via-emerald-300 to-teal-400" style={{ margin: 0, padding: 0 }}>
         {/* Start/End Overlay */}
