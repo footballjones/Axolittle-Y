@@ -47,12 +47,6 @@ function getRarityStatRange(rarity: 'Common' | 'Rare' | 'Epic' | 'Legendary' | '
   }
 }
 
-/**
- * Generate a random stat value within the given range
- */
-function generateStatInRange(min: number, max: number): number {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-}
 
 export function generateAxolotl(
   name: string,
@@ -64,29 +58,19 @@ export function generateAxolotl(
   rarity: 'Common' | 'Rare' | 'Epic' | 'Legendary' | 'Mythic' = 'Common',
   parentStats?: SecondaryStats // Parent's birth stats — used to enforce inheritance floor
 ): Axolotl {
-  // Generate secondary stats based on rarity, with an optional inheritance floor.
-  // The floor ensures a child's stat is never less than 75% of its parent's birth stat,
-  // so players can't get a shockingly bad roll after a successful rebirth.
+  // All secondary stats start at 0 — players grow them by allocating points on level-up.
   const statRange = getRarityStatRange(rarity);
-
-  const generateStatWithFloor = (parentStat?: number): number => {
-    if (parentStat !== undefined) {
-      // Floor = 75% of parent's birth stat, clamped within this rarity's range
-      const floor = Math.min(
-        Math.max(Math.floor(parentStat * STAT_INHERITANCE_FLOOR), statRange.min),
-        statRange.max
-      );
-      return generateStatInRange(floor, statRange.max);
-    }
-    return generateStatInRange(statRange.min, statRange.max);
-  };
-
-  const baseStats = {
-    strength: generateStatWithFloor(parentStats?.strength),
-    intellect: generateStatWithFloor(parentStats?.intellect),
-    stamina: generateStatWithFloor(parentStats?.stamina),
-    speed: generateStatWithFloor(parentStats?.speed),
-  };
+  // For rebirths/breedings the inheritance floor still applies, but the floor is
+  // computed from the parent's birth stats (which were also 0 initially, growing via
+  // allocations). Generation 1 always starts at 0.
+  const baseStats: SecondaryStats = parentStats !== undefined
+    ? {
+        strength: Math.max(0, Math.min(statRange.max, Math.floor((parentStats.strength ?? 0) * STAT_INHERITANCE_FLOOR))),
+        intellect: Math.max(0, Math.min(statRange.max, Math.floor((parentStats.intellect ?? 0) * STAT_INHERITANCE_FLOOR))),
+        stamina: Math.max(0, Math.min(statRange.max, Math.floor((parentStats.stamina ?? 0) * STAT_INHERITANCE_FLOOR))),
+        speed: Math.max(0, Math.min(statRange.max, Math.floor((parentStats.speed ?? 0) * STAT_INHERITANCE_FLOOR))),
+      }
+    : { strength: 0, intellect: 0, stamina: 0, speed: 0 };
 
   // Assign random recessive genes if not provided
   const genes = recessiveGenes || {
@@ -182,35 +166,23 @@ export function cleanAquarium(axolotl: Axolotl, amount: number = 30): Axolotl {
   };
 }
 
-export function checkEvolution(axolotl: Axolotl): Axolotl {
+export function checkEvolution(axolotl: Axolotl): { axolotl: Axolotl; didLevelUp: boolean } {
   const level = calculateLevel(axolotl.experience);
-  const lastLevel = axolotl.lastLevel || level; // Default to current level if not set
+  const lastLevel = axolotl.lastLevel || level;
   const stages: LifeStage[] = ['baby', 'juvenile', 'adult', 'elder'];
   const currentIndex = stages.indexOf(axolotl.stage);
 
-  // Check for level up and add +1 to each secondary stat
-  let updatedSecondaryStats = { ...axolotl.secondaryStats };
-  if (level > lastLevel) {
-    // Level up! Add +1 to each secondary stat
-    updatedSecondaryStats = {
-      strength: Math.min(100, updatedSecondaryStats.strength + 1),
-      intellect: Math.min(100, updatedSecondaryStats.intellect + 1),
-      stamina: Math.min(100, updatedSecondaryStats.stamina + 1),
-      speed: Math.min(100, updatedSecondaryStats.speed + 1),
-    };
-  }
+  const didLevelUp = level > lastLevel;
 
   let updatedAxolotl = {
     ...axolotl,
-    secondaryStats: updatedSecondaryStats,
-    lastLevel: level, // Update last level
+    lastLevel: level,
   };
 
   if (currentIndex < stages.length - 1) {
     const nextStage = stages[currentIndex + 1];
     const requirements = STAGE_REQUIREMENTS[nextStage];
 
-    // Evolution based on level only (not age)
     if (level >= requirements.minLevel) {
       updatedAxolotl = {
         ...updatedAxolotl,
@@ -219,7 +191,7 @@ export function checkEvolution(axolotl: Axolotl): Axolotl {
     }
   }
 
-  return updatedAxolotl;
+  return { axolotl: updatedAxolotl, didLevelUp };
 }
 
 export function canRebirth(axolotl: Axolotl): boolean {

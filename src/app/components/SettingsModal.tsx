@@ -7,6 +7,8 @@ interface SettingsModalProps {
   onResetGame: () => void;
   musicEnabled?: boolean;
   onMusicToggle?: (enabled: boolean) => void;
+  soundEffectsEnabled?: boolean;
+  onSoundToggle?: (enabled: boolean) => void;
   username?: string | null;
   isGuest?: boolean;
   onSignOut?: () => void;
@@ -34,12 +36,14 @@ export function SettingsModal({
   onResetGame,
   musicEnabled: initialMusicEnabled = true,
   onMusicToggle,
+  soundEffectsEnabled: initialSoundEnabled = true,
+  onSoundToggle,
   username,
   isGuest = true,
   onSignOut,
   onSignIn,
 }: SettingsModalProps) {
-  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [soundEnabled, setSoundEnabled] = useState(initialSoundEnabled);
   const [musicEnabled, setMusicEnabled] = useState(initialMusicEnabled);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
@@ -161,7 +165,11 @@ export function SettingsModal({
                     )}
                     <span className="text-white text-sm">Sound Effects</span>
                   </div>
-                  <ToggleSwitch enabled={soundEnabled} onToggle={() => setSoundEnabled(!soundEnabled)} />
+                  <ToggleSwitch enabled={soundEnabled} onToggle={() => {
+                    const next = !soundEnabled;
+                    setSoundEnabled(next);
+                    onSoundToggle?.(next);
+                  }} />
                 </div>
 
                 <div className="flex items-center justify-between bg-white/5 rounded-xl px-4 py-3 border border-white/5">

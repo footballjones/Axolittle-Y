@@ -14,6 +14,10 @@ export interface Achievement {
   description: string;
   emoji: string;
   category: AchievementCategory;
+  /** Coins awarded when this achievement is first unlocked (default 0) */
+  coinReward?: number;
+  /** Opals awarded when this achievement is first unlocked (default 0) */
+  opalReward?: number;
   /** Returns true if the achievement condition is met */
   check: (state: GameState) => boolean;
 }

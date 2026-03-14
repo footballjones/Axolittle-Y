@@ -116,6 +116,9 @@ export interface GameState {
   lastJimmyGift?: number; // Unix-ms timestamp of last gift received from Jimmy & Chubs
   // ── Audio Settings ────────────────────────────────────────────────────────────
   musicEnabled?: boolean; // Master toggle for all background music (default: true)
+  soundEnabled?: boolean; // Master toggle for all sound effects (default: true)
+  // ── Stat Allocation ────────────────────────────────────────────────────────
+  pendingStatPoints?: number; // Unspent level-up stat points waiting to be allocated
 }
 
 export interface Friend {

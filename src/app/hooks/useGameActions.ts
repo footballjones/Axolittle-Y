@@ -51,14 +51,26 @@ export function useGameActions({
     const newIds = checkAchievements(newState);
     if (newIds.length === 0) return newState;
 
+    let bonusCoins = 0;
+    let bonusOpals = 0;
+
     newIds.forEach(id => {
       const achievement = ALL_ACHIEVEMENTS.find(a => a.id === id);
       if (!achievement) return;
+
+      bonusCoins += achievement.coinReward ?? 0;
+      bonusOpals += achievement.opalReward ?? 0;
+
+      const rewardText = [
+        achievement.coinReward ? `+${achievement.coinReward} 🪙` : '',
+        achievement.opalReward ? `+${achievement.opalReward} 🪬` : '',
+      ].filter(Boolean).join('  ');
+
       setNotifications(prev => [...prev, {
         id: `achievement-${id}-${Date.now()}`,
         type: 'achievement' as const,
         emoji: achievement.emoji,
-        message: `Achievement Unlocked: ${achievement.name}`,
+        message: `Achievement Unlocked: ${achievement.name}${rewardText ? `  ${rewardText}` : ''}`,
         time: 'now',
         read: false,
       }]);
@@ -67,6 +79,8 @@ export function useGameActions({
     return {
       ...newState,
       achievements: [...(newState.achievements ?? []), ...newIds],
+      coins: newState.coins + bonusCoins,
+      opals: (newState.opals ?? 0) + bonusOpals,
     };
   }
 
@@ -675,11 +689,10 @@ export function useGameActions({
           hunger: newHunger,
         },
       };
-      const evolvedAxolotl = checkEvolution(updatedAxolotl);
+      const { axolotl: evolvedAxolotl, didLevelUp: leveledUpNow } = checkEvolution(updatedAxolotl);
 
-      // Detect level-up: checkEvolution sets lastLevel to the new level
       const newLevel = calculateLevel(evolvedAxolotl.experience);
-      if (newLevel > prevLevel) {
+      if (leveledUpNow || newLevel > prevLevel) {
         didLevelUp = true;
         levelUpNewLevel = newLevel;
       }
@@ -716,6 +729,7 @@ export function useGameActions({
           result.tier === 'exceptional'
             ? (prev.totalExceptionalScores ?? 0) + 1
             : (prev.totalExceptionalScores ?? 0),
+        pendingStatPoints: (prev.pendingStatPoints ?? 0) + (leveledUpNow ? 1 : 0),
       };
       return withAchievements(next);
     });

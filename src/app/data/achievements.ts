@@ -34,6 +34,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
     description: 'Feed your axolotl for the very first time.',
     emoji: '🍖',
     category: 'nurture',
+    coinReward: 5,
     check: s => (s.totalFeedsEver ?? 0) >= 1,
   },
   {
@@ -42,6 +43,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
     description: 'Feed your axolotl 100 times.',
     emoji: '🍽️',
     category: 'nurture',
+    coinReward: 30,
     check: s => (s.totalFeedsEver ?? 0) >= 100,
   },
   {
@@ -50,6 +52,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
     description: 'Clean up 50 poop items from the tank.',
     emoji: '✨',
     category: 'nurture',
+    coinReward: 15,
     check: s => (s.totalCleansEver ?? 0) >= 50,
   },
   {
@@ -58,6 +61,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
     description: 'Change the aquarium water 20 times.',
     emoji: '💧',
     category: 'nurture',
+    coinReward: 20,
     check: s => (s.totalWaterChanges ?? 0) >= 20,
   },
   {
@@ -66,6 +70,8 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
     description: 'Install the Premium Filter in your aquarium.',
     emoji: '⚗️',
     category: 'nurture',
+    coinReward: 25,
+    opalReward: 2,
     check: s => s.filterTier === 'filter-premium',
   },
 
@@ -76,6 +82,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
     description: 'Play your first mini game.',
     emoji: '🕹️',
     category: 'minigames',
+    coinReward: 10,
     check: s => (s.totalMinigamesPlayed ?? 0) >= 1,
   },
   {
@@ -84,6 +91,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
     description: 'Play 50 mini games.',
     emoji: '🎯',
     category: 'minigames',
+    coinReward: 25,
     check: s => (s.totalMinigamesPlayed ?? 0) >= 50,
   },
   {
@@ -92,6 +100,8 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
     description: 'Play 100 mini games.',
     emoji: '🏅',
     category: 'minigames',
+    coinReward: 40,
+    opalReward: 2,
     check: s => (s.totalMinigamesPlayed ?? 0) >= 100,
   },
   {
@@ -100,6 +110,8 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
     description: 'Achieve 10 exceptional scores across any mini games.',
     emoji: '⭐',
     category: 'minigames',
+    coinReward: 30,
+    opalReward: 3,
     check: s => (s.totalExceptionalScores ?? 0) >= 10,
   },
   {
@@ -108,6 +120,8 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
     description: 'Play every solo mini game at least once.',
     emoji: '🎪',
     category: 'minigames',
+    coinReward: 35,
+    opalReward: 3,
     check: s => {
       const played = new Set(s.uniqueGamesPlayed ?? []);
       return SOLO_GAME_IDS.every(id => played.has(id));
@@ -121,6 +135,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
     description: 'Your axolotl reaches the Juvenile stage.',
     emoji: '🌱',
     category: 'progression',
+    coinReward: 10,
     check: s => {
       const cur = s.axolotl;
       if (cur && ['juvenile', 'adult', 'elder'].includes(cur.stage)) return true;
@@ -133,6 +148,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
     description: 'Your axolotl reaches the Adult stage.',
     emoji: '🌿',
     category: 'progression',
+    coinReward: 15,
     check: s => {
       const cur = s.axolotl;
       if (cur && ['adult', 'elder'].includes(cur.stage)) return true;
@@ -145,6 +161,8 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
     description: 'Your axolotl reaches the Elder stage.',
     emoji: '🧙',
     category: 'progression',
+    coinReward: 25,
+    opalReward: 2,
     check: s => {
       const cur = s.axolotl;
       if (cur?.stage === 'elder') return true;
@@ -157,6 +175,8 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
     description: 'Reach the maximum level of 40.',
     emoji: '🔱',
     category: 'progression',
+    coinReward: 40,
+    opalReward: 5,
     check: s => {
       const cur = s.axolotl;
       if (cur && calculateLevel(cur.experience) >= 40) return true;
@@ -169,6 +189,8 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
     description: 'Complete your first Rebirth.',
     emoji: '🔄',
     category: 'progression',
+    coinReward: 20,
+    opalReward: 1,
     check: s => s.lineage.length >= 1,
   },
   {
@@ -177,6 +199,8 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
     description: 'Raise an axolotl of Generation 5 or higher.',
     emoji: '👑',
     category: 'progression',
+    coinReward: 35,
+    opalReward: 3,
     check: s => {
       const cur = s.axolotl;
       if (cur && cur.generation >= 5) return true;
@@ -191,6 +215,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
     description: 'Hatch your first egg.',
     emoji: '🐣',
     category: 'genetics',
+    coinReward: 10,
     check: s => (s.totalEggsHatched ?? 0) >= 1,
   },
   {
@@ -199,6 +224,8 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
     description: 'Hatch a Rare (or higher) egg.',
     emoji: '💙',
     category: 'genetics',
+    coinReward: 20,
+    opalReward: 2,
     check: s => everHadRarity(s, ['Rare', 'Epic', 'Legendary', 'Mythic']),
   },
   {
@@ -207,6 +234,8 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
     description: 'Hatch an Epic (or higher) egg.',
     emoji: '💜',
     category: 'genetics',
+    coinReward: 25,
+    opalReward: 3,
     check: s => everHadRarity(s, ['Epic', 'Legendary', 'Mythic']),
   },
   {
@@ -215,6 +244,8 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
     description: 'Hatch a Legendary (or higher) egg.',
     emoji: '💛',
     category: 'genetics',
+    coinReward: 35,
+    opalReward: 4,
     check: s => everHadRarity(s, ['Legendary', 'Mythic']),
   },
   {
@@ -223,6 +254,8 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
     description: 'Hatch a Mythic egg — the rarest of all.',
     emoji: '🔴',
     category: 'genetics',
+    coinReward: 40,
+    opalReward: 5,
     check: s => everHadRarity(s, ['Mythic']),
   },
 
@@ -233,6 +266,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
     description: 'Add your first friend.',
     emoji: '🤝',
     category: 'social',
+    coinReward: 10,
     check: s => s.friends.length >= 1,
   },
   {
@@ -241,6 +275,8 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
     description: 'Add 5 friends.',
     emoji: '🦋',
     category: 'social',
+    coinReward: 20,
+    opalReward: 1,
     check: s => s.friends.length >= 5,
   },
   {
@@ -249,6 +285,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
     description: 'Send 10 gifts to friends.',
     emoji: '🎁',
     category: 'social',
+    coinReward: 15,
     check: s => (s.totalGiftsSent ?? 0) >= 10,
   },
   {
@@ -257,6 +294,8 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
     description: 'Breed your axolotl with a friend\'s.',
     emoji: '💞',
     category: 'social',
+    coinReward: 20,
+    opalReward: 2,
     check: s => everBredWithFriend(s),
   },
 
@@ -267,6 +306,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
     description: 'Use the Spin Wheel for the first time.',
     emoji: '🎰',
     category: 'daily',
+    coinReward: 5,
     check: s => !!s.lastSpinDate,
   },
   {
@@ -275,6 +315,8 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
     description: 'Maintain a 7-day login streak.',
     emoji: '🗓️',
     category: 'daily',
+    coinReward: 15,
+    opalReward: 1,
     check: s => (s.loginStreak ?? 0) >= 7,
   },
   {
@@ -283,6 +325,8 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
     description: 'Maintain a 30-day login streak.',
     emoji: '📅',
     category: 'daily',
+    coinReward: 30,
+    opalReward: 2,
     check: s => (s.loginStreak ?? 0) >= 30,
   },
   {
@@ -291,6 +335,8 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
     description: 'Maintain a 100-day login streak.',
     emoji: '🌟',
     category: 'daily',
+    coinReward: 40,
+    opalReward: 5,
     check: s => (s.loginStreak ?? 0) >= 100,
   },
 ];

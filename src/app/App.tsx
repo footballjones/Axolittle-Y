@@ -72,8 +72,7 @@ export default function App() {
   const [playMode, setPlayMode] = useState(false);
   const playModeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  /** Set when the axolotl levels up mid-game; drives the level-up StatsModal */
-  const [levelUpData, setLevelUpData] = useState<{ level: number; prevStats: SecondaryStats } | null>(null);
+  // (level-up stat data is now tracked via gameState.pendingStatPoints)
 
   /** Show Jimmy & Chubs's aquarium */
   const [showJimmyAquarium, setShowJimmyAquarium] = useState(false);
@@ -173,9 +172,8 @@ export default function App() {
     startingTrack: '/music/mini-games/Axolittle mini game screen.mp3',
   });
   
-  // Level-up callback — navigates home and opens the stats modal with gain data
-  const handleLevelUp = useCallback((newLevel: number, prevStats: SecondaryStats) => {
-    setLevelUpData({ level: newLevel, prevStats });
+  // Level-up callback — navigates home and opens the stats modal so the player can allocate their point
+  const handleLevelUp = useCallback((_newLevel: number, _prevStats: SecondaryStats) => {
     setActiveModal('stats');
   }, [setActiveModal]);
 
@@ -893,10 +891,13 @@ export default function App() {
                           <span className="text-[11px] font-bold text-violet-800 tracking-wider uppercase">Spin Wheel</span>
                           {gameState && canSpinToday(gameState.lastSpinDate) && (
                             <motion.div
-                              className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-emerald-400 border-2 border-white shadow-md"
-                              animate={{ scale: [1, 1.3, 1] }}
-                              transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
-                            />
+                              className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 border-2 border-white flex items-center justify-center"
+                              style={{ boxShadow: '0 0 8px 2px rgba(239,68,68,0.7)' }}
+                              animate={{ scale: [1, 1.2, 1] }}
+                              transition={{ duration: 1.0, repeat: Infinity, ease: 'easeInOut' }}
+                            >
+                              <span className="text-white font-black" style={{ fontSize: 9 }}>!</span>
+                            </motion.div>
                           )}
                         </motion.button>
 
@@ -915,10 +916,13 @@ export default function App() {
                           <span className="text-[11px] font-bold text-amber-800 tracking-wider uppercase">Daily Bonus</span>
                           {gameState && canClaimDailyLogin(gameState.lastLoginDate) && (
                             <motion.div
-                              className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-emerald-400 border-2 border-white shadow-md"
-                              animate={{ scale: [1, 1.3, 1] }}
-                              transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
-                            />
+                              className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 border-2 border-white flex items-center justify-center"
+                              style={{ boxShadow: '0 0 8px 2px rgba(239,68,68,0.7)' }}
+                              animate={{ scale: [1, 1.2, 1] }}
+                              transition={{ duration: 1.0, repeat: Infinity, ease: 'easeInOut' }}
+                            >
+                              <span className="text-white font-black" style={{ fontSize: 9 }}>!</span>
+                            </motion.div>
                           )}
                         </motion.button>
 
@@ -932,6 +936,16 @@ export default function App() {
                           <div className="absolute inset-0 opacity-0 group-active:opacity-100 transition-opacity rounded-2xl" style={{ background: 'rgba(255,255,255,0.35)' }} />
                           <span className="text-[2rem]">📊</span>
                           <span className="text-[11px] font-bold text-sky-800 tracking-wider uppercase">Stats</span>
+                          {(gameState?.pendingStatPoints ?? 0) > 0 && (
+                            <motion.div
+                              className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-amber-400 border-2 border-white flex items-center justify-center"
+                              style={{ boxShadow: '0 0 8px 2px rgba(251,191,36,0.8)' }}
+                              animate={{ scale: [1, 1.2, 1] }}
+                              transition={{ duration: 1.0, repeat: Infinity, ease: 'easeInOut' }}
+                            >
+                              <span className="text-white font-black" style={{ fontSize: 9 }}>+</span>
+                            </motion.div>
+                          )}
                         </motion.button>
 
                         {/* EGGS */}
@@ -1224,16 +1238,28 @@ export default function App() {
                                 )}
                               </div>
                             </div>
-                            {unreadCount > 0 && (
-                              <motion.button
-                                onClick={() => setNotifications(prev => prev.map(n => ({ ...n, read: true })))}
-                                className="flex items-center gap-1.5 text-[10px] text-indigo-400 active:text-indigo-600 border border-indigo-200/50 bg-white/40 rounded-full px-3 py-1.5"
-                                whileTap={{ scale: 0.92 }}
-                              >
-                                <Check className="w-3 h-3" strokeWidth={2.5} />
-                                Mark all read
-                              </motion.button>
-                            )}
+                            <div className="flex items-center gap-2">
+                              {unreadCount > 0 && (
+                                <motion.button
+                                  onClick={() => setNotifications(prev => prev.map(n => ({ ...n, read: true })))}
+                                  className="flex items-center gap-1.5 text-[10px] text-indigo-400 active:text-indigo-600 border border-indigo-200/50 bg-white/40 rounded-full px-3 py-1.5"
+                                  whileTap={{ scale: 0.92 }}
+                                >
+                                  <Check className="w-3 h-3" strokeWidth={2.5} />
+                                  Mark all read
+                                </motion.button>
+                              )}
+                              {notifications.length > 0 && (
+                                <motion.button
+                                  onClick={() => setNotifications([])}
+                                  className="flex items-center gap-1.5 text-[10px] text-red-400 active:text-red-600 border border-red-200/50 bg-white/40 rounded-full px-3 py-1.5"
+                                  whileTap={{ scale: 0.92 }}
+                                >
+                                  <X className="w-3 h-3" strokeWidth={2.5} />
+                                  Clear all
+                                </motion.button>
+                              )}
+                            </div>
                           </div>
                           <div className="h-px mx-5 flex-shrink-0" style={{ background: 'linear-gradient(90deg,transparent,rgba(139,92,246,0.35),transparent)' }} />
 
@@ -1664,10 +1690,28 @@ export default function App() {
 
       {activeModal === 'stats' && (
         <StatsModal
-          onClose={() => { setActiveModal(null); setLevelUpData(null); }}
+          onClose={() => setActiveModal(null)}
           stats={axolotl.secondaryStats}
           name={axolotl.name}
-          levelUp={levelUpData ?? undefined}
+          pendingPoints={gameState?.pendingStatPoints ?? 0}
+          onAllocateStat={(stat) => {
+            setGameState(prev => {
+              if (!prev?.axolotl) return prev;
+              if ((prev.pendingStatPoints ?? 0) <= 0) return prev;
+              const updatedStats = {
+                ...prev.axolotl.secondaryStats,
+                [stat]: Math.min(100, prev.axolotl.secondaryStats[stat] + 1),
+              };
+              const remaining = (prev.pendingStatPoints ?? 0) - 1;
+              // Auto-close when last point is spent
+              if (remaining === 0) setTimeout(() => setActiveModal(null), 300);
+              return {
+                ...prev,
+                pendingStatPoints: remaining,
+                axolotl: { ...prev.axolotl, secondaryStats: updatedStats },
+              };
+            });
+          }}
         />
       )}
 
@@ -1681,6 +1725,10 @@ export default function App() {
           musicEnabled={gameState?.musicEnabled !== false}
           onMusicToggle={(enabled) => {
             setGameState(prev => prev ? { ...prev, musicEnabled: enabled } : null);
+          }}
+          soundEffectsEnabled={gameState?.soundEnabled !== false}
+          onSoundToggle={(enabled) => {
+            setGameState(prev => prev ? { ...prev, soundEnabled: enabled } : null);
           }}
           username={user?.user_metadata?.username ?? user?.email?.split('@')[0] ?? null}
           isGuest={isGuest || !user}

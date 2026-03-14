@@ -22,7 +22,7 @@ export function useWellbeingEngine({ axolotlId, setGameState }: UseWellbeingEngi
 
         const stateWithUpdatedShrimp = updateShrimp(prev);
         const statsResult = updateStats(prev.axolotl, stateWithUpdatedShrimp);
-        const updated = checkEvolution(statsResult.axolotl);
+        const { axolotl: evolved, didLevelUp } = checkEvolution(statsResult.axolotl);
         const gameStateUpdates = statsResult.gameState || {};
 
         const now = Date.now();
@@ -38,10 +38,13 @@ export function useWellbeingEngine({ axolotlId, setGameState }: UseWellbeingEngi
         return {
           ...stateWithUpdatedShrimp,
           ...gameStateUpdates,
-          axolotl: updated,
-          energy: newEnergy, // Store as float so fractional progress is preserved
+          axolotl: evolved,
+          energy: newEnergy,
           maxEnergy,
           lastEnergyUpdate: now,
+          pendingStatPoints: didLevelUp
+            ? (stateWithUpdatedShrimp.pendingStatPoints ?? 0) + 1
+            : (stateWithUpdatedShrimp.pendingStatPoints ?? 0),
         };
       });
     }, 5000);

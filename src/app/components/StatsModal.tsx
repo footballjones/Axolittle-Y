@@ -1,22 +1,19 @@
-import { X, Dumbbell, Brain, Heart, Zap } from 'lucide-react';
+import { X, Dumbbell, Brain, Heart, Zap, Plus } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { SecondaryStats } from '../types/game';
-
-interface LevelUpData {
-  level: number;
-  prevStats: SecondaryStats;
-}
 
 interface StatsModalProps {
   onClose: () => void;
   stats: SecondaryStats;
   name: string;
-  /** Present when the modal is being shown as a result of leveling up */
-  levelUp?: LevelUpData;
+  /** Unspent stat points the player can allocate */
+  pendingPoints?: number;
+  /** Called when the player taps a stat to spend a point on it */
+  onAllocateStat?: (stat: keyof SecondaryStats) => void;
 }
 
-export function StatsModal({ onClose, stats, name, levelUp }: StatsModalProps) {
-  const isLevelUp = !!levelUp;
+export function StatsModal({ onClose, stats, name, pendingPoints = 0, onAllocateStat }: StatsModalProps) {
+  const hasPoints = pendingPoints > 0;
 
   const statItems = [
     {
@@ -24,9 +21,9 @@ export function StatsModal({ onClose, stats, name, levelUp }: StatsModalProps) {
       label: 'Strength',
       key: 'strength' as const,
       value: stats.strength,
-      prevValue: levelUp?.prevStats.strength ?? stats.strength,
       color: 'from-red-400 to-rose-500',
       bg: 'bg-red-500/20',
+      btnColor: 'bg-red-500 hover:bg-red-400',
       description: 'Physical power and resilience',
     },
     {
@@ -34,9 +31,9 @@ export function StatsModal({ onClose, stats, name, levelUp }: StatsModalProps) {
       label: 'Intellect',
       key: 'intellect' as const,
       value: stats.intellect,
-      prevValue: levelUp?.prevStats.intellect ?? stats.intellect,
       color: 'from-purple-400 to-violet-500',
       bg: 'bg-purple-500/20',
+      btnColor: 'bg-purple-500 hover:bg-purple-400',
       description: 'Learning ability and problem solving',
     },
     {
@@ -44,9 +41,9 @@ export function StatsModal({ onClose, stats, name, levelUp }: StatsModalProps) {
       label: 'Stamina',
       key: 'stamina' as const,
       value: stats.stamina,
-      prevValue: levelUp?.prevStats.stamina ?? stats.stamina,
       color: 'from-pink-400 to-rose-500',
       bg: 'bg-pink-500/20',
+      btnColor: 'bg-pink-500 hover:bg-pink-400',
       description: 'Endurance and vitality',
     },
     {
@@ -54,9 +51,9 @@ export function StatsModal({ onClose, stats, name, levelUp }: StatsModalProps) {
       label: 'Speed',
       key: 'speed' as const,
       value: stats.speed,
-      prevValue: levelUp?.prevStats.speed ?? stats.speed,
       color: 'from-amber-400 to-yellow-500',
       bg: 'bg-amber-500/20',
+      btnColor: 'bg-amber-500 hover:bg-amber-400',
       description: 'Reaction time and agility',
     },
   ];
@@ -69,7 +66,7 @@ export function StatsModal({ onClose, stats, name, levelUp }: StatsModalProps) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          onClick={onClose}
+          onClick={hasPoints ? undefined : onClose}
           className="absolute inset-0 bg-black/60 backdrop-blur-sm"
         />
 
@@ -80,11 +77,11 @@ export function StatsModal({ onClose, stats, name, levelUp }: StatsModalProps) {
           exit={{ scale: 0.9, opacity: 0, y: 20 }}
           className="relative w-full max-w-md max-h-[90vh] sm:max-h-[85vh] bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl overflow-hidden border border-white/60 flex flex-col"
         >
-          {/* Header — golden on level-up, indigo/purple otherwise */}
+          {/* Header */}
           <div
             className="relative px-4 sm:px-6 py-3 sm:py-4 flex-shrink-0"
             style={{
-              background: isLevelUp
+              background: hasPoints
                 ? 'linear-gradient(135deg, #f59e0b 0%, #f97316 50%, #ef4444 100%)'
                 : 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%)',
             }}
@@ -98,8 +95,8 @@ export function StatsModal({ onClose, stats, name, levelUp }: StatsModalProps) {
               }}
             />
 
-            {/* Stars burst for level-up */}
-            {isLevelUp && (
+            {/* Stars burst for level-up allocation */}
+            {hasPoints && (
               <>
                 {['top-1 left-3', 'top-2 right-6', 'bottom-2 left-10', 'top-3 right-16'].map((pos, i) => (
                   <motion.span
@@ -117,7 +114,7 @@ export function StatsModal({ onClose, stats, name, levelUp }: StatsModalProps) {
 
             <div className="relative flex items-center justify-between">
               <div>
-                {isLevelUp ? (
+                {hasPoints ? (
                   <>
                     <motion.div
                       initial={{ opacity: 0, y: -8 }}
@@ -133,9 +130,13 @@ export function StatsModal({ onClose, stats, name, levelUp }: StatsModalProps) {
                       transition={{ delay: 0.15 }}
                       className="text-xl sm:text-2xl font-black text-white"
                     >
-                      Now Level {levelUp!.level}
+                      Choose a Stat to Upgrade
                     </motion.h2>
-                    <p className="text-white/80 text-xs sm:text-sm mt-0.5">All stats increased!</p>
+                    <p className="text-white/80 text-xs sm:text-sm mt-0.5">
+                      {pendingPoints === 1
+                        ? '1 point to assign'
+                        : `${pendingPoints} points to assign`}
+                    </p>
                   </>
                 ) : (
                   <>
@@ -144,132 +145,107 @@ export function StatsModal({ onClose, stats, name, levelUp }: StatsModalProps) {
                   </>
                 )}
               </div>
-              <motion.button
-                onClick={onClose}
-                className="bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-xl p-2 transition-all border border-white/40"
-                whileHover={{ scale: 1.1, rotate: 90 }}
-                whileTap={{ scale: 0.9 }}
-              >
-                <X className="w-5 h-5 text-white" strokeWidth={2.5} />
-              </motion.button>
+              {!hasPoints && (
+                <motion.button
+                  onClick={onClose}
+                  className="bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-xl p-2 transition-all border border-white/40"
+                  whileHover={{ scale: 1.1, rotate: 90 }}
+                  whileTap={{ scale: 0.9 }}
+                >
+                  <X className="w-5 h-5 text-white" strokeWidth={2.5} />
+                </motion.button>
+              )}
             </div>
           </div>
 
-          {/* Content - Scrollable */}
+          {/* Content */}
           <div className="overflow-y-auto flex-1 p-4 sm:p-6 space-y-3 sm:space-y-4">
-            {statItems.map(({ icon: Icon, label, value, prevValue, color, bg, description }, index) => {
-              const gain = value - prevValue;
-              return (
-                <motion.div
-                  key={label}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-2xl p-3 sm:p-4 border border-slate-200/60"
-                >
-                  <div className="flex items-start gap-3 sm:gap-4">
-                    {/* Icon */}
-                    <div className={`${bg} rounded-xl p-2 sm:p-3 flex-shrink-0`}>
-                      <Icon className="w-5 h-5 sm:w-6 sm:h-6 text-slate-700" strokeWidth={2.5} />
-                    </div>
 
-                    {/* Info */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-2">
-                        <h3 className="font-bold text-slate-900 text-sm sm:text-base">{label}</h3>
-                        <div className="flex items-center gap-1.5">
-                          {/* +N gain badge — only shown on level-up */}
-                          {isLevelUp && gain > 0 && (
-                            <motion.span
-                              initial={{ scale: 0, opacity: 0 }}
-                              animate={{ scale: 1, opacity: 1 }}
-                              transition={{
-                                delay: index * 0.1 + 0.3,
-                                type: 'spring',
-                                stiffness: 300,
-                                damping: 15,
-                              }}
-                              className="text-[11px] font-black text-white px-1.5 py-0.5 rounded-full"
-                              style={{ background: 'linear-gradient(135deg, #22c55e, #16a34a)' }}
-                            >
-                              +{gain}
-                            </motion.span>
-                          )}
-                          <span className="text-base sm:text-lg font-black text-slate-700">
-                            {Math.round(value)}
-                          </span>
-                        </div>
-                      </div>
-                      <p className="text-xs text-slate-600 mb-2 sm:mb-3">{description}</p>
+            {/* Points indicator banner */}
+            {hasPoints && (
+              <motion.div
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="rounded-2xl px-4 py-3 flex items-center gap-3 border"
+                style={{ background: 'rgba(251,191,36,0.15)', borderColor: 'rgba(251,191,36,0.4)' }}
+              >
+                <span className="text-2xl">🎯</span>
+                <p className="text-amber-800 font-bold text-sm">
+                  Tap any stat below to add +1 point!
+                </p>
+              </motion.div>
+            )}
 
-                      {/* Progress Bar */}
-                      <div className="relative h-2 bg-slate-200 rounded-full overflow-hidden">
-                        {/* Previous value marker (shown during level-up so player sees the "before") */}
-                        {isLevelUp && gain > 0 && (
-                          <div
-                            className="absolute inset-y-0 left-0 opacity-30 rounded-full"
-                            style={{
-                              width: `${prevValue}%`,
-                              background: `linear-gradient(90deg, ${color.replace('from-', '').replace(' to-', ', ')})`,
-                            }}
-                          />
+            {statItems.map(({ icon: Icon, label, key, value, color, bg, btnColor, description }, index) => (
+              <motion.div
+                key={label}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: index * 0.07 }}
+                className={`bg-gradient-to-br from-slate-50 to-slate-100 rounded-2xl p-3 sm:p-4 border border-slate-200/60 ${hasPoints ? 'cursor-pointer' : ''}`}
+                onClick={hasPoints && onAllocateStat ? () => onAllocateStat(key) : undefined}
+                whileTap={hasPoints ? { scale: 0.97 } : {}}
+                style={hasPoints ? { cursor: 'pointer' } : {}}
+              >
+                <div className="flex items-start gap-3 sm:gap-4">
+                  {/* Icon */}
+                  <div className={`${bg} rounded-xl p-2 sm:p-3 flex-shrink-0`}>
+                    <Icon className="w-5 h-5 sm:w-6 sm:h-6 text-slate-700" strokeWidth={2.5} />
+                  </div>
+
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="font-bold text-slate-900 text-sm sm:text-base">{label}</h3>
+                      <div className="flex items-center gap-2">
+                        <span className="text-base sm:text-lg font-black text-slate-700">{Math.round(value)}</span>
+                        {hasPoints && (
+                          <motion.div
+                            className={`${btnColor} w-7 h-7 rounded-full flex items-center justify-center shadow-md flex-shrink-0`}
+                            whileHover={{ scale: 1.15 }}
+                            animate={{ scale: [1, 1.08, 1] }}
+                            transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
+                          >
+                            <Plus className="w-4 h-4 text-white" strokeWidth={3} />
+                          </motion.div>
                         )}
-                        {/* Actual bar — animates from prevValue to value on level-up */}
-                        <motion.div
-                          initial={{ width: isLevelUp && gain > 0 ? `${prevValue}%` : '0%' }}
-                          animate={{ width: `${value}%` }}
-                          transition={{
-                            duration: 0.9,
-                            delay: index * 0.1 + (isLevelUp ? 0.45 : 0.2),
-                            ease: 'easeOut',
-                          }}
-                          className={`absolute inset-y-0 left-0 bg-gradient-to-r ${color} rounded-full`}
-                        />
                       </div>
+                    </div>
+                    <p className="text-xs text-slate-600 mb-2 sm:mb-3">{description}</p>
+
+                    {/* Progress Bar */}
+                    <div className="relative h-2 bg-slate-200 rounded-full overflow-hidden">
+                      <motion.div
+                        initial={{ width: '0%' }}
+                        animate={{ width: `${Math.min(100, value)}%` }}
+                        transition={{ duration: 0.7, delay: index * 0.07 + 0.2, ease: 'easeOut' }}
+                        className={`absolute inset-y-0 left-0 bg-gradient-to-r ${color} rounded-full`}
+                      />
                     </div>
                   </div>
-                </motion.div>
-              );
-            })}
+                </div>
+              </motion.div>
+            ))}
 
-            {/* Footer note */}
-            {isLevelUp ? (
+            {/* Footer */}
+            {hasPoints ? (
               <motion.div
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.55 }}
-                className="rounded-2xl p-3 sm:p-4 border"
+                transition={{ delay: 0.4 }}
+                className="rounded-2xl p-3 sm:p-4 border text-center"
                 style={{ background: 'rgba(251,191,36,0.12)', borderColor: 'rgba(251,191,36,0.3)' }}
               >
-                <p className="text-xs text-amber-700 text-center font-medium">
-                  🏆 Each level-up increases all secondary stats by +1
+                <p className="text-xs text-amber-700 font-medium">
+                  🏆 You earn 1 stat point every level-up — choose wisely!
                 </p>
               </motion.div>
             ) : (
               <div className="bg-indigo-50 rounded-2xl p-3 sm:p-4 border border-indigo-100">
                 <p className="text-xs text-indigo-700 text-center font-medium">
-                  💡 Stats are determined at birth and grow through mini-games and evolution
+                  💡 Earn stat points by leveling up through mini-games
                 </p>
               </div>
-            )}
-
-            {/* "Got it!" button — only on level-up */}
-            {isLevelUp && (
-              <motion.button
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.65 }}
-                onClick={onClose}
-                className="w-full py-3 rounded-2xl font-black text-white text-sm tracking-wide"
-                style={{
-                  background: 'linear-gradient(135deg, #f59e0b 0%, #f97316 100%)',
-                  boxShadow: '0 4px 16px rgba(245,158,11,0.4)',
-                }}
-                whileTap={{ scale: 0.96 }}
-                whileHover={{ scale: 1.02 }}
-              >
-                Got it! 🎉
-              </motion.button>
             )}
           </div>
         </motion.div>

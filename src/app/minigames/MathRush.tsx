@@ -27,83 +27,78 @@ interface Question {
   themeEmoji: string;
 }
 
-function generateQuestion(level: number): Question {
+// Perfect squares for square-root questions (Q33+)
+const PERFECT_SQUARES = [4, 9, 16, 25, 36, 49, 64, 81, 100];
+
+/**
+ * Generate a question based on how many questions have been asked so far.
+ *  Q1–4:   addition only
+ *  Q5–12:  addition + subtraction
+ *  Q13–24: addition + subtraction + multiplication
+ *  Q25–32: addition + subtraction + multiplication + division
+ *  Q33+:   all of the above + square roots
+ */
+function generateQuestion(questionCount: number): Question {
   const theme = THEMES[Math.floor(Math.random() * THEMES.length)];
-  let a: number, b: number, op: string, answer: number, questionText: string;
+  let a: number, b: number, answer: number, questionText: string;
 
-  // Progressive difficulty based on score (level = score / 3, max level 4)
-  const actualLevel = Math.min(Math.floor(level / 3), 4);
+  // Determine which operations are available based on question number
+  const hasSubtraction   = questionCount >= 5;
+  const hasMultiplication = questionCount >= 13;
+  const hasDivision      = questionCount >= 25;
+  const hasSquareRoot    = questionCount >= 33;
 
-  if (actualLevel < 1) {
-    // Level 0: Addition only (easier numbers)
-    a = 1 + Math.floor(Math.random() * 10);
-    b = 1 + Math.floor(Math.random() * 10);
-    op = '+';
+  // Build pool of available operations
+  const ops: string[] = ['+'];
+  if (hasSubtraction)    ops.push('-');
+  if (hasMultiplication) ops.push('×');
+  if (hasDivision)       ops.push('÷');
+  if (hasSquareRoot)     ops.push('√');
+
+  const op = ops[Math.floor(Math.random() * ops.length)];
+
+  if (op === '+') {
+    const range = hasMultiplication ? 20 : hasSubtraction ? 15 : 10;
+    a = 1 + Math.floor(Math.random() * range);
+    b = 1 + Math.floor(Math.random() * range);
     answer = a + b;
     questionText = `${a} ${theme.emoji} + ${b} ${theme.emoji} = ?`;
-  } else if (actualLevel < 2) {
-    // Level 1: Addition & subtraction (easier subtraction)
-    if (Math.random() < 0.5) {
-      a = 2 + Math.floor(Math.random() * 15);
-      b = 1 + Math.floor(Math.random() * a);
-      op = '-';
-      answer = a - b;
-      questionText = `${a} ${theme.emoji} − ${b} ${theme.emoji} = ?`;
-    } else {
-      a = 1 + Math.floor(Math.random() * 15);
-      b = 1 + Math.floor(Math.random() * 15);
-      op = '+';
-      answer = a + b;
-      questionText = `${a} ${theme.emoji} + ${b} ${theme.emoji} = ?`;
-    }
-  } else if (actualLevel < 3) {
-    // Level 2: Multiplication (smaller numbers)
-    a = 2 + Math.floor(Math.random() * 8);
-    b = 2 + Math.floor(Math.random() * 8);
-    op = '×';
+  } else if (op === '-') {
+    const range = hasDivision ? 20 : 15;
+    a = 2 + Math.floor(Math.random() * range);
+    b = 1 + Math.floor(Math.random() * a);
+    answer = a - b;
+    questionText = `${a} ${theme.emoji} − ${b} ${theme.emoji} = ?`;
+  } else if (op === '×') {
+    const maxFactor = hasDivision ? 10 : 8;
+    a = 2 + Math.floor(Math.random() * maxFactor);
+    b = 2 + Math.floor(Math.random() * maxFactor);
     answer = a * b;
     questionText = `${a} × ${b} ${theme.emoji} = ?`;
+  } else if (op === '÷') {
+    b = 2 + Math.floor(Math.random() * 8);
+    answer = 2 + Math.floor(Math.random() * 8);
+    a = b * answer;
+    questionText = `${a} ${theme.emoji} ÷ ${b} = ?`;
   } else {
-    // Level 3+: Mixed including division
-    const ops = ['+', '-', '×', '÷'];
-    op = ops[Math.floor(Math.random() * ops.length)];
-    
-    if (op === '÷') {
-      // Division: make sure it divides evenly
-      b = 2 + Math.floor(Math.random() * 8);
-      answer = 2 + Math.floor(Math.random() * 8);
-      a = b * answer;
-      questionText = `${a} ${theme.emoji} ÷ ${b} = ?`;
-    } else if (op === '×') {
-      a = 2 + Math.floor(Math.random() * 10);
-      b = 2 + Math.floor(Math.random() * 10);
-      answer = a * b;
-      questionText = `${a} × ${b} ${theme.emoji} = ?`;
-    } else if (op === '-') {
-      a = 5 + Math.floor(Math.random() * 20);
-      b = 1 + Math.floor(Math.random() * a);
-      answer = a - b;
-      questionText = `${a} ${theme.emoji} − ${b} ${theme.emoji} = ?`;
-    } else {
-      a = 1 + Math.floor(Math.random() * 20);
-      b = 1 + Math.floor(Math.random() * 20);
-      answer = a + b;
-      questionText = `${a} ${theme.emoji} + ${b} ${theme.emoji} = ?`;
-    }
+    // √ square root
+    const square = PERFECT_SQUARES[Math.floor(Math.random() * PERFECT_SQUARES.length)];
+    answer = Math.round(Math.sqrt(square));
+    questionText = `√${square} ${theme.emoji} = ?`;
   }
 
-  // Generate wrong answers (closer to correct answer for harder questions)
+  // Generate 3 wrong answers
   const wrongSet = new Set<number>();
-  const range = actualLevel < 2 ? 5 : 7; // Smaller range for easier questions
+  const range = questionCount < 5 ? 5 : questionCount < 13 ? 6 : 8;
   while (wrongSet.size < 3) {
-    const wrong = answer + (Math.floor(Math.random() * (range * 2 + 1)) - range);
+    const offset = Math.floor(Math.random() * (range * 2 + 1)) - range;
+    const wrong = answer + (offset === 0 ? 1 : offset);
     if (wrong !== answer && wrong >= 0 && !wrongSet.has(wrong)) {
       wrongSet.add(wrong);
     }
   }
 
   const options = [answer, ...Array.from(wrongSet)];
-  // Shuffle options
   for (let i = options.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [options[i], options[j]] = [options[j], options[i]];
@@ -114,6 +109,7 @@ function generateQuestion(level: number): Question {
 
 export function MathRush({ onEnd, onDeductEnergy, energy }: MiniGameProps) {
   const [score, setScore] = useState(0);
+  const [questionCount, setQuestionCount] = useState(0); // 1-based count of questions asked
   const [isPlaying, setIsPlaying] = useState(false); // Start with false, show overlay first
   const [isPaused, setIsPaused] = useState(false);
   const [showOverlay, setShowOverlay] = useState(true);
@@ -134,11 +130,12 @@ export function MathRush({ onEnd, onDeductEnergy, energy }: MiniGameProps) {
     return timerMs / 1000; // Convert to seconds
   }, []);
 
-  const loadNewQuestion = useCallback(() => {
-    const newQuestion = generateQuestion(score);
+  const loadNewQuestion = useCallback((currentQCount: number) => {
+    const newQuestion = generateQuestion(currentQCount + 1); // +1 because this will be the next question
     const newTimer = getTimerForScore(score);
     setCurrentQuestion(newQuestion);
     setTimer(newTimer);
+    setQuestionCount(currentQCount + 1);
     setSelectedAnswer(null);
     setFeedback({ text: '', type: '' });
     setWaitingForNext(false);
@@ -149,12 +146,13 @@ export function MathRush({ onEnd, onDeductEnergy, energy }: MiniGameProps) {
     if (hadEnergy) onDeductEnergy?.();
     setHadEnergyAtStart(hadEnergy);
     setScore(0);
+    setQuestionCount(0);
     setShowOverlay(false);
     setGameEnded(false);
     setFinalRewards(null);
     setIsPlaying(true);
     setIsPaused(false);
-    loadNewQuestion();
+    loadNewQuestion(0);
   }, [loadNewQuestion, energy, onDeductEnergy]);
 
   // Timer countdown - only when playing and question is loaded
@@ -209,17 +207,17 @@ export function MathRush({ onEnd, onDeductEnergy, energy }: MiniGameProps) {
 
   const handleAnswer = useCallback((answer: number) => {
     if (!currentQuestion || selectedAnswer !== null || waitingForNext) return;
-    
+
     setSelectedAnswer(answer);
     setWaitingForNext(true);
-    
+
     if (answer === currentQuestion.answer) {
       // Correct!
       setFeedback({ text: '✓ Correct!', type: 'correct' });
       setScore(prev => prev + 1);
       setTimeout(() => {
         if (isPlaying) { // Only load next if still playing
-          loadNewQuestion();
+          loadNewQuestion(questionCount);
         }
       }, 500);
     } else {
@@ -229,7 +227,7 @@ export function MathRush({ onEnd, onDeductEnergy, energy }: MiniGameProps) {
         endGame();
       }, 800);
     }
-  }, [currentQuestion, selectedAnswer, waitingForNext, loadNewQuestion, isPlaying, endGame]);
+  }, [currentQuestion, selectedAnswer, waitingForNext, loadNewQuestion, questionCount, isPlaying, endGame]);
 
   // Handle timer running out
   useEffect(() => {
@@ -292,12 +290,15 @@ export function MathRush({ onEnd, onDeductEnergy, energy }: MiniGameProps) {
                         </p>
                         <p className="flex items-center justify-center gap-2">
                           <span className="text-lg">⚡</span>
-                          Each correct answer speeds up the timer
+                          Timer speeds up as you go!
                         </p>
-                        <p className="flex items-center justify-center gap-2">
-                          <span className="text-lg">💎</span>
-                          Get as many right as you can!
-                        </p>
+                        <div className="bg-purple-100/70 rounded-xl px-3 py-2 text-left text-xs space-y-0.5 mt-1">
+                          <p>Q1–4: <span className="font-bold">Addition</span></p>
+                          <p>Q5–12: <span className="font-bold">+ Subtraction</span></p>
+                          <p>Q13–24: <span className="font-bold">+ Multiplication</span></p>
+                          <p>Q25–32: <span className="font-bold">+ Division</span></p>
+                          <p>Q33+: <span className="font-bold">+ Square Roots 🌟</span></p>
+                        </div>
                       </div>
                     </div>
                     <motion.button
