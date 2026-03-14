@@ -1,7 +1,7 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { supabase, isSupabaseConfigured } from '../services/supabase';
 import { GameState } from '../types/game';
-import { getLocalUpdatedAt } from '../utils/storage';
+import { getLocalUpdatedAt, generateFriendCode } from '../utils/storage';
 
 export type SyncStatus = 'idle' | 'syncing' | 'synced' | 'error' | 'guest';
 
@@ -79,13 +79,15 @@ export function useCloudSync({
       );
 
       // Publish discoverable profile info so other players can look up this user
-      // by friend code. Only written when the player has an axolotl and friend code.
-      if (!error && state.axolotl && state.friendCode) {
+      // by friend code. Derives the code from the axolotl (deterministic pure fn)
+      // rather than reading a non-existent GameState.friendCode field.
+      if (!error && state.axolotl) {
+        const friendCode = generateFriendCode(state.axolotl);
         await supabase.from('profiles').upsert(
           {
             id: userId,
             username: state.axolotl.name,
-            friend_code: state.friendCode,
+            friend_code: friendCode,
             axolotl_name: state.axolotl.name,
             generation: state.axolotl.generation,
             stage: state.axolotl.stage,
