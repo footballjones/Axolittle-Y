@@ -69,7 +69,11 @@ export function LoginScreen({ onClose }: LoginScreenProps = {}) {
 
   const handleSignIn = async (submittedPin?: string) => {
     const pinToUse = submittedPin ?? pin;
-    if (!username.trim() || pinToUse.length < 4) return;
+    if (!isValidUsername(username.trim())) {
+      setError('Username must be 3–20 characters: letters, numbers or underscores only.');
+      return;
+    }
+    if (pinToUse.length < 4) return;
     setLoading(true);
     setError(null);
     const { error } = await signIn(username.trim(), pinToUse);
