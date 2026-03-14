@@ -98,7 +98,8 @@ export default function App() {
   } = useEconomyActions({ setGameState, setNotifications });
 
   // ── Auth + Cloud Sync ──────────────────────────────────────────────────────
-  const { user, isLoading: authLoading, isGuest } = useAuth();
+  const { user, isLoading: authLoading, isGuest, signOut } = useAuth();
+  const [showAuthOverlay, setShowAuthOverlay] = useState(false);
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
   /** True if a save already existed in localStorage when the app first launched.
    *  Used to skip LoginScreen for existing / returning players. */
@@ -110,6 +111,13 @@ export default function App() {
     onCloudStateLoaded: setGameState,
     onStatusChange: setSyncStatus,
   });
+
+  // Auto-close the in-game auth overlay once the user successfully signs in
+  useEffect(() => {
+    if (user && !isGuest && showAuthOverlay) {
+      setShowAuthOverlay(false);
+    }
+  }, [user, isGuest, showAuthOverlay]);
 
   useWellbeingEngine({ axolotlId: gameState?.axolotl?.id, setGameState });
 
@@ -1674,7 +1682,22 @@ export default function App() {
           onMusicToggle={(enabled) => {
             setGameState(prev => prev ? { ...prev, musicEnabled: enabled } : null);
           }}
+          username={user?.user_metadata?.username ?? user?.email?.split('@')[0] ?? null}
+          isGuest={isGuest || !user}
+          onSignOut={async () => {
+            await signOut();
+            setActiveModal(null);
+          }}
+          onSignIn={() => {
+            setActiveModal(null);
+            setShowAuthOverlay(true);
+          }}
         />
+      )}
+
+      {/* In-game sign-in overlay */}
+      {showAuthOverlay && (
+        <LoginScreen onClose={() => setShowAuthOverlay(false)} />
       )}
 
       {/* Mini-Games */}

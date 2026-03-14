@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, Volume2, VolumeX, Bell, BellOff, Trash2 } from 'lucide-react';
+import { X, Volume2, VolumeX, Bell, BellOff, Trash2, LogOut, LogIn, User } from 'lucide-react';
 import { motion } from 'motion/react';
 
 interface SettingsModalProps {
@@ -7,6 +7,10 @@ interface SettingsModalProps {
   onResetGame: () => void;
   musicEnabled?: boolean;
   onMusicToggle?: (enabled: boolean) => void;
+  username?: string | null;
+  isGuest?: boolean;
+  onSignOut?: () => void;
+  onSignIn?: () => void;
 }
 
 // Move ToggleSwitch outside component to prevent recreation on every render
@@ -30,6 +34,10 @@ export function SettingsModal({
   onResetGame,
   musicEnabled: initialMusicEnabled = true,
   onMusicToggle,
+  username,
+  isGuest = true,
+  onSignOut,
+  onSignIn,
 }: SettingsModalProps) {
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [musicEnabled, setMusicEnabled] = useState(initialMusicEnabled);
@@ -87,7 +95,59 @@ export function SettingsModal({
 
           {/* Content */}
           <div className="overflow-y-auto p-4 sm:p-5 space-y-3 flex-1">
-            
+
+            {/* Account Section */}
+            <div>
+              <h3 className="text-white/50 text-xs font-semibold uppercase tracking-wider mb-2">Account</h3>
+              <div className="bg-white/5 rounded-xl px-4 py-3 border border-white/5">
+                {!isGuest && username ? (
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center flex-shrink-0">
+                        <User className="w-4 h-4 text-white" />
+                      </div>
+                      <div>
+                        <p className="text-white text-sm font-semibold">{username}</p>
+                        <p className="text-white/40 text-xs">Signed in</p>
+                      </div>
+                    </div>
+                    {onSignOut && (
+                      <motion.button
+                        onClick={onSignOut}
+                        className="flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-white/70 hover:text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors border border-white/10"
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        <LogOut className="w-3.5 h-3.5" />
+                        Sign Out
+                      </motion.button>
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0">
+                        <User className="w-4 h-4 text-white/40" />
+                      </div>
+                      <div>
+                        <p className="text-white/70 text-sm font-medium">Playing as Guest</p>
+                        <p className="text-white/40 text-xs">Progress saved locally only</p>
+                      </div>
+                    </div>
+                    {onSignIn && (
+                      <motion.button
+                        onClick={onSignIn}
+                        className="flex items-center gap-1.5 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition-all shadow-md"
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        <LogIn className="w-3.5 h-3.5" />
+                        Sign In
+                      </motion.button>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+
             {/* Audio Section */}
             <div>
               <h3 className="text-white/50 text-xs font-semibold uppercase tracking-wider mb-2">Audio</h3>

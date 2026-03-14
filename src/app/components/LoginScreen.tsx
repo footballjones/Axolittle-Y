@@ -29,7 +29,12 @@ function Bubbles() {
   );
 }
 
-export function LoginScreen() {
+interface LoginScreenProps {
+  /** When provided (in-game overlay), renders a back/close button. */
+  onClose?: () => void;
+}
+
+export function LoginScreen({ onClose }: LoginScreenProps = {}) {
   const { signIn, signUp, continueAsGuest, signInWithGoogle, signInWithApple } = useAuth();
 
   const [view, setView] = useState<View>('signin');
@@ -119,8 +124,24 @@ export function LoginScreen() {
   return (
     <div
       className="fixed inset-0 flex flex-col items-center justify-center p-6 overflow-hidden"
-      style={{ background: 'linear-gradient(180deg, #041428 0%, #0a1e3d 50%, #0d2847 100%)' }}
+      style={{ background: 'linear-gradient(180deg, #041428 0%, #0a1e3d 50%, #0d2847 100%)', zIndex: 60 }}
     >
+      {/* Back button — only shown when used as an in-game overlay */}
+      {onClose && (
+        <motion.button
+          onClick={onClose}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          whileTap={{ scale: 0.9 }}
+          className="absolute top-4 left-4 z-10 flex items-center gap-1.5 text-cyan-300/50 hover:text-cyan-300 transition-colors text-sm font-semibold"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M19 12H5M12 5l-7 7 7 7"/>
+          </svg>
+          Back to game
+        </motion.button>
+      )}
+
       {/* Background radial glows */}
       <div
         className="absolute inset-0 pointer-events-none"
@@ -393,17 +414,22 @@ export function LoginScreen() {
             </div>
           </div>
 
-          <motion.button
-            onClick={continueAsGuest}
-            whileTap={{ scale: 0.97 }}
-            className="w-full py-2 rounded-xl font-bold text-cyan-300/40 text-xs transition-colors hover:text-cyan-300/70"
-            style={{ background: 'transparent' }}
-          >
-            Continue as Guest
-          </motion.button>
-          <p className="text-[10px] text-cyan-200/20 text-center mt-1 leading-relaxed">
-            Guest progress is saved on this device only.
-          </p>
+          {/* Only show guest option when not already in-game */}
+          {!onClose && (
+            <>
+              <motion.button
+                onClick={continueAsGuest}
+                whileTap={{ scale: 0.97 }}
+                className="w-full py-2 rounded-xl font-bold text-cyan-300/40 text-xs transition-colors hover:text-cyan-300/70"
+                style={{ background: 'transparent' }}
+              >
+                Continue as Guest
+              </motion.button>
+              <p className="text-[10px] text-cyan-200/20 text-center mt-1 leading-relaxed">
+                Guest progress is saved on this device only.
+              </p>
+            </>
+          )}
         </div>
       </motion.div>
     </div>
