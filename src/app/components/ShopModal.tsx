@@ -13,6 +13,8 @@ interface ShopModalProps {
   onBuyFilter?: (filter: { id: string; name: string; coins: number; opals: number }) => void;
   onBuyTreatment?: (treatment: { id: string; name: string; opals: number }) => void;
   initialSection?: 'coins' | 'opals' | null;
+  /** The currently owned filter tier ID, if any. Owned filters show "Owned" and cannot be re-purchased. */
+  filterTier?: string;
 }
 
 const COIN_PACKS = [
@@ -179,6 +181,7 @@ export function ShopModal({
   onBuyFilter,
   onBuyTreatment,
   initialSection,
+  filterTier,
 }: ShopModalProps) {
   const canAfford = (cost: number) => coins >= cost;
   const canAffordOpals = (cost: number) => opals >= cost;
@@ -186,6 +189,7 @@ export function ShopModal({
   const opalsSectionRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [infoModal, setInfoModal] = useState<'shrimp' | 'filters' | 'treatments' | null>(null);
+  const [confirmFilter, setConfirmFilter] = useState<typeof FILTER_OPTIONS[number] | null>(null);
 
   useEffect(() => {
     if (!initialSection) return;
@@ -437,30 +441,42 @@ export function ShopModal({
               />
               <div className="space-y-1.5">
                 {FILTER_OPTIONS.map((filter, i) => {
+                  const isOwned = filterTier === filter.id;
                   const usesOpals = filter.opals > 0;
                   const canAffordFilter = usesOpals ? canAffordOpals(filter.opals) : canAfford(filter.coins);
                   const filterCost = usesOpals ? filter.opals : filter.coins;
-                  
+
                   return (
                     <ShopRowTile
                       key={filter.id}
                       index={i}
-                      onClick={() => onBuyFilter?.(filter)}
-                      disabled={!canAffordFilter}
-                      cardBg="linear-gradient(135deg, rgba(255,255,255,0.88) 0%, rgba(240,249,255,0.85) 100%)"
-                      cardBorder="1.5px solid rgba(186,230,253,0.6)"
+                      onClick={() => !isOwned && setConfirmFilter(filter)}
+                      disabled={isOwned || !canAffordFilter}
+                      cardBg={isOwned
+                        ? 'linear-gradient(135deg, rgba(220,252,231,0.9) 0%, rgba(187,247,208,0.85) 100%)'
+                        : 'linear-gradient(135deg, rgba(255,255,255,0.88) 0%, rgba(240,249,255,0.85) 100%)'}
+                      cardBorder={isOwned ? '1.5px solid rgba(134,239,172,0.7)' : '1.5px solid rgba(186,230,253,0.6)'}
                       emoji={filter.emoji}
                       title={filter.name}
                       subtitle={filter.description}
                       priceContent={
-                        <PriceBadge
-                          bg={canAffordFilter ? (usesOpals ? 'linear-gradient(135deg, #f472b6, #e11d48)' : 'linear-gradient(135deg, #38bdf8, #2563eb)') : 'rgba(216,180,254,0.3)'}
-                          border="none"
-                          shadow={canAffordFilter ? (usesOpals ? '0 3px 10px rgba(244,114,182,0.3)' : '0 3px 10px rgba(56,189,248,0.3)') : 'none'}
-                          icon={usesOpals ? Sparkles : Coins}
-                          value={filterCost}
-                          textColor={canAffordFilter ? '#fff' : 'rgba(139,92,246,0.4)'}
-                        />
+                        isOwned ? (
+                          <div
+                            className="flex items-center gap-1 text-[11px] font-black px-3 py-1.5 rounded-xl"
+                            style={{ background: 'linear-gradient(135deg, #4ade80, #16a34a)', color: '#fff', boxShadow: '0 3px 10px rgba(74,222,128,0.35)' }}
+                          >
+                            ✓ Owned
+                          </div>
+                        ) : (
+                          <PriceBadge
+                            bg={canAffordFilter ? (usesOpals ? 'linear-gradient(135deg, #f472b6, #e11d48)' : 'linear-gradient(135deg, #38bdf8, #2563eb)') : 'rgba(216,180,254,0.3)'}
+                            border="none"
+                            shadow={canAffordFilter ? (usesOpals ? '0 3px 10px rgba(244,114,182,0.3)' : '0 3px 10px rgba(56,189,248,0.3)') : 'none'}
+                            icon={usesOpals ? Sparkles : Coins}
+                            value={filterCost}
+                            textColor={canAffordFilter ? '#fff' : 'rgba(139,92,246,0.4)'}
+                          />
+                        )
                       }
                     />
                   );
@@ -523,6 +539,114 @@ export function ShopModal({
           </div>
         </div>
       </motion.div>
+
+      {/* ── Filter confirmation sheet ── */}
+      <AnimatePresence>
+        {confirmFilter && (() => {
+          const f = confirmFilter;
+          const usesOpals = f.opals > 0;
+          const cost = usesOpals ? f.opals : f.coins;
+          const canAffordIt = usesOpals ? canAffordOpals(f.opals) : canAfford(f.coins);
+          const FILTER_DETAIL: Record<string, string> = {
+            'filter-basic':    'A simple sponge filter that keeps waste from building up. Water Quality will decay more slowly, giving you more time between water changes.',
+            'filter-advanced': 'A multi-stage canister filter that removes particles and toxins faster. Significantly slows Water Quality decay — great for busy days.',
+            'filter-premium':  'A top-of-the-line system with UV sterilisation. Water Quality barely drops at all, so your axolotl stays happy with minimal maintenance.',
+          };
+          return (
+            <motion.div
+              key="confirm-filter-backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.18 }}
+              className="absolute inset-0 z-50 flex items-end justify-center pb-6 px-4"
+              style={{ background: 'rgba(15,10,40,0.45)', backdropFilter: 'blur(4px)' }}
+              onClick={() => setConfirmFilter(null)}
+            >
+              <motion.div
+                key="confirm-filter-card"
+                initial={{ opacity: 0, y: 40, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 30, scale: 0.95 }}
+                transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+                className="w-full rounded-3xl p-5 flex flex-col gap-3"
+                style={{
+                  background: 'linear-gradient(160deg, #f0f9ff 0%, #e0f2fe 100%)',
+                  border: '1.5px solid rgba(186,230,253,0.7)',
+                  boxShadow: '0 16px 48px rgba(0,0,0,0.18)',
+                }}
+                onClick={e => e.stopPropagation()}
+              >
+                {/* Header */}
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0 shadow-sm" style={{ background: 'rgba(255,255,255,0.7)' }}>
+                    {f.emoji}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-black tracking-tight text-[1rem]" style={{ background: 'linear-gradient(135deg, #0284c7, #1d4ed8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                      {f.name}
+                    </h4>
+                    <p className="text-sky-500/70 text-[10px] font-semibold">{f.description}</p>
+                  </div>
+                  <motion.button
+                    onClick={() => setConfirmFilter(null)}
+                    className="rounded-full p-1.5 flex-shrink-0"
+                    style={{ background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(203,213,225,0.5)' }}
+                    whileTap={{ scale: 0.85 }}
+                  >
+                    <X className="w-3.5 h-3.5 text-slate-400" strokeWidth={2.5} />
+                  </motion.button>
+                </div>
+
+                {/* Detail */}
+                <p className="text-slate-600 text-[12px] leading-relaxed">
+                  {FILTER_DETAIL[f.id]}
+                </p>
+
+                {/* Cost + warning */}
+                <div className="rounded-2xl px-3.5 py-2.5 flex items-center gap-2" style={{ background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(186,230,253,0.6)' }}>
+                  <span className="text-slate-500 text-[11px] font-medium flex-1">Cost:</span>
+                  <div className="flex items-center gap-1 text-[11px] font-black px-2.5 py-1 rounded-xl"
+                    style={{ background: usesOpals ? 'linear-gradient(135deg,#f472b6,#e11d48)' : 'linear-gradient(135deg,#38bdf8,#2563eb)', color: '#fff' }}>
+                    {usesOpals ? <Sparkles className="w-3 h-3" /> : <Coins className="w-3 h-3" />}
+                    <span>{cost}</span>
+                  </div>
+                  <span className="text-[9px] text-slate-400 font-medium">one-time</span>
+                </div>
+
+                {!canAffordIt && (
+                  <p className="text-red-400 text-[11px] font-semibold text-center">Not enough {usesOpals ? 'opals' : 'coins'}!</p>
+                )}
+
+                {/* Buttons */}
+                <div className="flex gap-2 mt-1">
+                  <motion.button
+                    onClick={() => setConfirmFilter(null)}
+                    whileTap={{ scale: 0.96 }}
+                    className="flex-1 py-2.5 rounded-2xl font-bold text-slate-500 text-sm"
+                    style={{ background: 'rgba(255,255,255,0.7)', border: '1.5px solid rgba(203,213,225,0.5)' }}
+                  >
+                    Cancel
+                  </motion.button>
+                  <motion.button
+                    onClick={() => {
+                      if (!canAffordIt) return;
+                      onBuyFilter?.(f);
+                      setConfirmFilter(null);
+                    }}
+                    disabled={!canAffordIt}
+                    whileTap={canAffordIt ? { scale: 0.96 } : {}}
+                    className="flex-1 py-2.5 rounded-2xl font-black text-white text-sm disabled:opacity-40"
+                    style={{ background: 'linear-gradient(135deg,#38bdf8,#2563eb)', boxShadow: canAffordIt ? '0 4px 15px rgba(56,189,248,0.4)' : 'none' }}
+                  >
+                    Buy Filter
+                  </motion.button>
+                </div>
+              </motion.div>
+            </motion.div>
+          );
+        })()}
+      </AnimatePresence>
 
       {/* ── Info modal ── */}
       <AnimatePresence>

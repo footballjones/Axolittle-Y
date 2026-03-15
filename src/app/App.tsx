@@ -1691,6 +1691,7 @@ export default function App() {
           onBuyShrimp={handleBuyShrimp}
           onBuyTreatment={handleBuyTreatment}
           initialSection={shopSection}
+          filterTier={gameState?.filterTier}
         />
       )}
 
