@@ -26,7 +26,7 @@ const OPAL_PACKS = [
   { price: '$0.99', opals: 10, label: 'A Few', emoji: '💎' },
   { price: '$2.99', opals: 35, label: 'Handful', emoji: '💎' },
   { price: '$4.99', opals: 75, label: 'Armful', emoji: '✨' },
-  { price: '$9.99', opals: 200, label: 'Best Value', emoji: '🌟' },
+  { price: '$9.99', opals: 200, label: 'Catch of the Day', emoji: '🌟' },
   { price: '$19.99', opals: 500, label: 'Whale Pack', emoji: '🐋' },
 ];
 
