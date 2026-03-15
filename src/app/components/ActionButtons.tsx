@@ -34,6 +34,7 @@ interface ActionButtonsProps {
   cleaningMode?: boolean;
   cleanTutorialActive?: boolean;
   playMode?: boolean;
+  coins?: number;
 }
 
 export function ActionButtons({
@@ -49,7 +50,11 @@ export function ActionButtons({
   cleaningMode,
   cleanTutorialActive,
   playMode,
+  coins = 0,
 }: ActionButtonsProps) {
+  const canAffordFeed = coins >= 10;
+  const canAffordWater = coins >= 150;
+
   const buttons = [
     {
       icon: Utensils, label: 'Feed', onClick: onFeed,
@@ -57,8 +62,10 @@ export function ActionButtons({
       emptyGradient: 'from-teal-900/30 to-cyan-950/35',
       fillColor: 'from-teal-400 via-cyan-400 to-teal-300',
       glowColor: 'rgba(94,234,212,0.45)',
-      disabled: isHungerFull,
+      disabled: isHungerFull || !canAffordFeed,
       value: stats.hunger,
+      cost: '10🪙',
+      cantAfford: !canAffordFeed,
     },
     {
       icon: Sparkles, label: 'Playtime', onClick: onPlay,
@@ -68,6 +75,8 @@ export function ActionButtons({
       glowColor: 'rgba(196,181,253,0.45)',
       disabled: false,
       value: stats.happiness,
+      cost: null,
+      cantAfford: false,
     },
     {
       icon: PoopIcon, label: 'Clean', onClick: onClean,
@@ -77,6 +86,8 @@ export function ActionButtons({
       glowColor: 'rgba(251,182,206,0.45)',
       disabled: false,
       value: stats.cleanliness,
+      cost: null,
+      cantAfford: false,
     },
     {
       icon: Droplets, label: 'Water Quality', onClick: onWaterChange,
@@ -87,19 +98,21 @@ export function ActionButtons({
       disabled: false,
       value: stats.waterQuality,
       smallIcon: true,
+      cost: '150🪙',
+      cantAfford: !canAffordWater,
     },
   ];
 
   return (
     <div className="space-y-2">
       <div className="grid grid-cols-4 gap-1.5">
-        {buttons.map(({ icon: Icon, label, onClick, emptyGradient, fillColor, glowColor, disabled, value, smallIcon }) => {
+        {buttons.map(({ icon: Icon, label, onClick, emptyGradient, fillColor, glowColor, disabled, value, smallIcon, cost, cantAfford }) => {
           const isLow = value < 30;
           return (
             <motion.button
               key={label}
               onClick={onClick}
-              className={`relative bg-gradient-to-b ${emptyGradient} rounded-xl overflow-hidden border border-white/10 ${disabled && value < 100 ? 'opacity-70' : ''}`}
+              className={`relative bg-gradient-to-b ${emptyGradient} rounded-xl overflow-hidden border border-white/10 ${(disabled && value < 100) || cantAfford ? 'opacity-60' : ''}`}
               whileTap={{ scale: 0.93 }}
               transition={{ type: "spring", stiffness: 400, damping: 17 }}
               style={{ height: 48 }}
@@ -219,7 +232,13 @@ export function ActionButtons({
                   <Icon className={`${smallIcon ? 'w-3.5 h-3.5' : 'w-4 h-4'} text-white drop-shadow-md`} strokeWidth={2.5} />
                 </motion.div>
                 <span className="text-[8px] font-bold text-white/90 tracking-tight drop-shadow-sm">{label}</span>
-                <span className="text-[9px] font-bold text-white tabular-nums drop-shadow-md">{Math.round(value)}</span>
+                {cantAfford && cost ? (
+                  <span className="text-[7px] font-black text-red-300 tabular-nums drop-shadow-md leading-none">{cost}</span>
+                ) : cost ? (
+                  <span className="text-[7px] font-semibold text-white/60 tabular-nums drop-shadow-sm leading-none">{cost}</span>
+                ) : (
+                  <span className="text-[9px] font-bold text-white tabular-nums drop-shadow-md">{Math.round(value)}</span>
+                )}
               </div>
             </motion.button>
           );

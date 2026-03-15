@@ -75,6 +75,7 @@ export function useGameActions({
   const handleFeed = useCallback(() => {
     setGameState(prev => {
       if (!prev?.axolotl) return prev;
+      if (prev.coins < 10) return prev; // can't afford to feed
 
       // Drop food at the center during the tutorial, random otherwise
       const newFood: FoodItem = {
@@ -115,6 +116,7 @@ export function useGameActions({
 
       const next: GameState = {
         ...prev,
+        coins: prev.coins - 10,
         foodItems,
         feedCount: newFeedCount,
         pendingPoops,
@@ -193,6 +195,7 @@ export function useGameActions({
   const handleWaterChange = useCallback(() => {
     setGameState(prev => {
       if (!prev?.axolotl) return prev;
+      if (prev.coins < 150) return prev; // can't afford water change
 
       const updated = {
         ...prev.axolotl,
@@ -204,6 +207,7 @@ export function useGameActions({
 
       const next: GameState = {
         ...prev,
+        coins: prev.coins - 150,
         axolotl: updated,
         miniGamesLockedUntil: Date.now() + 2 * 60 * 60 * 1000, // lock for 2 hours
         totalWaterChanges: (prev.totalWaterChanges ?? 0) + 1,

@@ -1619,6 +1619,7 @@ export default function App() {
                             cleaningMode={cleaningMode}
                             cleanTutorialActive={cleanTutActive}
                             playMode={playMode}
+                            coins={coins}
                           />
                         </div>
                       </div>
@@ -1677,6 +1678,7 @@ export default function App() {
         <WaterChangeModal
           onClose={() => setShowWaterChangeModal(false)}
           onConfirm={handleWaterChange}
+          coins={coins}
         />
       )}
 
