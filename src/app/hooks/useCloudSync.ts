@@ -8,9 +8,13 @@ export type SyncStatus = 'idle' | 'syncing' | 'synced' | 'error' | 'guest';
 interface UseCloudSyncOptions {
   /** Authenticated user ID, or null when not signed in. */
   userId: string | null;
+  /** The player's login username (from auth metadata). Null for OAuth-only users. */
+  authUsername: string | null;
   gameState: GameState | null;
   onCloudStateLoaded: (state: GameState) => void;
   onStatusChange: (status: SyncStatus) => void;
+  /** Called when this player's friend code collides with another user's in the DB. */
+  onFriendCodeCollision?: () => void;
 }
 
 /**
@@ -21,9 +25,11 @@ interface UseCloudSyncOptions {
  */
 export function useCloudSync({
   userId,
+  authUsername,
   gameState,
   onCloudStateLoaded,
   onStatusChange,
+  onFriendCodeCollision,
 }: UseCloudSyncOptions) {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   /** Guard so we only pull once per session. */
@@ -79,25 +85,36 @@ export function useCloudSync({
       );
 
       // Publish discoverable profile info so other players can look up this user
-      // by friend code. Uses the permanent code stored in GameState.
+      // by friend code. username stores the login handle (unique); axolotl_name
+      // stores the axolotl's current name (display only, not unique).
       if (!error && state.axolotl && state.friendCode) {
-        const friendCode = state.friendCode;
-        await supabase.from('profiles').upsert(
+        const { error: profileError } = await supabase.from('profiles').upsert(
           {
             id: userId,
-            username: state.axolotl.name,
-            friend_code: friendCode,
+            // Login username (unique) — fall back to axolotl name for OAuth users
+            username: authUsername ?? state.axolotl.name,
+            friend_code: state.friendCode,
             axolotl_name: state.axolotl.name,
             generation: state.axolotl.generation,
             stage: state.axolotl.stage,
           },
           { onConflict: 'id' },
         );
+
+        // Unique constraint violation on friend_code means another user already
+        // has this code — extremely rare but must be handled.
+        if (
+          profileError &&
+          profileError.code === '23505' &&
+          profileError.message?.includes('friend_code')
+        ) {
+          onFriendCodeCollision?.();
+        }
       }
 
       onStatusChange(error ? 'error' : 'synced');
     },
-    [userId, onStatusChange],
+    [userId, authUsername, onStatusChange, onFriendCodeCollision],
   );
 
   useEffect(() => {

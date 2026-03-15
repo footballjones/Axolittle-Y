@@ -109,12 +109,20 @@ export default function App() {
 
   useCloudSync({
     userId: user?.id ?? null,
+    authUsername: (user?.user_metadata?.username as string | undefined) ?? null,
     gameState,
     onCloudStateLoaded: (state: GameState) => {
       if (!state.friendCode) state = { ...state, friendCode: generatePermanentFriendCode() };
       setGameState(state);
     },
     onStatusChange: setSyncStatus,
+    onFriendCodeCollision: () => {
+      // Extremely rare: another user already holds this friend code in the DB.
+      // Generate a fresh permanent code and let the next sync register it.
+      setGameState(prev =>
+        prev ? { ...prev, friendCode: generatePermanentFriendCode() } : prev,
+      );
+    },
   });
 
   // Auto-close the in-game auth overlay once the user successfully signs in

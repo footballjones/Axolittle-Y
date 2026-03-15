@@ -314,7 +314,7 @@ export function useGameActions({
     const realFriend: Friend = {
       id: data.id,
       friendCode: normalizedCode,
-      name: data.username ?? normalizedCode,
+      name: data.username ?? data.axolotl_name ?? normalizedCode,
       axolotlName: data.axolotl_name ?? 'Mystery Axo',
       stage: (data.stage as Friend['stage']) ?? 'adult',
       generation: data.generation ?? 1,
