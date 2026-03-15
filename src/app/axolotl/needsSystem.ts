@@ -64,6 +64,9 @@ export function updateWellbeingStats(axolotl: Axolotl, gameState?: GameState): {
 
   // ── Poop generation & promotion ───────────────────────────────────────────
   const MAX_POOPS = 7;
+  const POOP_CLEANLINESS_HIT = 5; // instant cleanliness drop per new poop
+
+  const existingPoopCount = (gameState?.poopItems || []).length;
 
   // 1. Promote pending feed-based poops that are now due
   const pending = gameState?.pendingPoops || [];
@@ -99,6 +102,9 @@ export function updateWellbeingStats(axolotl: Axolotl, gameState?: GameState): {
   if (currentPoops.length > MAX_POOPS) {
     currentPoops = currentPoops.slice(0, MAX_POOPS);
   }
+
+  // Instant cleanliness drop for newly appearing poops
+  const newPoopsAppeared = Math.max(0, currentPoops.length - existingPoopCount);
   
   // Track when cleanliness drops below 50%
   let cleanlinessLowSince = gameState?.cleanlinessLowSince;
@@ -136,7 +142,9 @@ export function updateWellbeingStats(axolotl: Axolotl, gameState?: GameState): {
     // If there are any poops in the tank, cleanliness can never read as 100 —
     // this prevents the race where poop spawns in the same tick as the decay
     // calculation (which uses the pre-generation poop count).
-    cleanliness: currentPoops.length > 0 ? Math.min(99, newCleanliness) : newCleanliness,
+    cleanliness: currentPoops.length > 0
+      ? Math.min(99, Math.max(0, newCleanliness - newPoopsAppeared * POOP_CLEANLINESS_HIT))
+      : newCleanliness,
     // Water Quality: filter affects base decay, low cleanliness for >1 day multiplies it,
     // and any poops in the tank add direct additional decay
     waterQuality: Math.max(5, axolotl.stats.waterQuality - STAT_DECAY_RATE.waterQuality * minutesPassed * waterQualityDecayMultiplier - poopWaterDecay),

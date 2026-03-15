@@ -37,13 +37,14 @@ const COLORS = [
   '#FFB7B2', '#B5B9FF', '#FFDAC1', '#E2F0CB', '#C7CEEA',
 ];
 
-export function AxolotlStacker({ onEnd, onDeductEnergy, energy }: MiniGameProps) {
+export function AxolotlStacker({ onEnd, onDeductEnergy, onApplyReward, energy }: MiniGameProps) {
   const [score, setScore] = useState(0);
   const [showOverlay, setShowOverlay] = useState(true);
   const [gameEnded, setGameEnded] = useState(false);
   const [hadEnergyAtStart, setHadEnergyAtStart] = useState(false);
   const [finalRewards, setFinalRewards] = useState<{ tier: string; xp: number; coins: number; opals?: number } | null>(null);
-  
+  const cumulativeRef = useRef({ xp: 0, hadAnyEnergy: false });
+
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
   const animationFrameRef = useRef<number | null>(null);
@@ -199,6 +200,9 @@ export function AxolotlStacker({ onEnd, onDeductEnergy, energy }: MiniGameProps)
     
     if (hadEnergyAtStart) {
       const rewards = calculateRewards('axolotl-stacker', game.score);
+      cumulativeRef.current.xp += rewards.xp;
+      cumulativeRef.current.hadAnyEnergy = true;
+      onApplyReward?.(rewards.coins, rewards.opals);
       setFinalRewards({
         tier: rewards.tier,
         xp: rewards.xp,
@@ -438,13 +442,13 @@ export function AxolotlStacker({ onEnd, onDeductEnergy, energy }: MiniGameProps)
                       </motion.button>
                       <motion.button
                         onClick={() => {
-                          if (hadEnergyAtStart && finalRewards) {
+                          const cum = cumulativeRef.current;
+                          if (cum.hadAnyEnergy && finalRewards) {
                             onEnd({
                               score,
                               tier: finalRewards.tier as 'normal' | 'good' | 'exceptional',
-                              xp: finalRewards.xp,
-                              coins: finalRewards.coins,
-                              opals: finalRewards.opals,
+                              xp: cum.xp,
+                              coins: 0,
                             });
                           } else {
                             onEnd({

@@ -77,7 +77,7 @@ function pickFishType(): FishTypeName {
   return 'minnow';
 }
 
-export function Fishing({ onEnd, onDeductEnergy, energy, strength = 0, speed = 0 }: MiniGameProps) {
+export function Fishing({ onEnd, onDeductEnergy, onApplyReward, energy, strength = 0, speed = 0 }: MiniGameProps) {
   const [playerScore, setPlayerScore] = useState(0);
   const [botScore, setBotScore] = useState(0);
   const [timeLeft, setTimeLeft] = useState(GAME_DURATION);
@@ -87,6 +87,7 @@ export function Fishing({ onEnd, onDeductEnergy, energy, strength = 0, speed = 0
   const [gameEnded, setGameEnded] = useState(false);
   const [hadEnergyAtStart, setHadEnergyAtStart] = useState(false);
   const [finalRewards, setFinalRewards] = useState<{ tier: string; xp: number; coins: number; opals?: number } | null>(null);
+  const cumulativeRef = useRef({ xp: 0, hadAnyEnergy: false });
   const [isHolding, setIsHolding] = useState(false);
   
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -363,9 +364,13 @@ export function Fishing({ onEnd, onDeductEnergy, energy, strength = 0, speed = 0
     // Only calculate and show rewards if energy was available at start
     if (hadEnergyAtStart) {
       const rewards = calculateRewards('fishing', playerScore);
+      const earnedXp = playerScore > botScore ? rewards.xp : 0;
+      cumulativeRef.current.xp += earnedXp;
+      cumulativeRef.current.hadAnyEnergy = true;
+      onApplyReward?.(rewards.coins, rewards.opals);
       setFinalRewards({
         tier: rewards.tier,
-        xp: playerScore > botScore ? rewards.xp : 0, // Only winner gets XP
+        xp: earnedXp,
         coins: rewards.coins,
         opals: rewards.opals,
       });
@@ -378,7 +383,7 @@ export function Fishing({ onEnd, onDeductEnergy, energy, strength = 0, speed = 0
       });
     }
     setShowOverlay(true);
-  }, [playerScore, botScore, hadEnergyAtStart]);
+  }, [playerScore, botScore, hadEnergyAtStart, onApplyReward]);
 
   const draw = useCallback((ctx: CanvasRenderingContext2D, now: number) => {
     const { playerState, playerLineY, playerHooked, playerHookTime, botState: _botState, botLineY, botHooked, fish, escapeEffects } = gameStateRef.current;
@@ -839,17 +844,15 @@ export function Fishing({ onEnd, onDeductEnergy, energy, strength = 0, speed = 0
                       </motion.button>
                       <motion.button
                         onClick={() => {
-                          // Call onEnd with actual rewards when leaving (only if energy was used)
-                          if (hadEnergyAtStart && finalRewards) {
+                          const cum = cumulativeRef.current;
+                          if (cum.hadAnyEnergy && finalRewards) {
                             onEnd({
                               score: playerScore,
                               tier: finalRewards.tier as 'normal' | 'good' | 'exceptional',
-                              xp: finalRewards.xp,
-                              coins: finalRewards.coins,
-                              opals: finalRewards.opals,
+                              xp: cum.xp,
+                              coins: 0,
                             });
                           } else {
-                            // No rewards if no energy
                             onEnd({
                               score: playerScore,
                               tier: 'normal',

@@ -21,3 +21,91 @@ export const isSupabaseConfigured =
   supabaseUrl !== 'https://your-project-id.supabase.co' &&
   !!supabaseAnonKey &&
   supabaseAnonKey !== 'your-anon-key-here';
+
+// ─── friend_notifications helpers ─────────────────────────────────────────────
+
+export interface FriendNotificationRow {
+  id: string;
+  sender_id: string;
+  recipient_id: string;
+  type: 'gift' | 'poke';
+  coins: number;
+  opals: number;
+  sender_name: string;
+  applied: boolean;
+  created_at: string;
+}
+
+/**
+ * Inserts a gift or poke row for the recipient.
+ * Returns null on success, or 'cooldown' if the RLS 18-hour window blocks it.
+ */
+export async function sendFriendAction(
+  senderId: string,
+  recipientId: string,
+  senderName: string,
+  type: 'gift' | 'poke',
+  coins: number,
+  opals: number,
+): Promise<string | null> {
+  if (!isSupabaseConfigured) return 'Not signed in';
+
+  const { error } = await supabase
+    .from('friend_notifications')
+    .insert({ sender_id: senderId, recipient_id: recipientId, sender_name: senderName, type, coins, opals, applied: false });
+
+  if (error) {
+    if (error.code === '42501' || error.code === 'PGRST301') return 'cooldown';
+    console.error('[sendFriendAction]', error);
+    return error.message;
+  }
+  return null;
+}
+
+/** Fetches all unapplied friend_notifications for a user, oldest-first. */
+export async function fetchPendingNotifications(userId: string): Promise<FriendNotificationRow[]> {
+  if (!isSupabaseConfigured) return [];
+
+  const { data, error } = await supabase
+    .from('friend_notifications')
+    .select('*')
+    .eq('recipient_id', userId)
+    .eq('applied', false)
+    .order('created_at', { ascending: true });
+
+  if (error) {
+    console.error('[fetchPendingNotifications]', error);
+    return [];
+  }
+  return (data ?? []) as FriendNotificationRow[];
+}
+
+/** Marks a single friend_notification row as applied (recipient-only via RLS). */
+export async function markNotificationApplied(notifId: string): Promise<void> {
+  if (!isSupabaseConfigured) return;
+
+  const { error } = await supabase
+    .from('friend_notifications')
+    .update({ applied: true })
+    .eq('id', notifId);
+
+  if (error) console.error('[markNotificationApplied]', error);
+}
+
+/**
+ * Subscribes to new friend_notifications rows for this user via Realtime.
+ * Returns the channel so the caller can unsubscribe on cleanup.
+ */
+export function subscribeToFriendNotifications(
+  userId: string,
+  onNew: (row: FriendNotificationRow) => void,
+) {
+  return supabase
+    .channel(`friend-notifs-${userId}`)
+    .on(
+      'postgres_changes',
+      { event: 'INSERT', schema: 'public', table: 'friend_notifications', filter: `recipient_id=eq.${userId}` },
+      (payload) => onNew(payload.new as FriendNotificationRow),
+    )
+    .subscribe();
+}

@@ -106,7 +106,7 @@ interface Joystick {
   touchId: number | null;
 }
 
-export function BiteTag({ onEnd, onDeductEnergy, energy, speed = 0, stamina = 0 }: MiniGameProps) {
+export function BiteTag({ onEnd, onDeductEnergy, onApplyReward, energy, speed = 0, stamina = 0 }: MiniGameProps) {
   const [timeLeft, setTimeLeft] = useState(MATCH_DURATION);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
@@ -116,7 +116,8 @@ export function BiteTag({ onEnd, onDeductEnergy, energy, speed = 0, stamina = 0 
   const [finalRewards, setFinalRewards] = useState<{ tier: string; xp: number; coins: number; opals?: number } | null>(null);
   const [finalScore, setFinalScore] = useState(0);
   const [isWinner, setIsWinner] = useState(false);
-  
+  const cumulativeRef = useRef({ xp: 0, hadAnyEnergy: false });
+
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationFrameRef = useRef<number | null>(null);
   const gameStateRef = useRef<{
@@ -670,9 +671,13 @@ export function BiteTag({ onEnd, onDeductEnergy, energy, speed = 0, stamina = 0 
     // Only calculate and show rewards if energy was available at start
     if (hadEnergyAtStart) {
       const rewards = calculateRewards('bite-tag', score);
+      const earnedXp = won ? rewards.xp : 0;
+      cumulativeRef.current.xp += earnedXp;
+      cumulativeRef.current.hadAnyEnergy = true;
+      onApplyReward?.(rewards.coins, rewards.opals);
       setFinalRewards({
         tier: rewards.tier,
-        xp: won ? rewards.xp : 0,
+        xp: earnedXp,
         coins: rewards.coins,
         opals: rewards.opals,
       });
@@ -685,7 +690,7 @@ export function BiteTag({ onEnd, onDeductEnergy, energy, speed = 0, stamina = 0 
       });
     }
     setShowOverlay(true);
-  }, [getAlive, timeLeft, hadEnergyAtStart]);
+  }, [getAlive, timeLeft, hadEnergyAtStart, onApplyReward]);
 
   const drawAxo = useCallback((ctx: CanvasRenderingContext2D, e: Entity, bodyCol: string, gillCol: string, now: number) => {
     // Eliminated — draw as faded ghost
@@ -1325,17 +1330,15 @@ export function BiteTag({ onEnd, onDeductEnergy, energy, speed = 0, stamina = 0 
                       </motion.button>
                       <motion.button
                         onClick={() => {
-                          // Call onEnd with actual rewards when leaving (only if energy was used)
-                          if (hadEnergyAtStart && finalRewards) {
+                          const cum = cumulativeRef.current;
+                          if (cum.hadAnyEnergy && finalRewards) {
                             onEnd({
                               score: finalScore,
                               tier: finalRewards.tier as 'normal' | 'good' | 'exceptional',
-                              xp: finalRewards.xp,
-                              coins: finalRewards.coins,
-                              opals: finalRewards.opals,
+                              xp: cum.xp,
+                              coins: 0,
                             });
                           } else {
-                            // No rewards if no energy
                             onEnd({
                               score: finalScore,
                               tier: 'normal',

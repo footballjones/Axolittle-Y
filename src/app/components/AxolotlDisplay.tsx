@@ -39,7 +39,10 @@ export function AxolotlDisplay({ axolotl, foodItems, onEatFood, clickTarget, pla
   // Handle click target - move axolotl to clicked position
   useEffect(() => {
     if (clickTarget) {
-      prevPosRef.current = positionRef.current;
+      // Save the *visual* position (not the logical target) so the animation
+      // always starts from where the axolotl visually is — prevents instant
+      // proximity triggers when re-tapping a food the axolotl was already targeting.
+      prevPosRef.current = getAxolotlVisualPos();
       moveStartRef.current = Date.now();
       setFacingLeft(clickTarget.x < positionRef.current.x);
       setPosition({ x: clickTarget.x, y: clickTarget.y });
@@ -89,7 +92,7 @@ export function AxolotlDisplay({ axolotl, foodItems, onEatFood, clickTarget, pla
       for (const food of items) {
         const distX = food.x - axPos.x;
         const distY = getFoodVisualY(food) - axPos.y;
-        if (Math.sqrt(distX * distX + distY * distY) < 12) {
+        if (Math.sqrt(distX * distX + distY * distY) < 5) {
           onEatFoodRef.current(food.id);
           return;
         }
@@ -118,7 +121,13 @@ export function AxolotlDisplay({ axolotl, foodItems, onEatFood, clickTarget, pla
     }, { food: null as FoodItem | null, d: Infinity, vy: 0 });
 
     if (closest.food) {
-      prevPosRef.current = positionRef.current;
+      // Guard: skip if already targeting this food (prevents the effect re-firing
+      // after setPosition updates position deps and resetting the animation baseline)
+      if (
+        Math.abs(positionRef.current.x - closest.food.x) < 0.5 &&
+        Math.abs(positionRef.current.y - closest.vy) < 0.5
+      ) return;
+      prevPosRef.current = getAxolotlVisualPos();
       moveStartRef.current = Date.now();
       setFacingLeft(closest.food.x < position.x);
       setPosition({ x: closest.food.x, y: closest.vy });

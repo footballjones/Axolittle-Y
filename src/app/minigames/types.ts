@@ -13,6 +13,7 @@ export interface GameResult {
 export interface MiniGameProps {
   onEnd: (result: GameResult) => void;
   onDeductEnergy?: () => void; // Call when a game attempt starts; deducts 1 energy if available
+  onApplyReward?: (coins: number, opals?: number) => void; // Call immediately when rewards are earned (crash-safe)
   energy: number; // Current energy (for display/validation)
   strength?: number; // Axolotl strength stat (0-100)
   speed?: number; // Axolotl speed stat (0-100)

@@ -26,12 +26,13 @@ interface Hook {
   scored: boolean;
 }
 
-export function FlappyFishHooks({ onEnd, onDeductEnergy, energy }: MiniGameProps) {
+export function FlappyFishHooks({ onEnd, onDeductEnergy, onApplyReward, energy }: MiniGameProps) {
   const [score, setScore] = useState(0);
   const [showOverlay, setShowOverlay] = useState(true);
   const [gameEnded, setGameEnded] = useState(false);
   const [_hadEnergyAtStart, _setHadEnergyAtStart] = useState(false);
   const [finalRewards, setFinalRewards] = useState<{ tier: string; xp: number; coins: number; opals?: number } | null>(null);
+  const cumulativeRef = useRef({ xp: 0, hadAnyEnergy: false });
   
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const gameRef = useRef<{
@@ -160,9 +161,14 @@ export function FlappyFishHooks({ onEnd, onDeductEnergy, energy }: MiniGameProps
           g.running = false;
           g.frameId = null;
           setScore(g.score);
-          const rewards = g.hadEnergy 
+          const rewards = g.hadEnergy
             ? calculateRewards('fish-hooks', g.score)
             : { tier: 'normal', xp: 0, coins: 0, opals: undefined };
+          if (g.hadEnergy) {
+            cumulativeRef.current.xp += rewards.xp;
+            cumulativeRef.current.hadAnyEnergy = true;
+            onApplyReward?.(rewards.coins, rewards.opals);
+          }
           setFinalRewards({
             tier: rewards.tier,
             xp: rewards.xp,
@@ -409,13 +415,13 @@ export function FlappyFishHooks({ onEnd, onDeductEnergy, energy }: MiniGameProps
                       </motion.button>
                       <motion.button
                         onClick={() => {
-                          if (gameRef.current.hadEnergy && finalRewards) {
+                          const cum = cumulativeRef.current;
+                          if (cum.hadAnyEnergy && finalRewards) {
                             onEnd({
                               score: score,
                               tier: finalRewards.tier as 'normal' | 'good' | 'exceptional',
-                              xp: finalRewards.xp,
-                              coins: finalRewards.coins,
-                              opals: finalRewards.opals,
+                              xp: cum.xp,
+                              coins: 0,
                             });
                           } else {
                             onEnd({

@@ -646,6 +646,17 @@ export function useGameActions({
     });
   }, []);
 
+  const handleMiniGameApplyReward = useCallback((coins: number, opals?: number) => {
+    setGameState(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        coins: prev.coins + coins,
+        opals: opals ? (prev.opals || 0) + opals : prev.opals,
+      };
+    });
+  }, []);
+
   const handleMiniGameEnd = useCallback((result: GameResult) => {
     setActiveGame(null);
     // Navigation destination is decided after we know whether a level-up occurred.
@@ -696,7 +707,9 @@ export function useGameActions({
           id: `notif-${Date.now()}`,
           type: 'milestone',
           emoji: result.tier === 'exceptional' ? '✨' : result.tier === 'good' ? '🎉' : '🎮',
-          message: `Earned ${result.xp} XP and ${result.coins} coins!${result.opals ? ` +${result.opals} 🪬` : ''}`,
+          message: result.coins > 0
+            ? `Earned ${result.xp} XP and ${result.coins} coins!${result.opals ? ` +${result.opals} 🪬` : ''}`
+            : `Earned ${result.xp} XP!`,
           time: 'now',
           read: false,
         }]);
@@ -873,6 +886,7 @@ export function useGameActions({
     handleBoostEgg,
     handleGiftEgg,
     handleDiscardEgg,
+    handleMiniGameApplyReward,
     handleMiniGameEnd,
     handleBuyCoins,
     handleBuyOpals,

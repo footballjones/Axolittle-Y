@@ -154,7 +154,7 @@ function OceanBubbles() {
 
 // ── Main component ──────────────────────────────────────────────────────────
 
-export function CoralCode({ onEnd, onDeductEnergy, energy }: MiniGameProps) {
+export function CoralCode({ onEnd, onDeductEnergy, onApplyReward, energy }: MiniGameProps) {
   const [difficulty, setDifficulty] = useState<Difficulty | null>(null);
   const [codeLength, setCodeLength] = useState<number>(4);
   const [availableColors, setAvailableColors] = useState<ColorId[]>(ORB_COLORS.slice(0, 5).map(c => c.id));
@@ -170,6 +170,7 @@ export function CoralCode({ onEnd, onDeductEnergy, energy }: MiniGameProps) {
   const [finalScore, setFinalScore] = useState(0);
   const [hasEnded, setHasEnded] = useState(false);
   const [winFlash, setWinFlash] = useState(false);
+  const cumulativeRef = useRef({ xp: 0, hadAnyEnergy: false });
   const guessIdRef = useRef<number>(0);
   const guessesContainerRef = useRef<HTMLDivElement>(null);
 
@@ -230,14 +231,18 @@ export function CoralCode({ onEnd, onDeductEnergy, energy }: MiniGameProps) {
         const rewards = hadEnergyAtStart
           ? calculateRewards('coral-code', score)
           : { tier: 'normal', xp: 0, coins: 0, opals: undefined };
+        if (hadEnergyAtStart) {
+          cumulativeRef.current.xp += rewards.xp;
+          cumulativeRef.current.hadAnyEnergy = true;
+          onApplyReward?.(rewards.coins, rewards.opals);
+        }
         setFinalRewards({ tier: rewards.tier, xp: rewards.xp, coins: rewards.coins, opals: rewards.opals });
         setTimeout(() => setShowOverlay(true), won ? 800 : 300);
       }
       return newGuesses;
     });
     setCurrentGuess([]);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentGuess.length, secretCode, codeLength, isPlaying, isPaused, hasEnded]);
+  }, [currentGuess, secretCode, codeLength, isPlaying, isPaused, hasEnded, hadEnergyAtStart, onApplyReward]);
 
   return (
     <GameWrapper
@@ -460,8 +465,9 @@ export function CoralCode({ onEnd, onDeductEnergy, energy }: MiniGameProps) {
                       </motion.button>
                       <motion.button
                         onClick={() => {
-                          onEnd(hadEnergyAtStart && finalRewards
-                            ? { score: finalScore, tier: finalRewards.tier as 'normal'|'good'|'exceptional', xp: finalRewards.xp, coins: finalRewards.coins, opals: finalRewards.opals }
+                          const cum = cumulativeRef.current;
+                          onEnd(cum.hadAnyEnergy && finalRewards
+                            ? { score: finalScore, tier: finalRewards.tier as 'normal'|'good'|'exceptional', xp: cum.xp, coins: 0 }
                             : { score: finalScore, tier: 'normal', xp: 0, coins: 0 });
                         }}
                         whileTap={{ scale: 0.95 }}

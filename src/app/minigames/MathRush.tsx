@@ -107,7 +107,7 @@ function generateQuestion(questionCount: number): Question {
   return { question: questionText, answer, options, themeEmoji: theme.emoji };
 }
 
-export function MathRush({ onEnd, onDeductEnergy, energy }: MiniGameProps) {
+export function MathRush({ onEnd, onDeductEnergy, onApplyReward, energy }: MiniGameProps) {
   const [score, setScore] = useState(0);
   const [questionCount, setQuestionCount] = useState(0); // 1-based count of questions asked
   const [isPlaying, setIsPlaying] = useState(false); // Start with false, show overlay first
@@ -116,6 +116,7 @@ export function MathRush({ onEnd, onDeductEnergy, energy }: MiniGameProps) {
   const [gameEnded, setGameEnded] = useState(false);
   const [hadEnergyAtStart, setHadEnergyAtStart] = useState(false); // Track if energy was available when game started
   const [finalRewards, setFinalRewards] = useState<{ tier: string; xp: number; coins: number; opals?: number } | null>(null);
+  const cumulativeRef = useRef({ xp: 0, hadAnyEnergy: false });
   const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null);
   const [timer, setTimer] = useState(INITIAL_TIMER);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
@@ -187,6 +188,9 @@ export function MathRush({ onEnd, onDeductEnergy, energy }: MiniGameProps) {
     // Only calculate and show rewards if energy was available at start
     if (hadEnergyAtStart) {
       const rewards = calculateRewards('math-rush', score);
+      cumulativeRef.current.xp += rewards.xp;
+      cumulativeRef.current.hadAnyEnergy = true;
+      onApplyReward?.(rewards.coins, rewards.opals);
       setFinalRewards({
         tier: rewards.tier,
         xp: rewards.xp,
@@ -389,17 +393,15 @@ export function MathRush({ onEnd, onDeductEnergy, energy }: MiniGameProps) {
                       </motion.button>
                       <motion.button
                         onClick={() => {
-                          // Call onEnd with actual rewards when leaving (only if energy was used)
-                          if (hadEnergyAtStart && finalRewards) {
+                          const cum = cumulativeRef.current;
+                          if (cum.hadAnyEnergy && finalRewards) {
                             onEnd({
                               score,
                               tier: finalRewards.tier as 'normal' | 'good' | 'exceptional',
-                              xp: finalRewards.xp,
-                              coins: finalRewards.coins,
-                              opals: finalRewards.opals,
+                              xp: cum.xp,
+                              coins: 0,
                             });
                           } else {
-                            // No rewards if no energy
                             onEnd({
                               score,
                               tier: 'normal',

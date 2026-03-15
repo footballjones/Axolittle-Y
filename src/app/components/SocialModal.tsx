@@ -46,11 +46,12 @@ interface SocialModalProps {
   onRemoveFriend: (friendId: string) => void;
   onBreed: (friendId: string) => void;
   onGiftFriend: (friendId: string, coins: number, opals: number) => void;
+  onPokeFriend: (friendId: string) => void;
   onVisitJimmy: () => void;
   lineage: Axolotl[];
 }
 
-export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend, onRemoveFriend, onBreed, onGiftFriend, onVisitJimmy, lineage }: SocialModalProps) {
+export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend, onRemoveFriend, onBreed, onGiftFriend, onPokeFriend, onVisitJimmy, lineage }: SocialModalProps) {
   const [addFriendInput, setAddFriendInput] = useState('');
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<'friends' | 'lineage'>('friends');
@@ -450,6 +451,7 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
                                                 if (isPokeOnCooldown || justPokedThis) return;
                                                 recordCooldown(`poke_${friend.id}`);
                                                 setJustPoked(prev => { const next = new Set(prev); next.add(friend.id); return next; });
+                                                onPokeFriend(friend.id);
                                                 setTimeout(() => {
                                                   setJustPoked(prev => { const next = new Set(prev); next.delete(friend.id); return next; });
                                                   setTick(t => t + 1);
@@ -475,25 +477,20 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
                                           );
                                         })()}
 
-                                        {/* Breed */}
-                                        <motion.button
-                                          onClick={() => onBreed(friend.id)}
-                                          disabled={axolotl.stage !== 'adult'}
-                                          className="flex flex-col items-center justify-center gap-1 py-3 rounded-xl"
+                                        {/* Breed — Coming Soon */}
+                                        <div
+                                          className="flex flex-col items-center justify-center gap-1 py-3 rounded-xl relative overflow-hidden"
                                           style={{
-                                            background: axolotl.stage === 'adult'
-                                              ? 'linear-gradient(135deg, rgba(251,207,232,0.55), rgba(249,168,212,0.4))'
-                                              : 'rgba(216,180,254,0.15)',
-                                            border: axolotl.stage === 'adult'
-                                              ? '1px solid rgba(244,114,182,0.4)'
-                                              : '1px solid rgba(216,180,254,0.2)',
-                                            opacity: axolotl.stage !== 'adult' ? 0.5 : 1,
+                                            background: 'rgba(216,180,254,0.08)',
+                                            border: '1px solid rgba(216,180,254,0.15)',
+                                            opacity: 0.55,
+                                            cursor: 'not-allowed',
                                           }}
-                                          whileTap={axolotl.stage === 'adult' ? { scale: 0.9 } : {}}
                                         >
-                                          <span className="text-[1.2rem]">🥚</span>
-                                          <span className="text-[9px] font-black tracking-wide uppercase text-pink-500">Hatch Together</span>
-                                        </motion.button>
+                                          <span className="text-[1.2rem] grayscale">🥚</span>
+                                          <span className="text-[9px] font-black tracking-wide uppercase text-purple-400/60">Hatch Together</span>
+                                          <span className="text-[7px] font-bold tracking-widest uppercase text-purple-300/50">Coming Soon</span>
+                                        </div>
                                       </div>
 
                                       {/* Send Gift - full width, 18h cooldown */}
@@ -503,8 +500,8 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
                                         const justGiftedThis = justGifted[friend.id];
                                         const giftLabel = justGiftedThis
                                           ? justGiftedThis.opals > 0
-                                            ? `+${justGiftedThis.opals} Opals! ✨`
-                                            : `+${justGiftedThis.coins} Coins! 🪙`
+                                            ? `Sent ${justGiftedThis.opals} opals! 💜`
+                                            : `Sent ${justGiftedThis.coins} coins! 🪙`
                                           : isGiftOnCooldown
                                             ? formatCooldown(giftRemaining)
                                             : null;

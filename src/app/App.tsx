@@ -48,6 +48,7 @@ import { useAquariumMusic, useContextMusic } from './hooks/useAquariumMusic';
 import { getTodayDateString, canSpinToday, canClaimDailyLogin } from './utils/dailySystem';
 import { useAuth } from './context/AuthContext';
 import { useCloudSync, SyncStatus } from './hooks/useCloudSync';
+import { sendFriendAction, isSupabaseConfigured } from './services/supabase';
 import { LoginScreen } from './components/LoginScreen';
 import { SyncIndicator } from './components/SyncIndicator';
 import { JimmyChubsAquarium } from './components/JimmyChubsAquarium';
@@ -80,6 +81,22 @@ export default function App() {
   /** Show Jimmy & Chubs's aquarium */
   const [showJimmyAquarium, setShowJimmyAquarium] = useState(false);
 
+  // ── Auth ──────────────────────────────────────────────────────────────────
+  const { user, isLoading: authLoading, isGuest, signOut } = useAuth();
+  const [showAuthOverlay, setShowAuthOverlay] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
+  /** True if a save already existed in localStorage when the app first launched.
+   *  Used to skip LoginScreen for existing / returning players. */
+  const [hasLocalSave] = useState(() => !!localStorage.getItem('axolotl-game-state'));
+
+  // Stable callback — must be memoized so useSocialState's effects don't re-fire on every render
+  const handleApplyGiftReward = useCallback((coins: number, opals: number) => {
+    setGameState(prev => {
+      if (!prev) return prev;
+      return { ...prev, coins: prev.coins + coins, opals: (prev.opals ?? 0) + opals };
+    });
+  }, []);
+
   // Domain hooks
   const {
     notifications,
@@ -88,7 +105,10 @@ export default function App() {
     setHasPendingPokes,
     unreadCount,
     hasNotifications,
-  } = useSocialState();
+  } = useSocialState({
+    userId: user?.id ?? null,
+    onApplyGiftReward: handleApplyGiftReward,
+  });
 
   const {
     showSpinWheel,
@@ -98,14 +118,6 @@ export default function App() {
     handleSpinWheel,
     handleDailyLoginClaim,
   } = useEconomyActions({ setGameState, setNotifications });
-
-  // ── Auth + Cloud Sync ──────────────────────────────────────────────────────
-  const { user, isLoading: authLoading, isGuest, signOut } = useAuth();
-  const [showAuthOverlay, setShowAuthOverlay] = useState(false);
-  const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
-  /** True if a save already existed in localStorage when the app first launched.
-   *  Used to skip LoginScreen for existing / returning players. */
-  const [hasLocalSave] = useState(() => !!localStorage.getItem('axolotl-game-state'));
 
   useCloudSync({
     userId: user?.id ?? null,
@@ -221,6 +233,7 @@ export default function App() {
     handleBoostEgg,
     handleGiftEgg,
     handleDiscardEgg,
+    handleMiniGameApplyReward,
     handleMiniGameEnd,
     handleBuyCoins,
     handleBuyOpals,
@@ -231,6 +244,21 @@ export default function App() {
     handleUnlockGames,
     handleClaimAchievement,
   } = gameActions;
+
+  // ── Friend gift / poke — real Supabase writes ─────────────────────────────
+  const handleGiftFriend = useCallback(async (friendId: string, coins: number, opals: number) => {
+    if (!user?.id || !isSupabaseConfigured) return;
+    setGameState(prev => prev ? { ...prev, totalGiftsSent: (prev.totalGiftsSent ?? 0) + 1 } : prev);
+    const senderName = (user.user_metadata?.username as string | undefined) ?? gameState?.axolotl?.name ?? 'A friend';
+    await sendFriendAction(user.id, friendId, senderName, 'gift', coins, opals);
+  }, [user, gameState?.axolotl?.name]);
+
+  const handlePokeFriend = useCallback(async (friendId: string) => {
+    if (!user?.id || !isSupabaseConfigured) return;
+    const senderName = (user.user_metadata?.username as string | undefined) ?? gameState?.axolotl?.name ?? 'A friend';
+    await sendFriendAction(user.id, friendId, senderName, 'poke', 0, 0);
+  }, [user, gameState?.axolotl?.name]);
+
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const aquariumScrollRef = useRef<HTMLDivElement>(null);
   const [showScrollHint, setShowScrollHint] = useState(true);
@@ -1040,22 +1068,20 @@ export default function App() {
                           <span className="text-[11px] font-bold text-pink-800 tracking-wider uppercase">Social</span>
                         </motion.button>
 
-                        {/* DECORATIONS */}
-                        <motion.button
-                          onClick={() => { setShowInventoryPanel(true); setDecorationsTab('store'); }}
-                          className="group relative flex flex-col items-center justify-center gap-1 py-3 rounded-2xl overflow-hidden"
+                        {/* DECORATIONS — Coming Soon */}
+                        <div
+                          className="relative flex flex-col items-center justify-center gap-1 py-3 rounded-2xl overflow-hidden"
                           style={{
-                            background: showInventoryPanel
-                              ? 'linear-gradient(135deg, rgba(20,184,166,0.85) 0%, rgba(13,148,136,0.75) 100%)'
-                              : 'linear-gradient(135deg, rgba(20,184,166,0.7) 0%, rgba(13,148,136,0.55) 100%)',
-                            border: showInventoryPanel ? '1px solid rgba(13,148,136,0.6)' : '1px solid rgba(13,148,136,0.45)',
+                            background: 'linear-gradient(135deg, rgba(20,184,166,0.25) 0%, rgba(13,148,136,0.18) 100%)',
+                            border: '1px solid rgba(13,148,136,0.2)',
+                            opacity: 0.55,
+                            cursor: 'not-allowed',
                           }}
-                          whileTap={{ scale: 0.93 }}
                         >
-                          <div className="absolute inset-0 opacity-0 group-active:opacity-100 transition-opacity rounded-2xl" style={{ background: 'rgba(255,255,255,0.35)' }} />
-                          <span className="text-[2rem]">🪸</span>
-                          <span className="text-[11px] font-bold text-teal-800 tracking-wider uppercase">Decorations</span>
-                        </motion.button>
+                          <span className="text-[2rem] grayscale">🪸</span>
+                          <span className="text-[11px] font-bold text-teal-700/60 tracking-wider uppercase">Decorations</span>
+                          <span className="text-[8px] font-bold tracking-widest uppercase text-teal-600/50">Coming Soon</span>
+                        </div>
 
                         {/* HOW TO PLAY */}
                         <motion.button
@@ -1709,17 +1735,8 @@ export default function App() {
           onAddFriend={handleAddFriend}
           onRemoveFriend={handleRemoveFriend}
           onBreed={handleBreed}
-          onGiftFriend={(_friendId, coins, opals) => {
-            setGameState(prev => {
-              if (!prev) return prev;
-              return {
-                ...prev,
-                coins: prev.coins + coins,
-                opals: (prev.opals || 0) + opals,
-                totalGiftsSent: (prev.totalGiftsSent ?? 0) + 1,
-              };
-            });
-          }}
+          onGiftFriend={handleGiftFriend}
+          onPokeFriend={handlePokeFriend}
           onVisitJimmy={() => {
             setActiveModal(null);
             setShowJimmyAquarium(true);
@@ -1833,6 +1850,7 @@ export default function App() {
           <KeepeyUpey
             onEnd={handleMiniGameEnd}
             onDeductEnergy={handleDeductEnergy}
+            onApplyReward={handleMiniGameApplyReward}
             energy={gameState.energy}
             soundEnabled={gameState.soundEnabled !== false}
           />
@@ -1841,6 +1859,7 @@ export default function App() {
           <FlappyFishHooks
             onEnd={handleMiniGameEnd}
             onDeductEnergy={handleDeductEnergy}
+            onApplyReward={handleMiniGameApplyReward}
             energy={gameState.energy}
           />
         )}
@@ -1848,6 +1867,7 @@ export default function App() {
           <MathRush
             onEnd={handleMiniGameEnd}
             onDeductEnergy={handleDeductEnergy}
+            onApplyReward={handleMiniGameApplyReward}
             energy={gameState.energy}
           />
         )}
@@ -1855,6 +1875,7 @@ export default function App() {
           <AxolotlStacker
             onEnd={handleMiniGameEnd}
             onDeductEnergy={handleDeductEnergy}
+            onApplyReward={handleMiniGameApplyReward}
             energy={gameState.energy}
           />
         )}
@@ -1862,6 +1883,7 @@ export default function App() {
           <CoralCode
             onEnd={handleMiniGameEnd}
             onDeductEnergy={handleDeductEnergy}
+            onApplyReward={handleMiniGameApplyReward}
             energy={gameState.energy}
           />
         )}
@@ -1869,6 +1891,7 @@ export default function App() {
           <TreasureHuntCave
             onEnd={handleMiniGameEnd}
             onDeductEnergy={handleDeductEnergy}
+            onApplyReward={handleMiniGameApplyReward}
             energy={gameState.energy}
           />
         )}
@@ -1876,6 +1899,7 @@ export default function App() {
           <Fishing
             onEnd={handleMiniGameEnd}
             onDeductEnergy={handleDeductEnergy}
+            onApplyReward={handleMiniGameApplyReward}
             energy={gameState.energy}
             strength={gameState.axolotl?.secondaryStats?.strength || 0}
             speed={gameState.axolotl?.secondaryStats?.speed || 0}
@@ -1885,6 +1909,7 @@ export default function App() {
           <BiteTag
             onEnd={handleMiniGameEnd}
             onDeductEnergy={handleDeductEnergy}
+            onApplyReward={handleMiniGameApplyReward}
             energy={gameState.energy}
             speed={gameState.axolotl?.secondaryStats?.speed || 0}
             stamina={gameState.axolotl?.secondaryStats?.stamina || 0}

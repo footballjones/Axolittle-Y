@@ -1,5 +1,17 @@
-import { useState } from 'react';
-import { INITIAL_NOTIFICATIONS, GameNotification } from '../data/notifications';
+import { useState, useEffect, useCallback } from 'react';
+import { GameNotification } from '../data/notifications';
+import {
+  isSupabaseConfigured,
+  FriendNotificationRow,
+  fetchPendingNotifications,
+  markNotificationApplied,
+  subscribeToFriendNotifications,
+} from '../services/supabase';
+
+interface UseSocialStateOptions {
+  userId: string | null;
+  onApplyGiftReward: (coins: number, opals: number) => void;
+}
 
 interface UseSocialStateReturn {
   notifications: GameNotification[];
@@ -10,12 +22,74 @@ interface UseSocialStateReturn {
   hasNotifications: boolean;
 }
 
+function rowToNotification(row: FriendNotificationRow): GameNotification {
+  if (row.type === 'gift') {
+    return {
+      id: row.id,
+      type: 'gift',
+      emoji: '🎁',
+      message: row.opals > 0
+        ? `${row.sender_name} sent you ${row.opals} opals! 💜`
+        : `${row.sender_name} sent you ${row.coins} coins! 🪙`,
+      time: 'Just now',
+      read: false,
+    };
+  }
+  return {
+    id: row.id,
+    type: 'poke',
+    emoji: '👉',
+    message: `${row.sender_name} poked you!`,
+    time: 'Just now',
+    read: false,
+  };
+}
+
 /**
- * Manages social state: notifications and pending pokes.
+ * Manages social state: notifications, pending pokes, and Supabase
+ * real-time subscriptions for incoming friend gifts and pokes.
  */
-export function useSocialState(): UseSocialStateReturn {
-  const [notifications, setNotifications] = useState<GameNotification[]>(INITIAL_NOTIFICATIONS);
-  const [hasPendingPokes, setHasPendingPokes] = useState(true);
+export function useSocialState({ userId, onApplyGiftReward }: UseSocialStateOptions): UseSocialStateReturn {
+  const [notifications, setNotifications] = useState<GameNotification[]>([]);
+  const [hasPendingPokes, setHasPendingPokes] = useState(false);
+
+  const applyRow = useCallback(async (row: FriendNotificationRow) => {
+    const notif = rowToNotification(row);
+
+    setNotifications(prev => [notif, ...prev]);
+
+    if (row.type === 'gift' && (row.coins > 0 || row.opals > 0)) {
+      onApplyGiftReward(row.coins, row.opals);
+    }
+
+    if (row.type === 'poke') {
+      setHasPendingPokes(true);
+    }
+
+    await markNotificationApplied(row.id);
+  }, [onApplyGiftReward]);
+
+  // Fetch pending (offline) notifications on mount
+  useEffect(() => {
+    if (!userId || !isSupabaseConfigured) return;
+
+    fetchPendingNotifications(userId).then(rows => {
+      rows.forEach(row => applyRow(row));
+    });
+  }, [userId, applyRow]);
+
+  // Subscribe to real-time incoming notifications
+  useEffect(() => {
+    if (!userId || !isSupabaseConfigured) return;
+
+    const channel = subscribeToFriendNotifications(userId, (row) => {
+      applyRow(row);
+    });
+
+    return () => {
+      channel.unsubscribe();
+    };
+  }, [userId, applyRow]);
 
   const unreadCount = notifications.filter(n => !n.read).length;
   const hasNotifications = unreadCount > 0 || hasPendingPokes;

@@ -35,7 +35,7 @@ interface Bubble {
   life: number;
 }
 
-export function KeepeyUpey({ onEnd, onDeductEnergy, energy, soundEnabled = true }: MiniGameProps) {
+export function KeepeyUpey({ onEnd, onDeductEnergy, onApplyReward, energy, soundEnabled = true }: MiniGameProps) {
   const [score, setScore] = useState(0); // Time survived in seconds
   const [isPlaying, setIsPlaying] = useState(false); // Start with false, show overlay first
   const [isPaused, setIsPaused] = useState(false);
@@ -43,6 +43,7 @@ export function KeepeyUpey({ onEnd, onDeductEnergy, energy, soundEnabled = true 
   const [gameEnded, setGameEnded] = useState(false);
   const [hadEnergyAtStart, setHadEnergyAtStart] = useState(false); // Track if energy was available when game started
   const [finalRewards, setFinalRewards] = useState<{ tier: string; xp: number; coins: number; opals?: number } | null>(null);
+  const cumulativeRef = useRef({ xp: 0, hadAnyEnergy: false });
 
   const bounceSfxRef = useRef<HTMLAudioElement | null>(null);
 
@@ -129,6 +130,9 @@ export function KeepeyUpey({ onEnd, onDeductEnergy, energy, soundEnabled = true 
     // Only calculate and show rewards if energy was available at start
     if (hadEnergyAtStart) {
       const rewards = calculateRewards('keepey-upey', score);
+      cumulativeRef.current.xp += rewards.xp;
+      cumulativeRef.current.hadAnyEnergy = true;
+      onApplyReward?.(rewards.coins, rewards.opals);
       setFinalRewards({
         tier: rewards.tier,
         xp: rewards.xp,
@@ -490,17 +494,15 @@ export function KeepeyUpey({ onEnd, onDeductEnergy, energy, soundEnabled = true 
                       </motion.button>
                       <motion.button
                         onClick={() => {
-                          // Call onEnd with actual rewards when leaving (only if energy was used)
-                          if (hadEnergyAtStart && finalRewards) {
+                          const cum = cumulativeRef.current;
+                          if (cum.hadAnyEnergy && finalRewards) {
                             onEnd({
                               score,
                               tier: finalRewards.tier as 'normal' | 'good' | 'exceptional',
-                              xp: finalRewards.xp,
-                              coins: finalRewards.coins,
-                              opals: finalRewards.opals,
+                              xp: cum.xp,
+                              coins: 0,
                             });
                           } else {
-                            // No rewards if no energy
                             onEnd({
                               score,
                               tier: 'normal',
