@@ -96,8 +96,10 @@ export interface GameState {
   feedCount?: number; // Feeds since last feed-poop was scheduled (resets at 6)
   lastPoopTime?: number; // Timestamp when last time-based poop was generated
   miniGamesLockedUntil?: number; // Timestamp (ms) until which mini-games are locked after a water change
+  friendCode?: string;             // Permanent code set once at account creation, never changes
   // ── Achievement tracking ─────────────────────────────────────────────────
-  achievements?: string[];         // IDs of unlocked achievements
+  achievements?: string[];         // IDs of all unlocked achievements (claimed + unclaimed)
+  pendingAchievements?: string[];  // IDs of unlocked but not-yet-claimed achievements
   totalFeedsEver?: number;         // Cumulative feed count (all time)
   totalCleansEver?: number;        // Cumulative poop-clean count (all time)
   totalWaterChanges?: number;      // Cumulative water-change count

@@ -183,14 +183,18 @@ export function loadGameState(): GameState | null {
   return null;
 }
 
-export function generateFriendCode(axolotl: Axolotl): string {
-  // Generate a shareable friend code
-  const code = `${axolotl.name.substring(0, 3).toUpperCase()}-${axolotl.generation}${axolotl.id.substring(4, 8).toUpperCase()}`;
-  return code;
+export function generatePermanentFriendCode(): string {
+  // Generates a random permanent code — set once at account creation, never changes.
+  // Uses unambiguous chars (no 0/O, 1/I/L) for readability.
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const rand = (n: number) =>
+    Array.from({ length: n }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+  return `${rand(3)}-${rand(5)}`;
 }
 
 export function getInitialGameState(): GameState {
   return {
+    friendCode: generatePermanentFriendCode(),
     axolotl: null,
     coins: GAME_CONFIG.starterCoins,
     opals: GAME_CONFIG.starterOpals,

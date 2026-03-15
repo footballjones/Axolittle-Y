@@ -35,12 +35,16 @@ export function useEconomyActions({ setGameState, setNotifications }: UseEconomy
         id: `achievement-${id}-${Date.now()}`,
         type: 'achievement' as const,
         emoji: achievement.emoji,
-        message: `Achievement Unlocked: ${achievement.name}`,
+        message: `Achievement Unlocked: ${achievement.name} — tap Achievements to claim your reward!`,
         time: 'now',
         read: false,
       }]);
     });
-    return { ...newState, achievements: [...(newState.achievements ?? []), ...newIds] };
+    return {
+      ...newState,
+      achievements: [...(newState.achievements ?? []), ...newIds],
+      pendingAchievements: [...(newState.pendingAchievements ?? []), ...newIds],
+    };
   }, [setNotifications]);
 
   const handleSpinWheel = useCallback((reward: { type: 'coins' | 'opals'; amount: number }) => {

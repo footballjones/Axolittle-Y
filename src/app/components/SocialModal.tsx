@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { X, Users, Copy, Check, ChevronDown, Heart, Waves, Plus } from 'lucide-react';
 import { Axolotl, Friend } from '../types/game';
-import { generateFriendCode } from '../utils/storage';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface GiftResult {
@@ -41,6 +40,7 @@ const JIMMY_CHUBS_ID = 'jimmy-chubs';
 interface SocialModalProps {
   onClose: () => void;
   axolotl: Axolotl;
+  friendCode: string;
   friends: Friend[];
   onAddFriend: (code: string) => Promise<string | null>;
   onRemoveFriend: (friendId: string) => void;
@@ -50,8 +50,8 @@ interface SocialModalProps {
   lineage: Axolotl[];
 }
 
-export function SocialModal({ onClose, axolotl, friends, onAddFriend, onRemoveFriend, onBreed, onGiftFriend, onVisitJimmy, lineage }: SocialModalProps) {
-  const [friendCode, setFriendCode] = useState('');
+export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend, onRemoveFriend, onBreed, onGiftFriend, onVisitJimmy, lineage }: SocialModalProps) {
+  const [addFriendInput, setAddFriendInput] = useState('');
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<'friends' | 'lineage'>('friends');
   const [expandedFriend, setExpandedFriend] = useState<string | null>(null);
@@ -70,7 +70,7 @@ export function SocialModal({ onClose, axolotl, friends, onAddFriend, onRemoveFr
     return () => clearInterval(id);
   }, []);
 
-  const myCode = generateFriendCode(axolotl);
+  const myCode = friendCode;
 
   const copyCode = () => {
     navigator.clipboard.writeText(myCode);
@@ -79,15 +79,15 @@ export function SocialModal({ onClose, axolotl, friends, onAddFriend, onRemoveFr
   };
 
   const handleAddFriend = async () => {
-    if (!friendCode.trim() || addFriendLoading) return;
+    if (!addFriendInput.trim() || addFriendLoading) return;
     setAddFriendLoading(true);
     setAddFriendError(null);
-    const error = await onAddFriend(friendCode.trim());
+    const error = await onAddFriend(addFriendInput.trim());
     setAddFriendLoading(false);
     if (error) {
       setAddFriendError(error);
     } else {
-      setFriendCode('');
+      setAddFriendInput('');
       setAddFriendError(null);
       setShowAddFriendModal(false);
     }
@@ -1082,8 +1082,8 @@ export function SocialModal({ onClose, axolotl, friends, onAddFriend, onRemoveFr
                 <div className="flex gap-2 items-center">
                   <input
                     type="text"
-                    value={friendCode}
-                    onChange={e => { setFriendCode(e.target.value.toUpperCase()); setAddFriendError(null); }}
+                    value={addFriendInput}
+                    onChange={e => { setAddFriendInput(e.target.value.toUpperCase()); setAddFriendError(null); }}
                     placeholder="Enter friend code…"
                     className="flex-1 min-w-0 rounded-xl px-3 py-2.5 text-sky-800 text-sm placeholder-sky-300/70 focus:outline-none focus:ring-2 focus:ring-sky-300/50 transition-all"
                     style={{ background: 'rgba(224,242,254,0.8)', border: '1px solid rgba(186,230,253,0.6)' }}

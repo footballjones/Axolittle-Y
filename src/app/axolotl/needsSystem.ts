@@ -132,8 +132,11 @@ export function updateWellbeingStats(axolotl: Axolotl, gameState?: GameState): {
       ? 100 
       : Math.max(0, axolotl.stats.hunger - STAT_DECAY_RATE.hunger * minutesPassed * (waterQualityMultiplier < 0.5 ? 1.5 : waterQualityMultiplier > 0.7 ? 0.8 : 1)),
     happiness: Math.max(0, axolotl.stats.happiness - STAT_DECAY_RATE.happiness * minutesPassed * (waterQualityMultiplier < 0.5 ? 1.5 : waterQualityMultiplier > 0.7 ? 0.8 : 1)),
-    // Cleanliness: shrimp reduce decay
-    cleanliness: newCleanliness,
+    // Cleanliness: shrimp reduce decay.
+    // If there are any poops in the tank, cleanliness can never read as 100 —
+    // this prevents the race where poop spawns in the same tick as the decay
+    // calculation (which uses the pre-generation poop count).
+    cleanliness: currentPoops.length > 0 ? Math.min(99, newCleanliness) : newCleanliness,
     // Water Quality: filter affects base decay, low cleanliness for >1 day multiplies it,
     // and any poops in the tank add direct additional decay
     waterQuality: Math.max(5, axolotl.stats.waterQuality - STAT_DECAY_RATE.waterQuality * minutesPassed * waterQualityDecayMultiplier - poopWaterDecay),

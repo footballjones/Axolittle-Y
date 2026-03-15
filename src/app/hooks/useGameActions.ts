@@ -51,26 +51,15 @@ export function useGameActions({
     const newIds = checkAchievements(newState);
     if (newIds.length === 0) return newState;
 
-    let bonusCoins = 0;
-    let bonusOpals = 0;
-
     newIds.forEach(id => {
       const achievement = ALL_ACHIEVEMENTS.find(a => a.id === id);
       if (!achievement) return;
-
-      bonusCoins += achievement.coinReward ?? 0;
-      bonusOpals += achievement.opalReward ?? 0;
-
-      const rewardText = [
-        achievement.coinReward ? `+${achievement.coinReward} 🪙` : '',
-        achievement.opalReward ? `+${achievement.opalReward} 🪬` : '',
-      ].filter(Boolean).join('  ');
 
       setNotifications(prev => [...prev, {
         id: `achievement-${id}-${Date.now()}`,
         type: 'achievement' as const,
         emoji: achievement.emoji,
-        message: `Achievement Unlocked: ${achievement.name}${rewardText ? `  ${rewardText}` : ''}`,
+        message: `Achievement Unlocked: ${achievement.name} — tap Achievements to claim your reward!`,
         time: 'now',
         read: false,
       }]);
@@ -79,8 +68,7 @@ export function useGameActions({
     return {
       ...newState,
       achievements: [...(newState.achievements ?? []), ...newIds],
-      coins: newState.coins + bonusCoins,
-      opals: (newState.opals ?? 0) + bonusOpals,
+      pendingAchievements: [...(newState.pendingAchievements ?? []), ...newIds],
     };
   }
 
@@ -835,6 +823,22 @@ export function useGameActions({
     });
   }, []);
 
+  const handleClaimAchievement = useCallback((id: string) => {
+    setGameState(prev => {
+      if (!prev) return prev;
+      const achievement = ALL_ACHIEVEMENTS.find(a => a.id === id);
+      if (!achievement) return prev;
+      const pending = prev.pendingAchievements ?? [];
+      if (!pending.includes(id)) return prev;
+      return {
+        ...prev,
+        pendingAchievements: pending.filter(a => a !== id),
+        coins: prev.coins + (achievement.coinReward ?? 0),
+        opals: (prev.opals ?? 0) + (achievement.opalReward ?? 0),
+      };
+    });
+  }, [setGameState]);
+
   return {
     handleFeed,
     handleEatFood,
@@ -860,5 +864,6 @@ export function useGameActions({
     handleBuyShrimp,
     handleBuyTreatment,
     handleUnlockGames,
+    handleClaimAchievement,
   };
 }

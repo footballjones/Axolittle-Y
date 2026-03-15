@@ -7,7 +7,7 @@ import {
   getXPForNextLevel,
   getCurrentLevelXP,
 } from './utils/gameLogic';
-import { loadGameState, saveGameState, getInitialGameState } from './utils/storage';
+import { loadGameState, saveGameState, getInitialGameState, generatePermanentFriendCode } from './utils/storage';
 import { GAME_CONFIG } from './config/game';
 import { WelcomeScreen } from './components/WelcomeScreen';
 import { AxolotlDisplay } from './components/AxolotlDisplay';
@@ -110,7 +110,10 @@ export default function App() {
   useCloudSync({
     userId: user?.id ?? null,
     gameState,
-    onCloudStateLoaded: setGameState,
+    onCloudStateLoaded: (state: GameState) => {
+      if (!state.friendCode) state = { ...state, friendCode: generatePermanentFriendCode() };
+      setGameState(state);
+    },
     onStatusChange: setSyncStatus,
   });
 
@@ -217,6 +220,7 @@ export default function App() {
     handleBuyShrimp,
     handleBuyTreatment,
     handleUnlockGames,
+    handleClaimAchievement,
   } = gameActions;
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const aquariumScrollRef = useRef<HTMLDivElement>(null);
@@ -332,6 +336,8 @@ export default function App() {
         }, 800);
       }
 
+      // Migration: assign a permanent friend code to saves that pre-date this field
+      if (!loaded.friendCode) loaded.friendCode = generatePermanentFriendCode();
       setGameState(loaded);
 
       // Check for daily login bonus on app open
@@ -597,10 +603,6 @@ export default function App() {
                   </motion.button>
                 </div>
 
-                {/* Cloud sync status indicator */}
-                <div className="flex justify-end -mt-0.5 pointer-events-none">
-                  <SyncIndicator status={isGuest ? 'guest' : syncStatus} />
-                </div>
 
                 {/* XP Bar - toggleable via level badge */}
                 <AnimatePresence>
@@ -1249,7 +1251,7 @@ export default function App() {
                           </div>
                           {/* Scrollable content */}
                           <div className="flex-1 overflow-y-auto overscroll-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
-                            <AchievementCenter gameState={gameState} />
+                            <AchievementCenter gameState={gameState} onClaim={handleClaimAchievement} />
                           </div>
                         </motion.div>
                       )}
@@ -1533,11 +1535,12 @@ export default function App() {
                               className="absolute inset-0"
                               style={{ background: 'rgba(0,0,0,0.42)' }}
                             />
-                            {/* Speech bubble anchored just above the action buttons */}
+                            {/* Speech bubble anchored above the Clean button (3rd of 4) */}
                             <motion.div
-                              className="absolute bottom-[72px] left-0 right-0 flex flex-col items-center gap-0.5 px-4"
-                              initial={{ opacity: 0, y: 10 }}
-                              animate={{ opacity: 1, y: 0 }}
+                              className="absolute bottom-[72px] flex flex-col items-center gap-0.5"
+                              style={{ left: '62%' }}
+                              initial={{ opacity: 0, y: 10, x: '-50%' }}
+                              animate={{ opacity: 1, y: 0, x: '-50%' }}
                               transition={{ delay: 0.3, duration: 0.4 }}
                             >
                               <div
@@ -1687,6 +1690,7 @@ export default function App() {
         <SocialModal
           onClose={() => setActiveModal(null)}
           axolotl={axolotl}
+          friendCode={gameState.friendCode ?? ''}
           friends={friends}
           onAddFriend={handleAddFriend}
           onRemoveFriend={handleRemoveFriend}

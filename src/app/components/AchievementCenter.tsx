@@ -6,6 +6,7 @@ import type { GameState } from '../types/game';
 
 interface AchievementCenterProps {
   gameState: GameState;
+  onClaim: (id: string) => void;
 }
 
 const CATEGORY_COLORS: Record<string, { bg: string; text: string; border: string; icon: string }> = {
@@ -17,8 +18,9 @@ const CATEGORY_COLORS: Record<string, { bg: string; text: string; border: string
   daily:      { bg: 'from-amber-400 to-orange-500',    text: 'text-amber-700',   border: 'border-amber-200/60',   icon: 'bg-amber-100'   },
 };
 
-export function AchievementCenter({ gameState }: AchievementCenterProps) {
+export function AchievementCenter({ gameState, onClaim }: AchievementCenterProps) {
   const unlockedSet = new Set(gameState.achievements ?? []);
+  const pendingSet = new Set(gameState.pendingAchievements ?? []);
   const totalCount = ALL_ACHIEVEMENTS.length;
   const unlockedCount = unlockedSet.size;
   const progressPercent = (unlockedCount / totalCount) * 100;
@@ -98,6 +100,9 @@ export function AchievementCenter({ gameState }: AchievementCenterProps) {
               <AnimatePresence>
                 {catAchievements.map((achievement, idx) => {
                   const isUnlocked = unlockedSet.has(achievement.id);
+                  const isPending = pendingSet.has(achievement.id);
+                  const hasReward = (achievement.coinReward ?? 0) > 0 || (achievement.opalReward ?? 0) > 0;
+
                   return (
                     <motion.div
                       key={achievement.id}
@@ -105,7 +110,9 @@ export function AchievementCenter({ gameState }: AchievementCenterProps) {
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: 0.15 + catIndex * 0.06 + idx * 0.04 }}
                       className={`relative flex items-center gap-3 rounded-2xl px-3.5 py-3 border backdrop-blur-sm transition-all ${
-                        isUnlocked
+                        isPending
+                          ? 'bg-amber-400/20 border-amber-300/50 shadow-sm shadow-amber-400/20'
+                          : isUnlocked
                           ? 'bg-white/20 border-white/30 shadow-sm'
                           : 'bg-white/[0.05] border-white/10'
                       }`}
@@ -122,22 +129,51 @@ export function AchievementCenter({ gameState }: AchievementCenterProps) {
                         <p className={`text-sm font-bold leading-tight ${isUnlocked ? 'text-white' : 'text-white/40'}`}>
                           {achievement.name}
                         </p>
-                        <p className={`text-[10px] leading-snug mt-0.5 ${isUnlocked ? 'text-white/70' : 'text-white/25'}`}>
-                          {isUnlocked ? achievement.description : '???'}
+                        <p className={`text-[10px] leading-snug mt-0.5 ${isUnlocked ? 'text-white/70' : 'text-white/30'}`}>
+                          {achievement.description}
                         </p>
+                        {!isUnlocked && hasReward && (
+                          <p className="text-[10px] font-bold text-white/25 mt-0.5">
+                            {[
+                              achievement.coinReward ? `${achievement.coinReward}🪙` : '',
+                              achievement.opalReward ? `${achievement.opalReward}🪬` : '',
+                            ].filter(Boolean).join('  ')}
+                          </p>
+                        )}
                       </div>
 
-                      {/* Status icon */}
-                      <div className={`shrink-0 w-6 h-6 rounded-full flex items-center justify-center ${
-                        isUnlocked
-                          ? 'bg-emerald-400/90 shadow-md shadow-emerald-400/30'
-                          : 'bg-white/10'
-                      }`}>
-                        {isUnlocked
-                          ? <Check className="w-3.5 h-3.5 text-white" strokeWidth={3} />
-                          : <Lock className="w-3 h-3 text-white/30" strokeWidth={2.5} />
-                        }
-                      </div>
+                      {/* Status: claim button, check, or lock */}
+                      {isPending && hasReward ? (
+                        <motion.button
+                          whileTap={{ scale: 0.92 }}
+                          onClick={() => onClaim(achievement.id)}
+                          className="shrink-0 rounded-xl px-2.5 py-1.5 bg-amber-400 shadow-md shadow-amber-400/30 flex flex-col items-center"
+                        >
+                          <span className="text-[10px] font-black text-amber-900 leading-none">CLAIM</span>
+                          <span className="text-[9px] font-bold text-amber-800 leading-none mt-0.5">
+                            {[
+                              achievement.coinReward ? `${achievement.coinReward}🪙` : '',
+                              achievement.opalReward ? `${achievement.opalReward}🪬` : '',
+                            ].filter(Boolean).join(' ')}
+                          </span>
+                        </motion.button>
+                      ) : isPending ? (
+                        <motion.button
+                          whileTap={{ scale: 0.92 }}
+                          onClick={() => onClaim(achievement.id)}
+                          className="shrink-0 rounded-xl px-2.5 py-1.5 bg-amber-400 shadow-md shadow-amber-400/30"
+                        >
+                          <span className="text-[10px] font-black text-amber-900 leading-none">CLAIM</span>
+                        </motion.button>
+                      ) : isUnlocked ? (
+                        <div className="shrink-0 w-6 h-6 rounded-full flex items-center justify-center bg-emerald-400/90 shadow-md shadow-emerald-400/30">
+                          <Check className="w-3.5 h-3.5 text-white" strokeWidth={3} />
+                        </div>
+                      ) : (
+                        <div className="shrink-0 w-6 h-6 rounded-full flex items-center justify-center bg-white/10">
+                          <Lock className="w-3 h-3 text-white/30" strokeWidth={2.5} />
+                        </div>
+                      )}
                     </motion.div>
                   );
                 })}
