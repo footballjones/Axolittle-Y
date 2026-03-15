@@ -79,7 +79,10 @@ export interface GameState {
   foodItems: FoodItem[];
   incubatorEgg: Egg | null; // 1 slot for active hatching
   nurseryEggs: Egg[]; // Storage: 6 open, 18 locked (purchase with Opals)
-  filterTier?: string; // 'filter-basic' | 'filter-advanced' | 'filter-premium'
+  /** @deprecated Use ownedFilters + equippedFilter instead. Kept for legacy save migration. */
+  filterTier?: string;
+  ownedFilters?: string[];  // All filter IDs the player has purchased (multiple allowed)
+  equippedFilter?: string;  // The currently active filter ID (one of ownedFilters)
   shrimpCount?: number; // Number of shrimp in tank (vacation mechanic)
   lastShrimpUpdate?: number; // Timestamp of last shrimp consumption
   lastEnergyUpdate?: number; // Timestamp of last energy update (for fractional energy tracking)

@@ -72,7 +72,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
     category: 'nurture',
     coinReward: 25,
     opalReward: 2,
-    check: s => s.filterTier === 'filter-premium',
+    check: s => (s.equippedFilter ?? s.filterTier) === 'filter-premium',
   },
 
   // ─── 🎮 MINI GAMES ─────────────────────────────────────────────────────────

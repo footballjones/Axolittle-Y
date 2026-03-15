@@ -11,10 +11,13 @@ interface ShopModalProps {
   onBuyOpals: (pack: { price: string; opals: number }) => void;
   onBuyShrimp?: (pack: { count: number; opals: number }) => void;
   onBuyFilter?: (filter: { id: string; name: string; coins: number; opals: number }) => void;
+  onEquipFilter?: (filterId: string) => void;
   onBuyTreatment?: (treatment: { id: string; name: string; opals: number }) => void;
   initialSection?: 'coins' | 'opals' | null;
-  /** The currently owned filter tier ID, if any. Owned filters show "Owned" and cannot be re-purchased. */
-  filterTier?: string;
+  /** All filter IDs the player has purchased. */
+  ownedFilters?: string[];
+  /** The currently active (equipped) filter ID. */
+  equippedFilter?: string;
 }
 
 const COIN_PACKS = [
@@ -179,9 +182,11 @@ export function ShopModal({
   onBuyOpals,
   onBuyShrimp,
   onBuyFilter,
+  onEquipFilter,
   onBuyTreatment,
   initialSection,
-  filterTier,
+  ownedFilters = [],
+  equippedFilter,
 }: ShopModalProps) {
   const canAfford = (cost: number) => coins >= cost;
   const canAffordOpals = (cost: number) => opals >= cost;
@@ -189,7 +194,7 @@ export function ShopModal({
   const opalsSectionRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [infoModal, setInfoModal] = useState<'shrimp' | 'filters' | 'treatments' | null>(null);
-  const [confirmFilter, setConfirmFilter] = useState<typeof FILTER_OPTIONS[number] | null>(null);
+  const [confirmFilter, setConfirmFilter] = useState<{ filter: typeof FILTER_OPTIONS[number]; mode: 'buy' | 'equip' } | null>(null);
 
   useEffect(() => {
     if (!initialSection) return;
@@ -441,26 +446,55 @@ export function ShopModal({
               />
               <div className="space-y-1.5">
                 {FILTER_OPTIONS.map((filter, i) => {
-                  const isOwned = filterTier === filter.id;
+                  const isEquipped = equippedFilter === filter.id;
+                  const isOwned = ownedFilters.includes(filter.id);
                   const usesOpals = filter.opals > 0;
                   const canAffordFilter = usesOpals ? canAffordOpals(filter.opals) : canAfford(filter.coins);
                   const filterCost = usesOpals ? filter.opals : filter.coins;
+
+                  // Equipped → disabled. Owned-not-equipped → clickable (equip). Unowned → buy flow.
+                  const isDisabled = isEquipped || (!isOwned && !canAffordFilter);
+                  const handleClick = () => {
+                    if (isEquipped) return;
+                    if (isOwned) {
+                      setConfirmFilter({ filter, mode: 'equip' });
+                    } else if (canAffordFilter) {
+                      setConfirmFilter({ filter, mode: 'buy' });
+                    }
+                  };
 
                   return (
                     <ShopRowTile
                       key={filter.id}
                       index={i}
-                      onClick={() => !isOwned && setConfirmFilter(filter)}
-                      disabled={isOwned || !canAffordFilter}
-                      cardBg={isOwned
-                        ? 'linear-gradient(135deg, rgba(220,252,231,0.9) 0%, rgba(187,247,208,0.85) 100%)'
-                        : 'linear-gradient(135deg, rgba(255,255,255,0.88) 0%, rgba(240,249,255,0.85) 100%)'}
-                      cardBorder={isOwned ? '1.5px solid rgba(134,239,172,0.7)' : '1.5px solid rgba(186,230,253,0.6)'}
+                      onClick={handleClick}
+                      disabled={isDisabled}
+                      cardBg={
+                        isEquipped
+                          ? 'linear-gradient(135deg, rgba(219,234,254,0.95) 0%, rgba(191,219,254,0.9) 100%)'
+                          : isOwned
+                          ? 'linear-gradient(135deg, rgba(220,252,231,0.9) 0%, rgba(187,247,208,0.85) 100%)'
+                          : 'linear-gradient(135deg, rgba(255,255,255,0.88) 0%, rgba(240,249,255,0.85) 100%)'
+                      }
+                      cardBorder={
+                        isEquipped
+                          ? '1.5px solid rgba(96,165,250,0.7)'
+                          : isOwned
+                          ? '1.5px solid rgba(134,239,172,0.7)'
+                          : '1.5px solid rgba(186,230,253,0.6)'
+                      }
                       emoji={filter.emoji}
                       title={filter.name}
                       subtitle={filter.description}
                       priceContent={
-                        isOwned ? (
+                        isEquipped ? (
+                          <div
+                            className="flex items-center gap-1 text-[11px] font-black px-3 py-1.5 rounded-xl"
+                            style={{ background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)', color: '#fff', boxShadow: '0 3px 10px rgba(59,130,246,0.4)' }}
+                          >
+                            ⚡ Equipped
+                          </div>
+                        ) : isOwned ? (
                           <div
                             className="flex items-center gap-1 text-[11px] font-black px-3 py-1.5 rounded-xl"
                             style={{ background: 'linear-gradient(135deg, #4ade80, #16a34a)', color: '#fff', boxShadow: '0 3px 10px rgba(74,222,128,0.35)' }}
@@ -543,7 +577,7 @@ export function ShopModal({
       {/* ── Filter confirmation sheet ── */}
       <AnimatePresence>
         {confirmFilter && (() => {
-          const f = confirmFilter;
+          const { filter: f, mode } = confirmFilter;
           const usesOpals = f.opals > 0;
           const cost = usesOpals ? f.opals : f.coins;
           const canAffordIt = usesOpals ? canAffordOpals(f.opals) : canAfford(f.coins);
@@ -571,8 +605,12 @@ export function ShopModal({
                 transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
                 className="w-full rounded-3xl p-5 flex flex-col gap-3"
                 style={{
-                  background: 'linear-gradient(160deg, #f0f9ff 0%, #e0f2fe 100%)',
-                  border: '1.5px solid rgba(186,230,253,0.7)',
+                  background: mode === 'equip'
+                    ? 'linear-gradient(160deg, #eff6ff 0%, #dbeafe 100%)'
+                    : 'linear-gradient(160deg, #f0f9ff 0%, #e0f2fe 100%)',
+                  border: mode === 'equip'
+                    ? '1.5px solid rgba(147,197,253,0.7)'
+                    : '1.5px solid rgba(186,230,253,0.7)',
                   boxShadow: '0 16px 48px rgba(0,0,0,0.18)',
                 }}
                 onClick={e => e.stopPropagation()}
@@ -584,7 +622,7 @@ export function ShopModal({
                   </div>
                   <div className="flex-1 min-w-0">
                     <h4 className="font-black tracking-tight text-[1rem]" style={{ background: 'linear-gradient(135deg, #0284c7, #1d4ed8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                      {f.name}
+                      {mode === 'equip' ? `Equip ${f.name}?` : f.name}
                     </h4>
                     <p className="text-sky-500/70 text-[10px] font-semibold">{f.description}</p>
                   </div>
@@ -603,19 +641,28 @@ export function ShopModal({
                   {FILTER_DETAIL[f.id]}
                 </p>
 
-                {/* Cost + warning */}
-                <div className="rounded-2xl px-3.5 py-2.5 flex items-center gap-2" style={{ background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(186,230,253,0.6)' }}>
-                  <span className="text-slate-500 text-[11px] font-medium flex-1">Cost:</span>
-                  <div className="flex items-center gap-1 text-[11px] font-black px-2.5 py-1 rounded-xl"
-                    style={{ background: usesOpals ? 'linear-gradient(135deg,#f472b6,#e11d48)' : 'linear-gradient(135deg,#38bdf8,#2563eb)', color: '#fff' }}>
-                    {usesOpals ? <Sparkles className="w-3 h-3" /> : <Coins className="w-3 h-3" />}
-                    <span>{cost}</span>
+                {/* Cost row — only shown in buy mode */}
+                {mode === 'buy' && (
+                  <div className="rounded-2xl px-3.5 py-2.5 flex items-center gap-2" style={{ background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(186,230,253,0.6)' }}>
+                    <span className="text-slate-500 text-[11px] font-medium flex-1">Cost:</span>
+                    <div className="flex items-center gap-1 text-[11px] font-black px-2.5 py-1 rounded-xl"
+                      style={{ background: usesOpals ? 'linear-gradient(135deg,#f472b6,#e11d48)' : 'linear-gradient(135deg,#38bdf8,#2563eb)', color: '#fff' }}>
+                      {usesOpals ? <Sparkles className="w-3 h-3" /> : <Coins className="w-3 h-3" />}
+                      <span>{cost}</span>
+                    </div>
+                    <span className="text-[9px] text-slate-400 font-medium">one-time</span>
                   </div>
-                  <span className="text-[9px] text-slate-400 font-medium">one-time</span>
-                </div>
+                )}
 
-                {!canAffordIt && (
+                {mode === 'buy' && !canAffordIt && (
                   <p className="text-red-400 text-[11px] font-semibold text-center">Not enough {usesOpals ? 'opals' : 'coins'}!</p>
+                )}
+
+                {/* Equip-mode note */}
+                {mode === 'equip' && (
+                  <div className="rounded-2xl px-3.5 py-2.5 flex items-center gap-2" style={{ background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(147,197,253,0.5)' }}>
+                    <span className="text-[11px] text-slate-500 font-medium">Already in your collection — no extra cost!</span>
+                  </div>
                 )}
 
                 {/* Buttons */}
@@ -628,19 +675,33 @@ export function ShopModal({
                   >
                     Cancel
                   </motion.button>
-                  <motion.button
-                    onClick={() => {
-                      if (!canAffordIt) return;
-                      onBuyFilter?.(f);
-                      setConfirmFilter(null);
-                    }}
-                    disabled={!canAffordIt}
-                    whileTap={canAffordIt ? { scale: 0.96 } : {}}
-                    className="flex-1 py-2.5 rounded-2xl font-black text-white text-sm disabled:opacity-40"
-                    style={{ background: 'linear-gradient(135deg,#38bdf8,#2563eb)', boxShadow: canAffordIt ? '0 4px 15px rgba(56,189,248,0.4)' : 'none' }}
-                  >
-                    Buy Filter
-                  </motion.button>
+                  {mode === 'buy' ? (
+                    <motion.button
+                      onClick={() => {
+                        if (!canAffordIt) return;
+                        onBuyFilter?.(f);
+                        setConfirmFilter(null);
+                      }}
+                      disabled={!canAffordIt}
+                      whileTap={canAffordIt ? { scale: 0.96 } : {}}
+                      className="flex-1 py-2.5 rounded-2xl font-black text-white text-sm disabled:opacity-40"
+                      style={{ background: 'linear-gradient(135deg,#38bdf8,#2563eb)', boxShadow: canAffordIt ? '0 4px 15px rgba(56,189,248,0.4)' : 'none' }}
+                    >
+                      Buy &amp; Equip
+                    </motion.button>
+                  ) : (
+                    <motion.button
+                      onClick={() => {
+                        onEquipFilter?.(f.id);
+                        setConfirmFilter(null);
+                      }}
+                      whileTap={{ scale: 0.96 }}
+                      className="flex-1 py-2.5 rounded-2xl font-black text-white text-sm"
+                      style={{ background: 'linear-gradient(135deg,#3b82f6,#1d4ed8)', boxShadow: '0 4px 15px rgba(59,130,246,0.4)' }}
+                    >
+                      Equip
+                    </motion.button>
+                  )}
                 </div>
               </motion.div>
             </motion.div>

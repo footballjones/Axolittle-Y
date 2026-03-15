@@ -758,22 +758,34 @@ export function useGameActions({
   const handleBuyFilter = useCallback((filter: { id: string; name: string; coins: number; opals: number }) => {
     setGameState(prev => {
       if (!prev) return prev;
-      
+      // Migrate legacy ownedFilters from filterTier if needed
+      const currentOwned = prev.ownedFilters ?? (prev.filterTier ? [prev.filterTier] : []);
+      const newOwned = currentOwned.includes(filter.id) ? currentOwned : [...currentOwned, filter.id];
+
       if (filter.opals > 0) {
         if ((prev.opals || 0) < filter.opals) return prev;
         return withAchievements({
           ...prev,
           opals: (prev.opals || 0) - filter.opals,
-          filterTier: filter.id,
+          ownedFilters: newOwned,
+          equippedFilter: filter.id,
         });
       } else {
         if (prev.coins < filter.coins) return prev;
         return withAchievements({
           ...prev,
           coins: prev.coins - filter.coins,
-          filterTier: filter.id,
+          ownedFilters: newOwned,
+          equippedFilter: filter.id,
         });
       }
+    });
+  }, []);
+
+  const handleEquipFilter = useCallback((filterId: string) => {
+    setGameState(prev => {
+      if (!prev) return prev;
+      return { ...prev, equippedFilter: filterId };
     });
   }, []);
 
@@ -861,6 +873,7 @@ export function useGameActions({
     handleBuyCoins,
     handleBuyOpals,
     handleBuyFilter,
+    handleEquipFilter,
     handleBuyShrimp,
     handleBuyTreatment,
     handleUnlockGames,

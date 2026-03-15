@@ -42,7 +42,7 @@ export function updateWellbeingStats(axolotl: Axolotl, gameState?: GameState): {
   const waterQualityMultiplier = axolotl.stats.waterQuality / 100;
   
   // Filter effect on water quality decay
-  const filterMultiplier = getFilterDecayMultiplier(gameState?.filterTier);
+  const filterMultiplier = getFilterDecayMultiplier(gameState?.equippedFilter ?? gameState?.filterTier);
   
   // Shrimp effects
   const hasShrimp = (gameState?.shrimpCount || 0) > 0;

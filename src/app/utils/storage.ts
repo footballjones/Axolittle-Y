@@ -211,6 +211,8 @@ export function getInitialGameState(): GameState {
     incubatorEgg: null,
     nurseryEggs: [],
     filterTier: undefined,
+    ownedFilters: [],
+    equippedFilter: undefined,
     shrimpCount: 0,
     lastShrimpUpdate: undefined,
     lastEnergyUpdate: Date.now(), // Initialize energy timestamp

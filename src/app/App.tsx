@@ -225,6 +225,7 @@ export default function App() {
     handleBuyCoins,
     handleBuyOpals,
     handleBuyFilter,
+    handleEquipFilter,
     handleBuyShrimp,
     handleBuyTreatment,
     handleUnlockGames,
@@ -1688,10 +1689,12 @@ export default function App() {
           onBuyCoins={handleBuyCoins}
           onBuyOpals={handleBuyOpals}
           onBuyFilter={handleBuyFilter}
+          onEquipFilter={handleEquipFilter}
           onBuyShrimp={handleBuyShrimp}
           onBuyTreatment={handleBuyTreatment}
           initialSection={shopSection}
-          filterTier={gameState?.filterTier}
+          ownedFilters={gameState?.ownedFilters ?? (gameState?.filterTier ? [gameState.filterTier] : [])}
+          equippedFilter={gameState?.equippedFilter ?? gameState?.filterTier}
         />
       )}
 
