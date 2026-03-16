@@ -7,6 +7,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion } from 'motion/react';
 import { ArrowLeft } from 'lucide-react';
 import axolotlImg from '../../assets/axolotl.png';
+import castleImg from '../../assets/jimmy-chubs/Jimmy and Chubs castle.png';
 
 interface Pos { x: number; y: number }
 
@@ -144,7 +145,26 @@ export function JimmyChubsAquarium({ onBack }: Props) {
         {/* Subtle tint */}
         <div
           className="absolute inset-0 pointer-events-none"
-          style={{ background: 'rgba(4,20,60,0.25)' }}
+          style={{ background: 'rgba(4,20,60,0.06)' }}
+        />
+
+        {/* Castle decoration — large, centered, behind axolotls */}
+        <img
+          src={castleImg}
+          alt=""
+          draggable={false}
+          className="absolute pointer-events-none select-none"
+          style={{
+            bottom: '11%',
+            left: '50%',
+            transform: 'translateX(-50%) scaleY(1.32)',
+            width: '91%',
+            maxWidth: 548,
+            objectFit: 'contain',
+            filter: 'brightness(0.78) saturate(0.85) drop-shadow(0 8px 24px rgba(0,40,80,0.7))',
+            opacity: 0.88,
+            zIndex: 2,
+          }}
         />
 
         {/* Ripple on tap */}
@@ -172,7 +192,7 @@ export function JimmyChubsAquarium({ onBack }: Props) {
           animate={{ left: `${jimmyPos.x}%`, top: `${jimmyPos.y}%` }}
           transition={{ type: 'spring', stiffness: 55, damping: 14 }}
           className="absolute pointer-events-none"
-          style={{ transform: 'translate(-50%, -50%)' }}
+          style={{ transform: 'translate(-50%, -50%)', zIndex: 10 }}
         >
           <div
             className="absolute inset-0 rounded-full pointer-events-none"
@@ -205,7 +225,7 @@ export function JimmyChubsAquarium({ onBack }: Props) {
           animate={{ left: `${chubsPos.x}%`, top: `${chubsPos.y}%` }}
           transition={{ type: 'spring', stiffness: 35, damping: 11 }}
           className="absolute pointer-events-none"
-          style={{ transform: 'translate(-50%, -50%)' }}
+          style={{ transform: 'translate(-50%, -50%)', zIndex: 10 }}
         >
           <div
             className="absolute inset-0 rounded-full pointer-events-none"
