@@ -471,16 +471,16 @@ export function ShopModal({
                       disabled={isDisabled}
                       cardBg={
                         isEquipped
-                          ? 'linear-gradient(135deg, rgba(219,234,254,0.95) 0%, rgba(191,219,254,0.9) 100%)'
-                          : isOwned
                           ? 'linear-gradient(135deg, rgba(220,252,231,0.9) 0%, rgba(187,247,208,0.85) 100%)'
+                          : isOwned
+                          ? 'linear-gradient(135deg, rgba(219,234,254,0.95) 0%, rgba(191,219,254,0.9) 100%)'
                           : 'linear-gradient(135deg, rgba(255,255,255,0.88) 0%, rgba(240,249,255,0.85) 100%)'
                       }
                       cardBorder={
                         isEquipped
-                          ? '1.5px solid rgba(96,165,250,0.7)'
-                          : isOwned
                           ? '1.5px solid rgba(134,239,172,0.7)'
+                          : isOwned
+                          ? '1.5px solid rgba(96,165,250,0.7)'
                           : '1.5px solid rgba(186,230,253,0.6)'
                       }
                       emoji={filter.emoji}
@@ -490,16 +490,16 @@ export function ShopModal({
                         isEquipped ? (
                           <div
                             className="flex items-center gap-1 text-[11px] font-black px-3 py-1.5 rounded-xl"
-                            style={{ background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)', color: '#fff', boxShadow: '0 3px 10px rgba(59,130,246,0.4)' }}
+                            style={{ background: 'linear-gradient(135deg, #4ade80, #16a34a)', color: '#fff', boxShadow: '0 3px 10px rgba(74,222,128,0.4)' }}
                           >
-                            ⚡ Equipped
+                            ✓ Equipped
                           </div>
                         ) : isOwned ? (
                           <div
                             className="flex items-center gap-1 text-[11px] font-black px-3 py-1.5 rounded-xl"
-                            style={{ background: 'linear-gradient(135deg, #4ade80, #16a34a)', color: '#fff', boxShadow: '0 3px 10px rgba(74,222,128,0.35)' }}
+                            style={{ background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)', color: '#fff', boxShadow: '0 3px 10px rgba(59,130,246,0.4)' }}
                           >
-                            ✓ Owned
+                            Owned
                           </div>
                         ) : (
                           <PriceBadge

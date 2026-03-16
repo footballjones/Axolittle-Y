@@ -3,7 +3,7 @@
  * Two axolotls live here: Jimmy & Chubs (both swim to wherever you tap).
  */
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { motion } from 'motion/react';
 import { ArrowLeft } from 'lucide-react';
 import axolotlImg from '../../assets/axolotl.png';
@@ -26,6 +26,29 @@ interface Props {
 }
 
 export function JimmyChubsAquarium({ onBack }: Props) {
+  // Stable bioluminescent particle data — generated once on mount
+  const particles = useMemo(() => {
+    const colors = [
+      'rgba(56,189,248,1)',   // cyan
+      'rgba(139,92,246,1)',   // violet
+      'rgba(52,211,153,1)',   // teal
+      'rgba(167,243,208,1)',  // mint
+      'rgba(196,181,253,1)',  // lavender
+      'rgba(103,232,249,1)',  // sky
+    ];
+    return Array.from({ length: 28 }, (_, i) => ({
+      id: i,
+      x: 3 + Math.random() * 93,
+      y: 6 + Math.random() * 85,
+      size: 2.5 + Math.random() * 3.5,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      pulseDuration: 2.2 + Math.random() * 3,
+      driftY: -(3 + Math.random() * 9),
+      driftX: (Math.random() - 0.5) * 7,
+      delay: Math.random() * 5,
+    }));
+  }, []);
+
   const [jimmyPos, setJimmyPos] = useState<Pos>({ x: 30, y: 50 });
   const [chubsPos, setChubsPos] = useState<Pos>({ x: 65, y: 40 });
   const [ripple, setRipple] = useState<(Pos & { id: number }) | null>(null);
@@ -147,6 +170,35 @@ export function JimmyChubsAquarium({ onBack }: Props) {
           className="absolute inset-0 pointer-events-none"
           style={{ background: 'rgba(4,20,60,0.06)' }}
         />
+
+        {/* Bioluminescent particles */}
+        {particles.map(p => (
+          <motion.div
+            key={p.id}
+            className="absolute pointer-events-none rounded-full"
+            style={{
+              left: `${p.x}%`,
+              top: `${p.y}%`,
+              width: p.size,
+              height: p.size,
+              background: p.color,
+              boxShadow: `0 0 ${p.size * 2.5}px ${p.size * 1.5}px ${p.color.replace(',1)', ',0.55)')}`,
+              zIndex: 1,
+            }}
+            animate={{
+              opacity: [0.08, 1, 0.08],
+              scale: [0.5, 1.4, 0.5],
+              y: [0, p.driftY, 0],
+              x: [0, p.driftX, 0],
+            }}
+            transition={{
+              duration: p.pulseDuration,
+              repeat: Infinity,
+              ease: 'easeInOut',
+              delay: p.delay,
+            }}
+          />
+        ))}
 
         {/* Castle decoration — large, centered, behind axolotls */}
         <img
