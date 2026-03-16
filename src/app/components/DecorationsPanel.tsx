@@ -23,6 +23,14 @@ const TREATMENT_DEFS = [
 
 type InventoryTab = 'decorations' | 'wellbeing';
 
+interface PendingTreatmentUse {
+  id: string;
+  name: string;
+  emoji: string;
+  description: string;
+  count: number;
+}
+
 interface Props {
   owned: string[];
   equippedDecos: string[];
@@ -55,6 +63,9 @@ export function DecorationsPanel({
   onEquip,
 }: Props) {
   const [activeTab, setActiveTab] = useState<InventoryTab>('decorations');
+  const [pendingTreatmentUse, setPendingTreatmentUse] = useState<PendingTreatmentUse | null>(null);
+  const [showShrimpSheet, setShowShrimpSheet] = useState(false);
+  const [deployCount, setDeployCount] = useState(10);
   const [openCategories, setOpenCategories] = useState<Record<string, boolean>>(
     () => Object.fromEntries([...DECO_CATEGORIES.map(c => [c.type, true]), ['filters', true], ['treatments', true], ['shrimp', true]])
   );
@@ -350,12 +361,12 @@ export function DecorationsPanel({
                                   <p className="text-[10px] text-slate-400 font-medium">Add them to your aquarium to clean</p>
                                 </div>
                                 <motion.button
-                                  onClick={() => onDeployShrimpFromInventory?.(storedShrimp)}
+                                  onClick={() => { setDeployCount(10); setShowShrimpSheet(true); }}
                                   whileTap={{ scale: 0.94 }}
                                   className="text-[10px] font-black px-2.5 py-1 rounded-xl flex-shrink-0 text-white"
                                   style={{ background: 'linear-gradient(135deg, #f472b6, #e11d48)', boxShadow: '0 2px 6px rgba(244,114,182,0.35)' }}
                                 >
-                                  Add All
+                                  Add
                                 </motion.button>
                               </div>
                             </div>
@@ -390,7 +401,7 @@ export function DecorationsPanel({
                                       <p className="text-[10px] text-slate-400 font-medium">{t.description}</p>
                                     </div>
                                     <motion.button
-                                      onClick={() => onUseTreatmentFromInventory?.(t.id)}
+                                      onClick={() => setPendingTreatmentUse({ id: t.id, name: t.name, emoji: t.emoji, description: t.description, count })}
                                       whileTap={{ scale: 0.94 }}
                                       className="text-[10px] font-black px-2.5 py-1 rounded-xl flex-shrink-0 text-white"
                                       style={{ background: 'linear-gradient(135deg, #34d399, #0d9488)', boxShadow: '0 2px 6px rgba(52,211,153,0.35)' }}
@@ -415,6 +426,120 @@ export function DecorationsPanel({
 
         <div style={{ height: '3rem', minHeight: '3rem', flexShrink: 0 }} />
       </div>
+
+      {/* ── Treatment use confirmation sheet ── */}
+      <AnimatePresence>
+        {pendingTreatmentUse && (
+          <motion.div
+            key="treatment-confirm"
+            className="absolute inset-x-0 bottom-0 z-50 rounded-t-3xl px-5 pt-5 pb-7"
+            style={{ background: 'linear-gradient(160deg,#f0fdf4,#dcfce7)', borderTop: '1.5px solid rgba(52,211,153,0.3)', boxShadow: '0 -8px 32px rgba(0,0,0,0.12)' }}
+            initial={{ y: '100%' }}
+            animate={{ y: 0 }}
+            exit={{ y: '100%' }}
+            transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <div className="flex flex-col items-center gap-1 mb-4">
+              <span className="text-4xl mb-1">{pendingTreatmentUse.emoji}</span>
+              <p className="text-[14px] font-black text-slate-800 text-center">{pendingTreatmentUse.name}</p>
+              <p className="text-[11px] text-slate-500 text-center">{pendingTreatmentUse.description}</p>
+              {pendingTreatmentUse.count > 1 && (
+                <p className="text-[10px] font-bold text-teal-600 mt-0.5">You have ×{pendingTreatmentUse.count} stored</p>
+              )}
+            </div>
+            <p className="text-[12px] font-bold text-slate-600 text-center mb-4">Use this treatment on your axolotl?</p>
+            <div className="flex gap-3">
+              <motion.button
+                onClick={() => setPendingTreatmentUse(null)}
+                whileTap={{ scale: 0.95 }}
+                className="flex-1 py-3 rounded-2xl text-[13px] font-black"
+                style={{ background: 'rgba(241,245,249,0.9)', color: '#64748b', border: '1.5px solid rgba(203,213,225,0.6)' }}
+              >
+                Cancel
+              </motion.button>
+              <motion.button
+                onClick={() => { onUseTreatmentFromInventory?.(pendingTreatmentUse.id); setPendingTreatmentUse(null); }}
+                whileTap={{ scale: 0.95 }}
+                className="flex-1 py-3 rounded-2xl text-[13px] font-black text-white"
+                style={{ background: 'linear-gradient(135deg, #34d399, #0d9488)', boxShadow: '0 4px 14px rgba(52,211,153,0.4)' }}
+              >
+                ✓ Use Now
+              </motion.button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Shrimp deploy quantity sheet ── */}
+      <AnimatePresence>
+        {showShrimpSheet && (() => {
+          const maxGroups = Math.floor(storedShrimp / 10);
+          const selectedGroups = Math.floor(deployCount / 10);
+          return (
+            <motion.div
+              key="shrimp-deploy"
+              className="absolute inset-x-0 bottom-0 z-50 rounded-t-3xl px-5 pt-5 pb-7"
+              style={{ background: 'linear-gradient(160deg,#fff1f2,#fce7f3)', borderTop: '1.5px solid rgba(244,114,182,0.3)', boxShadow: '0 -8px 32px rgba(0,0,0,0.12)' }}
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+            >
+              <div className="flex flex-col items-center gap-1 mb-4">
+                <span className="text-4xl mb-1">🦐</span>
+                <p className="text-[14px] font-black text-slate-800">Add Shrimp to Aquarium</p>
+                <p className="text-[11px] text-slate-500">{storedShrimp} shrimp stored · select in groups of 10</p>
+              </div>
+
+              {/* Stepper */}
+              <div className="flex items-center justify-center gap-5 mb-5">
+                <motion.button
+                  onClick={() => setDeployCount(c => Math.max(10, c - 10))}
+                  whileTap={{ scale: 0.88 }}
+                  disabled={selectedGroups <= 1}
+                  className="w-11 h-11 rounded-2xl flex items-center justify-center text-xl font-black"
+                  style={{ background: selectedGroups <= 1 ? 'rgba(241,245,249,0.7)' : 'linear-gradient(135deg,#f472b6,#e11d48)', color: selectedGroups <= 1 ? '#cbd5e1' : '#fff', boxShadow: selectedGroups <= 1 ? 'none' : '0 3px 10px rgba(244,114,182,0.35)' }}
+                >
+                  −
+                </motion.button>
+                <div className="text-center">
+                  <p className="text-[32px] font-black text-slate-800 leading-none tabular-nums">{deployCount}</p>
+                  <p className="text-[10px] text-slate-400 font-medium mt-0.5">shrimp</p>
+                </div>
+                <motion.button
+                  onClick={() => setDeployCount(c => Math.min(maxGroups * 10, c + 10))}
+                  whileTap={{ scale: 0.88 }}
+                  disabled={selectedGroups >= maxGroups}
+                  className="w-11 h-11 rounded-2xl flex items-center justify-center text-xl font-black"
+                  style={{ background: selectedGroups >= maxGroups ? 'rgba(241,245,249,0.7)' : 'linear-gradient(135deg,#f472b6,#e11d48)', color: selectedGroups >= maxGroups ? '#cbd5e1' : '#fff', boxShadow: selectedGroups >= maxGroups ? 'none' : '0 3px 10px rgba(244,114,182,0.35)' }}
+                >
+                  +
+                </motion.button>
+              </div>
+
+              <div className="flex gap-3">
+                <motion.button
+                  onClick={() => setShowShrimpSheet(false)}
+                  whileTap={{ scale: 0.95 }}
+                  className="flex-1 py-3 rounded-2xl text-[13px] font-black"
+                  style={{ background: 'rgba(241,245,249,0.9)', color: '#64748b', border: '1.5px solid rgba(203,213,225,0.6)' }}
+                >
+                  Cancel
+                </motion.button>
+                <motion.button
+                  onClick={() => { onDeployShrimpFromInventory?.(deployCount); setShowShrimpSheet(false); }}
+                  whileTap={{ scale: 0.95 }}
+                  className="flex-1 py-3 rounded-2xl text-[13px] font-black text-white"
+                  style={{ background: 'linear-gradient(135deg, #f472b6, #e11d48)', boxShadow: '0 4px 14px rgba(244,114,182,0.4)' }}
+                >
+                  🦐 Add {deployCount} Shrimp
+                </motion.button>
+              </div>
+            </motion.div>
+          );
+        })()}
+      </AnimatePresence>
+
     </motion.div>
   );
 }
