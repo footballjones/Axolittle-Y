@@ -68,6 +68,8 @@ function rollJimmyGift(): { coins: number; opals: number } {
 export default function App() {
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [clickTarget, setClickTarget] = useState<{ x: number; y: number; timestamp: number } | null>(null);
+  const [tapRipples, setTapRipples] = useState<{ id: number; x: number; y: number }[]>([]);
+  const tapRippleCounter = useRef(0);
   const [showWaterChangeModal, setShowWaterChangeModal] = useState(false);
   const [cleaningMode, setCleaningMode] = useState(false);
   const cleaningModeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -1443,6 +1445,10 @@ export default function App() {
                         setClickTarget({ x: clampedX, y: clampedY, timestamp: Date.now() });
                         // In play mode, also give +10 happiness and reset the idle timer
                         if (playMode) handleAquariumPlayTap();
+                        // Tap ripple feedback
+                        const id = ++tapRippleCounter.current;
+                        setTapRipples(prev => [...prev, { id, x, y }]);
+                        setTimeout(() => setTapRipples(prev => prev.filter(r => r.id !== id)), 600);
                       }}
                     >
                       <AquariumBackground
@@ -1481,6 +1487,27 @@ export default function App() {
                         );
                       })}
                       
+                      {/* Tap ripple feedback */}
+                      {tapRipples.map(r => (
+                        <motion.div
+                          key={r.id}
+                          className="absolute pointer-events-none rounded-full"
+                          style={{
+                            left: `${r.x}%`,
+                            top: `${r.y}%`,
+                            width: 56,
+                            height: 56,
+                            marginLeft: -28,
+                            marginTop: -28,
+                            background: 'rgba(255,255,255,0.55)',
+                            zIndex: 50,
+                          }}
+                          initial={{ scale: 0, opacity: 0.9 }}
+                          animate={{ scale: 2.2, opacity: 0 }}
+                          transition={{ duration: 0.5, ease: 'easeOut' }}
+                        />
+                      ))}
+
                       {/* Axolotl */}
                       <div className="absolute inset-0 z-10 pointer-events-none">
                         <AxolotlDisplay
