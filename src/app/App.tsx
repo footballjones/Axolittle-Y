@@ -1495,10 +1495,10 @@ export default function App() {
                           style={{
                             left: `${r.x}%`,
                             top: `${r.y}%`,
-                            width: 56,
-                            height: 56,
-                            marginLeft: -28,
-                            marginTop: -28,
+                            width: 28,
+                            height: 28,
+                            marginLeft: -14,
+                            marginTop: -14,
                             background: 'rgba(255,255,255,0.55)',
                             zIndex: 50,
                           }}
