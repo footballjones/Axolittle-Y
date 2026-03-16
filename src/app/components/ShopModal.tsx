@@ -1,6 +1,6 @@
 import { X, Coins, Sparkles, Droplets, Filter, Bug, Gem, Info } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 
 interface ShopModalProps {
   onClose: () => void;
@@ -52,6 +52,35 @@ const TREATMENT_OPTIONS = [
   { id: 'treatment-miracle', name: 'Miracle Treatment', opals: 15, emoji: '🧪', description: 'Fully restores all water stats' },
 ];
 
+type TabId = 'currency' | 'decorations' | 'wellbeing';
+
+const TABS: { id: TabId; label: string; emoji: string; activeGradient: string; activeShadow: string; inactiveColor: string }[] = [
+  {
+    id: 'currency',
+    label: 'Currency',
+    emoji: '💰',
+    activeGradient: 'linear-gradient(135deg, #f59e0b, #d97706)',
+    activeShadow: '0 4px 12px rgba(245,158,11,0.45)',
+    inactiveColor: 'rgba(146,64,14,0.6)',
+  },
+  {
+    id: 'decorations',
+    label: 'Decorations',
+    emoji: '🪴',
+    activeGradient: 'linear-gradient(135deg, #38bdf8, #2563eb)',
+    activeShadow: '0 4px 12px rgba(56,189,248,0.45)',
+    inactiveColor: 'rgba(14,116,144,0.6)',
+  },
+  {
+    id: 'wellbeing',
+    label: 'Wellbeing',
+    emoji: '🌿',
+    activeGradient: 'linear-gradient(135deg, #34d399, #0d9488)',
+    activeShadow: '0 4px 12px rgba(52,211,153,0.45)',
+    inactiveColor: 'rgba(13,148,136,0.6)',
+  },
+];
+
 /* ── Section header ── */
 function SectionHeader({ icon: Icon, iconBg, iconShadow, title, titleGradient, wobbleDirection = 'left', onInfo }: {
   icon: typeof Coins;
@@ -96,7 +125,6 @@ function SectionHeader({ icon: Icon, iconBg, iconShadow, title, titleGradient, w
     </div>
   );
 }
-
 
 /* ── Shared row tile ── */
 function ShopRowTile({
@@ -190,22 +218,12 @@ export function ShopModal({
 }: ShopModalProps) {
   const canAfford = (cost: number) => coins >= cost;
   const canAffordOpals = (cost: number) => opals >= cost;
-  const coinsSectionRef = useRef<HTMLDivElement>(null);
-  const opalsSectionRef = useRef<HTMLDivElement>(null);
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  const [activeTab, setActiveTab] = useState<TabId>(
+    initialSection ? 'currency' : 'currency'
+  );
   const [infoModal, setInfoModal] = useState<'shrimp' | 'filters' | 'treatments' | null>(null);
   const [confirmFilter, setConfirmFilter] = useState<{ filter: typeof FILTER_OPTIONS[number]; mode: 'buy' | 'equip' } | null>(null);
-
-  useEffect(() => {
-    if (!initialSection) return;
-    const timeout = setTimeout(() => {
-      const ref = initialSection === 'coins' ? coinsSectionRef : opalsSectionRef;
-      ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 300);
-    return () => clearTimeout(timeout);
-  }, [initialSection]);
-
-
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3" style={{ background: 'rgba(88,28,135,0.22)', backdropFilter: 'blur(14px)' }}>
@@ -232,14 +250,12 @@ export function ShopModal({
             maxHeight: '90vh',
           }}
         >
-          {/* Header */}
+          {/* ── Header ── */}
           <div className="relative flex-shrink-0 px-5 pt-5 pb-4">
-            {/* Bottom rule */}
             <div className="absolute bottom-0 left-0 right-0 h-px" style={{ background: 'linear-gradient(90deg, transparent, rgba(168,85,247,0.3), transparent)' }} />
 
             <div className="flex items-start justify-between">
               <div>
-                {/* Wordmark */}
                 <h2
                   className="font-black tracking-tight"
                   style={{
@@ -253,7 +269,6 @@ export function ShopModal({
                 >
                   Shop
                 </h2>
-                {/* subtitle removed */}
               </div>
 
               {/* Currency pills */}
@@ -262,7 +277,7 @@ export function ShopModal({
                   className="flex items-center gap-1 rounded-full px-2 py-1 transition-all"
                   style={{ background: 'rgba(255,255,255,0.7)', border: '1px solid rgba(196,181,253,0.5)', boxShadow: '0 2px 8px rgba(139,92,246,0.1)' }}
                   whileTap={{ scale: 0.92 }}
-                  onClick={() => opalsSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                  onClick={() => setActiveTab('currency')}
                 >
                   <Sparkles className="w-2.5 h-2.5 text-violet-500" />
                   <span className="text-violet-800 text-[10px] font-black tabular-nums">{opals}</span>
@@ -271,7 +286,7 @@ export function ShopModal({
                   className="flex items-center gap-1 rounded-full px-2 py-1 transition-all"
                   style={{ background: 'rgba(255,255,255,0.7)', border: '1px solid rgba(253,230,138,0.6)', boxShadow: '0 2px 8px rgba(245,158,11,0.1)' }}
                   whileTap={{ scale: 0.92 }}
-                  onClick={() => coinsSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                  onClick={() => setActiveTab('currency')}
                 >
                   <Coins className="w-2.5 h-2.5 text-amber-500" />
                   <span className="text-amber-800 text-[10px] font-black tabular-nums">{coins}</span>
@@ -289,287 +304,387 @@ export function ShopModal({
             </div>
           </div>
 
-          {/* Scrollable content */}
-          <div
-            ref={scrollContainerRef}
-            className="overflow-y-auto flex-1 px-4 pb-5 pt-4 space-y-5"
-            style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-y' }}
-          >
-
-            {/* ── Buy Opals ── */}
-            <div ref={opalsSectionRef}>
-              <SectionHeader
-                icon={Gem}
-                iconBg="linear-gradient(135deg, #22d3ee, #3b82f6)"
-                iconShadow="0 3px 10px rgba(34,211,238,0.35)"
-                title="Buy Opals"
-                titleGradient="linear-gradient(135deg, #0891b2, #2563eb)"
-              />
-              <div className="space-y-1.5">
-                {OPAL_PACKS.map((pack, i) => (
-                  <ShopRowTile
-                    key={i}
-                    index={i}
-                    onClick={() => onBuyOpals(pack)}
-                    cardBg="linear-gradient(135deg, rgba(255,255,255,0.88) 0%, rgba(240,249,255,0.85) 100%)"
-                    cardBorder="1.5px solid rgba(186,230,253,0.6)"
-                    emoji={pack.emoji}
-                    title={pack.label}
-                    subtitle={`${pack.opals} Opals`}
-                    priceContent={
-                      <PriceBadge
-                        bg="linear-gradient(135deg, #22d3ee, #3b82f6)"
-                        border="none"
-                        shadow="0 3px 10px rgba(34,211,238,0.3)"
-                        icon={Sparkles}
-                        value={pack.price}
-                        textColor="#fff"
-                      />
-                    }
-                  />
-                ))}
-              </div>
-              <p className="text-violet-400/50 text-[9px] mt-2 text-center italic">Demo only — no real purchases made.</p>
-            </div>
-
-            {/* ── Buy Coins ── */}
-            <div ref={coinsSectionRef}>
-              <SectionHeader
-                icon={Coins}
-                iconBg="linear-gradient(135deg, #fbbf24, #f97316)"
-                iconShadow="0 3px 10px rgba(251,191,36,0.4)"
-                title="Buy Coins with Opals"
-                titleGradient="linear-gradient(135deg, #d97706, #ea580c)"
-                wobbleDirection="right"
-              />
-              <div className="grid grid-cols-2 gap-2">
-                {COIN_PACKS.map((pack, i) => (
-                  <motion.button
-                    key={i}
-                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    transition={{ delay: i * 0.06, duration: 0.28 }}
-                    onClick={() => onBuyCoins(pack)}
-                    disabled={!canAffordOpals(pack.opals)}
-                    className="relative flex flex-col items-center rounded-2xl p-3 text-center overflow-hidden transition-all"
-                    style={{
-                      background: canAffordOpals(pack.opals)
-                        ? 'linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,251,235,0.88) 100%)'
-                        : 'rgba(245,240,255,0.4)',
-                      border: canAffordOpals(pack.opals)
-                        ? '1.5px solid rgba(253,230,138,0.65)'
-                        : '1.5px solid rgba(216,180,254,0.2)',
-                      opacity: canAffordOpals(pack.opals) ? 1 : 0.45,
-                      boxShadow: canAffordOpals(pack.opals) ? '0 2px 10px -3px rgba(245,158,11,0.15)' : 'none',
-                      cursor: canAffordOpals(pack.opals) ? 'pointer' : 'not-allowed',
-                    }}
-                    whileTap={canAffordOpals(pack.opals) ? { scale: 0.96 } : {}}
-                  >
-                    {/* Gloss */}
-                    <div className="absolute top-0 left-0 right-0 h-1/2 rounded-t-2xl pointer-events-none" style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.5) 0%, transparent 100%)' }} />
-
-                    {pack.best && (
-                      <motion.div
-                        className="text-white text-[6px] font-black px-2 py-0.5 rounded-full mb-1"
-                        style={{ background: 'linear-gradient(135deg, #fbbf24, #f97316)', boxShadow: '0 2px 8px rgba(251,191,36,0.4)' }}
-                        animate={{ scale: [1, 1.08, 1] }}
-                        transition={{ duration: 2, repeat: Infinity }}
-                      >
-                        BEST
-                      </motion.div>
-                    )}
-                    <div className="text-lg mb-0.5">{pack.emoji}</div>
-                    <div className="text-amber-900 text-[12px] font-black">{pack.coins.toLocaleString()}</div>
-                    <div className="flex items-center gap-0.5 text-amber-500/70 text-[9px] font-semibold mb-1.5">
-                      <Coins className="w-2 h-2" />
-                      <span>coins</span>
-                    </div>
-                    <div
-                      className="flex items-center gap-1 px-2 py-0.5 rounded-lg"
-                      style={{ background: 'rgba(237,233,254,0.8)', border: '1px solid rgba(196,181,253,0.5)' }}
-                    >
-                      <Sparkles className="w-2 h-2 text-violet-500" />
-                      <span className="text-violet-700 text-[9px] font-black">{pack.opals}</span>
-                    </div>
-                  </motion.button>
-                ))}
-              </div>
-            </div>
-
-            {/* ── Ghost Shrimp ── */}
-            <div>
-              <SectionHeader
-                icon={Bug}
-                iconBg="linear-gradient(135deg, #f472b6, #e11d48)"
-                iconShadow="0 3px 10px rgba(244,114,182,0.35)"
-                title="Ghost Shrimp"
-                titleGradient="linear-gradient(135deg, #db2777, #be123c)"
-                onInfo={() => setInfoModal('shrimp')}
-              />
-              <div className="space-y-1.5">
-                {SHRIMP_PACKS.map((pack, i) => (
-                  <ShopRowTile
-                    key={i}
-                    index={i}
-                    onClick={() => onBuyShrimp?.(pack)}
-                    disabled={!canAffordOpals(pack.opals)}
-                    cardBg="linear-gradient(135deg, rgba(255,255,255,0.88) 0%, rgba(255,241,242,0.85) 100%)"
-                    cardBorder="1.5px solid rgba(251,207,232,0.65)"
-                    emoji={pack.emoji}
-                    title={pack.label}
-                    subtitle={`${pack.count} shrimp`}
-                    priceContent={
-                      <PriceBadge
-                        bg={canAffordOpals(pack.opals) ? 'linear-gradient(135deg, #f472b6, #e11d48)' : 'rgba(216,180,254,0.3)'}
-                        border="none"
-                        shadow={canAffordOpals(pack.opals) ? '0 3px 10px rgba(244,114,182,0.3)' : 'none'}
-                        icon={Sparkles}
-                        value={pack.opals}
-                        textColor={canAffordOpals(pack.opals) ? '#fff' : 'rgba(139,92,246,0.4)'}
-                      />
-                    }
-                  />
-                ))}
-              </div>
-            </div>
-
-            {/* ── Filters ── */}
-            <div>
-              <SectionHeader
-                icon={Filter}
-                iconBg="linear-gradient(135deg, #38bdf8, #2563eb)"
-                iconShadow="0 3px 10px rgba(56,189,248,0.35)"
-                title="Filters"
-                titleGradient="linear-gradient(135deg, #0284c7, #1d4ed8)"
-                wobbleDirection="right"
-                onInfo={() => setInfoModal('filters')}
-              />
-              <div className="space-y-1.5">
-                {FILTER_OPTIONS.map((filter, i) => {
-                  const isEquipped = equippedFilter === filter.id;
-                  const isOwned = ownedFilters.includes(filter.id);
-                  const usesOpals = filter.opals > 0;
-                  const canAffordFilter = usesOpals ? canAffordOpals(filter.opals) : canAfford(filter.coins);
-                  const filterCost = usesOpals ? filter.opals : filter.coins;
-
-                  // Equipped → disabled. Owned-not-equipped → clickable (equip). Unowned → buy flow.
-                  const isDisabled = isEquipped || (!isOwned && !canAffordFilter);
-                  const handleClick = () => {
-                    if (isEquipped) return;
-                    if (isOwned) {
-                      setConfirmFilter({ filter, mode: 'equip' });
-                    } else if (canAffordFilter) {
-                      setConfirmFilter({ filter, mode: 'buy' });
-                    }
-                  };
-
-                  return (
-                    <ShopRowTile
-                      key={filter.id}
-                      index={i}
-                      onClick={handleClick}
-                      disabled={isDisabled}
-                      cardBg={
-                        isEquipped
-                          ? 'linear-gradient(135deg, rgba(220,252,231,0.9) 0%, rgba(187,247,208,0.85) 100%)'
-                          : isOwned
-                          ? 'linear-gradient(135deg, rgba(219,234,254,0.95) 0%, rgba(191,219,254,0.9) 100%)'
-                          : 'linear-gradient(135deg, rgba(255,255,255,0.88) 0%, rgba(240,249,255,0.85) 100%)'
-                      }
-                      cardBorder={
-                        isEquipped
-                          ? '1.5px solid rgba(134,239,172,0.7)'
-                          : isOwned
-                          ? '1.5px solid rgba(96,165,250,0.7)'
-                          : '1.5px solid rgba(186,230,253,0.6)'
-                      }
-                      emoji={filter.emoji}
-                      title={filter.name}
-                      subtitle={filter.description}
-                      priceContent={
-                        isEquipped ? (
-                          <div
-                            className="flex items-center gap-1 text-[11px] font-black px-3 py-1.5 rounded-xl"
-                            style={{ background: 'linear-gradient(135deg, #4ade80, #16a34a)', color: '#fff', boxShadow: '0 3px 10px rgba(74,222,128,0.4)' }}
-                          >
-                            ✓ Equipped
-                          </div>
-                        ) : isOwned ? (
-                          <div
-                            className="flex items-center gap-1 text-[11px] font-black px-3 py-1.5 rounded-xl"
-                            style={{ background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)', color: '#fff', boxShadow: '0 3px 10px rgba(59,130,246,0.4)' }}
-                          >
-                            Owned
-                          </div>
-                        ) : (
-                          <PriceBadge
-                            bg={canAffordFilter ? (usesOpals ? 'linear-gradient(135deg, #f472b6, #e11d48)' : 'linear-gradient(135deg, #38bdf8, #2563eb)') : 'rgba(216,180,254,0.3)'}
-                            border="none"
-                            shadow={canAffordFilter ? (usesOpals ? '0 3px 10px rgba(244,114,182,0.3)' : '0 3px 10px rgba(56,189,248,0.3)') : 'none'}
-                            icon={usesOpals ? Sparkles : Coins}
-                            value={filterCost}
-                            textColor={canAffordFilter ? '#fff' : 'rgba(139,92,246,0.4)'}
-                          />
-                        )
-                      }
-                    />
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* ── Treatments ── */}
-            <div>
-              <SectionHeader
-                icon={Droplets}
-                iconBg="linear-gradient(135deg, #34d399, #0d9488)"
-                iconShadow="0 3px 10px rgba(52,211,153,0.35)"
-                title="Treatments"
-                titleGradient="linear-gradient(135deg, #059669, #0f766e)"
-                onInfo={() => setInfoModal('treatments')}
-              />
-              <div className="space-y-1.5">
-                {TREATMENT_OPTIONS.map((treatment, i) => (
-                  <ShopRowTile
-                    key={treatment.id}
-                    index={i}
-                    onClick={() => onBuyTreatment?.(treatment)}
-                    disabled={!canAffordOpals(treatment.opals)}
-                    cardBg="linear-gradient(135deg, rgba(255,255,255,0.88) 0%, rgba(240,253,250,0.85) 100%)"
-                    cardBorder="1.5px solid rgba(167,243,208,0.6)"
-                    emoji={treatment.emoji}
-                    title={treatment.name}
-                    subtitle={treatment.description}
-                    priceContent={
-                      <PriceBadge
-                        bg={canAffordOpals(treatment.opals) ? 'linear-gradient(135deg, #34d399, #0d9488)' : 'rgba(216,180,254,0.3)'}
-                        border="none"
-                        shadow={canAffordOpals(treatment.opals) ? '0 3px 10px rgba(52,211,153,0.3)' : 'none'}
-                        icon={Sparkles}
-                        value={treatment.opals}
-                        textColor={canAffordOpals(treatment.opals) ? '#fff' : 'rgba(139,92,246,0.4)'}
-                      />
-                    }
-                  />
-                ))}
-              </div>
-            </div>
-
-            {/* Footer tip */}
-            <motion.div
-              className="rounded-2xl p-3.5 text-center"
+          {/* ── Tab bar ── */}
+          <div className="flex-shrink-0 px-4 pt-3 pb-2">
+            <div
+              className="flex rounded-2xl p-1 gap-1"
               style={{
                 background: 'rgba(255,255,255,0.55)',
-                border: '1.5px dashed rgba(216,180,254,0.45)',
+                border: '1.5px solid rgba(216,180,254,0.38)',
+                boxShadow: 'inset 0 1px 3px rgba(139,92,246,0.06)',
               }}
-              animate={{ y: [0, -3, 0] }}
-              transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
             >
-              <p className="text-[10px] text-violet-400/70 font-medium">
-                🛍️ Earn coins from mini-games · Buy decorations in the Axopedia!
-              </p>
-            </motion.div>
+              {TABS.map(tab => (
+                <motion.button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className="flex-1 flex flex-col items-center gap-0.5 py-2.5 rounded-xl relative overflow-hidden"
+                  whileTap={{ scale: 0.94 }}
+                  transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+                >
+                  {/* Active background */}
+                  <AnimatePresence>
+                    {activeTab === tab.id && (
+                      <motion.div
+                        key="tab-bg"
+                        className="absolute inset-0 rounded-xl"
+                        style={{ background: tab.activeGradient, boxShadow: tab.activeShadow }}
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.9 }}
+                        transition={{ duration: 0.2 }}
+                      />
+                    )}
+                  </AnimatePresence>
+                  <span className="relative z-10 text-[1.1rem] leading-none">{tab.emoji}</span>
+                  <span
+                    className="relative z-10 text-[8.5px] font-black tracking-widest uppercase leading-none"
+                    style={{ color: activeTab === tab.id ? '#fff' : tab.inactiveColor }}
+                  >
+                    {tab.label}
+                  </span>
+                </motion.button>
+              ))}
+            </div>
+          </div>
 
+          {/* ── Tab content ── */}
+          <div
+            className="overflow-y-auto flex-1 px-4 pb-5"
+            style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-y' }}
+          >
+            <AnimatePresence mode="wait">
+
+              {/* CURRENCY TAB */}
+              {activeTab === 'currency' && (
+                <motion.div
+                  key="currency"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -6 }}
+                  transition={{ duration: 0.22 }}
+                  className="space-y-5 pt-3"
+                >
+                  {/* Buy Opals */}
+                  <div>
+                    <SectionHeader
+                      icon={Gem}
+                      iconBg="linear-gradient(135deg, #22d3ee, #3b82f6)"
+                      iconShadow="0 3px 10px rgba(34,211,238,0.35)"
+                      title="Buy Opals"
+                      titleGradient="linear-gradient(135deg, #0891b2, #2563eb)"
+                    />
+                    <div className="space-y-1.5">
+                      {OPAL_PACKS.map((pack, i) => (
+                        <ShopRowTile
+                          key={i}
+                          index={i}
+                          onClick={() => onBuyOpals(pack)}
+                          cardBg="linear-gradient(135deg, rgba(255,255,255,0.88) 0%, rgba(240,249,255,0.85) 100%)"
+                          cardBorder="1.5px solid rgba(186,230,253,0.6)"
+                          emoji={pack.emoji}
+                          title={pack.label}
+                          subtitle={`${pack.opals} Opals`}
+                          priceContent={
+                            <PriceBadge
+                              bg="linear-gradient(135deg, #22d3ee, #3b82f6)"
+                              border="none"
+                              shadow="0 3px 10px rgba(34,211,238,0.3)"
+                              icon={Sparkles}
+                              value={pack.price}
+                              textColor="#fff"
+                            />
+                          }
+                        />
+                      ))}
+                    </div>
+                    <p className="text-violet-400/50 text-[9px] mt-2 text-center italic">Demo only — no real purchases made.</p>
+                  </div>
+
+                  {/* Buy Coins */}
+                  <div>
+                    <SectionHeader
+                      icon={Coins}
+                      iconBg="linear-gradient(135deg, #fbbf24, #f97316)"
+                      iconShadow="0 3px 10px rgba(251,191,36,0.4)"
+                      title="Buy Coins with Opals"
+                      titleGradient="linear-gradient(135deg, #d97706, #ea580c)"
+                      wobbleDirection="right"
+                    />
+                    <div className="grid grid-cols-2 gap-2">
+                      {COIN_PACKS.map((pack, i) => (
+                        <motion.button
+                          key={i}
+                          initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          transition={{ delay: i * 0.06, duration: 0.28 }}
+                          onClick={() => onBuyCoins(pack)}
+                          disabled={!canAffordOpals(pack.opals)}
+                          className="relative flex flex-col items-center rounded-2xl p-3 text-center overflow-hidden transition-all"
+                          style={{
+                            background: canAffordOpals(pack.opals)
+                              ? 'linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,251,235,0.88) 100%)'
+                              : 'rgba(245,240,255,0.4)',
+                            border: canAffordOpals(pack.opals)
+                              ? '1.5px solid rgba(253,230,138,0.65)'
+                              : '1.5px solid rgba(216,180,254,0.2)',
+                            opacity: canAffordOpals(pack.opals) ? 1 : 0.45,
+                            boxShadow: canAffordOpals(pack.opals) ? '0 2px 10px -3px rgba(245,158,11,0.15)' : 'none',
+                            cursor: canAffordOpals(pack.opals) ? 'pointer' : 'not-allowed',
+                          }}
+                          whileTap={canAffordOpals(pack.opals) ? { scale: 0.96 } : {}}
+                        >
+                          <div className="absolute top-0 left-0 right-0 h-1/2 rounded-t-2xl pointer-events-none" style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.5) 0%, transparent 100%)' }} />
+                          {pack.best && (
+                            <motion.div
+                              className="text-white text-[6px] font-black px-2 py-0.5 rounded-full mb-1"
+                              style={{ background: 'linear-gradient(135deg, #fbbf24, #f97316)', boxShadow: '0 2px 8px rgba(251,191,36,0.4)' }}
+                              animate={{ scale: [1, 1.08, 1] }}
+                              transition={{ duration: 2, repeat: Infinity }}
+                            >
+                              BEST
+                            </motion.div>
+                          )}
+                          <div className="text-lg mb-0.5">{pack.emoji}</div>
+                          <div className="text-amber-900 text-[12px] font-black">{pack.coins.toLocaleString()}</div>
+                          <div className="flex items-center gap-0.5 text-amber-500/70 text-[9px] font-semibold mb-1.5">
+                            <Coins className="w-2 h-2" />
+                            <span>coins</span>
+                          </div>
+                          <div
+                            className="flex items-center gap-1 px-2 py-0.5 rounded-lg"
+                            style={{ background: 'rgba(237,233,254,0.8)', border: '1px solid rgba(196,181,253,0.5)' }}
+                          >
+                            <Sparkles className="w-2 h-2 text-violet-500" />
+                            <span className="text-violet-700 text-[9px] font-black">{pack.opals}</span>
+                          </div>
+                        </motion.button>
+                      ))}
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* DECORATIONS TAB */}
+              {activeTab === 'decorations' && (
+                <motion.div
+                  key="decorations"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -6 }}
+                  transition={{ duration: 0.22 }}
+                  className="pt-3 flex flex-col items-center justify-center gap-4"
+                  style={{ minHeight: 220 }}
+                >
+                  <motion.div
+                    className="text-5xl"
+                    animate={{ y: [0, -8, 0], rotate: [0, -4, 4, 0] }}
+                    transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut' }}
+                  >
+                    🎒
+                  </motion.div>
+                  <div className="text-center px-4">
+                    <p className="font-black text-[15px] text-violet-800 mb-1">Decorations live in Inventory</p>
+                    <p className="text-[12px] text-violet-500/70 leading-relaxed">
+                      Browse and equip plants, rocks, ornaments & backgrounds from the Inventory panel in the main menu.
+                    </p>
+                  </div>
+                  <motion.div
+                    className="rounded-2xl px-5 py-3 text-center"
+                    style={{ background: 'rgba(255,255,255,0.6)', border: '1.5px dashed rgba(216,180,254,0.5)' }}
+                    animate={{ y: [0, -3, 0] }}
+                    transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+                  >
+                    <p className="text-[10px] text-violet-500/70 font-medium">
+                      🪴 Tap <strong>Inventory</strong> in the menu to decorate your tank!
+                    </p>
+                  </motion.div>
+                </motion.div>
+              )}
+
+              {/* WELLBEING TAB */}
+              {activeTab === 'wellbeing' && (
+                <motion.div
+                  key="wellbeing"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -6 }}
+                  transition={{ duration: 0.22 }}
+                  className="space-y-5 pt-3"
+                >
+                  {/* Ghost Shrimp */}
+                  <div>
+                    <SectionHeader
+                      icon={Bug}
+                      iconBg="linear-gradient(135deg, #f472b6, #e11d48)"
+                      iconShadow="0 3px 10px rgba(244,114,182,0.35)"
+                      title="Ghost Shrimp"
+                      titleGradient="linear-gradient(135deg, #db2777, #be123c)"
+                      onInfo={() => setInfoModal('shrimp')}
+                    />
+                    <div className="space-y-1.5">
+                      {SHRIMP_PACKS.map((pack, i) => (
+                        <ShopRowTile
+                          key={i}
+                          index={i}
+                          onClick={() => onBuyShrimp?.(pack)}
+                          disabled={!canAffordOpals(pack.opals)}
+                          cardBg="linear-gradient(135deg, rgba(255,255,255,0.88) 0%, rgba(255,241,242,0.85) 100%)"
+                          cardBorder="1.5px solid rgba(251,207,232,0.65)"
+                          emoji={pack.emoji}
+                          title={pack.label}
+                          subtitle={`${pack.count} shrimp`}
+                          priceContent={
+                            <PriceBadge
+                              bg={canAffordOpals(pack.opals) ? 'linear-gradient(135deg, #f472b6, #e11d48)' : 'rgba(216,180,254,0.3)'}
+                              border="none"
+                              shadow={canAffordOpals(pack.opals) ? '0 3px 10px rgba(244,114,182,0.3)' : 'none'}
+                              icon={Sparkles}
+                              value={pack.opals}
+                              textColor={canAffordOpals(pack.opals) ? '#fff' : 'rgba(139,92,246,0.4)'}
+                            />
+                          }
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Filters */}
+                  <div>
+                    <SectionHeader
+                      icon={Filter}
+                      iconBg="linear-gradient(135deg, #38bdf8, #2563eb)"
+                      iconShadow="0 3px 10px rgba(56,189,248,0.35)"
+                      title="Filters"
+                      titleGradient="linear-gradient(135deg, #0284c7, #1d4ed8)"
+                      wobbleDirection="right"
+                      onInfo={() => setInfoModal('filters')}
+                    />
+                    <div className="space-y-1.5">
+                      {FILTER_OPTIONS.map((filter, i) => {
+                        const isEquipped = equippedFilter === filter.id;
+                        const isOwned = ownedFilters.includes(filter.id);
+                        const usesOpals = filter.opals > 0;
+                        const canAffordFilter = usesOpals ? canAffordOpals(filter.opals) : canAfford(filter.coins);
+                        const filterCost = usesOpals ? filter.opals : filter.coins;
+
+                        const isDisabled = isEquipped || (!isOwned && !canAffordFilter);
+                        const handleClick = () => {
+                          if (isEquipped) return;
+                          if (isOwned) {
+                            setConfirmFilter({ filter, mode: 'equip' });
+                          } else if (canAffordFilter) {
+                            setConfirmFilter({ filter, mode: 'buy' });
+                          }
+                        };
+
+                        return (
+                          <ShopRowTile
+                            key={filter.id}
+                            index={i}
+                            onClick={handleClick}
+                            disabled={isDisabled}
+                            cardBg={
+                              isEquipped
+                                ? 'linear-gradient(135deg, rgba(220,252,231,0.9) 0%, rgba(187,247,208,0.85) 100%)'
+                                : isOwned
+                                ? 'linear-gradient(135deg, rgba(219,234,254,0.95) 0%, rgba(191,219,254,0.9) 100%)'
+                                : 'linear-gradient(135deg, rgba(255,255,255,0.88) 0%, rgba(240,249,255,0.85) 100%)'
+                            }
+                            cardBorder={
+                              isEquipped
+                                ? '1.5px solid rgba(134,239,172,0.7)'
+                                : isOwned
+                                ? '1.5px solid rgba(96,165,250,0.7)'
+                                : '1.5px solid rgba(186,230,253,0.6)'
+                            }
+                            emoji={filter.emoji}
+                            title={filter.name}
+                            subtitle={filter.description}
+                            priceContent={
+                              isEquipped ? (
+                                <div
+                                  className="flex items-center gap-1 text-[11px] font-black px-3 py-1.5 rounded-xl"
+                                  style={{ background: 'linear-gradient(135deg, #4ade80, #16a34a)', color: '#fff', boxShadow: '0 3px 10px rgba(74,222,128,0.4)' }}
+                                >
+                                  ✓ Equipped
+                                </div>
+                              ) : isOwned ? (
+                                <div
+                                  className="flex items-center gap-1 text-[11px] font-black px-3 py-1.5 rounded-xl"
+                                  style={{ background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)', color: '#fff', boxShadow: '0 3px 10px rgba(59,130,246,0.4)' }}
+                                >
+                                  Owned
+                                </div>
+                              ) : (
+                                <PriceBadge
+                                  bg={canAffordFilter ? (usesOpals ? 'linear-gradient(135deg, #f472b6, #e11d48)' : 'linear-gradient(135deg, #38bdf8, #2563eb)') : 'rgba(216,180,254,0.3)'}
+                                  border="none"
+                                  shadow={canAffordFilter ? (usesOpals ? '0 3px 10px rgba(244,114,182,0.3)' : '0 3px 10px rgba(56,189,248,0.3)') : 'none'}
+                                  icon={usesOpals ? Sparkles : Coins}
+                                  value={filterCost}
+                                  textColor={canAffordFilter ? '#fff' : 'rgba(139,92,246,0.4)'}
+                                />
+                              )
+                            }
+                          />
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Treatments */}
+                  <div>
+                    <SectionHeader
+                      icon={Droplets}
+                      iconBg="linear-gradient(135deg, #34d399, #0d9488)"
+                      iconShadow="0 3px 10px rgba(52,211,153,0.35)"
+                      title="Treatments"
+                      titleGradient="linear-gradient(135deg, #059669, #0f766e)"
+                      onInfo={() => setInfoModal('treatments')}
+                    />
+                    <div className="space-y-1.5">
+                      {TREATMENT_OPTIONS.map((treatment, i) => (
+                        <ShopRowTile
+                          key={treatment.id}
+                          index={i}
+                          onClick={() => onBuyTreatment?.(treatment)}
+                          disabled={!canAffordOpals(treatment.opals)}
+                          cardBg="linear-gradient(135deg, rgba(255,255,255,0.88) 0%, rgba(240,253,250,0.85) 100%)"
+                          cardBorder="1.5px solid rgba(167,243,208,0.6)"
+                          emoji={treatment.emoji}
+                          title={treatment.name}
+                          subtitle={treatment.description}
+                          priceContent={
+                            <PriceBadge
+                              bg={canAffordOpals(treatment.opals) ? 'linear-gradient(135deg, #34d399, #0d9488)' : 'rgba(216,180,254,0.3)'}
+                              border="none"
+                              shadow={canAffordOpals(treatment.opals) ? '0 3px 10px rgba(52,211,153,0.3)' : 'none'}
+                              icon={Sparkles}
+                              value={treatment.opals}
+                              textColor={canAffordOpals(treatment.opals) ? '#fff' : 'rgba(139,92,246,0.4)'}
+                            />
+                          }
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Tip */}
+                  <motion.div
+                    className="rounded-2xl p-3.5 text-center"
+                    style={{ background: 'rgba(255,255,255,0.55)', border: '1.5px dashed rgba(167,243,208,0.45)' }}
+                    animate={{ y: [0, -3, 0] }}
+                    transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+                  >
+                    <p className="text-[10px] text-teal-500/70 font-medium">
+                      🌿 Keep shrimp stocked for a naturally cleaner tank!
+                    </p>
+                  </motion.div>
+                </motion.div>
+              )}
+
+            </AnimatePresence>
           </div>
         </div>
       </motion.div>
@@ -615,7 +730,6 @@ export function ShopModal({
                 }}
                 onClick={e => e.stopPropagation()}
               >
-                {/* Header */}
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0 shadow-sm" style={{ background: 'rgba(255,255,255,0.7)' }}>
                     {f.emoji}
@@ -636,12 +750,10 @@ export function ShopModal({
                   </motion.button>
                 </div>
 
-                {/* Detail */}
                 <p className="text-slate-600 text-[12px] leading-relaxed">
                   {FILTER_DETAIL[f.id]}
                 </p>
 
-                {/* Cost row — only shown in buy mode */}
                 {mode === 'buy' && (
                   <div className="rounded-2xl px-3.5 py-2.5 flex items-center gap-2" style={{ background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(186,230,253,0.6)' }}>
                     <span className="text-slate-500 text-[11px] font-medium flex-1">Cost:</span>
@@ -658,14 +770,12 @@ export function ShopModal({
                   <p className="text-red-400 text-[11px] font-semibold text-center">Not enough {usesOpals ? 'opals' : 'coins'}!</p>
                 )}
 
-                {/* Equip-mode note */}
                 {mode === 'equip' && (
                   <div className="rounded-2xl px-3.5 py-2.5 flex items-center gap-2" style={{ background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(147,197,253,0.5)' }}>
                     <span className="text-[11px] text-slate-500 font-medium">Already in your collection — no extra cost!</span>
                   </div>
                 )}
 
-                {/* Buttons */}
                 <div className="flex gap-2 mt-1">
                   <motion.button
                     onClick={() => setConfirmFilter(null)}
@@ -763,12 +873,8 @@ export function ShopModal({
                 style={{ background: INFO.bg, border: `1.5px solid ${INFO.border}`, boxShadow: '0 16px 48px rgba(0,0,0,0.18)' }}
                 onClick={e => e.stopPropagation()}
               >
-                {/* Header */}
                 <div className="flex items-center gap-3">
-                  <div
-                    className="w-10 h-10 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0 shadow-sm"
-                    style={{ background: 'rgba(255,255,255,0.7)' }}
-                  >
+                  <div className="w-10 h-10 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0 shadow-sm" style={{ background: 'rgba(255,255,255,0.7)' }}>
                     {INFO.emoji}
                   </div>
                   <h4
@@ -787,12 +893,10 @@ export function ShopModal({
                   </motion.button>
                 </div>
 
-                {/* Body */}
                 <p className="text-slate-600 text-[12px] leading-relaxed">
                   {INFO.body}
                 </p>
 
-                {/* Tip pill */}
                 <div
                   className="rounded-2xl px-3.5 py-2.5"
                   style={{ background: 'rgba(255,255,255,0.6)', border: `1px solid ${INFO.border}` }}

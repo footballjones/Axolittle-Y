@@ -1068,20 +1068,22 @@ export default function App() {
                           <span className="text-[11px] font-bold text-pink-800 tracking-wider uppercase">Social</span>
                         </motion.button>
 
-                        {/* DECORATIONS — Coming Soon */}
-                        <div
-                          className="relative flex flex-col items-center justify-center gap-1 py-3 rounded-2xl overflow-hidden"
+                        {/* INVENTORY */}
+                        <motion.button
+                          onClick={() => { setShowInventoryPanel(true); setShowHowToPlayPanel(false); setShowAchievementsPanel(false); setShowEggsPanel(false); }}
+                          className="group relative flex flex-col items-center justify-center gap-1 py-3 rounded-2xl overflow-hidden"
                           style={{
-                            background: 'linear-gradient(135deg, rgba(20,184,166,0.25) 0%, rgba(13,148,136,0.18) 100%)',
-                            border: '1px solid rgba(13,148,136,0.2)',
-                            opacity: 0.55,
-                            cursor: 'not-allowed',
+                            background: showInventoryPanel
+                              ? 'linear-gradient(135deg, rgba(20,184,166,0.85) 0%, rgba(13,148,136,0.75) 100%)'
+                              : 'linear-gradient(135deg, rgba(20,184,166,0.7) 0%, rgba(13,148,136,0.55) 100%)',
+                            border: showInventoryPanel ? '1px solid rgba(13,148,136,0.6)' : '1px solid rgba(13,148,136,0.45)',
                           }}
+                          whileTap={{ scale: 0.93 }}
                         >
-                          <span className="text-[2rem] grayscale">🪸</span>
-                          <span className="text-[11px] font-bold text-teal-700/60 tracking-wider uppercase">Decorations</span>
-                          <span className="text-[8px] font-bold tracking-widest uppercase text-teal-600/50">Coming Soon</span>
-                        </div>
+                          <div className="absolute inset-0 opacity-0 group-active:opacity-100 transition-opacity rounded-2xl" style={{ background: 'rgba(255,255,255,0.35)' }} />
+                          <span className="text-[2rem]">🎒</span>
+                          <span className="text-[11px] font-bold text-teal-800 tracking-wider uppercase">Inventory</span>
+                        </motion.button>
 
                         {/* HOW TO PLAY */}
                         <motion.button
