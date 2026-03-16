@@ -852,6 +852,56 @@ export function useGameActions({
     });
   }, []);
 
+  const handleStoreTreatment = useCallback((treatment: { id: string; name: string; opals: number }) => {
+    setGameState(prev => {
+      if (!prev) return prev;
+      if ((prev.opals || 0) < treatment.opals) return prev;
+      const stored = { ...(prev.storedTreatments || {}) };
+      stored[treatment.id] = (stored[treatment.id] || 0) + 1;
+      return { ...prev, opals: (prev.opals || 0) - treatment.opals, storedTreatments: stored };
+    });
+  }, []);
+
+  const handleUseTreatmentFromInventory = useCallback((treatmentId: string) => {
+    setGameState(prev => {
+      if (!prev?.axolotl) return prev;
+      const stored = { ...(prev.storedTreatments || {}) };
+      if (!stored[treatmentId] || stored[treatmentId] < 1) return prev;
+      stored[treatmentId] -= 1;
+      if (stored[treatmentId] === 0) delete stored[treatmentId];
+      const updated = { ...prev.axolotl };
+      if (treatmentId === 'treatment-water') {
+        updated.stats = { ...updated.stats, waterQuality: Math.min(100, updated.stats.waterQuality + 30) };
+      } else if (treatmentId === 'treatment-miracle') {
+        updated.stats = { ...updated.stats, hunger: 100, happiness: 100, cleanliness: 100, waterQuality: 100 };
+      }
+      return { ...prev, axolotl: updated, storedTreatments: stored };
+    });
+  }, []);
+
+  const handleStoreShrimpInInventory = useCallback((pack: { count: number; opals: number }) => {
+    setGameState(prev => {
+      if (!prev) return prev;
+      if ((prev.opals || 0) < pack.opals) return prev;
+      return { ...prev, opals: (prev.opals || 0) - pack.opals, storedShrimp: (prev.storedShrimp || 0) + pack.count };
+    });
+  }, []);
+
+  const handleDeployShrimpFromInventory = useCallback((count: number) => {
+    setGameState(prev => {
+      if (!prev) return prev;
+      const available = prev.storedShrimp || 0;
+      const deploying = Math.min(count, available);
+      if (deploying <= 0) return prev;
+      return {
+        ...prev,
+        storedShrimp: available - deploying,
+        shrimpCount: (prev.shrimpCount || 0) + deploying,
+        lastShrimpUpdate: Date.now(),
+      };
+    });
+  }, []);
+
   const handleClaimAchievement = useCallback((id: string) => {
     setGameState(prev => {
       if (!prev) return prev;
@@ -894,6 +944,10 @@ export function useGameActions({
     handleEquipFilter,
     handleBuyShrimp,
     handleBuyTreatment,
+    handleStoreTreatment,
+    handleUseTreatmentFromInventory,
+    handleStoreShrimpInInventory,
+    handleDeployShrimpFromInventory,
     handleUnlockGames,
     handleClaimAchievement,
   };

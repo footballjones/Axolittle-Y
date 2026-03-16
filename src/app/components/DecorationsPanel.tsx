@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ChevronDown, Coins } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import { DECORATIONS } from '../data/decorations';
 
 const DECO_CATEGORIES = [
@@ -10,15 +10,32 @@ const DECO_CATEGORIES = [
   { type: 'background', label: 'Backgrounds',  emoji: '🌊', color: 'rgba(147,210,255,0.2)',  border: 'rgba(56,189,248,0.3)'   },
 ];
 
+const FILTER_DEFS = [
+  { id: 'filter-basic',    name: 'Basic Filter',   emoji: '⚙️', description: 'Slow but steady filtration' },
+  { id: 'filter-advanced', name: 'Advanced Filter', emoji: '🔧', description: 'Faster, cleaner water' },
+  { id: 'filter-premium',  name: 'Premium Filter',  emoji: '✨', description: 'Crystal-clear perfection' },
+];
+
+const TREATMENT_DEFS = [
+  { id: 'treatment-water',   name: 'Water Treatment',  emoji: '💧', description: 'Restores water quality +30' },
+  { id: 'treatment-miracle', name: 'Miracle Treatment', emoji: '🧪', description: 'Fully restores all stats' },
+];
+
+type InventoryTab = 'decorations' | 'wellbeing';
+
 interface Props {
   owned: string[];
   equippedDecos: string[];
   coins: number;
   activeBackground: string;
-  decorationsTab: 'store' | 'owned';
-  setDecorationsTab: (tab: 'store' | 'owned') => void;
+  ownedFilters: string[];
+  equippedFilter?: string;
+  storedTreatments?: Record<string, number>;
+  storedShrimp?: number;
+  onEquipFilter?: (id: string) => void;
+  onUseTreatmentFromInventory?: (treatmentId: string) => void;
+  onDeployShrimpFromInventory?: (count: number) => void;
   onClose: () => void;
-  onPurchase: (id: string) => void;
   onEquip: (id: string) => void;
 }
 
@@ -27,19 +44,34 @@ export function DecorationsPanel({
   equippedDecos,
   coins,
   activeBackground,
-  decorationsTab,
-  setDecorationsTab,
+  ownedFilters,
+  equippedFilter,
+  storedTreatments = {},
+  storedShrimp = 0,
+  onEquipFilter,
+  onUseTreatmentFromInventory,
+  onDeployShrimpFromInventory,
   onClose,
-  onPurchase,
   onEquip,
 }: Props) {
-  // Track which categories are open — default all open
+  const [activeTab, setActiveTab] = useState<InventoryTab>('decorations');
   const [openCategories, setOpenCategories] = useState<Record<string, boolean>>(
-    () => Object.fromEntries(DECO_CATEGORIES.map(c => [c.type, true]))
+    () => Object.fromEntries([...DECO_CATEGORIES.map(c => [c.type, true]), ['filters', true], ['treatments', true], ['shrimp', true]])
   );
 
   const toggleCategory = (type: string) =>
     setOpenCategories(prev => ({ ...prev, [type]: !prev[type] }));
+
+  const ownedDecos = DECORATIONS.filter(d => owned.includes(d.id));
+  const ownedFilterDefs = FILTER_DEFS.filter(f => ownedFilters.includes(f.id));
+  const storedTreatmentEntries = TREATMENT_DEFS.filter(t => (storedTreatments[t.id] ?? 0) > 0);
+  const decoGroups = DECO_CATEGORIES.map(cat => ({
+    ...cat,
+    items: ownedDecos.filter(d => d.type === cat.type),
+  })).filter(g => g.items.length > 0);
+
+  const hasWellbeingItems = ownedFilterDefs.length > 0 || storedTreatmentEntries.length > 0 || storedShrimp > 0;
+  const hasDecoItems = decoGroups.length > 0;
 
   return (
     <motion.div
@@ -70,314 +102,317 @@ export function DecorationsPanel({
               WebkitTextFillColor: 'transparent',
             }}
           >
-            Decorations
+            Inventory
           </h3>
           <p className="text-[10px] text-teal-600/70 font-medium mt-0.5">
-            {owned.length} owned · {equippedDecos.length} equipped
+            {ownedDecos.length} decorations · {ownedFilterDefs.length} filter{ownedFilterDefs.length !== 1 ? 's' : ''}
           </p>
         </div>
-        {/* Coin balance pill */}
         <div
           className="flex items-center gap-1 px-2.5 py-1 rounded-full flex-shrink-0"
           style={{ background: 'rgba(255,255,255,0.7)', border: '1px solid rgba(253,230,138,0.6)' }}
         >
-          <Coins className="w-3 h-3 text-amber-500" />
+          <span className="text-amber-500 text-sm">🪙</span>
           <span className="text-amber-800 text-[10px] font-black tabular-nums">{coins}</span>
         </div>
       </div>
 
-      {/* Tab switcher */}
-      <div className="flex mx-4 mb-3 rounded-2xl p-1 flex-shrink-0" style={{ background: 'rgba(255,255,255,0.5)', border: '1px solid rgba(20,184,166,0.2)' }}>
-        {(['store', 'owned'] as const).map(tab => (
+      {/* Tab bar */}
+      <div className="flex mx-4 mb-2 rounded-2xl p-1 flex-shrink-0 gap-1" style={{ background: 'rgba(255,255,255,0.5)', border: '1px solid rgba(20,184,166,0.2)' }}>
+        {([
+          { id: 'decorations' as const, label: '🪴 Decorations' },
+          { id: 'wellbeing' as const, label: '🩺 Wellbeing' },
+        ]).map(tab => (
           <motion.button
-            key={tab}
-            onClick={() => setDecorationsTab(tab)}
-            className="flex-1 py-1.5 rounded-xl text-[11px] font-black tracking-wide uppercase transition-all"
-            style={{
-              background: decorationsTab === tab ? 'linear-gradient(135deg, #14b8a6, #7c3aed)' : 'transparent',
-              color: decorationsTab === tab ? '#fff' : 'rgba(15,118,110,0.6)',
-              boxShadow: decorationsTab === tab ? '0 2px 8px rgba(20,184,166,0.3)' : 'none',
-            }}
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className="flex-1 py-2 rounded-xl text-[11px] font-black tracking-wide uppercase relative overflow-hidden"
             whileTap={{ scale: 0.96 }}
           >
-            {tab === 'store' ? '🛒 Store' : `🎒 Owned (${owned.length})`}
+            <AnimatePresence>
+              {activeTab === tab.id && (
+                <motion.div
+                  key="tab-bg"
+                  className="absolute inset-0 rounded-xl"
+                  style={{
+                    background: tab.id === 'decorations'
+                      ? 'linear-gradient(135deg, #34d399, #0d9488)'
+                      : 'linear-gradient(135deg, #38bdf8, #2563eb)',
+                    boxShadow: tab.id === 'decorations'
+                      ? '0 2px 8px rgba(52,211,153,0.3)'
+                      : '0 2px 8px rgba(56,189,248,0.3)',
+                  }}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  transition={{ duration: 0.18 }}
+                />
+              )}
+            </AnimatePresence>
+            <span
+              className="relative z-10"
+              style={{ color: activeTab === tab.id ? '#fff' : 'rgba(15,118,110,0.6)' }}
+            >
+              {tab.label}
+            </span>
           </motion.button>
         ))}
       </div>
 
-      <div className="h-px mx-4 flex-shrink-0" style={{ background: 'linear-gradient(90deg,transparent,rgba(20,184,166,0.3),transparent)' }} />
+      <div className="h-px mx-4 flex-shrink-0 mb-2" style={{ background: 'linear-gradient(90deg,transparent,rgba(20,184,166,0.3),transparent)' }} />
 
       {/* Content */}
       <div
-        className="flex-1 overflow-y-auto px-4 pt-4 space-y-2"
-        style={{ 
-          WebkitOverflowScrolling: 'touch', 
-          touchAction: 'pan-y',
-          overscrollBehaviorY: 'none',
-        }}
+        className="flex-1 overflow-y-auto px-4 pb-4"
+        style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-y', overscrollBehaviorY: 'none' }}
       >
-        {decorationsTab === 'store' ? (
-          /* ── STORE TAB ── */
-          DECO_CATEGORIES.map((cat, ci) => {
-            const items = DECORATIONS.filter(d => d.type === cat.type);
-            const isOpen = openCategories[cat.type];
-            return (
-              <div key={cat.type} className="rounded-2xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.35)', border: '1px solid rgba(20,184,166,0.12)' }}>
-                {/* Collapsible header */}
-                <button
-                  className="flex items-center gap-2 w-full px-3 py-2.5 active:bg-teal-50/40"
-                  onClick={() => toggleCategory(cat.type)}
-                >
-                  <span className="text-base">{cat.emoji}</span>
-                  <span className="flex-1 text-left text-[11px] font-black tracking-widest uppercase" style={{ color: 'rgba(15,118,110,0.75)' }}>
-                    {cat.label}
-                  </span>
-                  <span className="text-[10px] text-slate-400 font-medium mr-1">{items.length}</span>
-                  <motion.div animate={{ rotate: isOpen ? 180 : 0 }} transition={{ duration: 0.22 }}>
-                    <ChevronDown className="w-3.5 h-3.5 text-teal-400" strokeWidth={2.5} />
-                  </motion.div>
-                </button>
+        <AnimatePresence mode="wait">
 
-                <AnimatePresence initial={false}>
-                  {isOpen && (
-                    <motion.div
-                      key={`store-${cat.type}`}
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-                      style={{ overflow: 'hidden' }}
-                    >
-                      <div className="grid grid-cols-3 gap-2 px-3 pb-3">
-                        {items.map((item, i) => {
-                          const isOwned = owned.includes(item.id);
-                          const isEquipped = equippedDecos.includes(item.id) || (item.type === 'background' && activeBackground === item.id);
-                          const canBuy = coins >= item.cost;
-                          return (
-                            <motion.div
-                              key={item.id}
-                              initial={{ opacity: 0, scale: 0.88 }}
-                              animate={{ opacity: 1, scale: 1 }}
-                              transition={{ delay: ci * 0.03 + i * 0.03 }}
-                              className="relative flex flex-col items-center gap-1.5 py-3 px-2 rounded-2xl overflow-hidden"
-                              style={{
-                                background: isEquipped
-                                  ? 'linear-gradient(135deg, rgba(167,243,208,0.6) 0%, rgba(110,231,183,0.45) 100%)'
-                                  : 'rgba(255,255,255,0.65)',
-                                border: isEquipped
-                                  ? '1.5px solid rgba(52,211,153,0.5)'
-                                  : `1.5px solid ${cat.border}`,
-                              }}
-                            >
-                              {isEquipped && (
-                                <div
-                                  className="absolute top-1.5 right-1.5 text-[6px] font-black text-white px-1 py-0.5 rounded-full"
-                                  style={{ background: 'linear-gradient(135deg,#34d399,#10b981)' }}
-                                >ON</div>
-                              )}
-                              <div
-                                className="w-11 h-11 rounded-xl flex items-center justify-center text-2xl shadow-sm"
-                                style={{ background: cat.color }}
+          {/* ── DECORATIONS TAB ── */}
+          {activeTab === 'decorations' && (
+            <motion.div
+              key="decos"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.2 }}
+              className="space-y-2 pt-2"
+            >
+              {!hasDecoItems ? (
+                <div className="flex flex-col items-center justify-center gap-4 opacity-60 py-16">
+                  <span className="text-5xl">🪴</span>
+                  <div className="text-center">
+                    <p className="text-slate-600 font-bold text-sm">No decorations owned yet</p>
+                    <p className="text-slate-400 text-[11px] mt-1">Buy them from the Shop → Decorations tab!</p>
+                  </div>
+                </div>
+              ) : decoGroups.map((group, gi) => (
+                <div key={group.type} className="rounded-2xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.35)', border: '1px solid rgba(20,184,166,0.12)' }}>
+                  <button
+                    className="flex items-center gap-2 w-full px-3 py-2.5 active:bg-teal-50/40"
+                    onClick={() => toggleCategory(group.type)}
+                  >
+                    <span className="text-base">{group.emoji}</span>
+                    <span className="flex-1 text-left text-[11px] font-black tracking-widest uppercase" style={{ color: 'rgba(15,118,110,0.75)' }}>
+                      {group.label}
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-medium mr-1">({group.items.length})</span>
+                    <motion.div animate={{ rotate: openCategories[group.type] ? 180 : 0 }} transition={{ duration: 0.22 }}>
+                      <ChevronDown className="w-3.5 h-3.5 text-teal-400" strokeWidth={2.5} />
+                    </motion.div>
+                  </button>
+
+                  <AnimatePresence initial={false}>
+                    {openCategories[group.type] && (
+                      <motion.div
+                        key={`owned-${group.type}`}
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+                        style={{ overflow: 'hidden' }}
+                      >
+                        <div className="grid grid-cols-3 gap-2 px-3 pb-3">
+                          {group.items.map((item, i) => {
+                            const isEquipped = equippedDecos.includes(item.id) || (item.type === 'background' && activeBackground === item.id);
+                            return (
+                              <motion.div
+                                key={item.id}
+                                initial={{ opacity: 0, scale: 0.88 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{ delay: gi * 0.04 + i * 0.04 }}
+                                className="relative flex flex-col items-center gap-1.5 py-3 px-2 rounded-2xl overflow-hidden"
+                                style={{
+                                  background: isEquipped ? 'linear-gradient(135deg, rgba(167,243,208,0.6), rgba(110,231,183,0.45))' : 'rgba(255,255,255,0.65)',
+                                  border: isEquipped ? '1.5px solid rgba(52,211,153,0.5)' : `1.5px solid ${group.border}`,
+                                }}
                               >
-                                {item.emoji}
-                              </div>
-                              <span className="text-[10px] font-bold text-slate-700 text-center leading-tight">{item.name}</span>
-                              {/* Action button */}
-                              {isOwned ? (
-                                item.type === 'background' ? (
-                                  <motion.button
-                                    onClick={() => onEquip(item.id)}
-                                    className="w-full py-1 rounded-xl text-[9px] font-black text-white"
-                                    style={{
-                                      background: isEquipped
-                                        ? 'linear-gradient(135deg,#34d399,#10b981)'
-                                        : 'linear-gradient(135deg,#38bdf8,#0ea5e9)',
-                                      boxShadow: isEquipped
-                                        ? '0 2px 6px rgba(52,211,153,0.35)'
-                                        : '0 2px 6px rgba(14,165,233,0.3)',
-                                    }}
-                                    whileTap={{ scale: 0.94 }}
-                                  >
+                                {isEquipped && (
+                                  <div className="absolute top-1.5 right-1.5 text-[6px] font-black text-white px-1 py-0.5 rounded-full" style={{ background: 'linear-gradient(135deg,#34d399,#10b981)' }}>ON</div>
+                                )}
+                                <div className="w-11 h-11 rounded-xl flex items-center justify-center text-2xl shadow-sm" style={{ background: group.color }}>
+                                  {item.emoji}
+                                </div>
+                                <span className="text-[10px] font-bold text-slate-700 text-center leading-tight">{item.name}</span>
+                                {item.type === 'background' ? (
+                                  <motion.button onClick={() => onEquip(item.id)} className="w-full py-1 rounded-xl text-[9px] font-black text-white"
+                                    style={{ background: isEquipped ? 'linear-gradient(135deg,#34d399,#10b981)' : 'linear-gradient(135deg,#38bdf8,#0ea5e9)' }} whileTap={{ scale: 0.94 }}>
                                     {isEquipped ? '✓ Active' : 'Use'}
                                   </motion.button>
                                 ) : isEquipped ? (
-                                  <motion.button
-                                    onClick={() => onEquip(item.id)}
-                                    className="w-full py-1 rounded-xl text-[9px] font-black"
-                                    style={{ background: 'rgba(239,246,255,0.8)', color: '#64748b', border: '1px solid rgba(203,213,225,0.5)' }}
-                                    whileTap={{ scale: 0.94 }}
-                                  >
+                                  <motion.button onClick={() => onEquip(item.id)} className="w-full py-1 rounded-xl text-[9px] font-black"
+                                    style={{ background: 'rgba(239,246,255,0.8)', color: '#64748b', border: '1px solid rgba(203,213,225,0.5)' }} whileTap={{ scale: 0.94 }}>
                                     Remove
                                   </motion.button>
                                 ) : (
-                                  <motion.button
-                                    onClick={() => onEquip(item.id)}
-                                    className="w-full py-1 rounded-xl text-[9px] font-black text-white"
-                                    style={{ background: 'linear-gradient(135deg,#38bdf8,#0ea5e9)', boxShadow: '0 2px 6px rgba(14,165,233,0.3)' }}
-                                    whileTap={{ scale: 0.94 }}
-                                  >
+                                  <motion.button onClick={() => onEquip(item.id)} className="w-full py-1 rounded-xl text-[9px] font-black text-white"
+                                    style={{ background: 'linear-gradient(135deg,#38bdf8,#0ea5e9)', boxShadow: '0 2px 6px rgba(14,165,233,0.3)' }} whileTap={{ scale: 0.94 }}>
                                     Equip
                                   </motion.button>
-                                )
-                              ) : (
-                                <motion.button
-                                  onClick={() => onPurchase(item.id)}
-                                  disabled={!canBuy}
-                                  className="w-full py-1 rounded-xl text-[9px] font-black"
-                                  style={{
-                                    background: item.cost === 0
-                                      ? 'linear-gradient(135deg,#34d399,#10b981)'
-                                      : canBuy
-                                        ? 'linear-gradient(135deg,#f59e0b,#f97316)'
-                                        : 'rgba(216,180,254,0.3)',
-                                    color: canBuy || item.cost === 0 ? '#fff' : 'rgba(139,92,246,0.4)',
-                                    boxShadow: canBuy && item.cost > 0 ? '0 2px 6px rgba(245,158,11,0.3)' : 'none',
-                                    border: !canBuy && item.cost > 0 ? '1px solid rgba(196,181,253,0.3)' : 'none',
-                                    cursor: !canBuy && item.cost > 0 ? 'not-allowed' : 'pointer',
-                                  }}
-                                  whileTap={canBuy || item.cost === 0 ? { scale: 0.94 } : {}}
-                                >
-                                  {item.cost === 0 ? 'Free' : (
-                                    <span className="flex items-center justify-center gap-0.5">
-                                      <Coins className="w-2.5 h-2.5" />{item.cost}
-                                    </span>
-                                  )}
-                                </motion.button>
-                              )}
-                            </motion.div>
-                          );
-                        })}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            );
-          })
-        ) : (
-          /* ── OWNED TAB ── */
-          (() => {
-            const allOwned = DECORATIONS.filter(d => owned.includes(d.id));
-            const groups = DECO_CATEGORIES.map(cat => ({
-              ...cat,
-              items: allOwned.filter(d => d.type === cat.type),
-            })).filter(g => g.items.length > 0);
+                                )}
+                              </motion.div>
+                            );
+                          })}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              ))}
+            </motion.div>
+          )}
 
-            if (groups.length === 0) {
-              return (
-                <div className="flex flex-col items-center justify-center h-full gap-4 opacity-60 py-16">
-                  <span className="text-5xl">🪸</span>
+          {/* ── WELLBEING TAB ── */}
+          {activeTab === 'wellbeing' && (
+            <motion.div
+              key="wellbeing"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.2 }}
+              className="space-y-2 pt-2"
+            >
+              {!hasWellbeingItems ? (
+                <div className="flex flex-col items-center justify-center gap-4 opacity-60 py-16">
+                  <span className="text-5xl">🩺</span>
                   <div className="text-center">
-                    <p className="text-slate-600 font-bold text-sm">Nothing owned yet</p>
-                    <p className="text-slate-400 text-[11px] mt-1">Head to the Store tab to buy decorations!</p>
+                    <p className="text-slate-600 font-bold text-sm">No wellbeing items yet</p>
+                    <p className="text-slate-400 text-[11px] mt-1">Buy filters, shrimp & treatments from the Shop!</p>
                   </div>
                 </div>
-              );
-            }
-
-            return groups.map((group, gi) => (
-              <div key={group.type} className="rounded-2xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.35)', border: '1px solid rgba(20,184,166,0.12)' }}>
-                {/* Collapsible header */}
-                <button
-                  className="flex items-center gap-2 w-full px-3 py-2.5 active:bg-teal-50/40"
-                  onClick={() => toggleCategory(group.type)}
-                >
-                  <span className="text-base">{group.emoji}</span>
-                  <span className="flex-1 text-left text-[11px] font-black tracking-widest uppercase" style={{ color: 'rgba(15,118,110,0.75)' }}>
-                    {group.label}
-                  </span>
-                  <span className="text-[10px] text-slate-400 font-medium mr-1">({group.items.length})</span>
-                  <motion.div animate={{ rotate: openCategories[group.type] ? 180 : 0 }} transition={{ duration: 0.22 }}>
-                    <ChevronDown className="w-3.5 h-3.5 text-teal-400" strokeWidth={2.5} />
-                  </motion.div>
-                </button>
-
-                <AnimatePresence initial={false}>
-                  {openCategories[group.type] && (
-                    <motion.div
-                      key={`owned-${group.type}`}
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-                      style={{ overflow: 'hidden' }}
-                    >
-                      <div className="grid grid-cols-3 gap-2 px-3 pb-3">
-                        {group.items.map((item, i) => {
-                          const isEquipped = equippedDecos.includes(item.id) || (item.type === 'background' && activeBackground === item.id);
-                          return (
-                            <motion.div
-                              key={item.id}
-                              initial={{ opacity: 0, scale: 0.88 }}
-                              animate={{ opacity: 1, scale: 1 }}
-                              transition={{ delay: gi * 0.04 + i * 0.04 }}
-                              className="relative flex flex-col items-center gap-1.5 py-3 px-2 rounded-2xl overflow-hidden"
-                              style={{
-                                background: isEquipped
-                                  ? 'linear-gradient(135deg, rgba(167,243,208,0.6) 0%, rgba(110,231,183,0.45) 100%)'
-                                  : 'rgba(255,255,255,0.65)',
-                                border: isEquipped
-                                  ? '1.5px solid rgba(52,211,153,0.5)'
-                                  : `1.5px solid ${group.border}`,
-                              }}
-                            >
-                              {isEquipped && (
-                                <div
-                                  className="absolute top-1.5 right-1.5 text-[6px] font-black text-white px-1 py-0.5 rounded-full"
-                                  style={{ background: 'linear-gradient(135deg,#34d399,#10b981)' }}
-                                >ON</div>
-                              )}
-                              <div
-                                className="w-11 h-11 rounded-xl flex items-center justify-center text-2xl shadow-sm"
-                                style={{ background: group.color }}
-                              >
-                                {item.emoji}
-                              </div>
-                              <span className="text-[10px] font-bold text-slate-700 text-center leading-tight">{item.name}</span>
-                              {item.type === 'background' ? (
-                                <motion.button
-                                  onClick={() => onEquip(item.id)}
-                                  className="w-full py-1 rounded-xl text-[9px] font-black text-white"
-                                  style={{
-                                    background: isEquipped
-                                      ? 'linear-gradient(135deg,#34d399,#10b981)'
-                                      : 'linear-gradient(135deg,#38bdf8,#0ea5e9)',
-                                  }}
-                                  whileTap={{ scale: 0.94 }}
-                                >
-                                  {isEquipped ? '✓ Active' : 'Use'}
-                                </motion.button>
-                              ) : isEquipped ? (
-                                <motion.button
-                                  onClick={() => onEquip(item.id)}
-                                  className="w-full py-1 rounded-xl text-[9px] font-black"
-                                  style={{ background: 'rgba(239,246,255,0.8)', color: '#64748b', border: '1px solid rgba(203,213,225,0.5)' }}
-                                  whileTap={{ scale: 0.94 }}
-                                >
-                                  Remove
-                                </motion.button>
-                              ) : (
-                                <motion.button
-                                  onClick={() => onEquip(item.id)}
-                                  className="w-full py-1 rounded-xl text-[9px] font-black text-white"
-                                  style={{ background: 'linear-gradient(135deg,#38bdf8,#0ea5e9)', boxShadow: '0 2px 6px rgba(14,165,233,0.3)' }}
-                                  whileTap={{ scale: 0.94 }}
-                                >
-                                  Equip
-                                </motion.button>
-                              )}
-                            </motion.div>
-                          );
-                        })}
-                      </div>
-                    </motion.div>
+              ) : (
+                <>
+                  {/* Filters */}
+                  {ownedFilterDefs.length > 0 && (
+                    <div className="rounded-2xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.35)', border: '1px solid rgba(56,189,248,0.18)' }}>
+                      <button className="flex items-center gap-2 w-full px-3 py-2.5 active:bg-sky-50/40" onClick={() => toggleCategory('filters')}>
+                        <span className="text-base">⚙️</span>
+                        <span className="flex-1 text-left text-[11px] font-black tracking-widest uppercase" style={{ color: 'rgba(14,116,144,0.8)' }}>Filters</span>
+                        <span className="text-[10px] text-slate-400 font-medium mr-1">({ownedFilterDefs.length})</span>
+                        <motion.div animate={{ rotate: openCategories['filters'] ? 180 : 0 }} transition={{ duration: 0.22 }}>
+                          <ChevronDown className="w-3.5 h-3.5 text-sky-400" strokeWidth={2.5} />
+                        </motion.div>
+                      </button>
+                      <AnimatePresence initial={false}>
+                        {openCategories['filters'] && (
+                          <motion.div key="filters-content" initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.25 }} style={{ overflow: 'hidden' }}>
+                            <div className="px-3 pb-3 space-y-1.5">
+                              {ownedFilterDefs.map(f => {
+                                const isEquipped = equippedFilter === f.id;
+                                return (
+                                  <div key={f.id} className="flex items-center gap-3 rounded-2xl px-3 py-2.5"
+                                    style={{ background: isEquipped ? 'linear-gradient(135deg, rgba(220,252,231,0.9), rgba(187,247,208,0.85))' : 'linear-gradient(135deg, rgba(240,249,255,0.9), rgba(224,242,254,0.85))', border: isEquipped ? '1.5px solid rgba(134,239,172,0.7)' : '1.5px solid rgba(186,230,253,0.6)' }}>
+                                    <span className="text-xl flex-shrink-0">{f.emoji}</span>
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-[12px] font-bold text-slate-700">{f.name}</p>
+                                      <p className="text-[10px] text-slate-400 font-medium">{f.description}</p>
+                                    </div>
+                                    {isEquipped ? (
+                                      <div className="flex items-center gap-1 text-[10px] font-black px-2.5 py-1 rounded-xl flex-shrink-0" style={{ background: 'linear-gradient(135deg, #4ade80, #16a34a)', color: '#fff', boxShadow: '0 2px 6px rgba(74,222,128,0.35)' }}>
+                                        ✓ Equipped
+                                      </div>
+                                    ) : (
+                                      <motion.button onClick={() => onEquipFilter?.(f.id)} whileTap={{ scale: 0.94 }}
+                                        className="text-[10px] font-black px-2.5 py-1 rounded-xl flex-shrink-0 text-white"
+                                        style={{ background: 'linear-gradient(135deg, #38bdf8, #2563eb)', boxShadow: '0 2px 6px rgba(56,189,248,0.3)' }}>
+                                        Equip
+                                      </motion.button>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
                   )}
-                </AnimatePresence>
-              </div>
-            ));
-          })()
-        )}
-        {/* Bottom spacer to prevent scroll bounce */}
+
+                  {/* Stored Shrimp */}
+                  {storedShrimp > 0 && (
+                    <div className="rounded-2xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.35)', border: '1px solid rgba(251,207,232,0.3)' }}>
+                      <button className="flex items-center gap-2 w-full px-3 py-2.5 active:bg-pink-50/40" onClick={() => toggleCategory('shrimp')}>
+                        <span className="text-base">🦐</span>
+                        <span className="flex-1 text-left text-[11px] font-black tracking-widest uppercase" style={{ color: 'rgba(157,23,77,0.7)' }}>Stored Shrimp</span>
+                        <span className="text-[10px] text-slate-400 font-medium mr-1">({storedShrimp})</span>
+                        <motion.div animate={{ rotate: openCategories['shrimp'] ? 180 : 0 }} transition={{ duration: 0.22 }}>
+                          <ChevronDown className="w-3.5 h-3.5 text-pink-400" strokeWidth={2.5} />
+                        </motion.div>
+                      </button>
+                      <AnimatePresence initial={false}>
+                        {openCategories['shrimp'] && (
+                          <motion.div key="shrimp-content" initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.25 }} style={{ overflow: 'hidden' }}>
+                            <div className="px-3 pb-3">
+                              <div className="flex items-center gap-3 rounded-2xl px-3 py-2.5" style={{ background: 'linear-gradient(135deg, rgba(255,241,242,0.9), rgba(252,231,243,0.85))', border: '1.5px solid rgba(251,207,232,0.6)' }}>
+                                <span className="text-2xl">🦐</span>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-[12px] font-bold text-slate-700">{storedShrimp} shrimp ready</p>
+                                  <p className="text-[10px] text-slate-400 font-medium">Add them to your aquarium to clean</p>
+                                </div>
+                                <motion.button
+                                  onClick={() => onDeployShrimpFromInventory?.(storedShrimp)}
+                                  whileTap={{ scale: 0.94 }}
+                                  className="text-[10px] font-black px-2.5 py-1 rounded-xl flex-shrink-0 text-white"
+                                  style={{ background: 'linear-gradient(135deg, #f472b6, #e11d48)', boxShadow: '0 2px 6px rgba(244,114,182,0.35)' }}
+                                >
+                                  Add All
+                                </motion.button>
+                              </div>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  )}
+
+                  {/* Stored Treatments */}
+                  {storedTreatmentEntries.length > 0 && (
+                    <div className="rounded-2xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.35)', border: '1px solid rgba(167,243,208,0.25)' }}>
+                      <button className="flex items-center gap-2 w-full px-3 py-2.5 active:bg-teal-50/40" onClick={() => toggleCategory('treatments')}>
+                        <span className="text-base">🧪</span>
+                        <span className="flex-1 text-left text-[11px] font-black tracking-widest uppercase" style={{ color: 'rgba(13,148,136,0.75)' }}>Treatments</span>
+                        <span className="text-[10px] text-slate-400 font-medium mr-1">({storedTreatmentEntries.reduce((s, t) => s + (storedTreatments[t.id] ?? 0), 0)})</span>
+                        <motion.div animate={{ rotate: openCategories['treatments'] ? 180 : 0 }} transition={{ duration: 0.22 }}>
+                          <ChevronDown className="w-3.5 h-3.5 text-teal-400" strokeWidth={2.5} />
+                        </motion.div>
+                      </button>
+                      <AnimatePresence initial={false}>
+                        {openCategories['treatments'] && (
+                          <motion.div key="treatments-content" initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.25 }} style={{ overflow: 'hidden' }}>
+                            <div className="px-3 pb-3 space-y-1.5">
+                              {storedTreatmentEntries.map(t => {
+                                const count = storedTreatments[t.id] ?? 0;
+                                return (
+                                  <div key={t.id} className="flex items-center gap-3 rounded-2xl px-3 py-2.5" style={{ background: 'linear-gradient(135deg, rgba(240,253,250,0.9), rgba(204,251,241,0.85))', border: '1.5px solid rgba(167,243,208,0.6)' }}>
+                                    <span className="text-xl flex-shrink-0">{t.emoji}</span>
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-[12px] font-bold text-slate-700">{t.name} <span className="text-teal-500 font-black">×{count}</span></p>
+                                      <p className="text-[10px] text-slate-400 font-medium">{t.description}</p>
+                                    </div>
+                                    <motion.button
+                                      onClick={() => onUseTreatmentFromInventory?.(t.id)}
+                                      whileTap={{ scale: 0.94 }}
+                                      className="text-[10px] font-black px-2.5 py-1 rounded-xl flex-shrink-0 text-white"
+                                      style={{ background: 'linear-gradient(135deg, #34d399, #0d9488)', boxShadow: '0 2px 6px rgba(52,211,153,0.35)' }}
+                                    >
+                                      Use
+                                    </motion.button>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  )}
+                </>
+              )}
+            </motion.div>
+          )}
+
+        </AnimatePresence>
+
         <div style={{ height: '3rem', minHeight: '3rem', flexShrink: 0 }} />
       </div>
     </motion.div>

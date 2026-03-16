@@ -165,8 +165,6 @@ export default function App() {
     setShowEggsPanel,
     showAchievementsPanel,
     setShowAchievementsPanel,
-    decorationsTab,
-    setDecorationsTab,
     currentScreen,
     setCurrentScreen,
     activeGame,
@@ -241,6 +239,10 @@ export default function App() {
     handleEquipFilter,
     handleBuyShrimp,
     handleBuyTreatment,
+    handleStoreTreatment,
+    handleUseTreatmentFromInventory,
+    handleStoreShrimpInInventory,
+    handleDeployShrimpFromInventory,
     handleUnlockGames,
     handleClaimAchievement,
   } = gameActions;
@@ -1231,10 +1233,14 @@ export default function App() {
                             equippedDecos={equippedDecos}
                             coins={coins}
                             activeBackground={gameState?.customization?.background ?? ''}
-                            decorationsTab={decorationsTab}
-                            setDecorationsTab={setDecorationsTab}
+                            ownedFilters={gameState?.ownedFilters ?? (gameState?.filterTier ? [gameState.filterTier] : [])}
+                            equippedFilter={gameState?.equippedFilter ?? gameState?.filterTier}
+                            storedTreatments={gameState?.storedTreatments ?? {}}
+                            storedShrimp={gameState?.storedShrimp ?? 0}
+                            onEquipFilter={handleEquipFilter}
+                            onUseTreatmentFromInventory={handleUseTreatmentFromInventory}
+                            onDeployShrimpFromInventory={handleDeployShrimpFromInventory}
                             onClose={() => setShowInventoryPanel(false)}
-                            onPurchase={handlePurchase}
                             onEquip={handleEquipDecoration}
                           />
                         );
@@ -1725,6 +1731,13 @@ export default function App() {
           initialSection={shopSection}
           ownedFilters={gameState?.ownedFilters ?? (gameState?.filterTier ? [gameState.filterTier] : [])}
           equippedFilter={gameState?.equippedFilter ?? gameState?.filterTier}
+          ownedDecos={gameState?.unlockedDecorations ?? []}
+          equippedDecos={gameState?.customization?.decorations ?? []}
+          activeBackground={gameState?.customization?.background ?? ''}
+          onBuyDecoration={handlePurchase}
+          onEquipDecoration={handleEquipDecoration}
+          onStoreTreatment={handleStoreTreatment}
+          onStoreShrimpInInventory={handleStoreShrimpInInventory}
         />
       )}
 

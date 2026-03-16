@@ -1,6 +1,14 @@
-import { X, Coins, Sparkles, Droplets, Filter, Bug, Gem, Info } from 'lucide-react';
+import { X, Coins, Sparkles, Droplets, Filter, Bug, Gem, Info, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useState } from 'react';
+import { DECORATIONS } from '../data/decorations';
+
+const DECO_CATEGORIES = [
+  { type: 'plant',      label: 'Plants',      emoji: '🌿', color: 'rgba(134,239,172,0.2)',  border: 'rgba(74,222,128,0.35)'  },
+  { type: 'rock',       label: 'Rocks',        emoji: '🪨', color: 'rgba(203,213,225,0.25)', border: 'rgba(148,163,184,0.35)' },
+  { type: 'ornament',   label: 'Ornaments',    emoji: '🐚', color: 'rgba(253,186,116,0.2)',  border: 'rgba(251,146,60,0.3)'   },
+  { type: 'background', label: 'Backgrounds',  emoji: '🌊', color: 'rgba(147,210,255,0.2)',  border: 'rgba(56,189,248,0.3)'   },
+];
 
 interface ShopModalProps {
   onClose: () => void;
@@ -13,11 +21,19 @@ interface ShopModalProps {
   onBuyFilter?: (filter: { id: string; name: string; coins: number; opals: number }) => void;
   onEquipFilter?: (filterId: string) => void;
   onBuyTreatment?: (treatment: { id: string; name: string; opals: number }) => void;
+  onStoreTreatment?: (treatment: { id: string; name: string; opals: number }) => void;
+  onStoreShrimpInInventory?: (pack: { count: number; opals: number }) => void;
   initialSection?: 'coins' | 'opals' | null;
   /** All filter IDs the player has purchased. */
   ownedFilters?: string[];
   /** The currently active (equipped) filter ID. */
   equippedFilter?: string;
+  /** Decoration ownership & equip state for the store tab. */
+  ownedDecos?: string[];
+  equippedDecos?: string[];
+  activeBackground?: string;
+  onBuyDecoration?: (id: string) => void;
+  onEquipDecoration?: (id: string) => void;
 }
 
 const COIN_PACKS = [
@@ -212,9 +228,16 @@ export function ShopModal({
   onBuyFilter,
   onEquipFilter,
   onBuyTreatment,
+  onStoreTreatment,
+  onStoreShrimpInInventory,
   initialSection,
   ownedFilters = [],
   equippedFilter,
+  ownedDecos = [],
+  equippedDecos = [],
+  activeBackground = '',
+  onBuyDecoration,
+  onEquipDecoration,
 }: ShopModalProps) {
   const canAfford = (cost: number) => coins >= cost;
   const canAffordOpals = (cost: number) => opals >= cost;
@@ -224,6 +247,14 @@ export function ShopModal({
   );
   const [infoModal, setInfoModal] = useState<'shrimp' | 'filters' | 'treatments' | null>(null);
   const [confirmFilter, setConfirmFilter] = useState<{ filter: typeof FILTER_OPTIONS[number]; mode: 'buy' | 'equip' } | null>(null);
+  const [openDecoCategories, setOpenDecoCategories] = useState<Record<string, boolean>>(
+    () => Object.fromEntries(DECO_CATEGORIES.map(c => [c.type, true]))
+  );
+  const toggleDecoCategory = (type: string) =>
+    setOpenDecoCategories(prev => ({ ...prev, [type]: !prev[type] }));
+
+  const [pendingTreatment, setPendingTreatment] = useState<typeof TREATMENT_OPTIONS[number] | null>(null);
+  const [pendingShrimpPack, setPendingShrimpPack] = useState<typeof SHRIMP_PACKS[number] | null>(null);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3" style={{ background: 'rgba(88,28,135,0.22)', backdropFilter: 'blur(14px)' }}>
@@ -473,32 +504,141 @@ export function ShopModal({
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -6 }}
                   transition={{ duration: 0.22 }}
-                  className="pt-3 flex flex-col items-center justify-center gap-4"
-                  style={{ minHeight: 220 }}
+                  className="space-y-2 pt-3"
                 >
-                  <motion.div
-                    className="text-5xl"
-                    animate={{ y: [0, -8, 0], rotate: [0, -4, 4, 0] }}
-                    transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut' }}
-                  >
-                    🎒
-                  </motion.div>
-                  <div className="text-center px-4">
-                    <p className="font-black text-[15px] text-violet-800 mb-1">Decorations live in Inventory</p>
-                    <p className="text-[12px] text-violet-500/70 leading-relaxed">
-                      Browse and equip plants, rocks, ornaments & backgrounds from the Inventory panel in the main menu.
-                    </p>
-                  </div>
-                  <motion.div
-                    className="rounded-2xl px-5 py-3 text-center"
-                    style={{ background: 'rgba(255,255,255,0.6)', border: '1.5px dashed rgba(216,180,254,0.5)' }}
-                    animate={{ y: [0, -3, 0] }}
-                    transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-                  >
-                    <p className="text-[10px] text-violet-500/70 font-medium">
-                      🪴 Tap <strong>Inventory</strong> in the menu to decorate your tank!
-                    </p>
-                  </motion.div>
+                  {DECO_CATEGORIES.map((cat, ci) => {
+                    const items = DECORATIONS.filter(d => d.type === cat.type);
+                    const isOpen = openDecoCategories[cat.type];
+                    return (
+                      <div
+                        key={cat.type}
+                        className="rounded-2xl overflow-hidden"
+                        style={{ background: 'rgba(255,255,255,0.45)', border: '1px solid rgba(20,184,166,0.14)' }}
+                      >
+                        <button
+                          className="flex items-center gap-2 w-full px-3 py-2.5 active:bg-teal-50/40"
+                          onClick={() => toggleDecoCategory(cat.type)}
+                        >
+                          <span className="text-base">{cat.emoji}</span>
+                          <span className="flex-1 text-left text-[11px] font-black tracking-widest uppercase" style={{ color: 'rgba(15,118,110,0.75)' }}>
+                            {cat.label}
+                          </span>
+                          <span className="text-[10px] text-slate-400 font-medium mr-1">{items.length}</span>
+                          <motion.div animate={{ rotate: isOpen ? 180 : 0 }} transition={{ duration: 0.22 }}>
+                            <ChevronDown className="w-3.5 h-3.5 text-teal-400" strokeWidth={2.5} />
+                          </motion.div>
+                        </button>
+
+                        <AnimatePresence initial={false}>
+                          {isOpen && (
+                            <motion.div
+                              key={`store-${cat.type}`}
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: 'auto', opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+                              style={{ overflow: 'hidden' }}
+                            >
+                              <div className="grid grid-cols-3 gap-2 px-3 pb-3">
+                                {items.map((item, i) => {
+                                  const isOwned = ownedDecos.includes(item.id);
+                                  const isEquipped = equippedDecos.includes(item.id) || (item.type === 'background' && activeBackground === item.id);
+                                  const canBuy = coins >= item.cost;
+                                  return (
+                                    <motion.div
+                                      key={item.id}
+                                      initial={{ opacity: 0, scale: 0.88 }}
+                                      animate={{ opacity: 1, scale: 1 }}
+                                      transition={{ delay: ci * 0.03 + i * 0.03 }}
+                                      className="relative flex flex-col items-center gap-1.5 py-3 px-2 rounded-2xl overflow-hidden"
+                                      style={{
+                                        background: isEquipped
+                                          ? 'linear-gradient(135deg, rgba(167,243,208,0.6), rgba(110,231,183,0.45))'
+                                          : 'rgba(255,255,255,0.7)',
+                                        border: isEquipped
+                                          ? '1.5px solid rgba(52,211,153,0.5)'
+                                          : `1.5px solid ${cat.border}`,
+                                      }}
+                                    >
+                                      {isEquipped && (
+                                        <div
+                                          className="absolute top-1.5 right-1.5 text-[6px] font-black text-white px-1 py-0.5 rounded-full"
+                                          style={{ background: 'linear-gradient(135deg,#34d399,#10b981)' }}
+                                        >ON</div>
+                                      )}
+                                      <div
+                                        className="w-11 h-11 rounded-xl flex items-center justify-center text-2xl shadow-sm"
+                                        style={{ background: cat.color }}
+                                      >
+                                        {item.emoji}
+                                      </div>
+                                      <span className="text-[10px] font-bold text-slate-700 text-center leading-tight">{item.name}</span>
+                                      {isOwned ? (
+                                        item.type === 'background' ? (
+                                          <motion.button
+                                            onClick={() => onEquipDecoration?.(item.id)}
+                                            className="w-full py-1 rounded-xl text-[9px] font-black text-white"
+                                            style={{
+                                              background: isEquipped ? 'linear-gradient(135deg,#34d399,#10b981)' : 'linear-gradient(135deg,#38bdf8,#0ea5e9)',
+                                            }}
+                                            whileTap={{ scale: 0.94 }}
+                                          >
+                                            {isEquipped ? '✓ Active' : 'Use'}
+                                          </motion.button>
+                                        ) : isEquipped ? (
+                                          <motion.button
+                                            onClick={() => onEquipDecoration?.(item.id)}
+                                            className="w-full py-1 rounded-xl text-[9px] font-black"
+                                            style={{ background: 'rgba(239,246,255,0.8)', color: '#64748b', border: '1px solid rgba(203,213,225,0.5)' }}
+                                            whileTap={{ scale: 0.94 }}
+                                          >
+                                            Remove
+                                          </motion.button>
+                                        ) : (
+                                          <motion.button
+                                            onClick={() => onEquipDecoration?.(item.id)}
+                                            className="w-full py-1 rounded-xl text-[9px] font-black text-white"
+                                            style={{ background: 'linear-gradient(135deg,#38bdf8,#0ea5e9)', boxShadow: '0 2px 6px rgba(14,165,233,0.3)' }}
+                                            whileTap={{ scale: 0.94 }}
+                                          >
+                                            Equip
+                                          </motion.button>
+                                        )
+                                      ) : (
+                                        <motion.button
+                                          onClick={() => onBuyDecoration?.(item.id)}
+                                          disabled={!canBuy && item.cost > 0}
+                                          className="w-full py-1 rounded-xl text-[9px] font-black"
+                                          style={{
+                                            background: item.cost === 0
+                                              ? 'linear-gradient(135deg,#34d399,#10b981)'
+                                              : canBuy
+                                              ? 'linear-gradient(135deg,#f59e0b,#f97316)'
+                                              : 'rgba(216,180,254,0.3)',
+                                            color: canBuy || item.cost === 0 ? '#fff' : 'rgba(139,92,246,0.4)',
+                                            boxShadow: canBuy && item.cost > 0 ? '0 2px 6px rgba(245,158,11,0.3)' : 'none',
+                                            border: !canBuy && item.cost > 0 ? '1px solid rgba(196,181,253,0.3)' : 'none',
+                                            cursor: !canBuy && item.cost > 0 ? 'not-allowed' : 'pointer',
+                                          }}
+                                          whileTap={canBuy || item.cost === 0 ? { scale: 0.94 } : {}}
+                                        >
+                                          {item.cost === 0 ? 'Free' : (
+                                            <span className="flex items-center justify-center gap-0.5">
+                                              <Coins className="w-2.5 h-2.5" />{item.cost}
+                                            </span>
+                                          )}
+                                        </motion.button>
+                                      )}
+                                    </motion.div>
+                                  );
+                                })}
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    );
+                  })}
                 </motion.div>
               )}
 
@@ -527,7 +667,7 @@ export function ShopModal({
                         <ShopRowTile
                           key={i}
                           index={i}
-                          onClick={() => onBuyShrimp?.(pack)}
+                          onClick={() => { if (canAffordOpals(pack.opals)) setPendingShrimpPack(pack); }}
                           disabled={!canAffordOpals(pack.opals)}
                           cardBg="linear-gradient(135deg, rgba(255,255,255,0.88) 0%, rgba(255,241,242,0.85) 100%)"
                           cardBorder="1.5px solid rgba(251,207,232,0.65)"
@@ -648,7 +788,7 @@ export function ShopModal({
                         <ShopRowTile
                           key={treatment.id}
                           index={i}
-                          onClick={() => onBuyTreatment?.(treatment)}
+                          onClick={() => { if (canAffordOpals(treatment.opals)) setPendingTreatment(treatment); }}
                           disabled={!canAffordOpals(treatment.opals)}
                           cardBg="linear-gradient(135deg, rgba(255,255,255,0.88) 0%, rgba(240,253,250,0.85) 100%)"
                           cardBorder="1.5px solid rgba(167,243,208,0.6)"
@@ -907,6 +1047,154 @@ export function ShopModal({
             </motion.div>
           );
         })()}
+      </AnimatePresence>
+
+      {/* ── Treatment: Use Now or Store sheet ── */}
+      <AnimatePresence>
+        {pendingTreatment && (
+          <motion.div
+            key="treatment-choice-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.18 }}
+            className="absolute inset-0 z-50 flex items-end justify-center pb-6 px-4"
+            style={{ background: 'rgba(15,10,40,0.45)', backdropFilter: 'blur(4px)' }}
+            onClick={() => setPendingTreatment(null)}
+          >
+            <motion.div
+              key="treatment-choice-card"
+              initial={{ opacity: 0, y: 40, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 30, scale: 0.95 }}
+              transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+              className="w-full rounded-3xl p-5 flex flex-col gap-3"
+              style={{ background: 'linear-gradient(160deg, #f0fdf4 0%, #ccfbf1 100%)', border: '1.5px solid rgba(167,243,208,0.7)', boxShadow: '0 16px 48px rgba(0,0,0,0.18)' }}
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0 shadow-sm" style={{ background: 'rgba(255,255,255,0.7)' }}>
+                  {pendingTreatment.emoji}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h4 className="font-black tracking-tight text-[1rem]" style={{ background: 'linear-gradient(135deg, #059669, #0f766e)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                    {pendingTreatment.name}
+                  </h4>
+                  <p className="text-teal-600/70 text-[10px] font-semibold">{pendingTreatment.description}</p>
+                </div>
+                <motion.button
+                  onClick={() => setPendingTreatment(null)}
+                  className="rounded-full p-1.5 flex-shrink-0"
+                  style={{ background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(203,213,225,0.5)' }}
+                  whileTap={{ scale: 0.85 }}
+                >
+                  <X className="w-3.5 h-3.5 text-slate-400" strokeWidth={2.5} />
+                </motion.button>
+              </div>
+              <p className="text-slate-600 text-[12px] leading-relaxed">
+                Use it now to boost your axolotl's stats, or save it in your Inventory to use whenever you're ready.
+              </p>
+              <div className="flex gap-2 mt-1">
+                <motion.button
+                  onClick={() => {
+                    onBuyTreatment?.(pendingTreatment);
+                    setPendingTreatment(null);
+                  }}
+                  whileTap={{ scale: 0.96 }}
+                  className="flex-1 py-2.5 rounded-2xl font-black text-white text-sm"
+                  style={{ background: 'linear-gradient(135deg, #34d399, #0d9488)', boxShadow: '0 4px 15px rgba(52,211,153,0.4)' }}
+                >
+                  Use Now
+                </motion.button>
+                <motion.button
+                  onClick={() => {
+                    onStoreTreatment?.(pendingTreatment);
+                    setPendingTreatment(null);
+                  }}
+                  whileTap={{ scale: 0.96 }}
+                  className="flex-1 py-2.5 rounded-2xl font-black text-sm"
+                  style={{ background: 'rgba(255,255,255,0.7)', border: '1.5px solid rgba(167,243,208,0.6)', color: '#0d9488' }}
+                >
+                  Store in Inventory
+                </motion.button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Shrimp: Add to Aquarium or Store sheet ── */}
+      <AnimatePresence>
+        {pendingShrimpPack && (
+          <motion.div
+            key="shrimp-choice-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.18 }}
+            className="absolute inset-0 z-50 flex items-end justify-center pb-6 px-4"
+            style={{ background: 'rgba(15,10,40,0.45)', backdropFilter: 'blur(4px)' }}
+            onClick={() => setPendingShrimpPack(null)}
+          >
+            <motion.div
+              key="shrimp-choice-card"
+              initial={{ opacity: 0, y: 40, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 30, scale: 0.95 }}
+              transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+              className="w-full rounded-3xl p-5 flex flex-col gap-3"
+              style={{ background: 'linear-gradient(160deg, #fff1f2 0%, #fce7f3 100%)', border: '1.5px solid rgba(251,207,232,0.7)', boxShadow: '0 16px 48px rgba(0,0,0,0.18)' }}
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0 shadow-sm" style={{ background: 'rgba(255,255,255,0.7)' }}>
+                  🦐
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h4 className="font-black tracking-tight text-[1rem]" style={{ background: 'linear-gradient(135deg, #db2777, #be123c)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                    {pendingShrimpPack.label}
+                  </h4>
+                  <p className="text-pink-500/70 text-[10px] font-semibold">{pendingShrimpPack.count} ghost shrimp</p>
+                </div>
+                <motion.button
+                  onClick={() => setPendingShrimpPack(null)}
+                  className="rounded-full p-1.5 flex-shrink-0"
+                  style={{ background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(203,213,225,0.5)' }}
+                  whileTap={{ scale: 0.85 }}
+                >
+                  <X className="w-3.5 h-3.5 text-slate-400" strokeWidth={2.5} />
+                </motion.button>
+              </div>
+              <p className="text-slate-600 text-[12px] leading-relaxed">
+                Add them to your aquarium now to start cleaning right away, or store them in your Inventory to deploy later.
+              </p>
+              <div className="flex gap-2 mt-1">
+                <motion.button
+                  onClick={() => {
+                    onBuyShrimp?.(pendingShrimpPack);
+                    setPendingShrimpPack(null);
+                  }}
+                  whileTap={{ scale: 0.96 }}
+                  className="flex-1 py-2.5 rounded-2xl font-black text-white text-sm"
+                  style={{ background: 'linear-gradient(135deg, #f472b6, #e11d48)', boxShadow: '0 4px 15px rgba(244,114,182,0.4)' }}
+                >
+                  Add to Aquarium
+                </motion.button>
+                <motion.button
+                  onClick={() => {
+                    onStoreShrimpInInventory?.(pendingShrimpPack);
+                    setPendingShrimpPack(null);
+                  }}
+                  whileTap={{ scale: 0.96 }}
+                  className="flex-1 py-2.5 rounded-2xl font-black text-sm"
+                  style={{ background: 'rgba(255,255,255,0.7)', border: '1.5px solid rgba(251,207,232,0.6)', color: '#be123c' }}
+                >
+                  Store in Inventory
+                </motion.button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
       </AnimatePresence>
     </div>
   );

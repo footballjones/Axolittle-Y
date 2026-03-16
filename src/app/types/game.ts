@@ -84,6 +84,8 @@ export interface GameState {
   ownedFilters?: string[];  // All filter IDs the player has purchased (multiple allowed)
   equippedFilter?: string;  // The currently active filter ID (one of ownedFilters)
   shrimpCount?: number; // Number of shrimp in tank (vacation mechanic)
+  storedShrimp?: number; // Shrimp in inventory, not yet deployed to tank
+  storedTreatments?: Record<string, number>; // treatmentId → count stored in inventory
   lastShrimpUpdate?: number; // Timestamp of last shrimp consumption
   lastEnergyUpdate?: number; // Timestamp of last energy update (for fractional energy tracking)
   lastSpinDate?: string; // YYYY-MM-DD format for daily spin wheel
