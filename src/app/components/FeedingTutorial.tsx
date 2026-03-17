@@ -84,16 +84,6 @@ export function FeedingTutorial({ step, axolotlName }: FeedingTutorialProps) {
                 borderTop: '9px solid rgba(255,255,255,0.97)',
               }}
             />
-
-            {/* Bouncing hand */}
-            <motion.span
-              className="text-2xl select-none"
-              style={{ marginLeft: 30 }}
-              animate={{ y: [0, 9, 0] }}
-              transition={{ duration: 0.8, repeat: Infinity, ease: 'easeInOut' }}
-            >
-              👇
-            </motion.span>
           </motion.div>
         </motion.div>
       )}
@@ -108,19 +98,19 @@ export function FeedingTutorial({ step, axolotlName }: FeedingTutorialProps) {
           exit={{ opacity: 0 }}
           transition={{ duration: 0.4 }}
         >
-          {/* Soft top banner so bubble reads clearly */}
+          {/* Soft bottom banner so bubble reads clearly */}
           <div
-            className="absolute top-0 left-0 right-0"
+            className="absolute bottom-0 left-0 right-0"
             style={{
-              height: '38%',
-              background: 'linear-gradient(to bottom, rgba(0,0,0,0.38) 0%, transparent 100%)',
+              height: '30%',
+              background: 'linear-gradient(to top, rgba(0,0,0,0.38) 0%, transparent 100%)',
             }}
           />
 
-          {/* Bubble centered near top */}
+          {/* Bubble pinned to bottom, above the action buttons */}
           <motion.div
-            className="absolute top-[10%] left-0 right-0 flex flex-col items-center gap-1 px-4"
-            initial={{ opacity: 0, y: -12 }}
+            className="absolute bottom-[82px] left-0 right-0 flex flex-col items-center gap-1 px-4"
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.25, duration: 0.4 }}
           >
@@ -153,23 +143,6 @@ export function FeedingTutorial({ step, axolotlName }: FeedingTutorialProps) {
                 Tap near it to guide {axolotlName} over to eat 😋
               </p>
             </div>
-
-            {/* Caret + bouncing hand pointing toward tank */}
-            <div
-              className="w-0 h-0"
-              style={{
-                borderLeft: '8px solid transparent',
-                borderRight: '8px solid transparent',
-                borderTop: '9px solid rgba(255,255,255,0.97)',
-              }}
-            />
-            <motion.span
-              className="text-2xl select-none"
-              animate={{ y: [0, 9, 0] }}
-              transition={{ duration: 0.8, repeat: Infinity, ease: 'easeInOut' }}
-            >
-              👇
-            </motion.span>
           </motion.div>
         </motion.div>
       )}
