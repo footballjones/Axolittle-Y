@@ -127,6 +127,9 @@ export interface GameState {
   soundEnabled?: boolean; // Master toggle for all sound effects (default: true)
   // ── Stat Allocation ────────────────────────────────────────────────────────
   pendingStatPoints?: number; // Unspent level-up stat points waiting to be allocated
+  // ── Feeding XP ───────────────────────────────────────────────────────────
+  feedXpToday?: number;  // Total XP earned from feeding today (resets daily, max 2)
+  feedXpDate?: string;   // YYYY-MM-DD when feedXpToday was last reset
 }
 
 export interface Friend {

@@ -135,10 +135,23 @@ export function useGameActions({
       const foodItems = (prev.foodItems || []).filter(f => f.id !== foodId);
       const updated = feedAxolotl(prev.axolotl, 15);
 
+      // Grant 0.1 XP per feeding, up to 2 XP per day
+      const today = new Date().toISOString().slice(0, 10);
+      const feedXpDate = prev.feedXpDate === today ? prev.feedXpDate : today;
+      const feedXpToday = prev.feedXpDate === today ? (prev.feedXpToday ?? 0) : 0;
+      const FEED_XP_GAIN = 0.1;
+      const FEED_XP_DAILY_CAP = 2;
+      const xpGain = feedXpToday < FEED_XP_DAILY_CAP
+        ? Math.min(FEED_XP_GAIN, FEED_XP_DAILY_CAP - feedXpToday)
+        : 0;
+      const newExperience = updated.experience + xpGain;
+
       return {
         ...prev,
-        axolotl: updated,
+        axolotl: { ...updated, experience: newExperience },
         foodItems,
+        feedXpToday: feedXpToday + xpGain,
+        feedXpDate,
         // Advance tutorial: 'eat' → 'done' when first food is eaten
         tutorialStep: prev.tutorialStep === 'eat' ? 'done' : prev.tutorialStep,
       };
