@@ -100,7 +100,7 @@ export function useGameActions({
             ),
           };
         });
-      }, 5000); // Match the maximum animation duration
+      }, 7000); // Match the maximum animation duration (4-6.67s sink + buffer)
 
       // Track feed count; every 6th feed schedules a poop to appear 5 min later
       const newFeedCount = ((prev.feedCount || 0) + 1) % 6;

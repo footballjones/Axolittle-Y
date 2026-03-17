@@ -10,7 +10,7 @@ interface FoodDisplayProps {
 export function FoodDisplay({ food, tutorialActive }: FoodDisplayProps) {
   // Generate random sink rate and wiggle pattern for each worm
   const animationProps = useMemo(() => ({
-    sinkDuration: 3 + Math.random() * 2, // 3-5 seconds to sink
+    sinkDuration: 4 + Math.random() * 2.67, // 4-6.67 seconds to sink (33% slower)
     wiggleAmount: 5 + Math.random() * 10, // 5-15 degrees wiggle
     wiggleDuration: 0.8 + Math.random() * 0.4, // 0.8-1.2 second wiggle
   }), []);
