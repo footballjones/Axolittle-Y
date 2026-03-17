@@ -1690,11 +1690,12 @@ export default function App() {
                       {/* Dim overlay */}
                       <div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.45)' }} />
 
-                      {/* Bubble + arrow pinned above the action buttons, pointing at Playtime */}
+                      {/* Bubble + arrow centered on Playtime (2nd of 4 buttons = ~37.5% from left) */}
                       <motion.div
-                        className="absolute bottom-[82px] left-0 right-0 flex flex-col items-center gap-1 px-4"
-                        initial={{ opacity: 0, y: 12 }}
-                        animate={{ opacity: 1, y: 0 }}
+                        className="absolute bottom-[82px] flex flex-col items-center gap-1"
+                        style={{ left: '37.5%' }}
+                        initial={{ opacity: 0, y: 12, x: '-50%' }}
+                        animate={{ opacity: 1, y: 0, x: '-50%' }}
                         transition={{ delay: 0.3, duration: 0.4 }}
                       >
                         <div
@@ -1703,24 +1704,23 @@ export default function App() {
                             background: 'rgba(255,255,255,0.97)',
                             border: '2.5px solid rgba(139,92,246,0.75)',
                             boxShadow: '0 8px 32px rgba(139,92,246,0.4)',
-                            maxWidth: 230,
+                            maxWidth: 200,
                           }}
                         >
                           <p className="text-slate-800 text-[13px] font-bold leading-snug">
                             Now go play! ✨
                           </p>
                           <p className="text-slate-500 text-[11.5px] leading-snug mt-0.5">
-                            Tap <span className="text-violet-600 font-bold">Playtime</span> to interact with your axolotl and boost happiness
+                            Tap <span className="text-violet-600 font-bold">Playtime</span> to boost happiness
                           </p>
                         </div>
-                        {/* Caret pointing down toward buttons */}
+                        {/* Caret pointing straight down at Playtime button */}
                         <div
                           className="w-0 h-0"
                           style={{
                             borderLeft: '8px solid transparent',
                             borderRight: '8px solid transparent',
                             borderTop: '9px solid rgba(255,255,255,0.97)',
-                            marginLeft: 20,
                           }}
                         />
                       </motion.div>
