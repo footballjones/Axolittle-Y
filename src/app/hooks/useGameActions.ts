@@ -750,7 +750,7 @@ export function useGameActions({
           result.tier === 'exceptional'
             ? (prev.totalExceptionalScores ?? 0) + 1
             : (prev.totalExceptionalScores ?? 0),
-        pendingStatPoints: (prev.pendingStatPoints ?? 0) + (leveledUpNow ? 1 : 0),
+        pendingStatPoints: (prev.pendingStatPoints ?? 0) + (newLevel - prevLevel),
       };
       return withAchievements(next);
     });
