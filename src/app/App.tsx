@@ -1634,7 +1634,7 @@ export default function App() {
 
                       {/* Speech bubble near the top pointing up to the stat banner */}
                       <motion.div
-                        className="absolute top-[8%] left-0 right-0 flex flex-col items-center gap-1 px-4"
+                        className="absolute top-[45%] left-0 right-0 flex flex-col items-center gap-1 px-4"
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.3, duration: 0.4 }}
