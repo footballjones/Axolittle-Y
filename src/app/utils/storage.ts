@@ -69,6 +69,9 @@ function migrateV1toV2(state: StoredState): StoredState {
   if (state.nurseryEggs === undefined) {
     state.nurseryEggs = [];
   }
+  if (state.nurseryUnlockedSlots === undefined) {
+    state.nurseryUnlockedSlots = GAME_CONFIG.nurserySlotsOpen;
+  }
   
   // Ensure energy is initialized
   if (state.energy === undefined) {
@@ -210,6 +213,7 @@ export function getInitialGameState(): GameState {
     foodItems: [],
     incubatorEgg: null,
     nurseryEggs: [],
+    nurseryUnlockedSlots: GAME_CONFIG.nurserySlotsOpen,
     filterTier: undefined,
     ownedFilters: [],
     equippedFilter: undefined,

@@ -39,6 +39,7 @@ export const GAME_CONFIG = {
   
   // Egg actions
   eggBoostCost: 3, // Opals to instantly hatch an egg
+  nurserySlotUnlockCost: 10, // Opals to unlock one nursery slot
   
   // Shrimp system
   shrimpEatenPerDay: 10, // Axolotl eats 10 shrimp per day

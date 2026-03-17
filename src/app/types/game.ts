@@ -78,7 +78,8 @@ export interface GameState {
   friends: Friend[];
   foodItems: FoodItem[];
   incubatorEgg: Egg | null; // 1 slot for active hatching
-  nurseryEggs: Egg[]; // Storage: 6 open, 18 locked (purchase with Opals)
+  nurseryEggs: Egg[]; // Storage: open slots grow as player unlocks them
+  nurseryUnlockedSlots?: number; // Number of unlocked nursery slots (default 6)
   /** @deprecated Use ownedFilters + equippedFilter instead. Kept for legacy save migration. */
   filterTier?: string;
   ownedFilters?: string[];  // All filter IDs the player has purchased (multiple allowed)

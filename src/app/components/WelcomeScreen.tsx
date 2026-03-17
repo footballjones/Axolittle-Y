@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Sparkles, Star, Gem, Wand2, Heart, HelpCircle, X } from 'lucide-react';
 
 interface WelcomeScreenProps {
-  onStart: (name: string) => void;
+  onStart: () => void;
 }
 
 const bulletIcons = [Heart, Star, Gem, Wand2, Sparkles];
@@ -315,15 +315,7 @@ function CausticLight() {
 }
 
 export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
-  const [name, setName] = useState('');
-  const [inputFocused, setInputFocused] = useState(false);
   const [showHowToPlay, setShowHowToPlay] = useState(false);
-
-  const handleStart = () => {
-    if (name.trim()) {
-      onStart(name.trim());
-    }
-  };
 
   // Bubbles rising from bottom
   const bubbles = useMemo(() =>
@@ -656,63 +648,27 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
             <div className="absolute top-0 left-4 right-4 h-[1px] bg-gradient-to-r from-transparent via-cyan-400/40 to-transparent" />
 
             <div className="relative p-5 pt-6">
-              {/* Name input section */}
               <div className="space-y-3.5">
-                <label className="block text-cyan-200/90 text-sm font-medium tracking-wide text-center">
-                  What will you call your new friend?
-                </label>
-
-                <div className="relative">
-                  <AnimatePresence>
-                    {inputFocused && (
-                      <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="absolute -inset-[2px] rounded-xl bg-gradient-to-r from-cyan-500/40 via-purple-400/30 to-teal-400/40 blur-sm"
-                      />
-                    )}
-                  </AnimatePresence>
-                  <div className="absolute -inset-[1px] rounded-xl bg-gradient-to-r from-cyan-500/30 via-blue-400/20 to-teal-500/30" />
-                  <input
-                    type="text"
-                    value={name}
-                    onChange={e => setName(e.target.value)}
-                    placeholder="Enter a name..."
-                    maxLength={20}
-                    className="relative w-full bg-[#060d1a]/80 rounded-xl px-4 py-3.5 text-white placeholder-cyan-300/25 focus:outline-none transition-all"
-                    onKeyPress={e => e.key === 'Enter' && handleStart()}
-                    onFocus={() => setInputFocused(true)}
-                    onBlur={() => setInputFocused(false)}
-                    autoFocus
-                  />
-                </div>
-
-                {/* CTA Button */}
+                {/* Start Adventure button */}
                 <motion.button
-                  onClick={handleStart}
-                  disabled={!name.trim()}
-                  className="relative w-full overflow-hidden rounded-xl py-4 text-white font-black text-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed group"
-                  whileHover={name.trim() ? { scale: 1.02, y: -2 } : {}}
-                  whileTap={name.trim() ? { scale: 0.97 } : {}}
+                  onClick={onStart}
+                  className="relative w-full overflow-hidden rounded-xl py-4 text-white font-black text-lg transition-all group"
+                  whileHover={{ scale: 1.02, y: -2 }}
+                  whileTap={{ scale: 0.97 }}
                 >
-                  {name.trim() && (
-                    <motion.div
-                      className="absolute -inset-1 rounded-xl bg-gradient-to-r from-cyan-400/25 via-purple-500/25 to-teal-400/25 blur-md"
-                      animate={{ opacity: [0.5, 0.8, 0.5] }}
-                      transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-                    />
-                  )}
+                  <motion.div
+                    className="absolute -inset-1 rounded-xl bg-gradient-to-r from-cyan-400/25 via-purple-500/25 to-teal-400/25 blur-md"
+                    animate={{ opacity: [0.5, 0.8, 0.5] }}
+                    transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                  />
                   <div className="absolute -inset-[1px] rounded-xl bg-gradient-to-r from-cyan-400/60 via-purple-400/40 to-cyan-400/60" />
                   <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 rounded-xl" />
                   <div className="absolute inset-0 bg-gradient-to-b from-white/10 to-transparent rounded-xl" />
-                  {name.trim() && (
-                    <motion.div
-                      className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0"
-                      animate={{ x: ['-200%', '200%'] }}
-                      transition={{ duration: 2.5, repeat: Infinity, ease: 'linear' }}
-                    />
-                  )}
+                  <motion.div
+                    className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0"
+                    animate={{ x: ['-200%', '200%'] }}
+                    transition={{ duration: 2.5, repeat: Infinity, ease: 'linear' }}
+                  />
                   <span className="relative z-10 drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)] flex items-center justify-center gap-2">
                     <Wand2 className="w-5 h-5" />
                     Start Adventure

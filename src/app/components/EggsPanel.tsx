@@ -96,6 +96,7 @@ interface Props {
   onClose: () => void;
   incubatorEgg: Egg | null;
   nurseryEggs: Egg[];
+  nurseryUnlockedSlots?: number;
   axolotl: Axolotl | null;
   onHatch?: (eggId: string, name: string) => void;
   onReleaseAxolotl?: () => void;
@@ -103,14 +104,16 @@ interface Props {
   onBoost?: (eggId: string) => void;
   onGift?: (eggId: string) => void;
   onDiscard?: (eggId: string) => void;
+  onUnlockSlot?: () => void;
   opals?: number;
   hasAxolotl?: boolean; // Whether an axolotl already exists
 }
 
-export function EggsPanel({ 
-  onClose, 
-  incubatorEgg, 
+export function EggsPanel({
+  onClose,
+  incubatorEgg,
   nurseryEggs,
+  nurseryUnlockedSlots = UNLOCKED_SLOTS,
   axolotl,
   onHatch,
   onReleaseAxolotl,
@@ -118,6 +121,7 @@ export function EggsPanel({
   onBoost,
   onGift,
   onDiscard,
+  onUnlockSlot,
   opals = 0,
   hasAxolotl: _hasAxolotl,
 }: Props) {
@@ -179,8 +183,12 @@ export function EggsPanel({
   const isLastEggWithoutAxolotl = !axolotl && allDisplayEggs.length === 1;
 
   const handleUnlockSlot = () => {
-    setShowUnlockToast(true);
-    setTimeout(() => setShowUnlockToast(false), 2500);
+    if (opals >= GAME_CONFIG.nurserySlotUnlockCost && onUnlockSlot) {
+      onUnlockSlot();
+    } else {
+      setShowUnlockToast(true);
+      setTimeout(() => setShowUnlockToast(false), 2500);
+    }
   };
 
   return (
@@ -337,7 +345,7 @@ export function EggsPanel({
         <div className="flex-1">
           <h3 className="text-violet-800 font-bold text-base">Nursery</h3>
           <p className="text-[10px] text-violet-500/80 font-medium">
-            {nurseryEggs.length}/{UNLOCKED_SLOTS} nursery slots · {allDisplayEggs.filter(e => e.hatchesIn === 'Ready!').length} ready
+            {nurseryEggs.length}/{nurseryUnlockedSlots} nursery slots · {allDisplayEggs.filter(e => e.hatchesIn === 'Ready!').length} ready
           </p>
         </div>
       </div>
@@ -401,8 +409,7 @@ export function EggsPanel({
           {/* Nursery slots grid — rows of 3 */}
           <div className="grid grid-cols-3 gap-3">
             {Array.from({ length: TOTAL_SLOTS }, (_, i) => {
-              // Rows 3–6 are locked
-              if (i >= UNLOCKED_SLOTS) {
+              if (i >= nurseryUnlockedSlots) {
                 return <LockedSlot key={i} onUnlock={handleUnlockSlot} />;
               }
               // Fill with nursery eggs where available

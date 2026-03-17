@@ -10,6 +10,8 @@ import {
 import { loadGameState, saveGameState, getInitialGameState, generatePermanentFriendCode } from './utils/storage';
 import { GAME_CONFIG } from './config/game';
 import { WelcomeScreen } from './components/WelcomeScreen';
+import { HatchingIntroScreen } from './components/HatchingIntroScreen';
+import { NamingScreen } from './components/NamingScreen';
 import { AxolotlDisplay } from './components/AxolotlDisplay';
 import { ActionButtons } from './components/ActionButtons';
 import { AquariumBackground } from './components/AquariumBackground';
@@ -67,6 +69,7 @@ function rollJimmyGift(): { coins: number; opals: number } {
 
 export default function App() {
   const [gameState, setGameState] = useState<GameState | null>(null);
+  const [showHatchingIntro, setShowHatchingIntro] = useState(false);
   const [clickTarget, setClickTarget] = useState<{ x: number; y: number; timestamp: number } | null>(null);
   const [tapRipples, setTapRipples] = useState<{ id: number; x: number; y: number }[]>([]);
   const tapRippleCounter = useRef(0);
@@ -245,6 +248,7 @@ export default function App() {
     handleUseTreatmentFromInventory,
     handleStoreShrimpInInventory,
     handleDeployShrimpFromInventory,
+    handleUnlockNurserySlot,
     handleUnlockGames,
     handleClaimAchievement,
   } = gameActions;
@@ -327,6 +331,9 @@ export default function App() {
       }
       if (loaded.nurseryEggs === undefined) {
         loaded.nurseryEggs = [];
+      }
+      if (loaded.nurseryUnlockedSlots === undefined) {
+        loaded.nurseryUnlockedSlots = GAME_CONFIG.nurserySlotsOpen;
       }
       if (loaded.shrimpCount === undefined) {
         loaded.shrimpCount = 0;
@@ -507,9 +514,19 @@ export default function App() {
 
   const _hasAnyEgg = !!(gameState.incubatorEgg || (gameState.nurseryEggs && gameState.nurseryEggs.length > 0));
 
-  // ── No axolotl, no eggs → genuine first-start or post-release ──
+  // ── No axolotl, no eggs → first-start or post-release ──
   if (!gameState.axolotl && !_hasAnyEgg) {
-    return <WelcomeScreen onStart={handleStart} />;
+    if (showHatchingIntro) {
+      return (
+        <HatchingIntroScreen
+          onComplete={(name) => {
+            setShowHatchingIntro(false);
+            handleStart(name);
+          }}
+        />
+      );
+    }
+    return <WelcomeScreen onStart={() => setShowHatchingIntro(true)} />;
   }
 
   // ── No axolotl, but egg(s) are waiting (post-rebirth) → nursery screen ──
@@ -523,12 +540,14 @@ export default function App() {
               onClose={() => {}} // Cannot close — must hatch to continue
               incubatorEgg={gameState.incubatorEgg}
               nurseryEggs={gameState.nurseryEggs || []}
+              nurseryUnlockedSlots={gameState.nurseryUnlockedSlots ?? GAME_CONFIG.nurserySlotsOpen}
               axolotl={null}
               onHatch={(eggId) => handleHatchEgg(eggId, '')}
               onMoveToIncubator={handleMoveToIncubator}
               onBoost={handleBoostEgg}
               onGift={handleGiftEgg}
               onDiscard={handleDiscardEgg}
+              onUnlockSlot={handleUnlockNurserySlot}
               opals={gameState.opals ?? 0}
               hasAxolotl={false}
             />
@@ -540,7 +559,7 @@ export default function App() {
 
   // ── Axolotl exists but has no name (just hatched from a rebirth egg) → naming screen ──
   if (gameState.axolotl && gameState.axolotl.name === '') {
-    return <WelcomeScreen onStart={handleNameAxolotl} />;
+    return <NamingScreen onComplete={handleNameAxolotl} />;
   }
 
   // All three null-axolotl cases are handled above; this guard exists only to
@@ -687,7 +706,7 @@ export default function App() {
                                 'text-white'
                               }`}
                             >
-                              {axolotl.rarity}
+                              Rarity: {axolotl.rarity}
                             </span>
                           </>
                         )}
@@ -1252,10 +1271,11 @@ export default function App() {
                     {/* ── Eggs sub-panel overlay ── */}
                     <AnimatePresence>
                       {showEggsPanel && (
-                        <EggsPanel 
+                        <EggsPanel
                           onClose={() => setShowEggsPanel(false)}
                           incubatorEgg={gameState?.incubatorEgg || null}
                           nurseryEggs={gameState?.nurseryEggs || []}
+                          nurseryUnlockedSlots={gameState?.nurseryUnlockedSlots ?? GAME_CONFIG.nurserySlotsOpen}
                           axolotl={gameState?.axolotl || null}
                           onHatch={handleHatchEgg}
                           onReleaseAxolotl={handleReleaseAxolotl}
@@ -1263,6 +1283,7 @@ export default function App() {
                           onBoost={handleBoostEgg}
                           onGift={handleGiftEgg}
                           onDiscard={handleDiscardEgg}
+                          onUnlockSlot={handleUnlockNurserySlot}
                           opals={opals}
                           hasAxolotl={!!gameState?.axolotl}
                         />

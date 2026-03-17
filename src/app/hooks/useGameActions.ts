@@ -510,6 +510,22 @@ export function useGameActions({
     });
   }, []);
 
+  const handleUnlockNurserySlot = useCallback(() => {
+    setGameState(prev => {
+      if (!prev) return prev;
+      const cost = GAME_CONFIG.nurserySlotUnlockCost;
+      const maxSlots = GAME_CONFIG.nurserySlotsOpen + GAME_CONFIG.nurserySlotsLocked;
+      const currentUnlocked = prev.nurseryUnlockedSlots ?? GAME_CONFIG.nurserySlotsOpen;
+      if (prev.opals < cost) return prev;
+      if (currentUnlocked >= maxSlots) return prev;
+      return {
+        ...prev,
+        opals: prev.opals - cost,
+        nurseryUnlockedSlots: currentUnlocked + 1,
+      };
+    });
+  }, []);
+
   const handleBoostEgg = useCallback((eggId: string) => {
     setGameState(prev => {
       if (!prev) return prev;
@@ -933,6 +949,7 @@ export function useGameActions({
     handleReleaseAxolotl,
     handleHatchEgg,
     handleMoveToIncubator,
+    handleUnlockNurserySlot,
     handleBoostEgg,
     handleGiftEgg,
     handleDiscardEgg,
