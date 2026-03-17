@@ -130,6 +130,9 @@ export interface GameState {
   // ── Feeding XP ───────────────────────────────────────────────────────────
   feedXpToday?: number;  // Total XP earned from feeding today (resets daily, max 2)
   feedXpDate?: string;   // YYYY-MM-DD when feedXpToday was last reset
+  firstFeedXpGranted?: boolean; // True after the first-ever eat grants a full level-up XP
+  // ── Stat tutorial ────────────────────────────────────────────────────────
+  statTutorialSeen?: boolean; // True once the player taps the stat assignment banner
 }
 
 export interface Friend {

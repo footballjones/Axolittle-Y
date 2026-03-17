@@ -866,7 +866,7 @@ export default function App() {
                       transition={{ duration: 0.3, ease: 'easeOut' }}
                     >
                       <motion.button
-                        onClick={() => { setActiveModal('stats'); setShowHamburgerMenu(false); }}
+                        onClick={() => { setActiveModal('stats'); setShowHamburgerMenu(false); setGameState(s => s ? { ...s, statTutorialSeen: true } : s); }}
                         whileTap={{ scale: 0.95 }}
                         animate={{ boxShadow: ['0 4px 18px rgba(245,158,11,0.45)', '0 4px 28px rgba(245,158,11,0.75)', '0 4px 18px rgba(245,158,11,0.45)'] }}
                         transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
@@ -1617,6 +1617,62 @@ export default function App() {
                       step={gameState.tutorialStep}
                       axolotlName={axolotl.name}
                     />
+                  )}
+
+                  {/* Stat assignment tutorial — shown after first level-up */}
+                  {(gameState.pendingStatPoints ?? 0) > 0 && !gameState.statTutorialSeen && gameState.tutorialStep === 'done' && !activeModal && (
+                    <motion.div
+                      className="absolute inset-0 pointer-events-none"
+                      style={{ zIndex: 45 }}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.4 }}
+                    >
+                      {/* Dim overlay */}
+                      <div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.45)' }} />
+
+                      {/* Speech bubble near the top pointing up to the stat banner */}
+                      <motion.div
+                        className="absolute top-[8%] left-0 right-0 flex flex-col items-center gap-1 px-4"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.3, duration: 0.4 }}
+                      >
+                        {/* Upward caret pointing to banner above */}
+                        <motion.span
+                          className="text-xl select-none"
+                          animate={{ y: [0, -6, 0] }}
+                          transition={{ duration: 0.8, repeat: Infinity, ease: 'easeInOut' }}
+                        >
+                          ☝️
+                        </motion.span>
+                        <div
+                          className="w-0 h-0"
+                          style={{
+                            borderLeft: '8px solid transparent',
+                            borderRight: '8px solid transparent',
+                            borderBottom: '9px solid rgba(255,255,255,0.97)',
+                          }}
+                        />
+                        <div
+                          className="rounded-2xl px-5 py-3 shadow-2xl text-center"
+                          style={{
+                            background: 'rgba(255,255,255,0.97)',
+                            border: '2.5px solid rgba(245,158,11,0.75)',
+                            boxShadow: '0 8px 32px rgba(245,158,11,0.4)',
+                            maxWidth: 230,
+                          }}
+                        >
+                          <p className="text-slate-800 text-[13px] font-bold leading-snug">
+                            You leveled up! 🎉
+                          </p>
+                          <p className="text-slate-500 text-[11.5px] leading-snug mt-0.5">
+                            Tap the glowing button above to assign your stat point!
+                          </p>
+                        </div>
+                      </motion.div>
+                    </motion.div>
                   )}
 
                   {/* ── First-time poop cleaning tutorial ── */}

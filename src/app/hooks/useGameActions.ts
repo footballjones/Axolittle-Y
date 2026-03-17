@@ -134,24 +134,46 @@ export function useGameActions({
 
       const foodItems = (prev.foodItems || []).filter(f => f.id !== foodId);
       const updated = feedAxolotl(prev.axolotl, 15);
+      const prevLevel = calculateLevel(updated.experience);
 
-      // Grant 0.1 XP per feeding, up to 2 XP per day
-      const today = new Date().toISOString().slice(0, 10);
-      const feedXpDate = prev.feedXpDate === today ? prev.feedXpDate : today;
-      const feedXpToday = prev.feedXpDate === today ? (prev.feedXpToday ?? 0) : 0;
-      const FEED_XP_GAIN = 0.1;
-      const FEED_XP_DAILY_CAP = 2;
-      const xpGain = feedXpToday < FEED_XP_DAILY_CAP
-        ? Math.min(FEED_XP_GAIN, FEED_XP_DAILY_CAP - feedXpToday)
-        : 0;
+      let xpGain: number;
+      let feedXpToday: number;
+      let feedXpDate: string;
+      let firstFeedXpGranted = prev.firstFeedXpGranted;
+
+      if (!prev.firstFeedXpGranted) {
+        // First-ever eat: grant exactly enough XP to level up (level 1 needs 1 XP)
+        xpGain = 1;
+        feedXpToday = prev.feedXpDate === new Date().toISOString().slice(0, 10)
+          ? (prev.feedXpToday ?? 0) + xpGain
+          : xpGain;
+        feedXpDate = new Date().toISOString().slice(0, 10);
+        firstFeedXpGranted = true;
+      } else {
+        // Normal daily cap: 0.1 XP per eat, up to 2 XP per day
+        const today = new Date().toISOString().slice(0, 10);
+        feedXpDate = prev.feedXpDate === today ? prev.feedXpDate : today;
+        const prevFeedXpToday = prev.feedXpDate === today ? (prev.feedXpToday ?? 0) : 0;
+        const FEED_XP_GAIN = 0.1;
+        const FEED_XP_DAILY_CAP = 2;
+        xpGain = prevFeedXpToday < FEED_XP_DAILY_CAP
+          ? Math.min(FEED_XP_GAIN, FEED_XP_DAILY_CAP - prevFeedXpToday)
+          : 0;
+        feedXpToday = prevFeedXpToday + xpGain;
+      }
+
       const newExperience = updated.experience + xpGain;
+      const newLevel = calculateLevel(newExperience);
+      const levelsGained = newLevel - prevLevel;
 
       return {
         ...prev,
         axolotl: { ...updated, experience: newExperience },
         foodItems,
-        feedXpToday: feedXpToday + xpGain,
+        feedXpToday,
         feedXpDate,
+        firstFeedXpGranted,
+        pendingStatPoints: (prev.pendingStatPoints ?? 0) + levelsGained,
         // Advance tutorial: 'eat' → 'done' when first food is eaten
         tutorialStep: prev.tutorialStep === 'eat' ? 'done' : prev.tutorialStep,
       };
