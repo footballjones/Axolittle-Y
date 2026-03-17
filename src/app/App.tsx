@@ -483,6 +483,8 @@ export default function App() {
       return;
     }
     setPlayMode(true);
+    // Mark play tutorial seen on first entry
+    setGameState(s => s && !s.playTutorialSeen ? { ...s, playTutorialSeen: true } : s);
     if (playModeTimerRef.current) clearTimeout(playModeTimerRef.current);
     playModeTimerRef.current = setTimeout(() => {
       setPlayMode(false);
@@ -1675,6 +1677,56 @@ export default function App() {
                     </motion.div>
                   )}
 
+                  {/* Play tutorial — shown after stat tutorial is completed */}
+                  {gameState.statTutorialSeen && !gameState.playTutorialSeen && (gameState.pendingStatPoints ?? 0) === 0 && gameState.tutorialStep === 'done' && !activeModal && !playMode && (
+                    <motion.div
+                      className="absolute inset-0 pointer-events-none"
+                      style={{ zIndex: 45 }}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.4 }}
+                    >
+                      {/* Dim overlay */}
+                      <div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.45)' }} />
+
+                      {/* Bubble + arrow pinned above the action buttons, pointing at Playtime */}
+                      <motion.div
+                        className="absolute bottom-[82px] left-0 right-0 flex flex-col items-center gap-1 px-4"
+                        initial={{ opacity: 0, y: 12 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.3, duration: 0.4 }}
+                      >
+                        <div
+                          className="rounded-2xl px-5 py-3 shadow-2xl text-center"
+                          style={{
+                            background: 'rgba(255,255,255,0.97)',
+                            border: '2.5px solid rgba(139,92,246,0.75)',
+                            boxShadow: '0 8px 32px rgba(139,92,246,0.4)',
+                            maxWidth: 230,
+                          }}
+                        >
+                          <p className="text-slate-800 text-[13px] font-bold leading-snug">
+                            Now go play! ✨
+                          </p>
+                          <p className="text-slate-500 text-[11.5px] leading-snug mt-0.5">
+                            Tap <span className="text-violet-600 font-bold">Playtime</span> to interact with your axolotl and boost happiness
+                          </p>
+                        </div>
+                        {/* Caret pointing down toward buttons */}
+                        <div
+                          className="w-0 h-0"
+                          style={{
+                            borderLeft: '8px solid transparent',
+                            borderRight: '8px solid transparent',
+                            borderTop: '9px solid rgba(255,255,255,0.97)',
+                            marginLeft: 20,
+                          }}
+                        />
+                      </motion.div>
+                    </motion.div>
+                  )}
+
                   {/* ── First-time poop cleaning tutorial ── */}
                   {(() => {
                     const showCleanTutorial =
@@ -1748,8 +1800,14 @@ export default function App() {
                       gameState.cleanTutorialSeen === false &&
                       (gameState.poopItems?.length ?? 0) > 0 &&
                       !cleaningMode;
+                    const playTutActive =
+                      gameState.statTutorialSeen === true &&
+                      !gameState.playTutorialSeen &&
+                      (gameState.pendingStatPoints ?? 0) === 0 &&
+                      gameState.tutorialStep === 'done' &&
+                      !activeModal && !playMode;
                     const needsLift =
-                      gameState.tutorialStep === 'feed' || cleanTutActive;
+                      gameState.tutorialStep === 'feed' || cleanTutActive || playTutActive;
                     return (
                       <div
                         className={`absolute bottom-0 left-0 right-0 pb-[max(0.75rem,env(safe-area-inset-bottom))] ${

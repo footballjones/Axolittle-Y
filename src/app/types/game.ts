@@ -133,6 +133,7 @@ export interface GameState {
   firstFeedXpGranted?: boolean; // True after the first-ever eat grants a full level-up XP
   // ── Stat tutorial ────────────────────────────────────────────────────────
   statTutorialSeen?: boolean; // True once the player taps the stat assignment banner
+  playTutorialSeen?: boolean; // True once the player enters play mode for the first time
 }
 
 export interface Friend {
