@@ -134,6 +134,7 @@ export interface GameState {
   // ── Stat tutorial ────────────────────────────────────────────────────────
   statTutorialSeen?: boolean; // True once the player taps the stat assignment banner
   playTutorialSeen?: boolean; // True once the player enters play mode for the first time
+  miniGameTutorialSeen?: boolean; // True once the player navigates to the mini games screen
 }
 
 export interface Friend {

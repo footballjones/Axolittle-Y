@@ -745,7 +745,7 @@ export default function App() {
                     <Home className="text-white mx-auto drop-shadow-lg" style={{ width: '40px', height: '40px' }} strokeWidth={2.5} />
                   </motion.button>
                   <motion.button
-                    onClick={() => setCurrentScreen('games')}
+                    onClick={() => { setCurrentScreen('games'); setGameState(s => s && !s.miniGameTutorialSeen ? { ...s, miniGameTutorialSeen: true } : s); }}
                     className={`relative bg-transparent border border-white/30 rounded-xl active:bg-white/[0.08] transition-all flex-1 overflow-hidden ${currentScreen === 'games' ? 'opacity-50' : ''}`}
                     style={{ padding: '5.6px' }}
                     whileTap={{ scale: 0.93 }}
@@ -1723,6 +1723,61 @@ export default function App() {
                             borderTop: '9px solid rgba(255,255,255,0.97)',
                           }}
                         />
+                      </motion.div>
+                    </motion.div>
+                  )}
+
+                  {/* Mini game tutorial — shown after play tutorial is completed */}
+                  {gameState.playTutorialSeen && !gameState.miniGameTutorialSeen && gameState.tutorialStep === 'done' && !activeModal && !playMode && (
+                    <motion.div
+                      className="absolute inset-0 pointer-events-none"
+                      style={{ zIndex: 45 }}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.4 }}
+                    >
+                      {/* Dim overlay */}
+                      <div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.45)' }} />
+
+                      {/* Bubble near top pointing up to the 🎮 button in the header */}
+                      <motion.div
+                        className="absolute top-[25%] left-0 right-0 flex flex-col items-center gap-1 px-4"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.3, duration: 0.4 }}
+                      >
+                        <motion.span
+                          className="text-xl select-none"
+                          animate={{ y: [0, -6, 0] }}
+                          transition={{ duration: 0.8, repeat: Infinity, ease: 'easeInOut' }}
+                        >
+                          ☝️
+                        </motion.span>
+                        <div
+                          className="w-0 h-0"
+                          style={{
+                            borderLeft: '8px solid transparent',
+                            borderRight: '8px solid transparent',
+                            borderBottom: '9px solid rgba(255,255,255,0.97)',
+                          }}
+                        />
+                        <div
+                          className="rounded-2xl px-5 py-3 shadow-2xl text-center"
+                          style={{
+                            background: 'rgba(255,255,255,0.97)',
+                            border: '2.5px solid rgba(99,102,241,0.75)',
+                            boxShadow: '0 8px 32px rgba(99,102,241,0.4)',
+                            maxWidth: 230,
+                          }}
+                        >
+                          <p className="text-slate-800 text-[13px] font-bold leading-snug">
+                            Play a mini game! 🎮
+                          </p>
+                          <p className="text-slate-500 text-[11.5px] leading-snug mt-0.5">
+                            Tap the game controller above to earn XP and coins
+                          </p>
+                        </div>
                       </motion.div>
                     </motion.div>
                   )}
