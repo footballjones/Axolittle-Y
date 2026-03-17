@@ -1742,7 +1742,7 @@ export default function App() {
 
                       {/* Bubble near top pointing up to the 🎮 button in the header */}
                       <motion.div
-                        className="absolute top-2 left-0 right-0 flex flex-col items-center gap-1 px-4"
+                        className="absolute top-[14%] left-0 right-0 flex flex-col items-center gap-1 px-4"
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.3, duration: 0.4 }}
