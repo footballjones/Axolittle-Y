@@ -99,6 +99,7 @@ interface Props {
   nurseryUnlockedSlots?: number;
   axolotl: Axolotl | null;
   onHatch?: (eggId: string, name: string) => void;
+  onStartHatchAnimation?: (eggId: string) => void;
   onReleaseAxolotl?: () => void;
   onMoveToIncubator?: (eggId: string) => void;
   onBoost?: (eggId: string) => void;
@@ -116,6 +117,7 @@ export function EggsPanel({
   nurseryUnlockedSlots = UNLOCKED_SLOTS,
   axolotl,
   onHatch,
+  onStartHatchAnimation,
   onReleaseAxolotl,
   onMoveToIncubator,
   onBoost,
@@ -583,9 +585,11 @@ export function EggsPanel({
                             setEggToHatch(selectedEgg.egg);
                             setShowReleaseModal(true);
                           } else {
-                            // No axolotl (post-rebirth): hatch directly with empty name.
-                            // App.tsx will detect name === '' and show the naming screen.
-                            if (onHatch) {
+                            // No axolotl: launch tap-to-hatch animation.
+                            if (onStartHatchAnimation) {
+                              onStartHatchAnimation(selectedEgg.egg.id);
+                              setSelectedEgg(null);
+                            } else if (onHatch) {
                               onHatch(selectedEgg.egg.id, '');
                               setSelectedEgg(null);
                             }
@@ -753,10 +757,14 @@ export function EggsPanel({
           if (onReleaseAxolotl) {
             onReleaseAxolotl();
           }
-          // After release, show hatch modal
           setShowReleaseModal(false);
           if (eggToHatch) {
-            setShowHatchModal(true);
+            if (onStartHatchAnimation) {
+              onStartHatchAnimation(eggToHatch.id);
+              setEggToHatch(null);
+            } else {
+              setShowHatchModal(true);
+            }
           }
         }}
         axolotlName={axolotl?.name}

@@ -70,6 +70,7 @@ function rollJimmyGift(): { coins: number; opals: number } {
 export default function App() {
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [showHatchingIntro, setShowHatchingIntro] = useState(false);
+  const [hatchingNurseryEggId, setHatchingNurseryEggId] = useState<string | null>(null);
   const [clickTarget, setClickTarget] = useState<{ x: number; y: number; timestamp: number } | null>(null);
   const [tapRipples, setTapRipples] = useState<{ id: number; x: number; y: number }[]>([]);
   const tapRippleCounter = useRef(0);
@@ -529,6 +530,18 @@ export default function App() {
     return <WelcomeScreen onStart={() => setShowHatchingIntro(true)} />;
   }
 
+  // ── Nursery hatch animation (any context) ──
+  if (hatchingNurseryEggId) {
+    return (
+      <HatchingIntroScreen
+        onComplete={(name) => {
+          handleHatchEgg(hatchingNurseryEggId, name);
+          setHatchingNurseryEggId(null);
+        }}
+      />
+    );
+  }
+
   // ── No axolotl, but egg(s) are waiting (post-rebirth) → nursery screen ──
   if (!gameState.axolotl && _hasAnyEgg) {
     return (
@@ -543,6 +556,7 @@ export default function App() {
               nurseryUnlockedSlots={gameState.nurseryUnlockedSlots ?? GAME_CONFIG.nurserySlotsOpen}
               axolotl={null}
               onHatch={(eggId) => handleHatchEgg(eggId, '')}
+              onStartHatchAnimation={(eggId) => setHatchingNurseryEggId(eggId)}
               onMoveToIncubator={handleMoveToIncubator}
               onBoost={handleBoostEgg}
               onGift={handleGiftEgg}
@@ -1278,6 +1292,7 @@ export default function App() {
                           nurseryUnlockedSlots={gameState?.nurseryUnlockedSlots ?? GAME_CONFIG.nurserySlotsOpen}
                           axolotl={gameState?.axolotl || null}
                           onHatch={handleHatchEgg}
+                          onStartHatchAnimation={(eggId) => setHatchingNurseryEggId(eggId)}
                           onReleaseAxolotl={handleReleaseAxolotl}
                           onMoveToIncubator={handleMoveToIncubator}
                           onBoost={handleBoostEgg}

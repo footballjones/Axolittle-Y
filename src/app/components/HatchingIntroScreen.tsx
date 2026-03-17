@@ -1,8 +1,9 @@
 import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import axolotlImg from '../../assets/axolotl.png';
+import startingEggImg from '../../assets/eggs/Starting egg.png';
 
-const TAP_THRESHOLD = 10;
+const TAP_THRESHOLD = 5;
 
 type Phase = 'tapping' | 'hatching' | 'naming';
 
@@ -31,7 +32,7 @@ export function HatchingIntroScreen({ onComplete }: Props) {
   const [shakeTrigger, setShakeTrigger] = useState(0);
 
   const progress = tapCount / TAP_THRESHOLD;
-  const crackLevel = tapCount >= 9 ? 3 : tapCount >= 6 ? 2 : tapCount >= 3 ? 1 : 0;
+  const crackLevel = tapCount >= 4 ? 3 : tapCount >= 3 ? 2 : tapCount >= 1 ? 1 : 0;
 
   const handleEggTap = useCallback(() => {
     if (phase !== 'tapping') return;
@@ -177,35 +178,30 @@ export function HatchingIntroScreen({ onComplete }: Props) {
                 {/* Egg inner — remounts on each tap for spring shake */}
                 <motion.div
                   key={shakeTrigger}
-                  initial={shakeTrigger > 0 ? {
-                    rotate: shakeTrigger % 2 === 0 ? -14 : 14,
-                    scale: 1.07,
-                  } : {}}
-                  animate={{ rotate: 0, scale: 1 }}
-                  transition={{ type: 'spring', stiffness: 480, damping: 11 }}
+                  initial={shakeTrigger > 0 ? { scale: 1.09 } : {}}
+                  animate={shakeTrigger > 0 ? {
+                    rotate: [0, 15, -12, 9, -6, 3, 0],
+                    scale: [1.09, 1.06, 1.04, 1.02, 1.01, 1, 1],
+                  } : { rotate: 0, scale: 1 }}
+                  transition={{ duration: 0.52, ease: 'easeOut' }}
                   whileTap={{ scale: 0.91 }}
-                  style={{ position: 'relative', width: 110, height: 140 }}
+                  style={{ position: 'relative', width: 228, height: 290 }}
                 >
-                  {/* Egg body */}
-                  <div style={{
-                    position: 'absolute', inset: 0,
-                    borderRadius: '50% 50% 50% 50% / 60% 60% 40% 40%',
-                    background: `radial-gradient(ellipse at 38% 32%, rgba(255,255,255,0.92) 0%, rgba(220,200,255,0.87) 40%, rgba(${175 - Math.floor(progress * 25)},${138 + Math.floor(progress * 22)},255,0.82) 100%)`,
-                    boxShadow: `0 0 ${22 + progress * 52}px rgba(168,85,247,${0.32 + progress * 0.45}), 0 0 ${38 + progress * 28}px rgba(100,150,255,${0.12 + progress * 0.14}), inset 0 -8px 20px rgba(100,0,200,0.1), 0 8px 24px rgba(0,0,0,0.38)`,
-                    border: `2px solid rgba(255,255,255,${0.44 + progress * 0.28})`,
-                  }} />
-                  {/* Shine spot */}
-                  <div style={{
-                    position: 'absolute', top: '12%', left: '24%',
-                    width: '28%', height: '22%',
-                    borderRadius: '50%',
-                    background: 'radial-gradient(circle, rgba(255,255,255,0.85) 0%, transparent 100%)',
-                    transform: 'rotate(-20deg)',
-                  }} />
+                  {/* Egg image */}
+                  <img
+                    src={startingEggImg}
+                    alt="egg"
+                    style={{
+                      position: 'absolute', inset: 0,
+                      width: '100%', height: '100%',
+                      objectFit: 'contain',
+                      filter: `drop-shadow(0 0 ${12 + progress * 32}px rgba(168,85,247,${0.4 + progress * 0.45}))`,
+                    }}
+                  />
                   {/* Crack SVG layer 1 */}
                   {crackLevel >= 1 && (
                     <motion.svg initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                      width="110" height="140" viewBox="0 0 110 140"
+                      width="100%" height="100%" viewBox="0 0 110 140"
                       style={{ position: 'absolute', top: 0, left: 0, pointerEvents: 'none' }}>
                       <path d="M56,34 L52,58 L61,76 L55,102" stroke="rgba(110,35,170,0.52)" strokeWidth="2" fill="none" strokeLinecap="round" />
                     </motion.svg>
@@ -213,7 +209,7 @@ export function HatchingIntroScreen({ onComplete }: Props) {
                   {/* Crack SVG layer 2 */}
                   {crackLevel >= 2 && (
                     <motion.svg initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                      width="110" height="140" viewBox="0 0 110 140"
+                      width="100%" height="100%" viewBox="0 0 110 140"
                       style={{ position: 'absolute', top: 0, left: 0, pointerEvents: 'none' }}>
                       <path d="M37,50 L44,66 L38,82" stroke="rgba(110,35,170,0.42)" strokeWidth="1.5" fill="none" strokeLinecap="round" />
                       <path d="M76,46 L70,64 L75,80" stroke="rgba(110,35,170,0.42)" strokeWidth="1.5" fill="none" strokeLinecap="round" />
@@ -222,7 +218,7 @@ export function HatchingIntroScreen({ onComplete }: Props) {
                   {/* Crack SVG layer 3 */}
                   {crackLevel >= 3 && (
                     <motion.svg initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                      width="110" height="140" viewBox="0 0 110 140"
+                      width="100%" height="100%" viewBox="0 0 110 140"
                       style={{ position: 'absolute', top: 0, left: 0, pointerEvents: 'none' }}>
                       <path d="M50,27 L45,50 L54,63 L47,84" stroke="rgba(130,50,200,0.5)" strokeWidth="1.5" fill="none" strokeLinecap="round" />
                       <path d="M67,30 L73,56 L64,72" stroke="rgba(130,50,200,0.46)" strokeWidth="1.5" fill="none" strokeLinecap="round" />
@@ -232,21 +228,6 @@ export function HatchingIntroScreen({ onComplete }: Props) {
               </motion.div>
             </div>
 
-            {/* Progress dots */}
-            <div className="flex gap-2 mt-10">
-              {Array.from({ length: TAP_THRESHOLD }, (_, i) => (
-                <motion.div
-                  key={i}
-                  className="rounded-full"
-                  style={{
-                    width: 9, height: 9,
-                    background: i < tapCount ? 'rgba(168,85,247,0.95)' : 'rgba(255,255,255,0.14)',
-                  }}
-                  animate={i === tapCount - 1 ? { scale: [1, 1.9, 1] } : {}}
-                  transition={{ duration: 0.28 }}
-                />
-              ))}
-            </div>
           </motion.div>
         )}
 
@@ -287,16 +268,19 @@ export function HatchingIntroScreen({ onComplete }: Props) {
 
             {/* Egg shattering */}
             <motion.div
-              style={{ width: 110, height: 140, position: 'absolute' }}
+              style={{ width: 228, height: 290, position: 'absolute' }}
               animate={{ scale: [1, 1.45, 0.15, 0], rotate: [0, -22, 22, 0], opacity: [1, 1, 0.4, 0] }}
               transition={{ duration: 0.75, ease: 'easeInOut' }}
             >
-              <div style={{
-                width: '100%', height: '100%',
-                borderRadius: '50% 50% 50% 50% / 60% 60% 40% 40%',
-                background: 'radial-gradient(ellipse at 38% 32%, rgba(255,255,255,0.95) 0%, rgba(220,200,255,0.9) 40%, rgba(150,120,255,0.85) 100%)',
-                boxShadow: '0 0 90px rgba(168,85,247,0.95)',
-              }} />
+              <img
+                src={startingEggImg}
+                alt="egg"
+                style={{
+                  width: '100%', height: '100%',
+                  objectFit: 'contain',
+                  filter: 'drop-shadow(0 0 40px rgba(168,85,247,0.95))',
+                }}
+              />
             </motion.div>
 
             {/* Axolotl pops in */}
