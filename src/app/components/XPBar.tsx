@@ -20,7 +20,7 @@ export function XPBar({ currentXP, nextLevelXP, level }: XPBarProps) {
             <span className="text-white text-xs font-bold">Level {level}</span>
           </motion.div>
           <span className="text-white/60 text-xs font-medium">
-            {currentXP} / {nextLevelXP} XP
+            {Math.round(currentXP)} / {nextLevelXP} XP
           </span>
         </div>
       </div>

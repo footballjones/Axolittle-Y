@@ -705,7 +705,7 @@ export default function App() {
                         />
                       </div>
                       <div className="flex items-center gap-2 pb-0.5 mt-0.5">
-                        <span className="text-white/50 text-[9px] font-medium">{currentLevelXP}/{nextLevelXP} XP</span>
+                        <span className="text-white/50 text-[9px] font-medium">{Math.round(currentLevelXP)}/{nextLevelXP} XP</span>
                         <span className="text-white/30 text-[9px]">·</span>
                         <span className="text-white/50 text-[9px] font-medium capitalize">Stage: {axolotl.stage}</span>
                         {axolotl.rarity && (
