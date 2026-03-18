@@ -297,6 +297,8 @@ export default function App() {
   const [showScrollHint, setShowScrollHint] = useState(true);
   const hasInitiallyScrolled = useRef(false);
   const isCenteringScroll = useRef(false);
+  // Prevents the swipe-tutorial advance from firing more than once
+  const swipeTutDoneRef = useRef(false);
 
   // Deducts 1 energy when a mini-game attempt begins.
   // Uses functional updater so it's always reading fresh state.
@@ -1549,6 +1551,15 @@ export default function App() {
                         hasInitiallyScrolled.current = true;
                         setShowScrollHint(false);
                       }
+                      // Swipe tutorial: advance to feed step after 1 s
+                      if (gameState?.tutorialStep === 'swipe' && !swipeTutDoneRef.current) {
+                        swipeTutDoneRef.current = true;
+                        setTimeout(() => {
+                          setGameState(s =>
+                            s?.tutorialStep === 'swipe' ? { ...s, tutorialStep: 'feed' } : s
+                          );
+                        }, 1000);
+                      }
                     }}
                   >
                     {/* Wider Aquarium Container */}
@@ -1694,6 +1705,54 @@ export default function App() {
                       </motion.div>
                     )}
                   </AnimatePresence>
+
+                  {/* ── Swipe tutorial — very first prompt for brand-new players ── */}
+                  {/* No dark overlay: we WANT them to see the full tank and swipe freely */}
+                  {gameState.tutorialStep === 'swipe' && (
+                    <motion.div
+                      className="absolute inset-0 pointer-events-none"
+                      style={{ zIndex: 15 }}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.6, delay: 0.6 }}
+                    >
+                      {/* Bubble sits just above the "Swipe to Explore" hint at bottom-20 (80px) */}
+                      <motion.div
+                        className="absolute left-0 right-0 flex flex-col items-center gap-1"
+                        style={{ bottom: '148px' }}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 1.0, duration: 0.4 }}
+                      >
+                        <div
+                          className="rounded-2xl px-5 py-3 shadow-2xl text-center"
+                          style={{
+                            background: 'rgba(255,255,255,0.97)',
+                            border: '2.5px solid rgba(6,182,212,0.75)',
+                            boxShadow: '0 8px 32px rgba(6,182,212,0.4)',
+                            maxWidth: 240,
+                          }}
+                        >
+                          <p className="text-slate-800 text-[13px] font-bold leading-snug">
+                            Welcome to your aquarium! 🌊
+                          </p>
+                          <p className="text-slate-500 text-[11.5px] leading-snug mt-0.5">
+                            Swipe <span className="text-cyan-600 font-bold">left & right</span> to explore your whole tank
+                          </p>
+                        </div>
+                        {/* Downward caret pointing toward the animated scroll hint below */}
+                        <div
+                          className="w-0 h-0"
+                          style={{
+                            borderLeft: '8px solid transparent',
+                            borderRight: '8px solid transparent',
+                            borderTop: '9px solid rgba(255,255,255,0.97)',
+                          }}
+                        />
+                      </motion.div>
+                    </motion.div>
+                  )}
 
                   {/* Tutorial overlay — rendered inside the aquarium relative container */}
                   {(gameState.tutorialStep === 'feed' || gameState.tutorialStep === 'eat' || gameState.tutorialStep === 'xp-tip') && (

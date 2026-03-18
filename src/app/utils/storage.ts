@@ -224,7 +224,7 @@ export function getInitialGameState(): GameState {
     lastLoginDate: undefined,
     loginStreak: 0,
     lastLoginBonusDate: undefined,
-    tutorialStep: 'feed',      // Show feeding tutorial on first ever play
+    tutorialStep: 'swipe',     // First tutorial: prompt the player to swipe and explore
     cleanTutorialSeen: false,  // Show cleaning tutorial on first poop appearance
     waterTutorialSeen: false,  // Show water-change tutorial after poop tutorial
   };

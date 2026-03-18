@@ -119,7 +119,7 @@ export interface GameState {
   recessiveExpressed?: boolean;    // Ephemeral: set true in handleHatchEgg when recessive genes expressed
   // ── Tutorial ────────────────────────────────────────────────────────────────
   // undefined = existing save (skip tutorial). 'feed'→'eat'→'xp-tip'→'done' on new games.
-  tutorialStep?: 'feed' | 'eat' | 'xp-tip' | 'done';
+  tutorialStep?: 'swipe' | 'feed' | 'eat' | 'xp-tip' | 'done';
   // undefined = existing save (skip). false = new game, not yet seen. true = completed.
   cleanTutorialSeen?: boolean;
   juvenileUnlockSeen?: boolean; // True once the Juvenile stage unlock modal has been shown
