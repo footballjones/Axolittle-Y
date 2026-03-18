@@ -249,6 +249,8 @@ export function useGameActions({
         axolotl: updated,
         miniGamesLockedUntil: Date.now() + 2 * 60 * 60 * 1000, // lock for 2 hours
         totalWaterChanges: (prev.totalWaterChanges ?? 0) + 1,
+        // Mark water tutorial complete on first ever water change
+        waterTutorialSeen: prev.waterTutorialSeen === false ? true : prev.waterTutorialSeen,
       };
       return withAchievements(next);
     });
@@ -523,6 +525,12 @@ export function useGameActions({
         if (!isEggReady(prev.incubatorEgg)) return prev;
         
         const newAxolotl = hatchEgg(prev.incubatorEgg, name);
+
+        // For brand-new players (waterTutorialSeen === false), start water quality
+        // at 70 so the water-change tutorial is immediately relevant.
+        if (prev.waterTutorialSeen === false) {
+          newAxolotl.stats = { ...newAxolotl.stats, waterQuality: 70 };
+        }
 
         const welcomePoop: PoopItem = {
           id: `poop-initial-${Date.now()}`,

@@ -118,10 +118,11 @@ export interface GameState {
   uniqueGamesPlayed?: string[];    // Game IDs ever played (for all-rounder achievement)
   recessiveExpressed?: boolean;    // Ephemeral: set true in handleHatchEgg when recessive genes expressed
   // ── Tutorial ────────────────────────────────────────────────────────────────
-  // undefined = existing save (skip tutorial). 'feed'→'eat'→'done' on new games.
-  tutorialStep?: 'feed' | 'eat' | 'done';
+  // undefined = existing save (skip tutorial). 'feed'→'eat'→'xp-tip'→'done' on new games.
+  tutorialStep?: 'feed' | 'eat' | 'xp-tip' | 'done';
   // undefined = existing save (skip). false = new game, not yet seen. true = completed.
   cleanTutorialSeen?: boolean;
+  juvenileUnlockSeen?: boolean; // True once the Juvenile stage unlock modal has been shown
   // ── Jimmy & Chubs ────────────────────────────────────────────────────────────
   lastJimmyGift?: number; // Unix-ms timestamp of last gift received from Jimmy & Chubs
   // ── Audio Settings ────────────────────────────────────────────────────────────
@@ -134,9 +135,10 @@ export interface GameState {
   feedXpDate?: string;   // YYYY-MM-DD when feedXpToday was last reset
   firstFeedXpGranted?: boolean; // True after the first-ever eat grants a full level-up XP
   // ── Stat tutorial ────────────────────────────────────────────────────────
-  statTutorialSeen?: boolean; // True once the player taps the stat assignment banner
-  playTutorialSeen?: boolean; // True once the player enters play mode for the first time
-  miniGameTutorialSeen?: boolean; // True once the player navigates to the mini games screen
+  statTutorialSeen?: boolean;      // True once the player taps the stat assignment banner
+  playTutorialSeen?: boolean;      // True once the player enters play mode for the first time
+  waterTutorialSeen?: boolean;     // True once the player completes their first water change
+  miniGameTutorialSeen?: boolean;  // True once the player navigates to the mini games screen
 }
 
 export interface Friend {

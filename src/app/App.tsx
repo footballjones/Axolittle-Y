@@ -82,6 +82,22 @@ export default function App() {
   const [playMode, setPlayMode] = useState(false);
   const playModeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // ── Tutorial pacing ───────────────────────────────────────────────────────
+  // When a tutorial step completes we don't jump immediately to the next one.
+  // `tutorialAllowed` is set false and re-enabled after the configured delay so
+  // the player has a moment to breathe between prompts.
+  const [tutorialAllowed, setTutorialAllowed] = useState(true);
+  const tutorialDelayRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const delayNextTutorial = useCallback((ms: number) => {
+    setTutorialAllowed(false);
+    if (tutorialDelayRef.current) clearTimeout(tutorialDelayRef.current);
+    tutorialDelayRef.current = setTimeout(() => {
+      setTutorialAllowed(true);
+      tutorialDelayRef.current = null;
+    }, ms);
+  }, []);
+  // ─────────────────────────────────────────────────────────────────────────
+
   // (level-up stat data is now tracked via gameState.pendingStatPoints)
   /** Level-up fanfare overlay: shows when the axolotl gains a level */
   const [levelUpInfo, setLevelUpInfo] = useState<{ level: number } | null>(null);
@@ -432,6 +448,36 @@ export default function App() {
       setShowJuvenileUnlock(true);
     }
   }, [gameState?.axolotl?.stage, gameState?.juvenileUnlockSeen]);
+
+  // ── Tutorial pacing: fire delays whenever a tutorial step completes ─────────
+  // stat tutorial seen → 1 s before play tutorial appears
+  const prevStatTut = useRef(gameState?.statTutorialSeen);
+  useEffect(() => {
+    if (gameState?.statTutorialSeen && !prevStatTut.current) delayNextTutorial(1000);
+    prevStatTut.current = gameState?.statTutorialSeen;
+  }, [gameState?.statTutorialSeen, delayNextTutorial]);
+
+  // play tutorial seen (Playtime tapped) → 4 s so the player can actually play
+  const prevPlayTut = useRef(gameState?.playTutorialSeen);
+  useEffect(() => {
+    if (gameState?.playTutorialSeen && !prevPlayTut.current) delayNextTutorial(4000);
+    prevPlayTut.current = gameState?.playTutorialSeen;
+  }, [gameState?.playTutorialSeen, delayNextTutorial]);
+
+  // poop tutorial done (first poop cleaned) → 1 s before water tutorial
+  const prevCleanTut = useRef(gameState?.cleanTutorialSeen);
+  useEffect(() => {
+    if (gameState?.cleanTutorialSeen === true && prevCleanTut.current === false) delayNextTutorial(1000);
+    prevCleanTut.current = gameState?.cleanTutorialSeen;
+  }, [gameState?.cleanTutorialSeen, delayNextTutorial]);
+
+  // water tutorial done (water change confirmed) → 1 s before mini-game tutorial
+  const prevWaterTut = useRef(gameState?.waterTutorialSeen);
+  useEffect(() => {
+    if (gameState?.waterTutorialSeen === true && prevWaterTut.current === false) delayNextTutorial(1000);
+    prevWaterTut.current = gameState?.waterTutorialSeen;
+  }, [gameState?.waterTutorialSeen, delayNextTutorial]);
+  // ──────────────────────────────────────────────────────────────────────────
 
   // Stats decay, evolution, and energy regen are handled by useWellbeingEngine
 
@@ -1659,7 +1705,7 @@ export default function App() {
                   )}
 
                   {/* Stat assignment tutorial — shown after first level-up */}
-                  {(gameState.pendingStatPoints ?? 0) > 0 && !gameState.statTutorialSeen && gameState.tutorialStep === 'done' && !activeModal && (
+                  {(gameState.pendingStatPoints ?? 0) > 0 && !gameState.statTutorialSeen && gameState.tutorialStep === 'done' && !activeModal && tutorialAllowed && (
                     <motion.div
                       className="absolute inset-0 pointer-events-none"
                       style={{ zIndex: 45 }}
@@ -1746,7 +1792,7 @@ export default function App() {
                   )}
 
                   {/* Play tutorial — shown after stat tutorial is completed */}
-                  {gameState.statTutorialSeen && !gameState.playTutorialSeen && (gameState.pendingStatPoints ?? 0) === 0 && gameState.tutorialStep === 'done' && !activeModal && !playMode && (
+                  {gameState.statTutorialSeen && !gameState.playTutorialSeen && (gameState.pendingStatPoints ?? 0) === 0 && gameState.tutorialStep === 'done' && !activeModal && !playMode && tutorialAllowed && (
                     <motion.div
                       className="absolute inset-0 pointer-events-none"
                       style={{ zIndex: 45 }}
@@ -1795,8 +1841,8 @@ export default function App() {
                     </motion.div>
                   )}
 
-                  {/* Mini game tutorial — shown after poop tutorial is completed */}
-                  {gameState.playTutorialSeen && gameState.cleanTutorialSeen === true && !gameState.miniGameTutorialSeen && gameState.tutorialStep === 'done' && !activeModal && !playMode && (
+                  {/* Mini game tutorial — shown after water tutorial is completed */}
+                  {gameState.playTutorialSeen && gameState.cleanTutorialSeen === true && gameState.waterTutorialSeen === true && !gameState.miniGameTutorialSeen && gameState.tutorialStep === 'done' && !activeModal && !playMode && tutorialAllowed && (
                     <motion.div
                       className="absolute inset-0 pointer-events-none"
                       style={{ zIndex: 45 }}
@@ -1836,14 +1882,20 @@ export default function App() {
                             background: 'rgba(255,255,255,0.97)',
                             border: '2.5px solid rgba(99,102,241,0.75)',
                             boxShadow: '0 8px 32px rgba(99,102,241,0.4)',
-                            maxWidth: 230,
+                            maxWidth: 240,
                           }}
                         >
                           <p className="text-slate-800 text-[13px] font-bold leading-snug">
                             Play a mini game! 🎮
                           </p>
+                          <p className="text-slate-500 text-[11.5px] leading-snug mt-1">
+                            Tap the controller above to open mini games.
+                          </p>
                           <p className="text-slate-500 text-[11.5px] leading-snug mt-0.5">
-                            Tap the game controller above to earn XP and coins
+                            If games are locked from the water change, use <span className="text-violet-600 font-bold">Opals ✨</span> to unlock instantly.
+                          </p>
+                          <p className="text-indigo-600 text-[11.5px] font-bold leading-snug mt-1">
+                            Start with Axolotl Stacker 🏗️
                           </p>
                         </div>
                       </motion.div>
@@ -1856,7 +1908,9 @@ export default function App() {
                     const showCleanTutorial =
                       gameState.cleanTutorialSeen === false &&
                       gameState.playTutorialSeen === true &&
-                      (gameState.poopItems?.length ?? 0) > 0;
+                      (gameState.poopItems?.length ?? 0) > 0 &&
+                      !playMode &&
+                      tutorialAllowed;
                     return (
                       <AnimatePresence>
                         {showCleanTutorial && !cleaningMode && (
@@ -1919,13 +1973,80 @@ export default function App() {
                     );
                   })()}
 
+                  {/* ── Water quality tutorial — shown after poop is cleaned ── */}
+                  {gameState.cleanTutorialSeen === true &&
+                    gameState.waterTutorialSeen === false &&
+                    gameState.tutorialStep === 'done' &&
+                    !activeModal && !playMode && !cleaningMode && tutorialAllowed && (
+                    <motion.div
+                      className="absolute inset-0 pointer-events-none"
+                      style={{ zIndex: 45 }}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.4 }}
+                    >
+                      {/* Dim overlay */}
+                      <div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.45)' }} />
+
+                      {/* Bubble above Water Quality button (4th of 4 = ~87.5% from left) */}
+                      <motion.div
+                        className="absolute bottom-[82px] flex flex-col items-center gap-0.5"
+                        style={{ left: '87.5%' }}
+                        initial={{ opacity: 0, y: 10, x: '-50%' }}
+                        animate={{ opacity: 1, y: 0, x: '-50%' }}
+                        transition={{ delay: 0.3, duration: 0.4 }}
+                      >
+                        <div
+                          className="rounded-2xl px-4 py-3 shadow-2xl text-center max-w-[210px]"
+                          style={{
+                            background: 'rgba(255,255,255,0.97)',
+                            border: '2.5px solid rgba(99,102,241,0.75)',
+                            boxShadow: '0 8px 32px rgba(99,102,241,0.4)',
+                          }}
+                        >
+                          <p className="text-slate-800 text-[13px] font-bold leading-snug">
+                            Water quality is low! 💧
+                          </p>
+                          <p className="text-slate-500 text-[11.5px] leading-snug mt-0.5">
+                            Tap <span className="text-indigo-600 font-bold">Water Quality</span> to do a water change
+                          </p>
+                        </div>
+                        {/* Downward caret */}
+                        <div
+                          className="w-0 h-0"
+                          style={{
+                            borderLeft: '9px solid transparent',
+                            borderRight: '9px solid transparent',
+                            borderTop: '9px solid rgba(255,255,255,0.97)',
+                          }}
+                        />
+                        {/* Bouncing finger */}
+                        <motion.span
+                          className="text-2xl select-none"
+                          animate={{ y: [0, 8, 0] }}
+                          transition={{ duration: 0.85, repeat: Infinity, ease: 'easeInOut' }}
+                        >
+                          👇
+                        </motion.span>
+                      </motion.div>
+                    </motion.div>
+                  )}
+
                   {/* Floating Action Buttons — lifted above tutorial overlays when needed */}
                   {(() => {
                     const cleanTutActive =
                       gameState.cleanTutorialSeen === false &&
                       gameState.playTutorialSeen === true &&
                       (gameState.poopItems?.length ?? 0) > 0 &&
-                      !cleaningMode;
+                      !playMode &&
+                      !cleaningMode &&
+                      tutorialAllowed;
+                    const waterTutActive =
+                      gameState.cleanTutorialSeen === true &&
+                      gameState.waterTutorialSeen === false &&
+                      gameState.tutorialStep === 'done' &&
+                      !activeModal && !playMode && !cleaningMode && tutorialAllowed;
                     const playTutActive =
                       gameState.statTutorialSeen === true &&
                       !gameState.playTutorialSeen &&
@@ -1933,7 +2054,7 @@ export default function App() {
                       gameState.tutorialStep === 'done' &&
                       !activeModal && !playMode;
                     const needsLift =
-                      gameState.tutorialStep === 'feed' || cleanTutActive || playTutActive;
+                      gameState.tutorialStep === 'feed' || cleanTutActive || playTutActive || waterTutActive;
                     return (
                       <div
                         className={`absolute bottom-0 left-0 right-0 pb-[max(0.75rem,env(safe-area-inset-bottom))] ${
