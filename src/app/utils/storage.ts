@@ -1,4 +1,4 @@
-import { GameState, Axolotl, Friend } from '../types/game';
+import { GameState, Friend } from '../types/game';
 import { GAME_CONFIG } from '../config/game';
 
 export const JIMMY_CHUBS_ID = 'jimmy-chubs';

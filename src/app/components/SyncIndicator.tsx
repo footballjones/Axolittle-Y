@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Cloud, CloudOff, Loader2, Check } from 'lucide-react';
+import { Cloud, CloudOff, Loader2, Check, WifiOff } from 'lucide-react';
 import type { SyncStatus } from '../hooks/useCloudSync';
 
 interface SyncIndicatorProps {
@@ -8,28 +8,40 @@ interface SyncIndicatorProps {
 }
 
 /**
- * A tiny indicator shown in the header HUD displaying cloud-sync state.
- * Disappears when idle / guest and no action is needed.
+ * Tiny HUD indicator showing cloud-sync state.
+ * - 'synced'  → green checkmark, auto-hides after 2 s
+ * - 'syncing' → spinning loader
+ * - 'error'   → red cloud-off, stays visible until status changes
+ * - 'offline' → amber wifi-off, stays visible until back online
+ * - 'idle' / 'guest' → hidden
  */
 export function SyncIndicator({ status }: SyncIndicatorProps) {
-  // Keep "synced" visible for 2 s then fade back to idle
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    if (status === 'idle') { setVisible(false); return; }
+    if (status === 'idle' || status === 'guest') {
+      setVisible(false);
+      return;
+    }
     setVisible(true);
+    // Synced is transient — hide after 2 s
     if (status === 'synced') {
       const t = setTimeout(() => setVisible(false), 2000);
       return () => clearTimeout(t);
     }
+    // error / offline / syncing → stay visible
   }, [status]);
 
-  const config: Record<SyncStatus, { icon: React.ElementType; color: string; label: string; spin?: boolean }> = {
-    idle:    { icon: Cloud,    color: 'text-white/40', label: '' },
-    guest:   { icon: Cloud,    color: 'text-white/40', label: 'Guest' },
-    syncing: { icon: Loader2,  color: 'text-sky-300',  label: 'Saving…', spin: true },
-    synced:  { icon: Check,    color: 'text-green-400',label: 'Saved' },
-    error:   { icon: CloudOff, color: 'text-red-400',  label: 'Sync error' },
+  const config: Record<
+    SyncStatus,
+    { icon: React.ElementType; color: string; label: string; spin?: boolean }
+  > = {
+    idle:    { icon: Cloud,    color: 'text-white/40',  label: '' },
+    guest:   { icon: Cloud,    color: 'text-white/40',  label: 'Guest' },
+    syncing: { icon: Loader2,  color: 'text-sky-300',   label: 'Saving…', spin: true },
+    synced:  { icon: Check,    color: 'text-green-400', label: 'Saved' },
+    error:   { icon: CloudOff, color: 'text-red-400',   label: 'Sync error' },
+    offline: { icon: WifiOff,  color: 'text-amber-400', label: 'Offline' },
   };
 
   const { icon: Icon, color, label, spin } = config[status];

@@ -29,7 +29,6 @@ export function createRebirthEgg(parent: Axolotl, pendingName?: string): Egg {
   // Intellect is the primary driver but strength/stamina/speed contribute too,
   // so builds that spread stats aren't penalized vs pure INT stackers.
   const { intellect, strength, stamina, speed } = parent.secondaryStats;
-  const baseIntellect = intellect;
   const poolScore = Math.floor(
     intellect * 0.5 +
     strength * 0.2 +
@@ -65,7 +64,7 @@ export function createRebirthEgg(parent: Axolotl, pendingName?: string): Egg {
   let rarity: 'Common' | 'Rare' | 'Epic' | 'Legendary' | 'Mythic' = minRarity;
   const rand = Math.random();
 
-  if (parent.generation >= 5 || effectiveScore >= 65) {
+  if (parent.generation >= 6 || effectiveScore >= 65) {
     if (rand < 0.05) {
       rarity = 'Mythic';
     } else if (rand < 0.25) {
@@ -77,7 +76,7 @@ export function createRebirthEgg(parent: Axolotl, pendingName?: string): Egg {
     } else {
       rarity = 'Common';
     }
-  } else if (parent.generation >= 4 || effectiveScore >= 50) {
+  } else if (parent.generation >= 5 || effectiveScore >= 50) {
     if (rand < 0.15) {
       rarity = 'Legendary';
     } else if (rand < 0.45) {

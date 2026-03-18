@@ -16,6 +16,7 @@ import { AxolotlDisplay } from './components/AxolotlDisplay';
 import { ActionButtons } from './components/ActionButtons';
 import { AquariumBackground } from './components/AquariumBackground';
 import { MiniGameMenu } from './components/MiniGameMenu';
+import { JuvenileUnlockModal } from './components/JuvenileUnlockModal';
 import { ShopModal } from './components/ShopModal';
 import { SocialModal } from './components/SocialModal';
 import { RebirthModal } from './components/RebirthModal';
@@ -53,6 +54,7 @@ import { useCloudSync, SyncStatus } from './hooks/useCloudSync';
 import { sendFriendAction, isSupabaseConfigured } from './services/supabase';
 import { LoginScreen } from './components/LoginScreen';
 import { SyncIndicator } from './components/SyncIndicator';
+import { SyncConflictModal } from './components/SyncConflictModal';
 import { JimmyChubsAquarium } from './components/JimmyChubsAquarium';
 import { LevelUpOverlay } from './components/LevelUpOverlay';
 import { JIMMY_CHUBS_FRIEND } from './utils/storage';
@@ -80,12 +82,28 @@ export default function App() {
   const [playMode, setPlayMode] = useState(false);
   const playModeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // ── DEV CHEAT: bump to level 10 for testing — remove before shipping ──────
+  const devCheatApplied = useRef(false);
+  useEffect(() => {
+    if (devCheatApplied.current) return;
+    if (!gameState?.axolotl) return;
+    devCheatApplied.current = true;
+    setGameState(prev => {
+      if (!prev?.axolotl) return prev;
+      return { ...prev, axolotl: { ...prev.axolotl, experience: 46, stage: 'juvenile', lastLevel: 9 }, juvenileUnlockSeen: false };
+    });
+  }, [gameState?.axolotl?.id]); // fires once when axolotl first loads
+  // ── END DEV CHEAT ──────────────────────────────────────────────────────────
+
   // (level-up stat data is now tracked via gameState.pendingStatPoints)
   /** Level-up fanfare overlay: shows when the axolotl gains a level */
   const [levelUpInfo, setLevelUpInfo] = useState<{ level: number } | null>(null);
 
   /** Show Jimmy & Chubs's aquarium */
   const [showJimmyAquarium, setShowJimmyAquarium] = useState(false);
+  const [showJuvenileUnlock, setShowJuvenileUnlock] = useState(false);
+  /** Populated when a cloud pull finds two meaningful saves — clears after user resolves. */
+  const [conflictSaves, setConflictSaves] = useState<{ local: GameState; cloud: GameState } | null>(null);
 
   // ── Auth ──────────────────────────────────────────────────────────────────
   const { user, isLoading: authLoading, isGuest, signOut } = useAuth();
@@ -132,6 +150,9 @@ export default function App() {
     onCloudStateLoaded: (state: GameState) => {
       if (!state.friendCode) state = { ...state, friendCode: generatePermanentFriendCode() };
       setGameState(state);
+    },
+    onConflict: (local, cloud) => {
+      setConflictSaves({ local, cloud });
     },
     onStatusChange: setSyncStatus,
     onFriendCodeCollision: () => {
@@ -414,6 +435,17 @@ export default function App() {
     }
   }, [gameState]);
 
+  // Show Juvenile unlock modal the first time the axolotl reaches the Juvenile stage
+  useEffect(() => {
+    if (
+      gameState?.axolotl?.stage === 'juvenile' &&
+      !gameState.juvenileUnlockSeen &&
+      !showJuvenileUnlock
+    ) {
+      setShowJuvenileUnlock(true);
+    }
+  }, [gameState?.axolotl?.stage, gameState?.juvenileUnlockSeen]);
+
   // Stats decay, evolution, and energy regen are handled by useWellbeingEngine
 
   const handleStart = useCallback((name: string) => {
@@ -653,6 +685,9 @@ export default function App() {
                     </div>
                   </motion.button>
 
+                  {/* Cloud-sync status dot */}
+                  <SyncIndicator status={syncStatus} />
+
                   {/* Hamburger Menu Button */}
                   <motion.button
                     ref={menuButtonRef}
@@ -707,7 +742,7 @@ export default function App() {
                         />
                       </div>
                       <div className="flex items-center gap-2 pb-0.5 mt-0.5">
-                        <span className="text-white/50 text-[9px] font-medium">{Math.round(currentLevelXP)}/{nextLevelXP} XP</span>
+                        <span className="text-white/50 text-[9px] font-medium">{Math.floor(currentLevelXP)}/{nextLevelXP} XP</span>
                         <span className="text-white/30 text-[9px]">·</span>
                         <span className="text-white/50 text-[9px] font-medium capitalize">Stage: {axolotl.stage}</span>
                         {axolotl.rarity && (
@@ -1614,10 +1649,11 @@ export default function App() {
                   </AnimatePresence>
 
                   {/* Tutorial overlay — rendered inside the aquarium relative container */}
-                  {(gameState.tutorialStep === 'feed' || gameState.tutorialStep === 'eat') && (
+                  {(gameState.tutorialStep === 'feed' || gameState.tutorialStep === 'eat' || gameState.tutorialStep === 'xp-tip') && (
                     <FeedingTutorial
                       step={gameState.tutorialStep}
                       axolotlName={axolotl.name}
+                      onXpTipDismiss={() => setGameState(s => s ? { ...s, tutorialStep: 'done' } : s)}
                     />
                   )}
 
@@ -1663,7 +1699,7 @@ export default function App() {
                             background: 'rgba(255,255,255,0.97)',
                             border: '2.5px solid rgba(245,158,11,0.75)',
                             boxShadow: '0 8px 32px rgba(245,158,11,0.4)',
-                            maxWidth: 230,
+                            maxWidth: 250,
                           }}
                         >
                           <p className="text-slate-800 text-[13px] font-bold leading-snug">
@@ -1672,6 +1708,37 @@ export default function App() {
                           <p className="text-slate-500 text-[11.5px] leading-snug mt-0.5">
                             Tap the glowing button above to assign your stat point!
                           </p>
+
+                          {/* Divider */}
+                          <div className="my-2.5 h-px bg-slate-100" />
+
+                          {/* Why stats matter */}
+                          <p className="text-slate-700 text-[12px] font-bold leading-snug mb-1">
+                            🥚 Why do stats matter?
+                          </p>
+                          <p className="text-slate-500 text-[11px] leading-snug">
+                            The stronger your axolotl, the better chance you get a{' '}
+                            <span className="text-cyan-600 font-bold">Rare</span>,{' '}
+                            <span className="text-fuchsia-600 font-bold">Epic</span>, or even{' '}
+                            <span className="text-amber-500 font-bold">Legendary</span> egg when you rebirth!
+                          </p>
+
+                          {/* Rarity ladder */}
+                          <div className="mt-2 flex items-center justify-center gap-1">
+                            {['⚪ Common','🔵 Rare','🟣 Epic','🟡 Legendary','🔴 Mythic'].map((r, i) => (
+                              <div
+                                key={i}
+                                className="text-[8.5px] font-bold px-1 py-0.5 rounded-md leading-none"
+                                style={{
+                                  background: ['rgba(148,163,184,0.15)','rgba(34,211,238,0.12)','rgba(168,85,247,0.12)','rgba(251,191,36,0.15)','rgba(239,68,68,0.12)'][i],
+                                  color: ['#94a3b8','#06b6d4','#a855f7','#d97706','#ef4444'][i],
+                                  border: `1px solid ${['rgba(148,163,184,0.3)','rgba(34,211,238,0.3)','rgba(168,85,247,0.3)','rgba(251,191,36,0.3)','rgba(239,68,68,0.3)'][i]}`,
+                                }}
+                              >
+                                {r}
+                              </div>
+                            ))}
+                          </div>
                         </div>
                       </motion.div>
                     </motion.div>
@@ -1911,6 +1978,7 @@ export default function App() {
                 <MiniGameMenu
                   onClose={() => setCurrentScreen('home')}
                   miniGamesLockedUntil={gameState.miniGamesLockedUntil}
+                  currentLevel={currentLevel}
                   onSelectGame={(gameId) => {
                     if (!gameState) return;
 
@@ -2074,6 +2142,39 @@ export default function App() {
       {showAuthOverlay && (
         <LoginScreen onClose={() => setShowAuthOverlay(false)} />
       )}
+
+      {/* Cloud save conflict resolution — shown before anything else when two meaningful saves exist */}
+      {conflictSaves && (
+        <SyncConflictModal
+          localState={conflictSaves.local}
+          cloudState={conflictSaves.cloud}
+          onKeepLocal={() => {
+            // User wants to keep what's on this device — dismiss and let the next
+            // debounced push overwrite the (older) cloud save naturally.
+            setConflictSaves(null);
+          }}
+          onUseCloud={() => {
+            // User chose the cloud save — hydrate app state with it.
+            let state = conflictSaves.cloud;
+            if (!state.friendCode) state = { ...state, friendCode: generatePermanentFriendCode() };
+            setGameState(state);
+            setConflictSaves(null);
+          }}
+        />
+      )}
+
+      {/* Juvenile stage unlock modal */}
+      <AnimatePresence>
+        {showJuvenileUnlock && gameState?.axolotl && (
+          <JuvenileUnlockModal
+            axolotlName={gameState.axolotl.name}
+            onClose={() => {
+              setShowJuvenileUnlock(false);
+              setGameState(s => s ? { ...s, juvenileUnlockSeen: true } : s);
+            }}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Level-up fanfare overlay */}
       <AnimatePresence>

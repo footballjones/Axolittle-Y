@@ -146,27 +146,6 @@ export function feedAxolotl(axolotl: Axolotl, amount: number = 25): Axolotl {
   };
 }
 
-export function playWithAxolotl(axolotl: Axolotl, amount: number = 20): Axolotl {
-  return {
-    ...axolotl,
-    stats: {
-      ...axolotl.stats,
-      happiness: Math.min(100, axolotl.stats.happiness + amount),
-    },
-    experience: axolotl.experience + 3,
-  };
-}
-
-export function cleanAquarium(axolotl: Axolotl, amount: number = 30): Axolotl {
-  return {
-    ...axolotl,
-    stats: {
-      ...axolotl.stats,
-      cleanliness: Math.min(100, axolotl.stats.cleanliness + amount),
-    },
-    experience: axolotl.experience + 2,
-  };
-}
 
 export function checkEvolution(axolotl: Axolotl): { axolotl: Axolotl; didLevelUp: boolean } {
   const level = calculateLevel(axolotl.experience);

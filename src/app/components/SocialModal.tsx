@@ -51,7 +51,7 @@ interface SocialModalProps {
   lineage: Axolotl[];
 }
 
-export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend, onRemoveFriend, onBreed, onGiftFriend, onPokeFriend, onVisitJimmy, lineage }: SocialModalProps) {
+export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend, onRemoveFriend, onBreed: _onBreed, onGiftFriend, onPokeFriend, onVisitJimmy, lineage }: SocialModalProps) {
   const [addFriendInput, setAddFriendInput] = useState('');
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<'friends' | 'lineage'>('friends');
