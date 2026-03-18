@@ -98,7 +98,7 @@ export function ActionButtons({
       disabled: false,
       value: stats.waterQuality,
       smallIcon: true,
-      cost: '150🪙',
+      cost: null,
       cantAfford: !canAffordWater,
     },
   ];
@@ -106,7 +106,7 @@ export function ActionButtons({
   return (
     <div className="space-y-2">
       <div className="grid grid-cols-4 gap-1.5">
-        {buttons.map(({ icon: Icon, label, onClick, emptyGradient, fillColor, glowColor, disabled, value, smallIcon, cost, cantAfford }) => {
+        {buttons.map(({ icon: Icon, label, onClick, emptyGradient, fillColor, glowColor, disabled, value, smallIcon, cantAfford }) => {
           const isLow = value < 30;
           return (
             <motion.button
@@ -232,13 +232,7 @@ export function ActionButtons({
                   <Icon className={`${smallIcon ? 'w-3.5 h-3.5' : 'w-4 h-4'} text-white drop-shadow-md`} strokeWidth={2.5} />
                 </motion.div>
                 <span className="text-[8px] font-bold text-white/90 tracking-tight drop-shadow-sm">{label}</span>
-                {cantAfford && cost ? (
-                  <span className="text-[7px] font-black text-red-300 tabular-nums drop-shadow-md leading-none">{cost}</span>
-                ) : cost ? (
-                  <span className="text-[7px] font-semibold text-white/60 tabular-nums drop-shadow-sm leading-none">{cost}</span>
-                ) : (
-                  <span className="text-[9px] font-bold text-white tabular-nums drop-shadow-md">{Math.round(value)}</span>
-                )}
+                <span className="text-[9px] font-bold text-white tabular-nums drop-shadow-md">{Math.round(value)}</span>
               </div>
             </motion.button>
           );

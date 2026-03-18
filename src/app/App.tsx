@@ -484,11 +484,15 @@ export default function App() {
   // Stats decay, evolution, and energy regen are handled by useWellbeingEngine
 
   const handleStart = useCallback((name: string) => {
-    const newAxolotl = generateAxolotl(name);
-    setGameState(prev => ({
-      ...(prev || getInitialGameState()),
-      axolotl: newAxolotl,
-    }));
+    setGameState(prev => {
+      const base = prev || getInitialGameState();
+      const axolotl = generateAxolotl(name);
+      // New players start with waterQuality 70 so the water-change tutorial feels relevant
+      const finalAxolotl = base.waterTutorialSeen === false
+        ? { ...axolotl, stats: { ...axolotl.stats, waterQuality: 70 } }
+        : axolotl;
+      return { ...base, axolotl: finalAxolotl };
+    });
   }, []);
 
   /** Applied after a rebirth egg hatches: sets the name on the freshly-created axolotl. */
