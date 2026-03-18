@@ -82,19 +82,6 @@ export default function App() {
   const [playMode, setPlayMode] = useState(false);
   const playModeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // ── DEV CHEAT: bump to level 10 for testing — remove before shipping ──────
-  const devCheatApplied = useRef(false);
-  useEffect(() => {
-    if (devCheatApplied.current) return;
-    if (!gameState?.axolotl) return;
-    devCheatApplied.current = true;
-    setGameState(prev => {
-      if (!prev?.axolotl) return prev;
-      return { ...prev, axolotl: { ...prev.axolotl, experience: 46, stage: 'juvenile', lastLevel: 9 }, juvenileUnlockSeen: false };
-    });
-  }, [gameState?.axolotl?.id]); // fires once when axolotl first loads
-  // ── END DEV CHEAT ──────────────────────────────────────────────────────────
-
   // (level-up stat data is now tracked via gameState.pendingStatPoints)
   /** Level-up fanfare overlay: shows when the axolotl gains a level */
   const [levelUpInfo, setLevelUpInfo] = useState<{ level: number } | null>(null);
