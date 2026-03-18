@@ -35,6 +35,13 @@ export function useWellbeingEngine({ axolotlId, setGameState }: UseWellbeingEngi
         const energyGained = energyRegenRate * elapsedSeconds;
         const newEnergy = Math.min(maxEnergy, currentEnergy + energyGained);
 
+        // NOTE: pendingStatPoints is intentionally NOT granted here.
+        // Stat points are the sole responsibility of the action handlers
+        // (handleEatFood, handleMiniGameEnd) which already update axolotl.lastLevel
+        // in sync with the XP change. If we also granted here we'd double-count
+        // every level-up because checkEvolution would still see level > lastLevel
+        // on the tick that runs right after an XP grant.
+        void didLevelUp; // stage evolution (the return value) is all we need
         return {
           ...stateWithUpdatedShrimp,
           ...gameStateUpdates,
@@ -42,9 +49,6 @@ export function useWellbeingEngine({ axolotlId, setGameState }: UseWellbeingEngi
           energy: newEnergy,
           maxEnergy,
           lastEnergyUpdate: now,
-          pendingStatPoints: didLevelUp
-            ? (stateWithUpdatedShrimp.pendingStatPoints ?? 0) + 1
-            : (stateWithUpdatedShrimp.pendingStatPoints ?? 0),
         };
       });
     }, 5000);
