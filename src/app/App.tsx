@@ -502,8 +502,22 @@ export default function App() {
       return;
     }
     setPlayMode(true);
-    // Mark play tutorial seen on first entry
-    setGameState(s => s && !s.playTutorialSeen ? { ...s, playTutorialSeen: true } : s);
+    // Mark play tutorial seen on first entry, and immediately spawn one tutorial
+    // poop so the poop-cleaning tutorial triggers right after play mode exits.
+    setGameState(s => {
+      if (!s) return s;
+      if (s.playTutorialSeen) return s; // already seen — nothing to do
+      const tutorialPoop = {
+        id: `poop-tutorial-${Date.now()}`,
+        x: 50, // center of tank so it's unmissable
+        createdAt: Date.now(),
+      };
+      return {
+        ...s,
+        playTutorialSeen: true,
+        poopItems: [...(s.poopItems ?? []), tutorialPoop],
+      };
+    });
     if (playModeTimerRef.current) clearTimeout(playModeTimerRef.current);
     playModeTimerRef.current = setTimeout(() => {
       setPlayMode(false);
@@ -1781,8 +1795,8 @@ export default function App() {
                     </motion.div>
                   )}
 
-                  {/* Mini game tutorial — shown after play tutorial is completed */}
-                  {gameState.playTutorialSeen && !gameState.miniGameTutorialSeen && gameState.tutorialStep === 'done' && !activeModal && !playMode && (
+                  {/* Mini game tutorial — shown after poop tutorial is completed */}
+                  {gameState.playTutorialSeen && gameState.cleanTutorialSeen === true && !gameState.miniGameTutorialSeen && gameState.tutorialStep === 'done' && !activeModal && !playMode && (
                     <motion.div
                       className="absolute inset-0 pointer-events-none"
                       style={{ zIndex: 45 }}
@@ -1837,9 +1851,11 @@ export default function App() {
                   )}
 
                   {/* ── First-time poop cleaning tutorial ── */}
+                  {/* Only shown after playTutorialSeen so it's sequenced, not random */}
                   {(() => {
                     const showCleanTutorial =
                       gameState.cleanTutorialSeen === false &&
+                      gameState.playTutorialSeen === true &&
                       (gameState.poopItems?.length ?? 0) > 0;
                     return (
                       <AnimatePresence>
@@ -1907,6 +1923,7 @@ export default function App() {
                   {(() => {
                     const cleanTutActive =
                       gameState.cleanTutorialSeen === false &&
+                      gameState.playTutorialSeen === true &&
                       (gameState.poopItems?.length ?? 0) > 0 &&
                       !cleaningMode;
                     const playTutActive =
