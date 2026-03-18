@@ -16,6 +16,26 @@ export function RebirthModal({ onClose, onConfirm, currentAxolotl }: RebirthModa
     'Breeding unlocked',
   ];
 
+  // ── Luck Meter ─────────────────────────────────────────────────────────────
+  const LUCK_BONUS_PER_STREAK = 5;
+  const streak = currentAxolotl.rebirthStreak ?? 0;
+  const effectiveScoreBonus = streak * LUCK_BONUS_PER_STREAK;
+  // Bar fills fully at streak 10
+  const luckPercent = Math.min(100, (streak / 10) * 100);
+
+  const luckLabel =
+    streak === 0 ? 'No bonus yet' :
+    streak < 3   ? 'Building luck...' :
+    streak < 6   ? 'Good luck bonus!' :
+    streak < 9   ? 'Almost there! 🔥' :
+                   'Max luck! ✨';
+
+  const luckBarColor =
+    luckPercent >= 80 ? 'from-amber-400 via-orange-400 to-rose-400' :
+    luckPercent >= 50 ? 'from-violet-400 via-purple-400 to-pink-400' :
+    luckPercent >= 25 ? 'from-blue-400 via-indigo-400 to-violet-400' :
+                        'from-sky-400 to-blue-400';
+
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-md z-50 flex items-center justify-center p-3 sm:p-4">
       <motion.div
@@ -27,35 +47,21 @@ export function RebirthModal({ onClose, onConfirm, currentAxolotl }: RebirthModa
         {/* Animated glow effect */}
         <motion.div
           className="absolute -inset-2 bg-gradient-to-r from-yellow-400 via-amber-500 to-orange-500 rounded-3xl blur-2xl"
-          animate={{
-            opacity: [0.3, 0.5, 0.3],
-            scale: [1, 1.05, 1],
-          }}
-          transition={{
-            duration: 2,
-            repeat: Infinity,
-            ease: 'easeInOut',
-          }}
+          animate={{ opacity: [0.3, 0.5, 0.3], scale: [1, 1.05, 1] }}
+          transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
         />
 
-        <div className="relative bg-gradient-to-b from-amber-900/95 via-slate-800/95 to-slate-900/95 backdrop-blur-xl rounded-3xl p-4 sm:p-6 border border-yellow-500/30 shadow-2xl flex flex-col">
+        <div className="relative bg-gradient-to-b from-amber-900/95 via-slate-800/95 to-slate-900/95 backdrop-blur-xl rounded-3xl p-4 sm:p-6 border border-yellow-500/30 shadow-2xl flex flex-col overflow-y-auto max-h-[90vh]">
           {/* Sparkle effects */}
           <motion.div
-            className="absolute top-4 right-4"
-            animate={{
-              rotate: 360,
-              scale: [1, 1.2, 1],
-            }}
-            transition={{
-              duration: 3,
-              repeat: Infinity,
-              ease: 'linear',
-            }}
+            className="absolute top-4 right-14"
+            animate={{ rotate: 360, scale: [1, 1.2, 1] }}
+            transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
           >
             <Sparkles className="w-6 h-6 text-yellow-400 drop-shadow-lg" />
           </motion.div>
 
-          <div className="flex items-center justify-between mb-4 sm:mb-6 flex-shrink-0">
+          <div className="flex items-center justify-between mb-4 sm:mb-5 flex-shrink-0">
             <div className="flex items-center gap-3">
               <motion.div
                 className="bg-gradient-to-r from-yellow-400 to-amber-500 rounded-full p-2 shadow-lg shadow-yellow-500/50"
@@ -76,7 +82,8 @@ export function RebirthModal({ onClose, onConfirm, currentAxolotl }: RebirthModa
             </motion.button>
           </div>
 
-          <div className="mb-6 space-y-4">
+          <div className="space-y-3 mb-4">
+            {/* Bonuses */}
             <motion.div
               className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-sm rounded-2xl p-4 border border-white/10"
               initial={{ opacity: 0, y: 10 }}
@@ -101,13 +108,69 @@ export function RebirthModal({ onClose, onConfirm, currentAxolotl }: RebirthModa
               </ul>
             </motion.div>
 
+            {/* Luck Meter */}
+            <motion.div
+              className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-sm rounded-2xl p-4 border border-white/10"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15 }}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-white font-bold text-sm flex items-center gap-1.5">
+                  🍀 Rebirth Luck
+                </span>
+                {effectiveScoreBonus > 0 && (
+                  <motion.span
+                    className="text-amber-300 font-black text-xs bg-amber-500/20 px-2 py-0.5 rounded-full border border-amber-400/30"
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ type: 'spring', bounce: 0.5 }}
+                  >
+                    +{effectiveScoreBonus} luck bonus
+                  </motion.span>
+                )}
+              </div>
+
+              {/* Bar */}
+              <div className="h-3 bg-white/10 rounded-full overflow-hidden mb-2">
+                <motion.div
+                  className={`h-full rounded-full bg-gradient-to-r ${luckBarColor} relative overflow-hidden`}
+                  initial={{ width: 0 }}
+                  animate={{ width: `${luckPercent}%` }}
+                  transition={{ duration: 0.8, ease: 'easeOut', delay: 0.3 }}
+                >
+                  {luckPercent > 20 && (
+                    <motion.div
+                      className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent"
+                      animate={{ x: ['-100%', '200%'] }}
+                      transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
+                      style={{ width: '50%' }}
+                    />
+                  )}
+                </motion.div>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <span className="text-white/50 text-[11px]">
+                  Streak: <span className="text-white/80 font-bold">{streak}</span>
+                </span>
+                <span className="text-white/60 text-[11px] font-medium">{luckLabel}</span>
+              </div>
+
+              {streak > 0 && (
+                <p className="text-white/40 text-[10px] mt-1.5 leading-relaxed">
+                  Luck carries forward each generation until you get a rarity upgrade.
+                </p>
+              )}
+            </motion.div>
+
+            {/* Generation */}
             <motion.div
               className="relative overflow-hidden bg-gradient-to-br from-purple-500/30 to-pink-500/30 backdrop-blur-sm rounded-2xl p-4 border-2 border-purple-400/50 shadow-lg shadow-purple-500/30"
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.2 }}
+              transition={{ delay: 0.25 }}
             >
-              {/* Animated shine */}
               <motion.div
                 className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
                 animate={{ x: ['-200%', '200%'] }}
@@ -126,7 +189,7 @@ export function RebirthModal({ onClose, onConfirm, currentAxolotl }: RebirthModa
               className="flex items-center gap-3 bg-white/10 rounded-2xl px-4 py-3 border border-white/15"
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
+              transition={{ delay: 0.35 }}
             >
               <span className="text-3xl">🥚</span>
               <div>
@@ -136,7 +199,7 @@ export function RebirthModal({ onClose, onConfirm, currentAxolotl }: RebirthModa
             </motion.div>
           </div>
 
-          <div className="flex gap-3">
+          <div className="flex gap-3 flex-shrink-0">
             <motion.button
               onClick={onClose}
               className="flex-1 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-xl py-3 text-white font-bold transition-all border border-white/20"

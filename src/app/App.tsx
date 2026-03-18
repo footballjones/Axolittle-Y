@@ -713,13 +713,13 @@ export default function App() {
                         {axolotl.rarity && (
                           <>
                             <span className="text-white/30 text-[9px]">·</span>
-                            <span 
-                              className={`text-[9px] font-bold ${
-                                axolotl.rarity === 'Mythic' ? 'text-red-400' :
-                                axolotl.rarity === 'Legendary' ? 'text-amber-400' :
-                                axolotl.rarity === 'Epic' ? 'text-violet-400' :
-                                axolotl.rarity === 'Rare' ? 'text-blue-400' :
-                                'text-white'
+                            <span
+                              className={`text-[9px] font-bold drop-shadow-[0_0_4px_rgba(0,0,0,0.8)] ${
+                                axolotl.rarity === 'Mythic' ? 'text-rose-300' :
+                                axolotl.rarity === 'Legendary' ? 'text-amber-300' :
+                                axolotl.rarity === 'Epic' ? 'text-fuchsia-300' :
+                                axolotl.rarity === 'Rare' ? 'text-cyan-300' :
+                                'text-white/80'
                               }`}
                             >
                               Rarity: {axolotl.rarity}

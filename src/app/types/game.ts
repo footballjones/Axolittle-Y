@@ -37,6 +37,7 @@ export interface Axolotl {
   rarity?: 'Common' | 'Rare' | 'Epic' | 'Legendary' | 'Mythic'; // Rarity of egg this axolotl came from
   lastLevel?: number; // Track last level to detect level ups
   birthStats?: SecondaryStats; // Secondary stats at birth (before any level-up gains) — used for inheritance floor
+  rebirthStreak?: number; // Consecutive rebirths at same rarity without upgrading — feeds the luck meter
 }
 
 export interface DecorationItem {
@@ -64,6 +65,7 @@ export interface Egg {
   rarity: 'Common' | 'Rare' | 'Epic' | 'Legendary' | 'Mythic';
   pendingName?: string; // Name provided during rebirth (used at hatch)
   parentStats?: SecondaryStats; // Parent's birth stats — used to apply inheritance floor on hatch
+  rebirthStreak?: number; // Carried from parent so hatched axolotl inherits the streak
 }
 
 export interface GameState {

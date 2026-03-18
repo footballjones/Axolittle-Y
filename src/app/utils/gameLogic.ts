@@ -56,7 +56,8 @@ export function generateAxolotl(
   inheritedPattern?: string,
   recessiveGenes?: { color?: string; pattern?: string },
   rarity: 'Common' | 'Rare' | 'Epic' | 'Legendary' | 'Mythic' = 'Common',
-  parentStats?: SecondaryStats // Parent's birth stats — used to enforce inheritance floor
+  parentStats?: SecondaryStats,
+  rebirthStreak?: number
 ): Axolotl {
   // All secondary stats start at 0 — players grow them by allocating points on level-up.
   const statRange = getRarityStatRange(rarity);
@@ -101,6 +102,7 @@ export function generateAxolotl(
     rarity, // Store the rarity this axolotl came from
     lastLevel: 1, // Start at level 1
     birthStats: { ...baseStats }, // Snapshot of stats at birth — used as inheritance floor for children
+    rebirthStreak: rebirthStreak ?? 0,
   };
 }
 

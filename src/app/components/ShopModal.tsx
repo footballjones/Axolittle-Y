@@ -117,27 +117,29 @@ function SectionHeader({ icon: Icon, iconBg, iconShadow, title, titleGradient, w
       >
         <Icon className="w-4 h-4 text-white" strokeWidth={2.5} />
       </motion.div>
-      <h3
-        className="text-[13px] font-black tracking-tight flex-1"
-        style={{
-          background: titleGradient,
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
-          backgroundClip: 'text',
-        }}
-      >
-        {title}
-      </h3>
-      {onInfo && (
-        <motion.button
-          onClick={onInfo}
-          className="rounded-full p-1 flex-shrink-0 active:bg-violet-100/60"
-          style={{ background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(196,181,253,0.45)' }}
-          whileTap={{ scale: 0.85 }}
+      <div className="flex items-center gap-1">
+        <h3
+          className="text-[13px] font-black tracking-tight"
+          style={{
+            background: titleGradient,
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+          }}
         >
-          <Info className="w-3.5 h-3.5 text-violet-400" strokeWidth={2.5} />
-        </motion.button>
-      )}
+          {title}
+        </h3>
+        {onInfo && (
+          <motion.button
+            onClick={onInfo}
+            className="rounded-full p-1 flex-shrink-0 active:bg-violet-100/60"
+            style={{ background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(196,181,253,0.45)' }}
+            whileTap={{ scale: 0.85 }}
+          >
+            <Info className="w-3.5 h-3.5 text-violet-400" strokeWidth={2.5} />
+          </motion.button>
+        )}
+      </div>
     </div>
   );
 }

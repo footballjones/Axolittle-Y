@@ -9,47 +9,63 @@ export function createRebirthEgg(parent: Axolotl, pendingName?: string): Egg {
   // Roll for recessive expression
   let color = parent.color;
   let pattern = parent.pattern;
-  
+
   if (parent.recessiveGenes?.color && Math.random() < GAME_CONFIG.recessiveGeneExpressionChance) {
     color = parent.recessiveGenes.color;
   }
-  
+
   if (parent.recessiveGenes?.pattern && Math.random() < GAME_CONFIG.recessiveGeneExpressionChance) {
     pattern = parent.recessiveGenes.pattern;
   }
-  
+
   // Get parent's rarity (default to Common if not set, for backwards compatibility)
   const parentRarity = parent.rarity || 'Common';
-  
+
   // Rarity hierarchy for comparison
-  const rarityOrder: ('Common' | 'Rare' | 'Epic' | 'Legendary' | 'Mythic')[] = 
+  const rarityOrder: ('Common' | 'Rare' | 'Epic' | 'Legendary' | 'Mythic')[] =
     ['Common', 'Rare', 'Epic', 'Legendary', 'Mythic'];
-  // Neglect decay logic: higher rarities can drop if intellect is too low
+
+  // ── Weighted pool score (all stats count) ────────────────────────────────
+  // Intellect is the primary driver but strength/stamina/speed contribute too,
+  // so builds that spread stats aren't penalized vs pure INT stackers.
+  const { intellect, strength, stamina, speed } = parent.secondaryStats;
+  const baseIntellect = intellect;
+  const poolScore = Math.floor(
+    intellect * 0.5 +
+    strength * 0.2 +
+    stamina * 0.15 +
+    speed * 0.15
+  );
+
+  // ── Luck Meter (pity system) ──────────────────────────────────────────────
+  // Each rebirth at the same rarity without upgrading adds +5 to the pool score.
+  const LUCK_BONUS_PER_STREAK = 5;
+  const currentStreak = parent.rebirthStreak ?? 0;
+  const effectiveScore = Math.min(100, poolScore + currentStreak * LUCK_BONUS_PER_STREAK);
+
+  // Neglect decay logic: higher rarities can drop if overall fitness (poolScore) is too low
   let minRarity = parentRarity;
-  const intellect = parent.secondaryStats.intellect;
-  
-  if (parentRarity === 'Mythic' && intellect < 61) {
-    minRarity = 'Legendary';
-  } else if (parentRarity === 'Legendary' && intellect <= 60) {
-    minRarity = 'Epic';
-  } else if (parentRarity === 'Epic' && intellect < 47) {
+
+  // Generation floor: Common axolotls entering Gen 3+ are guaranteed at least Rare
+  if (parentRarity === 'Common' && parent.generation >= 2) {
     minRarity = 'Rare';
-  } else if (parentRarity === 'Rare' && intellect < 40) {
-    minRarity = 'Common';
-  } else if (parentRarity === 'Common' && intellect < 40) {
-    // Can stay Common or drop (already at minimum)
+  } else if (parentRarity === 'Mythic' && poolScore < 61) {
+    minRarity = 'Legendary';
+  } else if (parentRarity === 'Legendary' && poolScore <= 60) {
+    minRarity = 'Epic';
+  } else if (parentRarity === 'Epic' && poolScore < 47) {
+    minRarity = 'Rare';
+  } else if (parentRarity === 'Rare' && poolScore < 40) {
     minRarity = 'Common';
   }
-  
+
   const minRarityIndex = rarityOrder.indexOf(minRarity);
-  
-  // Determine potential rarity based on generation and intellect
-  // But never go below parent's rarity (unless neglect)
+
+  // Determine potential rarity based on generation and effective pool score (includes luck bonus)
   let rarity: 'Common' | 'Rare' | 'Epic' | 'Legendary' | 'Mythic' = minRarity;
   const rand = Math.random();
-  
-  if (parent.generation >= 5 || parent.secondaryStats.intellect > 90) {
-    // Very high generation or intellect - chance for Mythic
+
+  if (parent.generation >= 5 || effectiveScore >= 65) {
     if (rand < 0.05) {
       rarity = 'Mythic';
     } else if (rand < 0.25) {
@@ -61,8 +77,7 @@ export function createRebirthEgg(parent: Axolotl, pendingName?: string): Egg {
     } else {
       rarity = 'Common';
     }
-  } else if (parent.generation >= 4 || parent.secondaryStats.intellect > 85) {
-    // High generation or intellect - chance for Legendary
+  } else if (parent.generation >= 4 || effectiveScore >= 50) {
     if (rand < 0.15) {
       rarity = 'Legendary';
     } else if (rand < 0.45) {
@@ -72,8 +87,7 @@ export function createRebirthEgg(parent: Axolotl, pendingName?: string): Egg {
     } else {
       rarity = 'Common';
     }
-  } else if (parent.generation >= 3 || parent.secondaryStats.intellect > 80) {
-    // Good generation or intellect - chance for Epic
+  } else if (parent.generation >= 4 || effectiveScore >= 25) {
     if (rand < 0.20) {
       rarity = 'Epic';
     } else if (rand < 0.60) {
@@ -81,33 +95,37 @@ export function createRebirthEgg(parent: Axolotl, pendingName?: string): Egg {
     } else {
       rarity = 'Common';
     }
-  } else if (parent.generation >= 2 || parent.secondaryStats.intellect > 60) {
-    // Moderate generation or intellect - chance for Rare
-    if (rand < 0.50) {
+  } else if (parent.generation >= 2 || effectiveScore >= 15) {
+    if (rand < 0.30) {
       rarity = 'Rare';
     } else {
       rarity = 'Common';
     }
   }
   // Otherwise stays Common
-  
+
   // Ensure we never go below the minimum rarity
   const finalRarityIndex = rarityOrder.indexOf(rarity);
   if (finalRarityIndex < minRarityIndex) {
     rarity = minRarity;
   }
-  
+
+  // ── Update streak for the child ───────────────────────────────────────────
+  // If rarity upgraded → streak resets. Same or lower → streak grows.
+  const parentRarityIndex = rarityOrder.indexOf(parentRarity);
+  const newStreak = rarityOrder.indexOf(rarity) > parentRarityIndex ? 0 : currentStreak + 1;
+
   return {
     id: `egg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
     parentIds: [parent.id],
     generation: parent.generation + 1,
-    incubationEndsAt: Date.now() + (GAME_CONFIG.eggIncubationHours * 60 * 60 * 1000), // 24 hours
+    incubationEndsAt: Date.now() + (GAME_CONFIG.eggIncubationHours * 60 * 60 * 1000),
     color,
     pattern,
     rarity,
-    pendingName, // Store name provided during rebirth
-    // Pass birth stats (not leveled stats) so the child's floor reflects genetic quality, not grind
-    parentStats: parent.birthStats,
+    pendingName,
+    parentStats: parent.secondaryStats,
+    rebirthStreak: newStreak,
   };
 }
 
@@ -194,7 +212,8 @@ export function hatchEgg(egg: Egg, name: string): Axolotl {
     egg.pattern,     // May already include recessive expression
     undefined,       // New random recessive genes for this axolotl
     egg.rarity,      // Use the egg's rarity to determine starting stats
-    egg.parentStats  // Parent's birth stats — enforces inheritance floor on child's stats
+    egg.parentStats, // Parent's birth stats — enforces inheritance floor on child's stats
+    egg.rebirthStreak  // carry the luck streak to the new axolotl
   );
 }
 
