@@ -10,6 +10,7 @@ import { motion } from 'motion/react';
 import { GameWrapper } from './GameWrapper';
 import { MiniGameProps } from './types';
 import { calculateRewards } from './config';
+import keepeyBg from '../../assets/keepey-bg.png';
 
 const CANVAS_W = 360;
 const CANVAS_H = 640;
@@ -59,6 +60,14 @@ export function KeepeyUpey({ onEnd, onDeductEnergy, onApplyReward, energy, sound
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationFrameRef = useRef<number | null>(null);
   const lastTouchTimeRef = useRef<number>(0);
+  const bgImageRef = useRef<HTMLImageElement | null>(null);
+
+  // Pre-load background image once
+  useEffect(() => {
+    const img = new Image();
+    img.src = keepeyBg;
+    img.onload = () => { bgImageRef.current = img; };
+  }, []);
   const gameStateRef = useRef<{
     axo: { x: number; y: number; vy: number; size: number };
     obstacles: Obstacle[];
@@ -154,14 +163,32 @@ export function KeepeyUpey({ onEnd, onDeductEnergy, onApplyReward, energy, sound
   const draw = useCallback((ctx: CanvasRenderingContext2D) => {
     const { axo, obstacles, bubbles } = gameStateRef.current;
     
-    // Background
-    ctx.fillStyle = '#132a38';
-    ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+    // Background — cover mode: scale so image fills entire canvas, then slow pan
+    const bg = bgImageRef.current;
+    if (bg && bg.complete) {
+      // Cover: pick the scale that ensures both dimensions meet or exceed the canvas
+      const scaleW = CANVAS_W / bg.naturalWidth;
+      const scaleH = CANVAS_H / bg.naturalHeight;
+      const scale = Math.max(scaleW, scaleH);
+      const drawW = bg.naturalWidth * scale;
+      const drawH = bg.naturalHeight * scale;
+      // Centre horizontally; slow vertical pan within the extra height
+      const offsetX = (CANVAS_W - drawW) / 2;
+      const panRange = Math.max(0, drawH - CANVAS_H);
+      const panY = panRange > 0
+        ? -(((performance.now() * 0.00003) % 1) * panRange)
+        : (CANVAS_H - drawH) / 2;
+      ctx.drawImage(bg, offsetX, panY, drawW, drawH);
+    } else {
+      // Fallback while image loads
+      ctx.fillStyle = '#132a38';
+      ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+    }
 
-    // Subtle gradient at bottom (floor danger zone)
+    // Subtle danger-zone gradient at bottom
     const grad = ctx.createLinearGradient(0, CANVAS_H - 60, 0, CANVAS_H);
     grad.addColorStop(0, 'transparent');
-    grad.addColorStop(1, 'rgba(239, 83, 80, 0.15)');
+    grad.addColorStop(1, 'rgba(239, 83, 80, 0.25)');
     ctx.fillStyle = grad;
     ctx.fillRect(0, CANVAS_H - 60, CANVAS_W, 60);
 
@@ -215,27 +242,128 @@ export function KeepeyUpey({ onEnd, onDeductEnergy, onApplyReward, energy, sound
       ctx.fill();
     }
 
-    // Axolotl
-    const bx = axo.x, by = axo.y, bs = axo.size;
-    // Body
-    ctx.fillStyle = '#E8A0BF';
-    ctx.beginPath();
-    ctx.arc(bx, by, bs, 0, Math.PI * 2);
-    ctx.fill();
-    // Eyes
-    ctx.fillStyle = '#222';
-    ctx.beginPath();
-    ctx.arc(bx + 6, by - 5, 3, 0, Math.PI * 2);
-    ctx.arc(bx + 6, by + 5, 3, 0, Math.PI * 2);
-    ctx.fill();
-    // Gills
-    ctx.strokeStyle = '#D48BA8';
-    ctx.lineWidth = 2;
-    for (const dy of [-10, -6, 6, 10]) {
+    // Axolotl — detailed procedural character facing right, tilts with velocity
+    {
+      const bx = axo.x, by = axo.y, bs = axo.size;
+      const tilt = Math.max(-0.35, Math.min(0.35, axo.vy * 0.055));
+
+      const pink      = '#F2B8D2';
+      const pinkDark  = '#E490B8';
+      const pinkLight = '#FDE4F0';
+      const gillColor = '#FF6BAC';
+
+      ctx.save();
+      ctx.translate(bx, by);
+      ctx.rotate(tilt);
+
+      // — Tail — tapers to a rounded point, no fan
+      ctx.fillStyle = pinkDark;
       ctx.beginPath();
-      ctx.moveTo(bx - bs + 2, by + dy);
-      ctx.lineTo(bx - bs - 8, by + dy + (dy > 0 ? 3 : -3));
+      ctx.moveTo(-bs * 0.8, -bs * 0.3);
+      ctx.bezierCurveTo(-bs * 1.2, -bs * 0.35, -bs * 1.7, -bs * 0.2, -bs * 2.0, 0);
+      ctx.bezierCurveTo(-bs * 1.7, bs * 0.2, -bs * 1.2, bs * 0.35, -bs * 0.8, bs * 0.3);
+      ctx.closePath();
+      ctx.fill();
+
+      // — Body ellipse —
+      ctx.fillStyle = pink;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, bs * 1.0, bs * 0.72, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Belly highlight
+      ctx.fillStyle = pinkLight;
+      ctx.beginPath();
+      ctx.ellipse(bs * 0.1, bs * 0.1, bs * 0.62, bs * 0.42, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // — Back legs (behind head) —
+      ctx.fillStyle = pink;
+      ctx.strokeStyle = pinkDark;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.ellipse(-bs * 0.55, bs * 0.55, bs * 0.16, bs * 0.28, -0.25, 0, Math.PI * 2);
+      ctx.fill(); ctx.stroke();
+      ctx.beginPath();
+      ctx.ellipse(-bs * 0.28, bs * 0.58, bs * 0.14, bs * 0.24, 0.15, 0, Math.PI * 2);
+      ctx.fill(); ctx.stroke();
+
+      // — Head —
+      ctx.fillStyle = pink;
+      ctx.beginPath();
+      ctx.arc(bs * 0.7, 0, bs * 0.65, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Head belly highlight
+      ctx.fillStyle = pinkLight;
+      ctx.beginPath();
+      ctx.ellipse(bs * 0.75, bs * 0.08, bs * 0.38, bs * 0.3, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // — Front legs —
+      ctx.fillStyle = pink;
+      ctx.strokeStyle = pinkDark;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.ellipse(bs * 0.45, bs * 0.6, bs * 0.16, bs * 0.28, -0.2, 0, Math.PI * 2);
+      ctx.fill(); ctx.stroke();
+      ctx.beginPath();
+      ctx.ellipse(bs * 0.72, bs * 0.62, bs * 0.14, bs * 0.26, 0.1, 0, Math.PI * 2);
+      ctx.fill(); ctx.stroke();
+
+      // — Gill plumes (3 branching feathery plumes on top of head) —
+      const gills = [
+        { gx: bs * 0.35, gy: -bs * 0.58, lean: -0.08 },
+        { gx: bs * 0.65, gy: -bs * 0.68, lean:  0.0  },
+        { gx: bs * 0.9,  gy: -bs * 0.58, lean:  0.08 },
+      ];
+      ctx.strokeStyle = gillColor;
+      ctx.lineCap = 'round';
+      for (const g of gills) {
+        const stemLen = bs * 0.55;
+        const tipX = g.gx + g.lean * bs;
+        const tipY = g.gy - stemLen;
+        // Stem
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.moveTo(g.gx, g.gy + bs * 0.12);
+        ctx.quadraticCurveTo(g.gx, g.gy, tipX, tipY);
+        ctx.stroke();
+        // Top branches
+        ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.moveTo(tipX, tipY); ctx.lineTo(tipX - bs * 0.22, tipY - bs * 0.18); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(tipX, tipY); ctx.lineTo(tipX + bs * 0.16, tipY - bs * 0.22); ctx.stroke();
+        // Mid branch
+        const midX = g.gx + (tipX - g.gx) * 0.5;
+        const midY = g.gy + (tipY - g.gy) * 0.5;
+        ctx.beginPath(); ctx.moveTo(midX, midY); ctx.lineTo(midX - bs * 0.18, midY - bs * 0.12); ctx.stroke();
+      }
+
+      // — Eye: sclera → pupil → highlight —
+      ctx.fillStyle = '#fff';
+      ctx.beginPath();
+      ctx.arc(bs * 0.9, -bs * 0.22, bs * 0.22, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#1a1a2e';
+      ctx.beginPath();
+      ctx.arc(bs * 0.93, -bs * 0.22, bs * 0.13, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#fff';
+      ctx.beginPath();
+      ctx.arc(bs * 0.97, -bs * 0.27, bs * 0.055, 0, Math.PI * 2);
+      ctx.fill();
+
+      // — Smile —
+      ctx.strokeStyle = '#C4789A';
+      ctx.lineWidth = 1.5;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.arc(bs * 0.85, bs * 0.08, bs * 0.16, 0.3, Math.PI - 0.3);
       ctx.stroke();
+
+      ctx.restore();
     }
 
     // Timer display
