@@ -353,18 +353,12 @@ export function KeepeyUpey({ onEnd, onDeductEnergy, onApplyReward, energy, sound
       ctx.ellipse(hx, hy, hr * 1.05, hr * 0.92, 0, 0, Math.PI * 2);
       ctx.fill();
 
-      // Head highlight
-      ctx.fillStyle = pinkLight;
-      ctx.beginPath();
-      ctx.ellipse(hx - bs * 0.05, hy - bs * 0.1, hr * 0.55, hr * 0.4, -0.2, 0, Math.PI * 2);
-      ctx.fill();
-
       // ── Gill fronds ── soft filled petal/leaf shapes (NOT lines)
-      // 3 fronds fanning upward-backward from behind the head, slanted back
+      // 3 fronds fanning upward-backward from behind the head, slanted well back
       const gillFronds = [
-        { angle: -2.2, len: bs * 0.5,  width: bs * 0.11 },  // back-most, angled far back
-        { angle: -1.8, len: bs * 0.55, width: bs * 0.12 },  // middle, angled back
-        { angle: -1.4, len: bs * 0.48, width: bs * 0.11 },  // forward, still angled back
+        { angle: -2.5, len: bs * 0.5,  width: bs * 0.11 },  // back-most, angled far back
+        { angle: -2.1, len: bs * 0.55, width: bs * 0.12 },  // middle, angled back
+        { angle: -1.7, len: bs * 0.48, width: bs * 0.11 },  // forward, still angled back
       ];
       const gillBaseX = hx - bs * 0.15;
       const gillBaseY = hy - bs * 0.32;
