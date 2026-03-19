@@ -503,12 +503,12 @@ export default function App() {
   useEffect(() => {
     if (
       gameState?.wellbeingCompleteSeen === true &&
-      gameState?.menuTutorialSeen === false &&
+      !gameState?.menuTutorialSeen &&
       gameState?.tutorialStep === 'done' &&
       !showMenuTutorial &&
       !showMenuTutorialComplete &&
       tutorialAllowed &&
-      currentScreen === 'aquarium'
+      currentScreen === 'home'
     ) {
       const t = setTimeout(() => setShowMenuTutorial(true), 1500);
       return () => clearTimeout(t);

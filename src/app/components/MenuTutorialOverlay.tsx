@@ -47,25 +47,35 @@ export function MenuTutorialOverlay({ menuOpen, onOpenMenu, onComplete }: MenuTu
 
   // Measure the target element for the current phase
   const measure = useCallback(() => {
+    let el: HTMLElement | null = null;
     if (phase === 0) {
-      // Target the hamburger button
-      const el = document.querySelector('[data-menu-id="hamburger"]') as HTMLElement | null;
-      if (el) setTargetRect(el.getBoundingClientRect());
+      el = document.querySelector('[data-menu-id="hamburger"]');
     } else if (phase >= 1 && phase <= 9) {
-      const step = MENU_STEPS[phase - 1];
-      const el = document.querySelector(step.selector) as HTMLElement | null;
-      if (el) setTargetRect(el.getBoundingClientRect());
+      el = document.querySelector(MENU_STEPS[phase - 1].selector);
     } else if (phase === 10) {
-      // Target the close button
-      const el = document.querySelector('[data-menu-id="close"]') as HTMLElement | null;
-      if (el) setTargetRect(el.getBoundingClientRect());
+      el = document.querySelector('[data-menu-id="close"]');
+    }
+    if (el) {
+      setTargetRect(el.getBoundingClientRect());
+      foundRef.current = true;
     }
   }, [phase]);
 
   // Re-measure when phase changes or menu open state changes
+  const foundRef = useRef(false);
   useLayoutEffect(() => {
     setTargetRect(null);
-    measureTimer.current = setTimeout(measure, 150);
+    foundRef.current = false;
+    let attempts = 0;
+    const tryMeasure = () => {
+      measure();
+      attempts++;
+      // Keep retrying until element found or max attempts
+      if (!foundRef.current && attempts < 8) {
+        measureTimer.current = setTimeout(tryMeasure, 200);
+      }
+    };
+    measureTimer.current = setTimeout(tryMeasure, 150);
     window.addEventListener('resize', measure);
     return () => {
       if (measureTimer.current) clearTimeout(measureTimer.current);
