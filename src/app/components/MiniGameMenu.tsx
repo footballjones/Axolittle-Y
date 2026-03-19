@@ -593,7 +593,7 @@ export function MiniGameMenu({ onClose: _onClose, onSelectGame, energy = 10, max
                 bottom: window.innerHeight - tutorialRect.top + 10,
                 // X: centre on the measured element's midpoint; unlock btn nudged left to account for card padding
                 left: tutorialPhase === 'unlock'
-                  ? tutorialRect.left + tutorialRect.width / 2 - 60
+                  ? tutorialRect.left + tutorialRect.width / 2 - 120
                   : tutorialRect.left + tutorialRect.width / 2,
                 transform: 'translateX(-50%)',
               }}
