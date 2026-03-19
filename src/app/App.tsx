@@ -1136,7 +1136,7 @@ export default function App() {
                         >
                           <div className="absolute inset-0 opacity-0 group-active:opacity-100 transition-opacity rounded-2xl" style={{ background: 'rgba(255,255,255,0.35)' }} />
                           <span className="text-[2rem]">🎰</span>
-                          <span className="text-[11px] font-bold text-violet-800 tracking-wider uppercase">Spin Wheel</span>
+                          <span className="text-[11px] font-bold text-violet-800 tracking-wider uppercase">Wheel Spin</span>
                           {gameState && canSpinToday(gameState.lastSpinDate) && (
                             <motion.div
                               className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-red-500 border-2 border-white flex items-center justify-center"
