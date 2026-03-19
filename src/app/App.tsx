@@ -449,7 +449,7 @@ export default function App() {
   // Show Juvenile unlock modal the first time the axolotl reaches the Juvenile stage
   useEffect(() => {
     if (
-      gameState?.axolotl?.stage === 'juvenile' &&
+      gameState?.axolotl?.stage === 'sprout' &&
       !gameState.juvenileUnlockSeen &&
       !showJuvenileUnlock
     ) {
@@ -1349,9 +1349,9 @@ export default function App() {
                               { emoji: '🎮', color: 'rgba(139,92,246,0.12)', border: 'rgba(167,139,250,0.18)', title: 'Play Mini Games', tip: 'Head to Mini Games to earn XP and coins. Level up your axolotl to unlock the ability to rebirth at Level 40.' },
                               { emoji: '🧹', color: 'rgba(14,165,233,0.12)', border: 'rgba(56,189,248,0.18)', title: 'Clean the Tank', tip: "Tap Clean to remove poops and keep the tank clean. If cleanliness drops below 50% for more than a day, it will start to affect water quality decay." },
                               { emoji: '💧', color: 'rgba(99,102,241,0.12)', border: 'rgba(129,140,248,0.18)', title: 'Change the Water', tip: 'Tap Water to refresh the tank and directly boost water quality. Good water quality slows decay of other stats.' },
-                              { emoji: '🌱', color: 'rgba(34,197,94,0.12)', border: 'rgba(74,222,128,0.18)', title: 'Evolve Through 4 Stages', tip: 'Your axolotl grows from Baby → Juvenile → Adult → Elder. Keep all stats high to evolve faster. Eggs hatch into Baby at Level 1.' },
+                              { emoji: '🌱', color: 'rgba(34,197,94,0.12)', border: 'rgba(74,222,128,0.18)', title: 'Evolve Through 4 Stages', tip: 'Your axolotl grows from Hatchling → Sprout → Guardian → Elder. Keep all stats high to evolve faster. Eggs hatch into Hatchling at Level 1.' },
                               { emoji: '✨', color: 'rgba(168,85,247,0.12)', border: 'rgba(216,180,254,0.18)', title: 'Rebirth for Bonuses', tip: 'At Elder stage (Level 40) you can Rebirth — start a new generation with bonus coins and inherited colour traits.' },
-                              { emoji: '🛍️', color: 'rgba(245,158,11,0.12)', border: 'rgba(251,191,36,0.18)', title: 'Customize Your Tank', tip: 'Tap the Shop button in the HUD to buy decorations, plants, and filters. Unlock backgrounds with opals.' },
+                              { emoji: '🛍️', color: 'rgba(245,158,11,0.12)', border: 'rgba(251,191,36,0.18)', title: 'Customize Your Tank', tip: 'Tap the Shop button in the Aquarium to buy decorations, plants, and filters. Unlock backgrounds with opals.' },
                               { emoji: '👥', color: 'rgba(236,72,153,0.12)', border: 'rgba(244,114,182,0.18)', title: 'Play with Friends', tip: 'Add friends via code in Social. Poke them, visit their tanks, or hatch eggs together.' },
                             ].map((item, i) => (
                               <motion.div
