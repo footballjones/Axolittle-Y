@@ -135,10 +135,12 @@ export interface GameState {
   feedXpDate?: string;   // YYYY-MM-DD when feedXpToday was last reset
   firstFeedXpGranted?: boolean; // True after the first-ever eat grants a full level-up XP
   // ── Stat tutorial ────────────────────────────────────────────────────────
-  statTutorialSeen?: boolean;      // True once the player taps the stat assignment banner
-  playTutorialSeen?: boolean;      // True once the player enters play mode for the first time
-  waterTutorialSeen?: boolean;     // True once the player completes their first water change
-  miniGameTutorialSeen?: boolean;  // True once the player navigates to the mini games screen
+  statTutorialSeen?: boolean;        // True once the player taps the stat assignment banner
+  playTutorialSeen?: boolean;        // True once the player enters play mode for the first time
+  waterTutorialSeen?: boolean;       // True once the player completes their first water change
+  miniGameTutorialSeen?: boolean;    // True once the player navigates to the mini games screen
+  wellbeingIntroSeen?: boolean;      // false = show intro modal before wellbeing tutorials begin
+  wellbeingCompleteSeen?: boolean;   // false = show completion modal + 5 opal reward after water tutorial
 }
 
 export interface Friend {

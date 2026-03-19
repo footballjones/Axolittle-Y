@@ -224,8 +224,10 @@ export function getInitialGameState(): GameState {
     lastLoginDate: undefined,
     loginStreak: 0,
     lastLoginBonusDate: undefined,
-    tutorialStep: 'swipe',     // First tutorial: prompt the player to swipe and explore
-    cleanTutorialSeen: false,  // Show cleaning tutorial on first poop appearance
-    waterTutorialSeen: false,  // Show water-change tutorial after poop tutorial
+    tutorialStep: 'swipe',        // First tutorial: prompt the player to swipe and explore
+    cleanTutorialSeen: false,     // Show cleaning tutorial on first poop appearance
+    waterTutorialSeen: false,     // Show water-change tutorial after poop tutorial
+    wellbeingIntroSeen: false,    // Show wellbeing intro modal before feed tutorial
+    wellbeingCompleteSeen: false, // Show completion modal + 5 opal reward after water tutorial
   };
 }

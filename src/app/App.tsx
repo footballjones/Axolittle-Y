@@ -17,6 +17,8 @@ import { ActionButtons } from './components/ActionButtons';
 import { AquariumBackground } from './components/AquariumBackground';
 import { MiniGameMenu } from './components/MiniGameMenu';
 import { JuvenileUnlockModal } from './components/JuvenileUnlockModal';
+import { WellbeingIntroModal } from './components/WellbeingIntroModal';
+import { WellbeingCompleteModal } from './components/WellbeingCompleteModal';
 import { ShopModal } from './components/ShopModal';
 import { SocialModal } from './components/SocialModal';
 import { RebirthModal } from './components/RebirthModal';
@@ -489,7 +491,7 @@ export default function App() {
   const isGameLocked = !!gameState?.miniGamesLockedUntil && gameState.miniGamesLockedUntil > Date.now();
   useEffect(() => {
     if (currentScreen !== 'games') { setMgTutPhase(null); return; }
-    if (gameState?.miniGameTutorialSeen || !gameState?.waterTutorialSeen) return;
+    if (gameState?.miniGameTutorialSeen || !gameState?.waterTutorialSeen || !gameState?.wellbeingCompleteSeen) return;
     setMgTutPhase(isGameLocked ? 'unlock' : 'stacker');
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentScreen]);
@@ -1784,7 +1786,8 @@ export default function App() {
                   )}
 
                   {/* Tutorial overlay — rendered inside the aquarium relative container */}
-                  {(gameState.tutorialStep === 'feed' || gameState.tutorialStep === 'eat' || gameState.tutorialStep === 'xp-tip') && (
+                  {/* Only show after wellbeing intro is dismissed */}
+                  {gameState.wellbeingIntroSeen === true && (gameState.tutorialStep === 'feed' || gameState.tutorialStep === 'eat' || gameState.tutorialStep === 'xp-tip') && (
                     <FeedingTutorial
                       step={gameState.tutorialStep}
                       axolotlName={axolotl.name}
@@ -1932,8 +1935,8 @@ export default function App() {
                     </motion.div>
                   )}
 
-                  {/* Mini game tutorial — shown after water tutorial is completed */}
-                  {gameState.playTutorialSeen && gameState.cleanTutorialSeen === true && gameState.waterTutorialSeen === true && !gameState.miniGameTutorialSeen && gameState.tutorialStep === 'done' && !activeModal && !playMode && tutorialAllowed && (
+                  {/* Mini game tutorial — shown after wellbeing completion reward is collected */}
+                  {gameState.playTutorialSeen && gameState.cleanTutorialSeen === true && gameState.waterTutorialSeen === true && gameState.wellbeingCompleteSeen === true && !gameState.miniGameTutorialSeen && gameState.tutorialStep === 'done' && !activeModal && !playMode && tutorialAllowed && (
                     <motion.div
                       className="absolute inset-0 pointer-events-none"
                       style={{ zIndex: 45 }}
@@ -2383,6 +2386,34 @@ export default function App() {
           }}
         />
       )}
+
+      {/* Wellbeing intro modal — shown before the feed tutorial on new games */}
+      <AnimatePresence>
+        {gameState?.wellbeingIntroSeen === false &&
+          gameState?.tutorialStep === 'feed' &&
+          gameState?.axolotl && (
+          <WellbeingIntroModal
+            axolotlName={gameState.axolotl.name}
+            onStart={() => setGameState(s => s ? { ...s, wellbeingIntroSeen: true } : s)}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Wellbeing completion modal — shown after water tutorial, grants 5 opals */}
+      <AnimatePresence>
+        {gameState?.waterTutorialSeen === true &&
+          gameState?.wellbeingCompleteSeen === false &&
+          gameState?.axolotl && (
+          <WellbeingCompleteModal
+            axolotlName={gameState.axolotl.name}
+            onCollect={() =>
+              setGameState(s =>
+                s ? { ...s, wellbeingCompleteSeen: true, opals: (s.opals ?? 0) + 5 } : s
+              )
+            }
+          />
+        )}
+      </AnimatePresence>
 
       {/* Juvenile stage unlock modal */}
       <AnimatePresence>
