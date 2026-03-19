@@ -47,6 +47,33 @@ export function WellbeingIntroModal({ axolotlName, onStart }: WellbeingIntroModa
           <p className="text-violet-300/80 text-[12.5px] mt-1.5 leading-snug">
             A quick guide to keeping your axolotl happy & healthy
           </p>
+
+          {/* Reward teaser */}
+          <motion.div
+            className="mt-3 flex items-center justify-center gap-2 rounded-xl px-4 py-2"
+            style={{ background: 'rgba(251,191,36,0.12)', border: '1px solid rgba(251,191,36,0.3)' }}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3, duration: 0.4 }}
+          >
+            <motion.span
+              className="text-lg select-none"
+              animate={{ scale: [1, 1.2, 1] }}
+              transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
+            >
+              ✨
+            </motion.span>
+            <p className="text-amber-300 text-[11.5px] font-semibold leading-snug">
+              Complete it and earn <span className="text-amber-200 font-extrabold">5 free Opals!</span>
+            </p>
+            <motion.span
+              className="text-lg select-none"
+              animate={{ scale: [1, 1.2, 1] }}
+              transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut', delay: 0.7 }}
+            >
+              ✨
+            </motion.span>
+          </motion.div>
         </div>
 
         {/* Divider */}
