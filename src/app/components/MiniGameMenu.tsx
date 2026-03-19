@@ -582,8 +582,18 @@ export function MiniGameMenu({ onClose: _onClose, onSelectGame, energy = 10, max
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
           >
-            {/* Dim overlay */}
-            <div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.50)' }} />
+            {/* Dim overlay — spotlight cutout for unlock phase so button stays bright & clickable */}
+            {tutorialPhase === 'unlock' ? (
+              // 4 strips surround the button rect, leaving it undimmed
+              <>
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: Math.max(0, tutorialRect.top - 6), background: 'rgba(0,0,0,0.55)' }} />
+                <div style={{ position: 'absolute', top: tutorialRect.bottom + 6, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.55)' }} />
+                <div style={{ position: 'absolute', top: tutorialRect.top - 6, left: 0, width: Math.max(0, tutorialRect.left - 6), height: tutorialRect.height + 12, background: 'rgba(0,0,0,0.55)' }} />
+                <div style={{ position: 'absolute', top: tutorialRect.top - 6, left: tutorialRect.right + 6, right: 0, height: tutorialRect.height + 12, background: 'rgba(0,0,0,0.55)' }} />
+              </>
+            ) : (
+              <div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.50)' }} />
+            )}
 
             {/* Speech bubble + caret + bouncing finger, centred above the measured target */}
             <motion.div
