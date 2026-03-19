@@ -418,7 +418,7 @@ export function KeepeyUpey({ onEnd, onDeductEnergy, onApplyReward, energy, sound
       }
 
       // ── Eye ── single eye on the side of the head (near side)
-      const eyeX = hx + bs * 0.22;
+      const eyeX = hx + bs * 0.14;
       const eyeY = hy - bs * 0.1;
       const eyeR = bs * 0.16;
       ctx.fillStyle = '#fff';
@@ -452,11 +452,11 @@ export function KeepeyUpey({ onEnd, onDeductEnergy, onApplyReward, energy, sound
       ctx.fill();
 
       // ── Smile ── small happy curve on the snout
-      ctx.strokeStyle = '#C4789A';
+      ctx.strokeStyle = '#1a1a2e';
       ctx.lineWidth = 1.5;
       ctx.lineCap = 'round';
       ctx.beginPath();
-      ctx.arc(hx + bs * 0.28, hy + bs * 0.06, bs * 0.1, 0.3, Math.PI - 0.6);
+      ctx.arc(hx + bs * 0.28, hy + bs * 0.18, bs * 0.1, 0.3, Math.PI - 0.6);
       ctx.stroke();
 
       ctx.restore();
