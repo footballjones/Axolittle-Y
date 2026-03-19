@@ -216,10 +216,12 @@ export function MiniGameMenu({ onClose: _onClose, onSelectGame, energy = 10, max
       const el = tutorialPhase === 'unlock' ? unlockBtnRef.current : keepeyTileRef.current;
       if (el) setTutorialRect(el.getBoundingClientRect());
     };
-    // Small delay lets the DOM and animations settle before measuring
-    const t = setTimeout(measure, 120);
+    // Measure after animations settle, then re-measure to catch layout shifts
+    const t1 = setTimeout(measure, 200);
+    const t2 = setTimeout(measure, 500);
     window.addEventListener('resize', measure);
-    return () => { clearTimeout(t); window.removeEventListener('resize', measure); };
+    window.addEventListener('scroll', measure, true); // capture scroll on any ancestor
+    return () => { clearTimeout(t1); clearTimeout(t2); window.removeEventListener('resize', measure); window.removeEventListener('scroll', measure, true); };
   }, [tutorialPhase]);
 
   const isLocked = !!miniGamesLockedUntil && miniGamesLockedUntil > Date.now();
