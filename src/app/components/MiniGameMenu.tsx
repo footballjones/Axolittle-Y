@@ -14,6 +14,7 @@ interface MiniGameMenuProps {
   miniGamesLockedUntil?: number;
   opals?: number;
   onUnlockGames?: () => void;
+  onRefillEnergy?: () => void;
   currentLevel?: number;
   tutorialPhase?: 'unlock' | 'stacker';
 }
@@ -196,7 +197,9 @@ function GameTile({ game, index, delayOffset = 0, expandedId, onToggleInfo, onSe
   );
 }
 
-export function MiniGameMenu({ onClose: _onClose, onSelectGame, energy = 10, maxEnergy = 10, lastEnergyUpdate, miniGamesLockedUntil, opals = 0, onUnlockGames, currentLevel, tutorialPhase }: MiniGameMenuProps) {
+const REFILL_ENERGY_COST = 10; // opals
+
+export function MiniGameMenu({ onClose: _onClose, onSelectGame, energy = 10, maxEnergy = 10, lastEnergyUpdate, miniGamesLockedUntil, opals = 0, onUnlockGames, onRefillEnergy, currentLevel, tutorialPhase }: MiniGameMenuProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [energyTimeText, setEnergyTimeText] = useState<string>('');
   const [lockTimeText, setLockTimeText] = useState<string>('');
@@ -383,6 +386,33 @@ export function MiniGameMenu({ onClose: _onClose, onSelectGame, energy = 10, max
             </p>
           </div>
         )}
+
+        {/* Refill energy with opals — only when completely empty */}
+        <AnimatePresence>
+          {displayEnergy === 0 && (
+            <motion.button
+              key="refill-energy"
+              onClick={opals >= REFILL_ENERGY_COST ? onRefillEnergy : undefined}
+              whileTap={opals >= REFILL_ENERGY_COST ? { scale: 0.96 } : {}}
+              disabled={opals < REFILL_ENERGY_COST}
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.3 }}
+              className={`mt-2.5 w-full flex items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold transition-all border ${
+                opals >= REFILL_ENERGY_COST
+                  ? 'bg-yellow-400/90 hover:bg-yellow-400 border-yellow-300/60 text-slate-900 cursor-pointer'
+                  : 'bg-white/10 border-white/10 text-white/40 cursor-not-allowed'
+              }`}
+            >
+              <Zap className="w-3.5 h-3.5" />
+              <span>Refill Energy — {REFILL_ENERGY_COST} Opals</span>
+              <span className={`ml-auto text-[10px] font-semibold ${opals >= REFILL_ENERGY_COST ? 'text-slate-700' : 'text-white/30'}`}>
+                (you have {opals})
+              </span>
+            </motion.button>
+          )}
+        </AnimatePresence>
       </motion.div>
 
       {/* Mini-Games Lock Banner */}

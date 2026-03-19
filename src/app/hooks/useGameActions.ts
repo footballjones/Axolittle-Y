@@ -257,6 +257,20 @@ export function useGameActions({
   }, []);
 
   const UNLOCK_GAMES_COST = 5; // opals
+  const REFILL_ENERGY_COST = 10; // opals
+
+  const handleRefillEnergy = useCallback(() => {
+    setGameState(prev => {
+      if (!prev) return prev;
+      if ((prev.opals || 0) < REFILL_ENERGY_COST) return prev;
+      return {
+        ...prev,
+        opals: (prev.opals || 0) - REFILL_ENERGY_COST,
+        energy: prev.maxEnergy ?? GAME_CONFIG.energyMax,
+        lastEnergyUpdate: Date.now(),
+      };
+    });
+  }, []);
 
   const handleUnlockGames = useCallback(() => {
     setGameState(prev => {
@@ -999,6 +1013,7 @@ export function useGameActions({
     handleStoreShrimpInInventory,
     handleDeployShrimpFromInventory,
     handleUnlockGames,
+    handleRefillEnergy,
     handleClaimAchievement,
   };
 }

@@ -278,6 +278,7 @@ export default function App() {
     handleDeployShrimpFromInventory,
     handleUnlockNurserySlot,
     handleUnlockGames,
+    handleRefillEnergy,
     handleClaimAchievement,
   } = gameActions;
 
@@ -2203,6 +2204,7 @@ export default function App() {
                     lastEnergyUpdate={gameState.lastEnergyUpdate}
                     opals={opals}
                     onUnlockGames={handleUnlockGames}
+                    onRefillEnergy={handleRefillEnergy}
                   />
                 </div>
 
