@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { User, Users, Info, Zap, Lock } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { GAME_CONFIG } from '../config/game';
@@ -203,6 +203,23 @@ export function MiniGameMenu({ onClose: _onClose, onSelectGame, energy = 10, max
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [energyTimeText, setEnergyTimeText] = useState<string>('');
   const [lockTimeText, setLockTimeText] = useState<string>('');
+
+  // Tutorial target measurement — used to position fixed overlays precisely
+  const unlockBtnRef = useRef<HTMLButtonElement>(null);
+  const stackerTileRef = useRef<HTMLDivElement>(null);
+  const [tutorialRect, setTutorialRect] = useState<DOMRect | null>(null);
+
+  useLayoutEffect(() => {
+    if (!tutorialPhase) { setTutorialRect(null); return; }
+    const measure = () => {
+      const el = tutorialPhase === 'unlock' ? unlockBtnRef.current : stackerTileRef.current;
+      if (el) setTutorialRect(el.getBoundingClientRect());
+    };
+    // Small delay lets the DOM and animations settle before measuring
+    const t = setTimeout(measure, 120);
+    window.addEventListener('resize', measure);
+    return () => { clearTimeout(t); window.removeEventListener('resize', measure); };
+  }, [tutorialPhase]);
 
   const isLocked = !!miniGamesLockedUntil && miniGamesLockedUntil > Date.now();
   const multiplayerLevelLocked = (currentLevel ?? 0) < 10;
@@ -438,6 +455,7 @@ export function MiniGameMenu({ onClose: _onClose, onSelectGame, energy = 10, max
             </div>
             {/* Unlock with opals */}
             <motion.button
+              ref={unlockBtnRef}
               onClick={opals >= UNLOCK_GAMES_COST ? onUnlockGames : undefined}
               whileTap={opals >= UNLOCK_GAMES_COST ? { scale: 0.96 } : {}}
               disabled={opals < UNLOCK_GAMES_COST}
@@ -467,19 +485,34 @@ export function MiniGameMenu({ onClose: _onClose, onSelectGame, energy = 10, max
         </div>
         
         <div className="grid grid-cols-2 gap-2">
-          {soloGames.map((game, index) => (
-            <GameTile
-              key={game.id}
-              game={game}
-              index={index}
-              expandedId={expandedId}
-              onToggleInfo={toggleInfo}
-              onSelectGame={onSelectGame}
-              energy={energy}
-              isLocked={isLocked}
-              tutorialHighlight={tutorialPhase === 'stacker' && game.id === 'axolotl-stacker'}
-            />
-          ))}
+          {soloGames.map((game, index) =>
+            game.id === 'axolotl-stacker' ? (
+              // Wrapper div gives us a ref to measure the stacker tile's exact position
+              <div key={game.id} ref={stackerTileRef}>
+                <GameTile
+                  game={game}
+                  index={index}
+                  expandedId={expandedId}
+                  onToggleInfo={toggleInfo}
+                  onSelectGame={onSelectGame}
+                  energy={energy}
+                  isLocked={isLocked}
+                  tutorialHighlight={tutorialPhase === 'stacker'}
+                />
+              </div>
+            ) : (
+              <GameTile
+                key={game.id}
+                game={game}
+                index={index}
+                expandedId={expandedId}
+                onToggleInfo={toggleInfo}
+                onSelectGame={onSelectGame}
+                energy={energy}
+                isLocked={isLocked}
+              />
+            )
+          )}
         </div>
       </div>
 
@@ -522,11 +555,101 @@ export function MiniGameMenu({ onClose: _onClose, onSelectGame, energy = 10, max
         transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
       >
         <p className="text-xs text-white/90 text-center font-medium">
-          {energy <= 0 
+          {energy <= 0
             ? '⚡ No energy! You can still play for fun, but no XP or coins will be earned. Energy regenerates over time.'
             : '💡 Playing mini-games earns coins and boosts your axolotl\'s stats!'}
         </p>
       </motion.div>
+
+      {/* ── Tutorial overlays — fixed so they stay pinned over the target element ── */}
+      <AnimatePresence>
+        {tutorialPhase && tutorialRect && (
+          <motion.div
+            key={tutorialPhase}
+            className="fixed inset-0 pointer-events-none"
+            style={{ zIndex: 60 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            {/* Dim overlay */}
+            <div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.50)' }} />
+
+            {/* Speech bubble + caret + bouncing finger, centred above the measured target */}
+            <motion.div
+              className="absolute flex flex-col items-center gap-0.5"
+              style={{
+                // Bubble sits above the target; left is centred on the target
+                bottom: window.innerHeight - tutorialRect.top + 10,
+                left: tutorialRect.left + tutorialRect.width / 2,
+                transform: 'translateX(-50%)',
+              }}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2, duration: 0.35 }}
+            >
+              {tutorialPhase === 'unlock' ? (
+                <div
+                  className="rounded-2xl px-5 py-3.5 shadow-2xl text-center"
+                  style={{
+                    background: 'rgba(255,255,255,0.97)',
+                    border: '2.5px solid rgba(139,92,246,0.75)',
+                    boxShadow: '0 8px 32px rgba(139,92,246,0.4)',
+                    maxWidth: 240,
+                    whiteSpace: 'normal',
+                  }}
+                >
+                  <p className="text-slate-800 text-[13px] font-bold leading-snug">
+                    Games are locked! 🔒
+                  </p>
+                  <p className="text-slate-500 text-[11.5px] leading-snug mt-1">
+                    The water change locked games for 2 hrs.{' '}
+                    Tap <span className="text-violet-600 font-bold">Unlock Now</span> to use Opals and skip the wait!
+                  </p>
+                </div>
+              ) : (
+                <div
+                  className="rounded-2xl px-5 py-3.5 shadow-2xl text-center"
+                  style={{
+                    background: 'rgba(255,255,255,0.97)',
+                    border: '2.5px solid rgba(99,102,241,0.75)',
+                    boxShadow: '0 8px 32px rgba(99,102,241,0.4)',
+                    maxWidth: 240,
+                    whiteSpace: 'normal',
+                  }}
+                >
+                  <p className="text-slate-800 text-[13px] font-bold leading-snug">
+                    Let's play! 🎮
+                  </p>
+                  <p className="text-slate-500 text-[11.5px] leading-snug mt-1">
+                    Start with <span className="text-indigo-600 font-bold">Axolotl Stacker 🏗️</span> — stack 'em high to earn XP & coins!
+                  </p>
+                </div>
+              )}
+
+              {/* Caret pointing down at the target */}
+              <div
+                className="w-0 h-0"
+                style={{
+                  borderLeft: '8px solid transparent',
+                  borderRight: '8px solid transparent',
+                  borderTop: `9px solid ${tutorialPhase === 'unlock' ? 'rgba(255,255,255,0.97)' : 'rgba(255,255,255,0.97)'}`,
+                }}
+              />
+
+              {/* Bouncing finger */}
+              <motion.span
+                className="text-2xl select-none leading-none"
+                animate={{ y: [0, 8, 0] }}
+                transition={{ duration: 0.85, repeat: Infinity, ease: 'easeInOut' }}
+              >
+                👇
+              </motion.span>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
