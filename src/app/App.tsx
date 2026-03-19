@@ -2394,7 +2394,16 @@ export default function App() {
           gameState?.axolotl && (
           <WellbeingIntroModal
             axolotlName={gameState.axolotl.name}
-            onStart={() => setGameState(s => s ? { ...s, wellbeingIntroSeen: true } : s)}
+            onStart={() => {
+              // Snap aquarium to center so feed button and worm drop at x=50 are in view
+              const el = aquariumScrollRef.current;
+              if (el) {
+                isCenteringScroll.current = true;
+                el.scrollLeft = (el.scrollWidth - el.clientWidth) / 2;
+                requestAnimationFrame(() => { isCenteringScroll.current = false; });
+              }
+              setGameState(s => s ? { ...s, wellbeingIntroSeen: true } : s);
+            }}
           />
         )}
       </AnimatePresence>
