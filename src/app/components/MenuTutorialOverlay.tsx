@@ -157,22 +157,32 @@ export function MenuTutorialOverlay({ menuOpen, onOpenMenu, onComplete }: MenuTu
         />
 
         {/* Speech bubble */}
+        {(() => {
+          // Position the bubble so the caret points directly at the target center
+          const targetCenterX = r.left + r.width / 2;
+          const bubbleW = 250;
+          // Clamp bubble so it stays on screen with 12px margin
+          const bubbleLeft = Math.max(12, Math.min(window.innerWidth - bubbleW - 12, targetCenterX - bubbleW / 2));
+          // Caret offset within the bubble to align with target center
+          const caretLeft = Math.max(20, Math.min(bubbleW - 20, targetCenterX - bubbleLeft));
+
+          return (
         <motion.div
-          className="absolute flex flex-col items-center pointer-events-auto"
+          className="absolute flex flex-col items-start pointer-events-auto"
           style={{
             ...(placeBelow
               ? { top: r.bottom + pad + 12 }
               : { bottom: window.innerHeight - r.top + pad + 12 }),
-            left: Math.max(16, Math.min(window.innerWidth - 264, r.left + r.width / 2 - 125)),
-            width: 250,
+            left: bubbleLeft,
+            width: bubbleW,
           }}
           initial={{ opacity: 0, y: placeBelow ? -8 : 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
         >
-          {/* Caret pointing at target */}
+          {/* Caret pointing up at target */}
           {placeBelow && (
-            <div className="flex justify-center w-full -mb-px">
+            <div className="-mb-px" style={{ marginLeft: caretLeft - 8 }}>
               <div style={{
                 width: 0, height: 0,
                 borderLeft: '8px solid transparent',
@@ -228,9 +238,9 @@ export function MenuTutorialOverlay({ menuOpen, onOpenMenu, onComplete }: MenuTu
             )}
           </div>
 
-          {/* Caret pointing up at target (when bubble is below target) */}
+          {/* Caret pointing down at target (when bubble is above target) */}
           {!placeBelow && (
-            <div className="flex justify-center w-full -mt-px">
+            <div className="-mt-px" style={{ marginLeft: caretLeft - 8 }}>
               <div style={{
                 width: 0, height: 0,
                 borderLeft: '8px solid transparent',
@@ -240,6 +250,8 @@ export function MenuTutorialOverlay({ menuOpen, onOpenMenu, onComplete }: MenuTu
             </div>
           )}
         </motion.div>
+          );
+        })()}
       </motion.div>
     </AnimatePresence>
   );
