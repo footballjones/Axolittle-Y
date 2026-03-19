@@ -16,7 +16,7 @@ interface MiniGameMenuProps {
   onUnlockGames?: () => void;
   onRefillEnergy?: () => void;
   currentLevel?: number;
-  tutorialPhase?: 'unlock' | 'stacker';
+  tutorialPhase?: 'unlock' | 'keepey';
 }
 
 interface GameTileProps {
@@ -206,13 +206,13 @@ export function MiniGameMenu({ onClose: _onClose, onSelectGame, energy = 10, max
 
   // Tutorial target measurement — used to position fixed overlays precisely
   const unlockBtnRef = useRef<HTMLButtonElement>(null);
-  const stackerTileRef = useRef<HTMLDivElement>(null);
+  const keepeyTileRef = useRef<HTMLDivElement>(null);
   const [tutorialRect, setTutorialRect] = useState<DOMRect | null>(null);
 
   useLayoutEffect(() => {
     if (!tutorialPhase) { setTutorialRect(null); return; }
     const measure = () => {
-      const el = tutorialPhase === 'unlock' ? unlockBtnRef.current : stackerTileRef.current;
+      const el = tutorialPhase === 'unlock' ? unlockBtnRef.current : keepeyTileRef.current;
       if (el) setTutorialRect(el.getBoundingClientRect());
     };
     // Small delay lets the DOM and animations settle before measuring
@@ -485,10 +485,15 @@ export function MiniGameMenu({ onClose: _onClose, onSelectGame, energy = 10, max
         </div>
         
         <div className="grid grid-cols-2 gap-2">
-          {soloGames.map((game, index) =>
-            game.id === 'axolotl-stacker' ? (
-              // Wrapper div gives us a ref to measure the stacker tile's exact position
-              <div key={game.id} ref={stackerTileRef}>
+          {soloGames.map((game, index) => {
+            const soloLevelLocked = multiplayerLevelLocked &&
+              (game.id === 'axolotl-stacker' || game.id === 'coral-code');
+            const tileIsLocked = isLocked || soloLevelLocked;
+            const lockReason = soloLevelLocked ? 'Reach Lv.10' : undefined;
+
+            return game.id === 'keepey-upey' ? (
+              // Wrapper div gives us a ref to measure the Keepey Upey tile's exact position
+              <div key={game.id} ref={keepeyTileRef}>
                 <GameTile
                   game={game}
                   index={index}
@@ -496,8 +501,9 @@ export function MiniGameMenu({ onClose: _onClose, onSelectGame, energy = 10, max
                   onToggleInfo={toggleInfo}
                   onSelectGame={onSelectGame}
                   energy={energy}
-                  isLocked={isLocked}
-                  tutorialHighlight={tutorialPhase === 'stacker'}
+                  isLocked={tileIsLocked}
+                  lockReason={lockReason}
+                  tutorialHighlight={tutorialPhase === 'keepey'}
                 />
               </div>
             ) : (
@@ -509,10 +515,11 @@ export function MiniGameMenu({ onClose: _onClose, onSelectGame, energy = 10, max
                 onToggleInfo={toggleInfo}
                 onSelectGame={onSelectGame}
                 energy={energy}
-                isLocked={isLocked}
+                isLocked={tileIsLocked}
+                lockReason={lockReason}
               />
-            )
-          )}
+            );
+          })}
         </div>
       </div>
 
@@ -582,7 +589,7 @@ export function MiniGameMenu({ onClose: _onClose, onSelectGame, energy = 10, max
               style={{
                 bottom: window.innerHeight - tutorialRect.top + 10,
                 // Unlock banner spans full width so pin to screen centre;
-                // stacker tile is in col-1 so centre on the tile itself.
+                // keepey tile is in col-1 so centre on the tile itself.
                 left: tutorialPhase === 'unlock'
                   ? window.innerWidth / 2
                   : tutorialRect.left + tutorialRect.width / 2,
@@ -626,7 +633,7 @@ export function MiniGameMenu({ onClose: _onClose, onSelectGame, energy = 10, max
                     Let's play! 🎮
                   </p>
                   <p className="text-slate-500 text-[11.5px] leading-snug mt-1">
-                    Start with <span className="text-indigo-600 font-bold">Axolotl Stacker 🏗️</span> — stack 'em high to earn XP & coins!
+                    Start with <span className="text-indigo-600 font-bold">Keepey Upey 🎈</span> — keep the balloon in the air to earn XP & coins!
                   </p>
                 </div>
               )}

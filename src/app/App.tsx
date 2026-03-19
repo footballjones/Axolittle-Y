@@ -84,8 +84,8 @@ export default function App() {
   const [playMode, setPlayMode] = useState(false);
   const playModeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Tracks in-games-screen tutorial phase ('unlock' → prompt to use opals, 'stacker' → prompt to play Axolotl Stacker)
-  const [mgTutPhase, setMgTutPhase] = useState<'unlock' | 'stacker' | null>(null);
+  // Tracks in-games-screen tutorial phase ('unlock' → prompt to use opals, 'keepey' → prompt to play Keepey Upey)
+  const [mgTutPhase, setMgTutPhase] = useState<'unlock' | 'keepey' | null>(null);
 
   // ── Tutorial pacing ───────────────────────────────────────────────────────
   // When a tutorial step completes we don't jump immediately to the next one.
@@ -492,18 +492,18 @@ export default function App() {
   useEffect(() => {
     if (currentScreen !== 'games') { setMgTutPhase(null); return; }
     if (gameState?.miniGameTutorialSeen || !gameState?.waterTutorialSeen || !gameState?.wellbeingCompleteSeen) return;
-    setMgTutPhase(isGameLocked ? 'unlock' : 'stacker');
+    setMgTutPhase(isGameLocked ? 'unlock' : 'keepey');
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentScreen]);
 
   // Advance unlock → stacker once the lock clears
   useEffect(() => {
-    if (mgTutPhase === 'unlock' && !isGameLocked) setMgTutPhase('stacker');
+    if (mgTutPhase === 'unlock' && !isGameLocked) setMgTutPhase('keepey');
   }, [mgTutPhase, isGameLocked]);
 
-  // Mark miniGameTutorialSeen when stacker phase is reached so home-screen bubble doesn't reappear
+  // Mark miniGameTutorialSeen when keepey phase is reached so home-screen bubble doesn't reappear
   useEffect(() => {
-    if (mgTutPhase === 'stacker') {
+    if (mgTutPhase === 'keepey') {
       setGameState(s => s && !s.miniGameTutorialSeen ? { ...s, miniGameTutorialSeen: true } : s);
     }
   }, [mgTutPhase]);
