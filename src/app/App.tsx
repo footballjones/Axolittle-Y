@@ -1788,7 +1788,10 @@ export default function App() {
                     <FeedingTutorial
                       step={gameState.tutorialStep}
                       axolotlName={axolotl.name}
-                      onXpTipDismiss={() => setGameState(s => s ? { ...s, tutorialStep: 'done' } : s)}
+                      onXpTipDismiss={() => {
+                        setGameState(s => s ? { ...s, tutorialStep: 'done' } : s);
+                        delayNextTutorial(1200); // brief pause before stat-assignment tutorial
+                      }}
                     />
                   )}
 
