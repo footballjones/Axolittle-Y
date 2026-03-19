@@ -40,7 +40,12 @@ function getAvailableColors(difficulty: Difficulty): ColorId[] {
   return ORB_COLORS.slice(0, DIFFICULTY_CONFIG[difficulty].colorCount).map(c => c.id);
 }
 
-function generateSecretCode(codeLength: number, available: ColorId[]): ColorId[] {
+function generateSecretCode(codeLength: number, available: ColorId[], unique = false): ColorId[] {
+  if (unique) {
+    // Shuffle a copy and slice — guarantees no duplicate colors in the code
+    const pool = [...available].sort(() => Math.random() - 0.5);
+    return pool.slice(0, codeLength);
+  }
   return Array.from({ length: codeLength }, () => available[Math.floor(Math.random() * available.length)]);
 }
 
@@ -183,7 +188,7 @@ export function CoralCode({ onEnd, onDeductEnergy, onApplyReward, energy }: Mini
     setDifficulty(selectedDifficulty);
     setCodeLength(config.codeLength);
     setAvailableColors(colors);
-    setSecretCode(generateSecretCode(config.codeLength, colors));
+    setSecretCode(generateSecretCode(config.codeLength, colors, selectedDifficulty === 'easy'));
     setCurrentGuess([]);
     setGuesses([]);
     setIsPlaying(true);
