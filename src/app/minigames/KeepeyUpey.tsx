@@ -353,68 +353,71 @@ export function KeepeyUpey({ onEnd, onDeductEnergy, onApplyReward, energy, sound
       ctx.ellipse(hx, hy, hr * 1.05, hr * 0.92, 0, 0, Math.PI * 2);
       ctx.fill();
 
-      // ── Gill fronds ── soft filled petal/leaf shapes (NOT lines)
-      // 3 fronds fanning upward-backward from behind the head, slanted well back
-      const gillFronds = [
-        { angle: -2.9, len: bs * 0.5,  width: bs * 0.11 },  // back-most, nearly horizontal back
-        { angle: -2.5, len: bs * 0.55, width: bs * 0.12 },  // middle, strongly angled back
-        { angle: -2.1, len: bs * 0.48, width: bs * 0.11 },  // forward, angled back toward tail
+      // ── Gill stalks ── thick rounded branches with small nubs, like soft coral
+      // 3 stalks angled back from behind the head
+      const gillStalks = [
+        { angle: -2.9, len: bs * 0.52 },  // back-most
+        { angle: -2.5, len: bs * 0.58 },  // middle (longest)
+        { angle: -2.1, len: bs * 0.5  },  // forward
       ];
       const gillBaseX = hx - bs * 0.15;
       const gillBaseY = hy - bs * 0.32;
 
-      for (let gi = 0; gi < gillFronds.length; gi++) {
-        const gf = gillFronds[gi];
-        const wave = Math.sin(t * 2.5 + gi * 1.1) * 0.15;
-        const a = gf.angle + wave;
-        const tipX = gillBaseX + Math.cos(a) * gf.len;
-        const tipY = gillBaseY + Math.sin(a) * gf.len;
-        // Perpendicular for width
-        const perpX = Math.cos(a + Math.PI / 2) * gf.width;
-        const perpY = Math.sin(a + Math.PI / 2) * gf.width;
-        const midF = 0.55; // control point along the length
+      for (let gi = 0; gi < gillStalks.length; gi++) {
+        const gs = gillStalks[gi];
+        const wave = Math.sin(t * 2.5 + gi * 1.1) * 0.1;
+        const a = gs.angle + wave;
+        const tipX = gillBaseX + Math.cos(a) * gs.len;
+        const tipY = gillBaseY + Math.sin(a) * gs.len;
 
-        // Filled petal shape
-        ctx.fillStyle = gillBase;
+        // Thick main stalk with round caps
+        ctx.strokeStyle = gillBase;
+        ctx.lineWidth = bs * 0.08;
+        ctx.lineCap = 'round';
         ctx.beginPath();
         ctx.moveTo(gillBaseX, gillBaseY);
         ctx.quadraticCurveTo(
-          gillBaseX + Math.cos(a) * gf.len * midF + perpX,
-          gillBaseY + Math.sin(a) * gf.len * midF + perpY,
+          gillBaseX + (tipX - gillBaseX) * 0.5 + Math.cos(a + Math.PI / 2) * bs * 0.04,
+          gillBaseY + (tipY - gillBaseY) * 0.5 + Math.sin(a + Math.PI / 2) * bs * 0.04,
           tipX, tipY
         );
-        ctx.quadraticCurveTo(
-          gillBaseX + Math.cos(a) * gf.len * midF - perpX,
-          gillBaseY + Math.sin(a) * gf.len * midF - perpY,
-          gillBaseX, gillBaseY
-        );
-        ctx.closePath();
-        ctx.fill();
+        ctx.stroke();
 
-        // Inner lighter highlight on each frond
+        // Bulbous tip
         ctx.fillStyle = gillLight;
         ctx.beginPath();
-        ctx.moveTo(gillBaseX, gillBaseY);
-        ctx.quadraticCurveTo(
-          gillBaseX + Math.cos(a) * gf.len * midF + perpX * 0.4,
-          gillBaseY + Math.sin(a) * gf.len * midF + perpY * 0.4,
-          tipX, tipY
-        );
-        ctx.quadraticCurveTo(
-          gillBaseX + Math.cos(a) * gf.len * midF - perpX * 0.3,
-          gillBaseY + Math.sin(a) * gf.len * midF - perpY * 0.3,
-          gillBaseX, gillBaseY
-        );
-        ctx.closePath();
+        ctx.arc(tipX, tipY, bs * 0.05, 0, Math.PI * 2);
         ctx.fill();
 
-        // Subtle center vein line
-        ctx.strokeStyle = pinkDark;
-        ctx.lineWidth = 0.7;
-        ctx.beginPath();
-        ctx.moveTo(gillBaseX, gillBaseY);
-        ctx.lineTo(tipX, tipY);
-        ctx.stroke();
+        // Small nubs along each side of the stalk (like feathery filaments)
+        const perpA = a + Math.PI / 2;
+        const nubCount = 4;
+        for (let ni = 1; ni <= nubCount; ni++) {
+          const frac = ni / (nubCount + 1);
+          const nx = gillBaseX + (tipX - gillBaseX) * frac;
+          const ny = gillBaseY + (tipY - gillBaseY) * frac;
+          const nubLen = bs * (0.06 + (1 - frac) * 0.04); // longer near base
+          const nubWave = Math.sin(t * 3 + gi * 2 + ni) * 0.15;
+
+          // Nub on each side
+          for (const side of [-1, 1]) {
+            const na = perpA + side * 0.3 + nubWave;
+            const ntx = nx + Math.cos(na) * nubLen * side;
+            const nty = ny + Math.sin(na) * nubLen * side;
+            ctx.strokeStyle = gillLight;
+            ctx.lineWidth = bs * 0.03;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(nx, ny);
+            ctx.lineTo(ntx, nty);
+            ctx.stroke();
+            // Tiny dot at nub tip
+            ctx.fillStyle = gillLight;
+            ctx.beginPath();
+            ctx.arc(ntx, nty, bs * 0.018, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
       }
 
       // ── Eye ── single eye on the side of the head (near side)
