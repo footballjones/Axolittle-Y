@@ -209,15 +209,6 @@ export function MenuTutorialOverlay({ menuOpen, onOpenMenu, onComplete }: MenuTu
                 <p className="text-xs text-slate-500">
                   {phase === 0 ? 'Let\'s explore what\'s inside.' : 'You\'re all set!'}
                 </p>
-                {phase === 0 && (
-                  <motion.span
-                    className="inline-block text-2xl mt-1"
-                    animate={{ y: [0, -6, 0] }}
-                    transition={{ duration: 0.85, repeat: Infinity, ease: 'easeInOut' }}
-                  >
-                    👆
-                  </motion.span>
-                )}
               </>
             ) : currentStep && (
               <>
