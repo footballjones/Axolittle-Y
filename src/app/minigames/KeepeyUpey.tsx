@@ -356,9 +356,9 @@ export function KeepeyUpey({ onEnd, onDeductEnergy, onApplyReward, energy, sound
       // ── Gill fronds ── soft filled petal/leaf shapes (NOT lines)
       // 3 fronds fanning upward-backward from behind the head, slanted well back
       const gillFronds = [
-        { angle: -2.5, len: bs * 0.5,  width: bs * 0.11 },  // back-most, angled far back
-        { angle: -2.1, len: bs * 0.55, width: bs * 0.12 },  // middle, angled back
-        { angle: -1.7, len: bs * 0.48, width: bs * 0.11 },  // forward, still angled back
+        { angle: -2.9, len: bs * 0.5,  width: bs * 0.11 },  // back-most, nearly horizontal back
+        { angle: -2.5, len: bs * 0.55, width: bs * 0.12 },  // middle, strongly angled back
+        { angle: -2.1, len: bs * 0.48, width: bs * 0.11 },  // forward, angled back toward tail
       ];
       const gillBaseX = hx - bs * 0.15;
       const gillBaseY = hy - bs * 0.32;
