@@ -262,24 +262,37 @@ export function KeepeyUpey({ onEnd, onDeductEnergy, onApplyReward, energy, sound
       ctx.translate(bx, by + bob);
       ctx.rotate(tilt);
 
-      // ── Tail ── smooth taper trailing left with gentle wag
+      // ── Body + Tail as one continuous shape ──
+      // Draw tail first (behind body), starting wide where it meets the body
       const tw = Math.sin(t * 3.5) * bs * 0.1;
-      ctx.fillStyle = pinkMid;
+      ctx.fillStyle = pink;
       ctx.beginPath();
-      ctx.moveTo(-bs * 0.7, -bs * 0.1);
-      ctx.bezierCurveTo(-bs * 1.1, -bs * 0.15 + tw, -bs * 1.5, tw * 0.5, -bs * 1.7, tw);
-      ctx.bezierCurveTo(-bs * 1.5, bs * 0.08 + tw * 0.5, -bs * 1.1, bs * 0.18 + tw * 0.3, -bs * 0.7, bs * 0.1);
+      // Start at the back of the body (top edge), where body ellipse would be
+      ctx.moveTo(-bs * 0.5, -bs * 0.38);
+      // Top edge of tail — curves out wide then tapers to a point
+      ctx.bezierCurveTo(
+        -bs * 0.9, -bs * 0.35 + tw * 0.3,
+        -bs * 1.3, -bs * 0.2 + tw * 0.7,
+        -bs * 1.75, tw
+      );
+      // Bottom edge — tapers back from point to body width
+      ctx.bezierCurveTo(
+        -bs * 1.3, bs * 0.2 + tw * 0.7,
+        -bs * 0.9, bs * 0.38 + tw * 0.3,
+        -bs * 0.5, bs * 0.38
+      );
       ctx.closePath();
       ctx.fill();
+
       // Tail dorsal fin ridge
       ctx.strokeStyle = pinkDark;
       ctx.lineWidth = 0.8;
       ctx.beginPath();
-      ctx.moveTo(-bs * 0.75, 0);
-      ctx.bezierCurveTo(-bs * 1.1, tw * 0.4, -bs * 1.4, tw * 0.6, -bs * 1.65, tw);
+      ctx.moveTo(-bs * 0.55, 0);
+      ctx.bezierCurveTo(-bs * 1.0, tw * 0.3, -bs * 1.4, tw * 0.6, -bs * 1.7, tw);
       ctx.stroke();
 
-      // ── Body ── long horizontal ellipse
+      // Body ellipse — drawn on top, overlaps the tail base seamlessly
       ctx.fillStyle = pink;
       ctx.beginPath();
       ctx.ellipse(0, 0, bs * 0.85, bs * 0.42, 0, 0, Math.PI * 2);
