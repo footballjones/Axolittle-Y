@@ -591,8 +591,10 @@ export function MiniGameMenu({ onClose: _onClose, onSelectGame, energy = 10, max
               style={{
                 // Y: float above the measured element
                 bottom: window.innerHeight - tutorialRect.top + 10,
-                // X: centre on the measured element's midpoint (works for both unlock btn and keepey tile)
-                left: tutorialRect.left + tutorialRect.width / 2,
+                // X: centre on the measured element's midpoint; unlock btn nudged left to account for card padding
+                left: tutorialPhase === 'unlock'
+                  ? tutorialRect.left + tutorialRect.width / 2 - 30
+                  : tutorialRect.left + tutorialRect.width / 2,
                 transform: 'translateX(-50%)',
               }}
               initial={{ opacity: 0, y: 8 }}
