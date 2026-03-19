@@ -595,13 +595,9 @@ export function MiniGameMenu({ onClose: _onClose, onSelectGame, energy = 10, max
             <motion.div
               className="absolute flex flex-col items-center gap-0.5"
               style={{
-                // Y: float above the measured element
                 bottom: window.innerHeight - tutorialRect.top + (tutorialPhase === 'keepey' ? 25 : 10),
-                // X: centre on the measured element's midpoint
-                // Note: style.transform is overridden by Framer Motion's own transform,
-                // so we manually subtract half the bubble maxWidth (240/2 = 120) to centre it.
-                left: tutorialRect.left + tutorialRect.width / 2 - 120,
-                transform: 'translateX(-50%)',
+                left: Math.max(12, Math.min(window.innerWidth - 252, tutorialRect.left + tutorialRect.width / 2 - 120)),
+                width: 240,
               }}
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
