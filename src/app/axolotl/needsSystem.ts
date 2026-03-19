@@ -150,50 +150,10 @@ export function updateWellbeingStats(axolotl: Axolotl, gameState?: GameState): {
     waterQuality: Math.max(5, axolotl.stats.waterQuality - STAT_DECAY_RATE.waterQuality * minutesPassed * waterQualityDecayMultiplier - poopWaterDecay),
   };
 
-  // ── Trait decay ───────────────────────────────────────────────────────────
-  // If hunger, happiness AND cleanliness are all 0 for >9 days (12,960 min),
-  // decay each secondary stat by 1 (min 0) every 18 hours (1,080 min).
-  const allZero =
-    newStats.hunger === 0 &&
-    newStats.happiness === 0 &&
-    newStats.cleanliness === 0;
-
-  let allStatsZeroSince = gameState?.allStatsZeroSince;
-  if (allZero) {
-    if (!allStatsZeroSince) allStatsZeroSince = now;
-  } else {
-    allStatsZeroSince = undefined;
-  }
-
-  const NINE_DAYS_MIN   = 12960; // 9 * 24 * 60
-  const DECAY_INTERVAL  = 1080;  // 18 * 60
-
-  let lastTraitDecayTime = gameState?.lastTraitDecayTime;
-  let updatedSecondaryStats = axolotl.secondaryStats;
-
-  if (
-    allStatsZeroSince &&
-    (now - allStatsZeroSince) / (1000 * 60) > NINE_DAYS_MIN
-  ) {
-    const lastDecay = lastTraitDecayTime ?? allStatsZeroSince;
-    const minutesSinceDecay = (now - lastDecay) / (1000 * 60);
-
-    if (minutesSinceDecay >= DECAY_INTERVAL) {
-      const ticks = Math.floor(minutesSinceDecay / DECAY_INTERVAL);
-      updatedSecondaryStats = {
-        strength:  Math.max(2, axolotl.secondaryStats.strength  - ticks),
-        intellect: Math.max(2, axolotl.secondaryStats.intellect - ticks),
-        stamina:   Math.max(2, axolotl.secondaryStats.stamina   - ticks),
-        speed:     Math.max(2, axolotl.secondaryStats.speed     - ticks),
-      };
-      lastTraitDecayTime = lastDecay + ticks * DECAY_INTERVAL * 60 * 1000;
-    }
-  }
-
   const updatedAxolotl = {
     ...axolotl,
     stats: newStats,
-    secondaryStats: updatedSecondaryStats,
+    secondaryStats: axolotl.secondaryStats,
     age: axolotl.age + minutesPassed,
     lastUpdated: now,
   };
@@ -207,16 +167,12 @@ export function updateWellbeingStats(axolotl: Axolotl, gameState?: GameState): {
   const trackersChanged =
     cleanlinessLowSince     !== gameState?.cleanlinessLowSince     ||
     cleanlinessVeryLowSince !== gameState?.cleanlinessVeryLowSince ||
-    allStatsZeroSince       !== gameState?.allStatsZeroSince       ||
-    lastTraitDecayTime      !== gameState?.lastTraitDecayTime      ||
     poopsChanged;
 
   const gameStateUpdate = trackersChanged
     ? {
         cleanlinessLowSince,
         cleanlinessVeryLowSince,
-        allStatsZeroSince,
-        lastTraitDecayTime,
         ...(poopsChanged ? { poopItems: currentPoops, pendingPoops: stillPending, lastPoopTime } : {}),
       }
     : undefined;

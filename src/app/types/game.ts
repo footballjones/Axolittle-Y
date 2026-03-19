@@ -1,4 +1,4 @@
-export type LifeStage = 'baby' | 'juvenile' | 'adult' | 'elder';
+export type LifeStage = 'hatchling' | 'sprout' | 'guardian' | 'elder';
 
 export interface AxolotlStats {
   hunger: number; // 0-100
@@ -97,8 +97,6 @@ export interface GameState {
   lastLoginBonusDate?: string; // YYYY-MM-DD format for login bonus tracking
   cleanlinessLowSince?: number; // Timestamp when cleanliness first dropped below 50%
   cleanlinessVeryLowSince?: number; // Timestamp when cleanliness first dropped below 10%
-  allStatsZeroSince?: number; // Timestamp when hunger, happiness AND cleanliness all hit 0 simultaneously
-  lastTraitDecayTime?: number; // Timestamp of last secondary-stat decay tick
   poopItems?: PoopItem[]; // Active visible poop items in the tank
   pendingPoops?: PendingPoop[]; // Poops scheduled to appear after 5-min delay
   feedCount?: number; // Feeds since last feed-poop was scheduled (resets at 6)
@@ -122,7 +120,7 @@ export interface GameState {
   tutorialStep?: 'swipe' | 'feed' | 'eat' | 'xp-tip' | 'done';
   // undefined = existing save (skip). false = new game, not yet seen. true = completed.
   cleanTutorialSeen?: boolean;
-  juvenileUnlockSeen?: boolean; // True once the Juvenile stage unlock modal has been shown
+  juvenileUnlockSeen?: boolean; // True once the Sprout stage unlock modal has been shown
   // ── Jimmy & Chubs ────────────────────────────────────────────────────────────
   lastJimmyGift?: number; // Unix-ms timestamp of last gift received from Jimmy & Chubs
   // ── Audio Settings ────────────────────────────────────────────────────────────

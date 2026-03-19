@@ -8,7 +8,7 @@ export const JIMMY_CHUBS_FRIEND: Friend = {
   friendCode: 'JIM-0CHBS',
   name: 'Jimmy & Chubs',
   axolotlName: 'Chubs',
-  stage: 'adult',
+  stage: 'guardian',
   generation: 7,
   lastSync: 0,
 };
@@ -82,7 +82,7 @@ function migrateV1toV2(state: StoredState): StoredState {
   }
   
   if (state.axolotl) {
-    const stageMigration: Record<string, string> = { 'egg': 'baby', 'larva': 'baby' };
+    const stageMigration: Record<string, string> = { 'egg': 'hatchling', 'larva': 'hatchling', 'baby': 'hatchling', 'juvenile': 'sprout', 'adult': 'guardian' };
     if (stageMigration[state.axolotl.stage]) {
       state.axolotl.stage = stageMigration[state.axolotl.stage];
     }
