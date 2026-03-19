@@ -347,11 +347,11 @@ export function KeepeyUpey({ onEnd, onDeductEnergy, onApplyReward, energy, sound
       ctx.fill();
 
       // ── Gill fronds ── soft filled petal/leaf shapes (NOT lines)
-      // 3 fronds fanning upward-backward from behind the head
+      // 3 fronds fanning upward-backward from behind the head, slanted back
       const gillFronds = [
-        { angle: -1.9, len: bs * 0.55, width: bs * 0.12 },  // back-most, angled up-left
-        { angle: -1.5, len: bs * 0.6,  width: bs * 0.13 },  // middle, mostly straight up
-        { angle: -1.1, len: bs * 0.5,  width: bs * 0.11 },  // forward, angled up-right
+        { angle: -2.2, len: bs * 0.5,  width: bs * 0.11 },  // back-most, angled far back
+        { angle: -1.8, len: bs * 0.55, width: bs * 0.12 },  // middle, angled back
+        { angle: -1.4, len: bs * 0.48, width: bs * 0.11 },  // forward, still angled back
       ];
       const gillBaseX = hx - bs * 0.15;
       const gillBaseY = hy - bs * 0.32;
@@ -410,27 +410,9 @@ export function KeepeyUpey({ onEnd, onDeductEnergy, onApplyReward, energy, sound
         ctx.stroke();
       }
 
-      // ── Eye ── one main eye (near side), one small peek eye (far side)
-      // Far eye (partially hidden behind head)
-      const farEyeX = hx - bs * 0.08;
-      const farEyeY = hy - bs * 0.12;
-      const farR = bs * 0.1;
-      ctx.fillStyle = '#fff';
-      ctx.beginPath();
-      ctx.arc(farEyeX, farEyeY, farR, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = '#1a1a2e';
-      ctx.beginPath();
-      ctx.arc(farEyeX + bs * 0.02, farEyeY, farR * 0.6, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = '#fff';
-      ctx.beginPath();
-      ctx.arc(farEyeX + bs * 0.04, farEyeY - bs * 0.02, farR * 0.25, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Main eye (near side, larger)
-      const eyeX = hx + bs * 0.12;
-      const eyeY = hy - bs * 0.15;
+      // ── Eye ── single eye on the side of the head (near side)
+      const eyeX = hx + bs * 0.22;
+      const eyeY = hy - bs * 0.1;
       const eyeR = bs * 0.16;
       ctx.fillStyle = '#fff';
       ctx.shadowColor = 'rgba(0,0,0,0.1)';
