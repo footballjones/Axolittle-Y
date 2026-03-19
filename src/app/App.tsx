@@ -2162,48 +2162,161 @@ export default function App() {
               </>
             ) : (
               /* Mini Games Screen */
-              <div 
-                className="flex-1 min-h-0 overflow-y-auto overscroll-contain bg-gradient-to-br from-indigo-300/90 via-purple-300/90 to-pink-300/90"
-                style={{ 
-                  WebkitOverflowScrolling: 'touch',
-                  touchAction: 'pan-y',
-                  paddingTop: '0.5rem',
-                  height: '100%',
-                  width: '100%',
-                  position: 'relative',
-                  display: activeGame ? 'none' : 'block', // Hide menu when game is active
-                }}
-              >
-                <MiniGameMenu
-                  onClose={() => setCurrentScreen('home')}
-                  miniGamesLockedUntil={gameState.miniGamesLockedUntil}
-                  currentLevel={currentLevel}
-                  tutorialPhase={mgTutPhase ?? undefined}
-                  onSelectGame={(gameId) => {
-                    if (!gameState) return;
-
-                    // Clear in-games tutorial when any game is selected
-                    if (mgTutPhase !== null) setMgTutPhase(null);
-
-                    // Track unique games played for "All-Rounder" achievement
-                    setGameState(prev => {
-                      if (!prev) return prev;
-                      const already = prev.uniqueGamesPlayed ?? [];
-                      if (already.includes(gameId)) return prev;
-                      return { ...prev, uniqueGamesPlayed: [...already, gameId] };
-                    });
-
-                    // Start the game - energy is deducted inside each game's startGame()
-                    setActiveGame(gameId);
-                    setCurrentScreen('home');
+              <>
+                <div
+                  className="flex-1 min-h-0 overflow-y-auto overscroll-contain bg-gradient-to-br from-indigo-300/90 via-purple-300/90 to-pink-300/90"
+                  style={{
+                    WebkitOverflowScrolling: 'touch',
+                    touchAction: 'pan-y',
+                    paddingTop: '0.5rem',
+                    height: '100%',
+                    width: '100%',
+                    position: 'relative',
+                    display: activeGame ? 'none' : 'block', // Hide menu when game is active
                   }}
-                  energy={gameState.energy}
-                  maxEnergy={gameState.maxEnergy}
-                  lastEnergyUpdate={gameState.lastEnergyUpdate}
-                  opals={opals}
-                  onUnlockGames={handleUnlockGames}
-                />
-              </div>
+                >
+                  <MiniGameMenu
+                    onClose={() => setCurrentScreen('home')}
+                    miniGamesLockedUntil={gameState.miniGamesLockedUntil}
+                    currentLevel={currentLevel}
+                    tutorialPhase={mgTutPhase ?? undefined}
+                    onSelectGame={(gameId) => {
+                      if (!gameState) return;
+
+                      // Clear in-games tutorial when any game is selected
+                      if (mgTutPhase !== null) setMgTutPhase(null);
+
+                      // Track unique games played for "All-Rounder" achievement
+                      setGameState(prev => {
+                        if (!prev) return prev;
+                        const already = prev.uniqueGamesPlayed ?? [];
+                        if (already.includes(gameId)) return prev;
+                        return { ...prev, uniqueGamesPlayed: [...already, gameId] };
+                      });
+
+                      // Start the game - energy is deducted inside each game's startGame()
+                      setActiveGame(gameId);
+                      setCurrentScreen('home');
+                    }}
+                    energy={gameState.energy}
+                    maxEnergy={gameState.maxEnergy}
+                    lastEnergyUpdate={gameState.lastEnergyUpdate}
+                    opals={opals}
+                    onUnlockGames={handleUnlockGames}
+                  />
+                </div>
+
+                {/* ── Mini-game screen tutorial overlays (fixed, don't scroll) ── */}
+                {mgTutPhase && !activeGame && (
+                  <motion.div
+                    key={mgTutPhase}
+                    className="fixed inset-0 pointer-events-none"
+                    style={{ zIndex: 60 }}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.35 }}
+                  >
+                    {/* Dim overlay */}
+                    <div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.52)' }} />
+
+                    {mgTutPhase === 'unlock' && (
+                      /* ── Unlock phase: point at the lock banner / Unlock Now button ── */
+                      <motion.div
+                        className="absolute left-0 right-0 flex flex-col items-center gap-1 px-6"
+                        style={{ top: '28%' }}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.3, duration: 0.4 }}
+                      >
+                        <div
+                          className="rounded-2xl px-5 py-4 shadow-2xl text-center w-full max-w-[280px]"
+                          style={{
+                            background: 'rgba(255,255,255,0.97)',
+                            border: '2.5px solid rgba(139,92,246,0.75)',
+                            boxShadow: '0 8px 32px rgba(139,92,246,0.4)',
+                          }}
+                        >
+                          <p className="text-slate-800 text-[14px] font-bold leading-snug">
+                            Games are locked! 🔒
+                          </p>
+                          <p className="text-slate-500 text-[12px] leading-snug mt-1">
+                            The water change locked your games for 2 hours.
+                          </p>
+                          <p className="text-slate-600 text-[12px] font-semibold leading-snug mt-1">
+                            Use <span className="text-violet-600 font-bold">Opals ✨</span> below to unlock now!
+                          </p>
+                        </div>
+                        {/* Caret pointing down toward lock banner */}
+                        <div
+                          className="w-0 h-0"
+                          style={{
+                            borderLeft: '9px solid transparent',
+                            borderRight: '9px solid transparent',
+                            borderTop: '10px solid rgba(255,255,255,0.97)',
+                          }}
+                        />
+                        {/* Bouncing finger */}
+                        <motion.span
+                          className="text-3xl select-none"
+                          animate={{ y: [0, 10, 0] }}
+                          transition={{ duration: 0.85, repeat: Infinity, ease: 'easeInOut' }}
+                        >
+                          👇
+                        </motion.span>
+                      </motion.div>
+                    )}
+
+                    {mgTutPhase === 'stacker' && (
+                      /* ── Stacker phase: point at Axolotl Stacker tile (col-1 row-2 of grid) ── */
+                      <motion.div
+                        className="absolute flex flex-col items-start gap-1 px-6"
+                        style={{ top: '26%', left: 0, right: 0 }}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.3, duration: 0.4 }}
+                      >
+                        <div
+                          className="rounded-2xl px-5 py-4 shadow-2xl text-center w-full max-w-[280px] mx-auto"
+                          style={{
+                            background: 'rgba(255,255,255,0.97)',
+                            border: '2.5px solid rgba(99,102,241,0.75)',
+                            boxShadow: '0 8px 32px rgba(99,102,241,0.4)',
+                          }}
+                        >
+                          <p className="text-slate-800 text-[14px] font-bold leading-snug">
+                            Let's play! 🎮
+                          </p>
+                          <p className="text-slate-500 text-[12px] leading-snug mt-1">
+                            Start with <span className="text-indigo-600 font-bold">Axolotl Stacker 🏗️</span>
+                          </p>
+                          <p className="text-slate-500 text-[12px] leading-snug mt-0.5">
+                            Stack axolotls as high as you can to earn XP & coins!
+                          </p>
+                        </div>
+                        {/* Caret + finger pointing down-left toward Stacker tile (col 1) */}
+                        <div className="flex flex-col items-start pl-[15%] gap-0.5 w-full">
+                          <div
+                            className="w-0 h-0"
+                            style={{
+                              borderLeft: '9px solid transparent',
+                              borderRight: '9px solid transparent',
+                              borderTop: '10px solid rgba(255,255,255,0.97)',
+                            }}
+                          />
+                          <motion.span
+                            className="text-3xl select-none"
+                            animate={{ y: [0, 10, 0] }}
+                            transition={{ duration: 0.85, repeat: Infinity, ease: 'easeInOut' }}
+                          >
+                            👇
+                          </motion.span>
+                        </div>
+                      </motion.div>
+                    )}
+                  </motion.div>
+                )}
+              </>
             )}
             </div>
           </div>

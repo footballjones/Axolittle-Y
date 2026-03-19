@@ -406,33 +406,6 @@ export function MiniGameMenu({ onClose: _onClose, onSelectGame, energy = 10, max
                 </p>
               </div>
             </div>
-            {/* Unlock tutorial bubble */}
-            {tutorialPhase === 'unlock' && (
-              <motion.div
-                className="mt-3 flex flex-col items-center gap-0.5"
-                initial={{ opacity: 0, y: -6 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3, duration: 0.4 }}
-              >
-                <div
-                  className="rounded-xl px-4 py-2 text-center shadow-lg w-full"
-                  style={{
-                    background: 'rgba(255,255,255,0.97)',
-                    border: '2px solid rgba(139,92,246,0.75)',
-                    boxShadow: '0 4px 20px rgba(139,92,246,0.35)',
-                  }}
-                >
-                  <p className="text-slate-800 text-[12px] font-bold leading-snug">
-                    Games locked! ✨
-                  </p>
-                  <p className="text-slate-500 text-[11px] leading-snug mt-0.5">
-                    Tap <span className="text-violet-600 font-bold">Unlock Now</span> below to use Opals and skip the wait
-                  </p>
-                </div>
-                {/* Caret pointing down at unlock button */}
-                <div className="w-0 h-0" style={{ borderLeft: '7px solid transparent', borderRight: '7px solid transparent', borderTop: '8px solid rgba(255,255,255,0.97)' }} />
-              </motion.div>
-            )}
             {/* Unlock with opals */}
             <motion.button
               onClick={opals >= UNLOCK_GAMES_COST ? onUnlockGames : undefined}
@@ -463,34 +436,6 @@ export function MiniGameMenu({ onClose: _onClose, onSelectGame, energy = 10, max
           <h3 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-white to-violet-100 drop-shadow-sm">Solo Games</h3>
         </div>
         
-        {/* Stacker tutorial banner */}
-        {tutorialPhase === 'stacker' && (
-          <motion.div
-            className="mb-3 flex flex-col items-center gap-0.5"
-            initial={{ opacity: 0, y: -6 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3, duration: 0.4 }}
-          >
-            <div
-              className="rounded-xl px-4 py-2.5 text-center shadow-lg w-full"
-              style={{
-                background: 'rgba(255,255,255,0.97)',
-                border: '2px solid rgba(99,102,241,0.75)',
-                boxShadow: '0 4px 20px rgba(99,102,241,0.3)',
-              }}
-            >
-              <p className="text-slate-800 text-[12px] font-bold leading-snug">
-                Start with Axolotl Stacker! 🏗️
-              </p>
-              <p className="text-slate-500 text-[11px] leading-snug mt-0.5">
-                Stack axolotls as high as you can to earn XP & coins
-              </p>
-            </div>
-            {/* Caret pointing down at the grid */}
-            <div className="w-0 h-0" style={{ borderLeft: '7px solid transparent', borderRight: '7px solid transparent', borderTop: '8px solid rgba(255,255,255,0.97)' }} />
-          </motion.div>
-        )}
-
         <div className="grid grid-cols-2 gap-2">
           {soloGames.map((game, index) => (
             <GameTile
