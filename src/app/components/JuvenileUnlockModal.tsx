@@ -82,33 +82,18 @@ export function JuvenileUnlockModal({ axolotlName, onClose }: JuvenileUnlockModa
 
           {/* Stage transition visual */}
           <motion.div
-            className="relative flex items-center justify-center gap-4 mb-4"
+            className="relative flex items-center justify-center gap-3 mb-4"
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.35 }}
           >
-            <div className="flex flex-col items-center gap-1">
-              <div className="w-14 h-14 rounded-2xl bg-white/20 border border-white/30 flex items-center justify-center text-3xl shadow-lg">
-                🥚
-              </div>
-              <span className="text-white/70 text-[10px] font-bold uppercase tracking-wide">Baby</span>
-            </div>
-            <motion.div
+            <span className="text-white/80 text-lg font-black uppercase tracking-widest">Hatchling</span>
+            <motion.span
+              className="text-white text-2xl"
               animate={{ x: [0, 6, 0] }}
               transition={{ duration: 0.9, repeat: Infinity, ease: 'easeInOut' }}
-            >
-              <span className="text-white text-2xl">→</span>
-            </motion.div>
-            <div className="flex flex-col items-center gap-1">
-              <motion.div
-                className="w-14 h-14 rounded-2xl bg-white/30 border-2 border-white/60 flex items-center justify-center text-3xl shadow-xl"
-                animate={{ scale: [1, 1.08, 1], boxShadow: ['0 0 0px rgba(255,255,255,0.3)', '0 0 20px rgba(255,255,255,0.6)', '0 0 0px rgba(255,255,255,0.3)'] }}
-                transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
-              >
-                🦎
-              </motion.div>
-              <span className="text-white text-[10px] font-black uppercase tracking-wide">Juvenile ✨</span>
-            </div>
+            >→</motion.span>
+            <span className="text-white text-lg font-black uppercase tracking-widest">Sprout</span>
           </motion.div>
 
           <motion.p
@@ -125,7 +110,7 @@ export function JuvenileUnlockModal({ axolotlName, onClose }: JuvenileUnlockModa
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
           >
-            {axolotlName} is a Juvenile!
+            {axolotlName} is a Sprout!
           </motion.h2>
           <motion.p
             className="relative text-white/80 text-sm mt-1"
