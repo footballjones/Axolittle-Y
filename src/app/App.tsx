@@ -499,6 +499,13 @@ export default function App() {
     if (mgTutPhase === 'unlock' && !isGameLocked) setMgTutPhase('stacker');
   }, [mgTutPhase, isGameLocked]);
 
+  // Mark miniGameTutorialSeen when stacker phase is reached so home-screen bubble doesn't reappear
+  useEffect(() => {
+    if (mgTutPhase === 'stacker') {
+      setGameState(s => s && !s.miniGameTutorialSeen ? { ...s, miniGameTutorialSeen: true } : s);
+    }
+  }, [mgTutPhase]);
+
   // Stats decay, evolution, and energy regen are handled by useWellbeingEngine
 
   const handleStart = useCallback((name: string) => {
@@ -851,7 +858,7 @@ export default function App() {
                     <Home className="text-white mx-auto drop-shadow-lg" style={{ width: '40px', height: '40px' }} strokeWidth={2.5} />
                   </motion.button>
                   <motion.button
-                    onClick={() => { setCurrentScreen('games'); setGameState(s => s && !s.miniGameTutorialSeen ? { ...s, miniGameTutorialSeen: true } : s); }}
+                    onClick={() => { setCurrentScreen('games'); }}
                     className={`relative bg-transparent border border-white/30 rounded-xl active:bg-white/[0.08] transition-all flex-1 overflow-hidden ${currentScreen === 'games' ? 'opacity-50' : ''}`}
                     style={{ padding: '5.6px' }}
                     whileTap={{ scale: 0.93 }}
@@ -2185,7 +2192,10 @@ export default function App() {
                       if (!gameState) return;
 
                       // Clear in-games tutorial when any game is selected
-                      if (mgTutPhase !== null) setMgTutPhase(null);
+                      if (mgTutPhase !== null) {
+                        setMgTutPhase(null);
+                        setGameState(s => s && !s.miniGameTutorialSeen ? { ...s, miniGameTutorialSeen: true } : s);
+                      }
 
                       // Track unique games played for "All-Rounder" achievement
                       setGameState(prev => {
