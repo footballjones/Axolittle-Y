@@ -14,6 +14,8 @@ interface MiniGameMenuProps {
   miniGamesLockedUntil?: number;
   opals?: number;
   onUnlockGames?: () => void;
+  currentLevel?: number;
+  tutorialPhase?: 'unlock' | 'stacker';
 }
 
 interface GameTileProps {
@@ -25,9 +27,11 @@ interface GameTileProps {
   onSelectGame: (id: string) => void;
   energy?: number;
   isLocked?: boolean;
+  lockReason?: string;
+  tutorialHighlight?: boolean;
 }
 
-function GameTile({ game, index, delayOffset = 0, expandedId, onToggleInfo, onSelectGame, energy: _energy = 0, isLocked = false }: GameTileProps) {
+function GameTile({ game, index, delayOffset = 0, expandedId, onToggleInfo, onSelectGame, energy: _energy = 0, isLocked = false, lockReason, tutorialHighlight = false }: GameTileProps) {
   const isExpanded = expandedId === game.id;
 
   return (
@@ -40,9 +44,21 @@ function GameTile({ game, index, delayOffset = 0, expandedId, onToggleInfo, onSe
       style={{ transform: 'scale(0.65)' }}
     >
       {isLocked && (
-        <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/20 rounded-2xl cursor-not-allowed">
-          <Lock className="w-5 h-5 text-white/80" />
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/50 rounded-2xl cursor-not-allowed gap-1.5">
+          <Lock className="w-5 h-5 text-white/90" />
+          {lockReason && (
+            <span className="text-[13px] font-black text-white text-center leading-tight px-2 py-0.5 rounded-lg bg-white/20 border border-white/30">{lockReason}</span>
+          )}
         </div>
+      )}
+      {/* Tutorial highlight ring */}
+      {tutorialHighlight && (
+        <motion.div
+          className="absolute inset-0 rounded-2xl pointer-events-none z-20"
+          style={{ border: '2.5px solid rgba(99,102,241,0.9)' }}
+          animate={{ opacity: [0.5, 1, 0.5], boxShadow: ['0 0 0 0 rgba(99,102,241,0.3)', '0 0 12px 4px rgba(99,102,241,0.4)', '0 0 0 0 rgba(99,102,241,0.3)'] }}
+          transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
+        />
       )}
       <button
         onClick={() => !isLocked && onSelectGame(game.id)}
@@ -180,12 +196,13 @@ function GameTile({ game, index, delayOffset = 0, expandedId, onToggleInfo, onSe
   );
 }
 
-export function MiniGameMenu({ onClose: _onClose, onSelectGame, energy = 10, maxEnergy = 10, lastEnergyUpdate, miniGamesLockedUntil, opals = 0, onUnlockGames }: MiniGameMenuProps) {
+export function MiniGameMenu({ onClose: _onClose, onSelectGame, energy = 10, maxEnergy = 10, lastEnergyUpdate, miniGamesLockedUntil, opals = 0, onUnlockGames, currentLevel, tutorialPhase }: MiniGameMenuProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [energyTimeText, setEnergyTimeText] = useState<string>('');
   const [lockTimeText, setLockTimeText] = useState<string>('');
 
   const isLocked = !!miniGamesLockedUntil && miniGamesLockedUntil > Date.now();
+  const multiplayerLevelLocked = (currentLevel ?? 0) < 10;
 
   // Live countdown for the mini-game lock
   useEffect(() => {
@@ -389,6 +406,33 @@ export function MiniGameMenu({ onClose: _onClose, onSelectGame, energy = 10, max
                 </p>
               </div>
             </div>
+            {/* Unlock tutorial bubble */}
+            {tutorialPhase === 'unlock' && (
+              <motion.div
+                className="mt-3 flex flex-col items-center gap-0.5"
+                initial={{ opacity: 0, y: -6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3, duration: 0.4 }}
+              >
+                <div
+                  className="rounded-xl px-4 py-2 text-center shadow-lg w-full"
+                  style={{
+                    background: 'rgba(255,255,255,0.97)',
+                    border: '2px solid rgba(139,92,246,0.75)',
+                    boxShadow: '0 4px 20px rgba(139,92,246,0.35)',
+                  }}
+                >
+                  <p className="text-slate-800 text-[12px] font-bold leading-snug">
+                    Games locked! ✨
+                  </p>
+                  <p className="text-slate-500 text-[11px] leading-snug mt-0.5">
+                    Tap <span className="text-violet-600 font-bold">Unlock Now</span> below to use Opals and skip the wait
+                  </p>
+                </div>
+                {/* Caret pointing down at unlock button */}
+                <div className="w-0 h-0" style={{ borderLeft: '7px solid transparent', borderRight: '7px solid transparent', borderTop: '8px solid rgba(255,255,255,0.97)' }} />
+              </motion.div>
+            )}
             {/* Unlock with opals */}
             <motion.button
               onClick={opals >= UNLOCK_GAMES_COST ? onUnlockGames : undefined}
@@ -419,6 +463,34 @@ export function MiniGameMenu({ onClose: _onClose, onSelectGame, energy = 10, max
           <h3 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-white to-violet-100 drop-shadow-sm">Solo Games</h3>
         </div>
         
+        {/* Stacker tutorial banner */}
+        {tutorialPhase === 'stacker' && (
+          <motion.div
+            className="mb-3 flex flex-col items-center gap-0.5"
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3, duration: 0.4 }}
+          >
+            <div
+              className="rounded-xl px-4 py-2.5 text-center shadow-lg w-full"
+              style={{
+                background: 'rgba(255,255,255,0.97)',
+                border: '2px solid rgba(99,102,241,0.75)',
+                boxShadow: '0 4px 20px rgba(99,102,241,0.3)',
+              }}
+            >
+              <p className="text-slate-800 text-[12px] font-bold leading-snug">
+                Start with Axolotl Stacker! 🏗️
+              </p>
+              <p className="text-slate-500 text-[11px] leading-snug mt-0.5">
+                Stack axolotls as high as you can to earn XP & coins
+              </p>
+            </div>
+            {/* Caret pointing down at the grid */}
+            <div className="w-0 h-0" style={{ borderLeft: '7px solid transparent', borderRight: '7px solid transparent', borderTop: '8px solid rgba(255,255,255,0.97)' }} />
+          </motion.div>
+        )}
+
         <div className="grid grid-cols-2 gap-2">
           {soloGames.map((game, index) => (
             <GameTile
@@ -430,6 +502,7 @@ export function MiniGameMenu({ onClose: _onClose, onSelectGame, energy = 10, max
               onSelectGame={onSelectGame}
               energy={energy}
               isLocked={isLocked}
+              tutorialHighlight={tutorialPhase === 'stacker' && game.id === 'axolotl-stacker'}
             />
           ))}
         </div>
@@ -442,6 +515,11 @@ export function MiniGameMenu({ onClose: _onClose, onSelectGame, energy = 10, max
             <Users className="w-5 h-5 text-white" strokeWidth={2.5} />
           </div>
           <h3 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-white to-rose-100 drop-shadow-sm">Multiplayer Games</h3>
+          {multiplayerLevelLocked && (
+            <span className="ml-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-white/20 text-white/70 border border-white/20">
+              🔒 Lv.10
+            </span>
+          )}
         </div>
 
         <div className="grid grid-cols-2 gap-2">
@@ -455,7 +533,8 @@ export function MiniGameMenu({ onClose: _onClose, onSelectGame, energy = 10, max
               onToggleInfo={toggleInfo}
               onSelectGame={onSelectGame}
               energy={energy}
-              isLocked={isLocked}
+              isLocked={isLocked || multiplayerLevelLocked}
+              lockReason={multiplayerLevelLocked ? 'Reach Lv.10' : undefined}
             />
           ))}
         </div>

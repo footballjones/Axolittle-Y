@@ -82,6 +82,9 @@ export default function App() {
   const [playMode, setPlayMode] = useState(false);
   const playModeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Tracks in-games-screen tutorial phase ('unlock' → prompt to use opals, 'stacker' → prompt to play Axolotl Stacker)
+  const [mgTutPhase, setMgTutPhase] = useState<'unlock' | 'stacker' | null>(null);
+
   // ── Tutorial pacing ───────────────────────────────────────────────────────
   // When a tutorial step completes we don't jump immediately to the next one.
   // `tutorialAllowed` is set false and re-enabled after the configured delay so
@@ -480,6 +483,20 @@ export default function App() {
     prevWaterTut.current = gameState?.waterTutorialSeen;
   }, [gameState?.waterTutorialSeen, delayNextTutorial]);
   // ──────────────────────────────────────────────────────────────────────────
+
+  // Mini-game screen tutorial: set phase when navigating to games screen
+  const isGameLocked = !!gameState?.miniGamesLockedUntil && gameState.miniGamesLockedUntil > Date.now();
+  useEffect(() => {
+    if (currentScreen !== 'games') { setMgTutPhase(null); return; }
+    if (gameState?.miniGameTutorialSeen || !gameState?.waterTutorialSeen) return;
+    setMgTutPhase(isGameLocked ? 'unlock' : 'stacker');
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentScreen]);
+
+  // Advance unlock → stacker once the lock clears
+  useEffect(() => {
+    if (mgTutPhase === 'unlock' && !isGameLocked) setMgTutPhase('stacker');
+  }, [mgTutPhase, isGameLocked]);
 
   // Stats decay, evolution, and energy regen are handled by useWellbeingEngine
 
@@ -1945,20 +1962,14 @@ export default function App() {
                             background: 'rgba(255,255,255,0.97)',
                             border: '2.5px solid rgba(99,102,241,0.75)',
                             boxShadow: '0 8px 32px rgba(99,102,241,0.4)',
-                            maxWidth: 240,
+                            maxWidth: 220,
                           }}
                         >
                           <p className="text-slate-800 text-[13px] font-bold leading-snug">
                             Play a mini game! 🎮
                           </p>
-                          <p className="text-slate-500 text-[11.5px] leading-snug mt-1">
-                            Tap the controller above to open mini games.
-                          </p>
                           <p className="text-slate-500 text-[11.5px] leading-snug mt-0.5">
-                            If games are locked from the water change, use <span className="text-violet-600 font-bold">Opals ✨</span> to unlock instantly.
-                          </p>
-                          <p className="text-indigo-600 text-[11.5px] font-bold leading-snug mt-1">
-                            Start with Axolotl Stacker 🏗️
+                            Tap the controller above to earn XP and coins
                           </p>
                         </div>
                       </motion.div>
@@ -2167,8 +2178,12 @@ export default function App() {
                   onClose={() => setCurrentScreen('home')}
                   miniGamesLockedUntil={gameState.miniGamesLockedUntil}
                   currentLevel={currentLevel}
+                  tutorialPhase={mgTutPhase ?? undefined}
                   onSelectGame={(gameId) => {
                     if (!gameState) return;
+
+                    // Clear in-games tutorial when any game is selected
+                    if (mgTutPhase !== null) setMgTutPhase(null);
 
                     // Track unique games played for "All-Rounder" achievement
                     setGameState(prev => {
