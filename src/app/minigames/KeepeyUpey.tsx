@@ -242,11 +242,10 @@ export function KeepeyUpey({ onEnd, onDeductEnergy, onApplyReward, energy, sound
       ctx.fill();
     }
 
-    // Axolotl — cute front-facing chibi character, tilts with velocity
+    // Axolotl — cute front-facing salamander, tilts with velocity
     {
       const bx = axo.x, by = axo.y, bs = axo.size;
       const tilt = Math.max(-0.3, Math.min(0.3, axo.vy * 0.045));
-      // Gentle idle bob
       const bobTime = (performance.now() - gameStateRef.current.startTime) / 1000;
       const bob = Math.sin(bobTime * 2.5) * bs * 0.04;
 
@@ -263,165 +262,154 @@ export function KeepeyUpey({ onEnd, onDeductEnergy, onApplyReward, energy, sound
       ctx.translate(bx, by + bob);
       ctx.rotate(tilt);
 
-      // ── Tail ── gentle taper with a soft S-curve
+      // ── Tail ── gentle S-curve trailing behind (to the left)
       const tailWag = Math.sin(bobTime * 4) * bs * 0.08;
       ctx.fillStyle = pinkMid;
       ctx.beginPath();
-      ctx.moveTo(-bs * 0.55, -bs * 0.15);
+      ctx.moveTo(-bs * 0.55, -bs * 0.12);
       ctx.bezierCurveTo(
-        -bs * 1.0, -bs * 0.2 + tailWag,
-        -bs * 1.4, bs * 0.1 + tailWag,
-        -bs * 1.65, -bs * 0.05 + tailWag
-      );
-      // rounded tip
-      ctx.bezierCurveTo(
-        -bs * 1.7, bs * 0.05 + tailWag,
-        -bs * 1.65, bs * 0.12 + tailWag,
-        -bs * 1.55, bs * 0.1 + tailWag
+        -bs * 1.0, -bs * 0.18 + tailWag,
+        -bs * 1.4, bs * 0.08 + tailWag,
+        -bs * 1.6, -bs * 0.02 + tailWag
       );
       ctx.bezierCurveTo(
-        -bs * 1.3, bs * 0.2 + tailWag,
-        -bs * 0.9, bs * 0.22 + tailWag * 0.5,
-        -bs * 0.55, bs * 0.15
+        -bs * 1.65, bs * 0.05 + tailWag,
+        -bs * 1.55, bs * 0.1 + tailWag,
+        -bs * 1.45, bs * 0.08 + tailWag
+      );
+      ctx.bezierCurveTo(
+        -bs * 1.2, bs * 0.18 + tailWag * 0.5,
+        -bs * 0.85, bs * 0.2,
+        -bs * 0.55, bs * 0.12
       );
       ctx.closePath();
       ctx.fill();
 
-      // ── Tail fin ridge (subtle darker line down center)
+      // Tail ridge line
       ctx.strokeStyle = pinkDark;
       ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.moveTo(-bs * 0.6, 0);
-      ctx.bezierCurveTo(-bs * 1.0, 0 + tailWag * 0.5, -bs * 1.35, bs * 0.05 + tailWag, -bs * 1.6, 0 + tailWag);
+      ctx.bezierCurveTo(-bs * 1.0, tailWag * 0.5, -bs * 1.3, bs * 0.04 + tailWag, -bs * 1.5, tailWag);
       ctx.stroke();
 
-      // ── Body ── plump oval, slightly wider than tall (chibi proportions)
+      // ── Body ── elongated horizontal oval (salamander, not bird)
       ctx.fillStyle = pink;
       ctx.beginPath();
-      ctx.ellipse(0, bs * 0.05, bs * 0.7, bs * 0.55, 0, 0, Math.PI * 2);
+      ctx.ellipse(0, bs * 0.05, bs * 0.72, bs * 0.48, 0, 0, Math.PI * 2);
       ctx.fill();
 
-      // Belly — lighter oval on lower body
+      // Belly
       ctx.fillStyle = belly;
       ctx.beginPath();
-      ctx.ellipse(bs * 0.02, bs * 0.18, bs * 0.45, bs * 0.3, 0, 0, Math.PI * 2);
+      ctx.ellipse(bs * 0.02, bs * 0.16, bs * 0.44, bs * 0.26, 0, 0, Math.PI * 2);
       ctx.fill();
 
-      // ── Back legs (behind body, partially hidden) ──
-      const legWiggle = Math.sin(bobTime * 3) * 0.08;
+      // ── Legs ── stubby salamander legs splayed outward
+      const legWiggle = Math.sin(bobTime * 3) * 0.06;
       ctx.fillStyle = pinkMid;
-      // Left back
-      ctx.beginPath();
-      ctx.ellipse(-bs * 0.45, bs * 0.42, bs * 0.12, bs * 0.22, -0.3 + legWiggle, 0, Math.PI * 2);
-      ctx.fill();
-      // Right back
-      ctx.beginPath();
-      ctx.ellipse(bs * 0.45, bs * 0.42, bs * 0.12, bs * 0.22, 0.3 - legWiggle, 0, Math.PI * 2);
-      ctx.fill();
-      // Tiny toes (back)
-      ctx.fillStyle = pinkDark;
-      for (const tx of [-bs * 0.55, -bs * 0.48, -bs * 0.41]) {
-        ctx.beginPath(); ctx.arc(tx, bs * 0.6, bs * 0.03, 0, Math.PI * 2); ctx.fill();
-      }
-      for (const tx of [bs * 0.55, bs * 0.48, bs * 0.41]) {
-        ctx.beginPath(); ctx.arc(tx, bs * 0.6, bs * 0.03, 0, Math.PI * 2); ctx.fill();
-      }
 
-      // ── Front legs ──
-      ctx.fillStyle = pink;
-      // Left front
+      // Back legs (further back, slightly behind body)
       ctx.beginPath();
-      ctx.ellipse(-bs * 0.52, bs * 0.28, bs * 0.13, bs * 0.24, -0.2 + legWiggle, 0, Math.PI * 2);
+      ctx.ellipse(-bs * 0.42, bs * 0.35, bs * 0.11, bs * 0.2, -0.35 + legWiggle, 0, Math.PI * 2);
       ctx.fill();
-      // Right front
       ctx.beginPath();
-      ctx.ellipse(bs * 0.52, bs * 0.28, bs * 0.13, bs * 0.24, 0.2 - legWiggle, 0, Math.PI * 2);
+      ctx.ellipse(bs * 0.42, bs * 0.35, bs * 0.11, bs * 0.2, 0.35 - legWiggle, 0, Math.PI * 2);
       ctx.fill();
-      // Tiny toes (front)
-      ctx.fillStyle = pinkDark;
-      for (const tx of [-bs * 0.62, -bs * 0.55, -bs * 0.48]) {
-        ctx.beginPath(); ctx.arc(tx, bs * 0.48, bs * 0.03, 0, Math.PI * 2); ctx.fill();
-      }
-      for (const tx of [bs * 0.62, bs * 0.55, bs * 0.48]) {
-        ctx.beginPath(); ctx.arc(tx, bs * 0.48, bs * 0.03, 0, Math.PI * 2); ctx.fill();
-      }
 
-      // ── Head ── big round chibi head (front-facing)
-      const headR = bs * 0.62;
-      const headY = -bs * 0.35;
+      // Front legs
       ctx.fillStyle = pink;
       ctx.beginPath();
-      ctx.arc(0, headY, headR, 0, Math.PI * 2);
+      ctx.ellipse(-bs * 0.5, bs * 0.22, bs * 0.12, bs * 0.2, -0.25 + legWiggle, 0, Math.PI * 2);
       ctx.fill();
-
-      // Head highlight — soft light on upper-left
-      ctx.fillStyle = pinkLight;
       ctx.beginPath();
-      ctx.ellipse(-bs * 0.12, headY - bs * 0.12, headR * 0.5, headR * 0.4, -0.3, 0, Math.PI * 2);
+      ctx.ellipse(bs * 0.5, bs * 0.22, bs * 0.12, bs * 0.2, 0.25 - legWiggle, 0, Math.PI * 2);
       ctx.fill();
 
-      // ── Gill plumes ── 3 per side, soft organic curves with gradient feel
-      const gillSets: Array<{ side: number; angles: number[] }> = [
-        { side: -1, angles: [-2.4, -2.0, -1.6] },
-        { side:  1, angles: [-0.75, -1.15, -1.55] },
-      ];
-      for (const gs of gillSets) {
-        for (let gi = 0; gi < gs.angles.length; gi++) {
-          const angle = gs.angles[gi];
-          const gillWave = Math.sin(bobTime * 3 + gi * 1.2 + gs.side) * 0.1;
-          const stemLen = bs * (0.45 + gi * 0.06);
-          const baseX = Math.cos(angle) * headR * 0.88 * gs.side * -1;
-          const baseY = headY + Math.sin(angle) * headR * 0.88;
-          const tipAngle = angle + gillWave;
-          const tipX = baseX + Math.cos(tipAngle) * stemLen * gs.side * -1;
-          const tipY = baseY + Math.sin(tipAngle) * stemLen;
-
-          // Thicker stem
-          ctx.strokeStyle = gillPink;
-          ctx.lineWidth = 3;
-          ctx.lineCap = 'round';
-          ctx.beginPath();
-          ctx.moveTo(baseX, baseY);
-          ctx.quadraticCurveTo(
-            baseX + (tipX - baseX) * 0.5 + gs.side * bs * 0.05,
-            baseY + (tipY - baseY) * 0.5,
-            tipX, tipY
-          );
-          ctx.stroke();
-
-          // Thinner branches from tip
-          ctx.strokeStyle = gillTip;
-          ctx.lineWidth = 1.8;
-          const branchLen = bs * 0.14;
-          ctx.beginPath();
-          ctx.moveTo(tipX, tipY);
-          ctx.lineTo(tipX + Math.cos(tipAngle - 0.5) * branchLen * gs.side * -1, tipY + Math.sin(tipAngle - 0.5) * branchLen);
-          ctx.stroke();
-          ctx.beginPath();
-          ctx.moveTo(tipX, tipY);
-          ctx.lineTo(tipX + Math.cos(tipAngle + 0.4) * branchLen * gs.side * -1, tipY + Math.sin(tipAngle + 0.4) * branchLen);
-          ctx.stroke();
-
-          // Tiny dot at tip (like little gill buds)
-          ctx.fillStyle = gillTip;
-          ctx.beginPath();
-          ctx.arc(tipX, tipY, bs * 0.025, 0, Math.PI * 2);
-          ctx.fill();
+      // Tiny toes
+      ctx.fillStyle = pinkDark;
+      for (const side of [-1, 1]) {
+        for (let t = 0; t < 3; t++) {
+          const tx = side * (bs * 0.52 + bs * 0.06 * (t - 1));
+          ctx.beginPath(); ctx.arc(tx, bs * 0.42, bs * 0.025, 0, Math.PI * 2); ctx.fill();
         }
       }
 
-      // ── Eyes ── big kawaii-style, both visible (front-facing)
-      const eyeSpacing = bs * 0.22;
-      const eyeY = headY - bs * 0.06;
-      const eyeR = bs * 0.17;
+      // ── Head ── wide flat oval (salamander snout shape, NOT a circle)
+      const headW = bs * 0.72;  // wider than tall
+      const headH = bs * 0.52;
+      const headY = -bs * 0.3;
+      ctx.fillStyle = pink;
+      ctx.beginPath();
+      ctx.ellipse(0, headY, headW, headH, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Head highlight
+      ctx.fillStyle = pinkLight;
+      ctx.beginPath();
+      ctx.ellipse(-bs * 0.1, headY - bs * 0.1, headW * 0.45, headH * 0.4, -0.2, 0, Math.PI * 2);
+      ctx.fill();
+
+      // ── Gill plumes ── grow UPWARD from top-back of head like a crown
+      // 3 per side, fanning up and slightly outward — NOT sideways
+      const gillData = [
+        // Left gills: angled up-left
+        { bx: -bs * 0.42, by: headY - bs * 0.38, angle: -1.8, len: bs * 0.48 },
+        { bx: -bs * 0.28, by: headY - bs * 0.45, angle: -1.6, len: bs * 0.52 },
+        { bx: -bs * 0.12, by: headY - bs * 0.48, angle: -1.45, len: bs * 0.46 },
+        // Right gills: angled up-right
+        { bx: bs * 0.42, by: headY - bs * 0.38, angle: -1.35, len: bs * 0.48 },
+        { bx: bs * 0.28, by: headY - bs * 0.45, angle: -1.55, len: bs * 0.52 },
+        { bx: bs * 0.12, by: headY - bs * 0.48, angle: -1.7, len: bs * 0.46 },
+      ];
+
+      for (let gi = 0; gi < gillData.length; gi++) {
+        const g = gillData[gi];
+        const wave = Math.sin(bobTime * 3 + gi * 0.9) * 0.12;
+        const tipX = g.bx + Math.cos(g.angle + wave) * g.len;
+        const tipY = g.by + Math.sin(g.angle + wave) * g.len;
+
+        // Main stem
+        ctx.strokeStyle = gillPink;
+        ctx.lineWidth = 2.8;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(g.bx, g.by);
+        ctx.quadraticCurveTo(g.bx + (tipX - g.bx) * 0.4, g.by + (tipY - g.by) * 0.6, tipX, tipY);
+        ctx.stroke();
+
+        // Small branches
+        ctx.strokeStyle = gillTip;
+        ctx.lineWidth = 1.5;
+        const bLen = bs * 0.12;
+        ctx.beginPath();
+        ctx.moveTo(tipX, tipY);
+        ctx.lineTo(tipX + Math.cos(g.angle + wave - 0.5) * bLen, tipY + Math.sin(g.angle + wave - 0.5) * bLen);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(tipX, tipY);
+        ctx.lineTo(tipX + Math.cos(g.angle + wave + 0.5) * bLen, tipY + Math.sin(g.angle + wave + 0.5) * bLen);
+        ctx.stroke();
+
+        // Tip bud
+        ctx.fillStyle = gillTip;
+        ctx.beginPath();
+        ctx.arc(tipX, tipY, bs * 0.025, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // ── Eyes ── wide-set on the flat head (salamander-like)
+      const eyeSpacing = bs * 0.32;
+      const eyeY = headY - bs * 0.04;
+      const eyeR = bs * 0.15;
 
       for (const side of [-1, 1]) {
         const ex = side * eyeSpacing;
 
-        // Sclera with subtle shadow
+        // Sclera
         ctx.fillStyle = '#fff';
         ctx.shadowColor = 'rgba(0,0,0,0.08)';
-        ctx.shadowBlur = 3;
+        ctx.shadowBlur = 2;
         ctx.beginPath();
         ctx.ellipse(ex, eyeY, eyeR, eyeR * 1.05, 0, 0, Math.PI * 2);
         ctx.fill();
@@ -430,45 +418,45 @@ export function KeepeyUpey({ onEnd, onDeductEnergy, onApplyReward, energy, sound
         // Iris
         ctx.fillStyle = '#1a1a2e';
         ctx.beginPath();
-        ctx.arc(ex + side * bs * 0.02, eyeY + bs * 0.01, eyeR * 0.62, 0, Math.PI * 2);
+        ctx.arc(ex, eyeY + bs * 0.01, eyeR * 0.6, 0, Math.PI * 2);
         ctx.fill();
 
-        // Pupil highlight (big)
+        // Highlight (large)
         ctx.fillStyle = '#fff';
         ctx.beginPath();
-        ctx.arc(ex + side * bs * 0.05, eyeY - bs * 0.04, eyeR * 0.28, 0, Math.PI * 2);
+        ctx.arc(ex + side * bs * 0.03, eyeY - bs * 0.03, eyeR * 0.26, 0, Math.PI * 2);
         ctx.fill();
 
-        // Pupil highlight (small)
+        // Highlight (small)
         ctx.beginPath();
-        ctx.arc(ex - side * bs * 0.02, eyeY + bs * 0.04, eyeR * 0.12, 0, Math.PI * 2);
+        ctx.arc(ex - side * bs * 0.015, eyeY + bs * 0.03, eyeR * 0.11, 0, Math.PI * 2);
         ctx.fill();
       }
 
-      // ── Cheek blush ── soft pink circles
+      // ── Cheek blush ──
       ctx.fillStyle = cheekColor;
       ctx.beginPath();
-      ctx.ellipse(-bs * 0.35, headY + bs * 0.14, bs * 0.12, bs * 0.08, 0, 0, Math.PI * 2);
+      ctx.ellipse(-bs * 0.38, headY + bs * 0.18, bs * 0.1, bs * 0.06, 0, 0, Math.PI * 2);
       ctx.fill();
       ctx.beginPath();
-      ctx.ellipse(bs * 0.35, headY + bs * 0.14, bs * 0.12, bs * 0.08, 0, 0, Math.PI * 2);
+      ctx.ellipse(bs * 0.38, headY + bs * 0.18, bs * 0.1, bs * 0.06, 0, 0, Math.PI * 2);
       ctx.fill();
 
-      // ── Nostrils ── two tiny dots
+      // ── Nostrils ──
       ctx.fillStyle = pinkDark;
       ctx.beginPath();
-      ctx.arc(-bs * 0.06, headY + bs * 0.1, bs * 0.02, 0, Math.PI * 2);
+      ctx.arc(-bs * 0.08, headY + bs * 0.16, bs * 0.018, 0, Math.PI * 2);
       ctx.fill();
       ctx.beginPath();
-      ctx.arc(bs * 0.06, headY + bs * 0.1, bs * 0.02, 0, Math.PI * 2);
+      ctx.arc(bs * 0.08, headY + bs * 0.16, bs * 0.018, 0, Math.PI * 2);
       ctx.fill();
 
-      // ── Smile ── cute little U-shaped mouth
+      // ── Smile ──
       ctx.strokeStyle = '#C4789A';
-      ctx.lineWidth = 1.8;
+      ctx.lineWidth = 1.6;
       ctx.lineCap = 'round';
       ctx.beginPath();
-      ctx.arc(0, headY + bs * 0.2, bs * 0.1, 0.15, Math.PI - 0.15);
+      ctx.arc(0, headY + bs * 0.24, bs * 0.09, 0.2, Math.PI - 0.2);
       ctx.stroke();
 
       ctx.restore();
