@@ -582,29 +582,24 @@ export function MiniGameMenu({ onClose: _onClose, onSelectGame, energy = 10, max
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
           >
-            {/* Dim overlay — spotlight cutout for unlock phase so button stays bright & clickable */}
-            {tutorialPhase === 'unlock' ? (
-              // 4 strips surround the button rect, leaving it undimmed
-              <>
-                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: Math.max(0, tutorialRect.top - 6), background: 'rgba(0,0,0,0.55)' }} />
-                <div style={{ position: 'absolute', top: tutorialRect.bottom + 6, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.55)' }} />
-                <div style={{ position: 'absolute', top: tutorialRect.top - 6, left: 0, width: Math.max(0, tutorialRect.left - 6), height: tutorialRect.height + 12, background: 'rgba(0,0,0,0.55)' }} />
-                <div style={{ position: 'absolute', top: tutorialRect.top - 6, left: tutorialRect.right + 6, right: 0, height: tutorialRect.height + 12, background: 'rgba(0,0,0,0.55)' }} />
-              </>
-            ) : (
-              <div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.50)' }} />
-            )}
+            {/* Dim overlay — 4-strip spotlight cutout for both phases so target stays bright & clickable */}
+            <>
+              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: Math.max(0, tutorialRect.top - 6), background: 'rgba(0,0,0,0.55)' }} />
+              <div style={{ position: 'absolute', top: tutorialRect.bottom + 6, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.55)' }} />
+              <div style={{ position: 'absolute', top: tutorialRect.top - 6, left: 0, width: Math.max(0, tutorialRect.left - 6), height: tutorialRect.height + 12, background: 'rgba(0,0,0,0.55)' }} />
+              <div style={{ position: 'absolute', top: tutorialRect.top - 6, left: tutorialRect.right + 6, right: 0, height: tutorialRect.height + 12, background: 'rgba(0,0,0,0.55)' }} />
+            </>
 
             {/* Speech bubble + caret + bouncing finger, centred above the measured target */}
             <motion.div
               className="absolute flex flex-col items-center gap-0.5"
               style={{
                 // Y: float above the measured element
-                bottom: window.innerHeight - tutorialRect.top + 10,
-                // X: centre on the measured element's midpoint; unlock btn nudged left to account for card padding
-                left: tutorialPhase === 'unlock'
-                  ? tutorialRect.left + tutorialRect.width / 2 - 120
-                  : tutorialRect.left + tutorialRect.width / 2,
+                bottom: window.innerHeight - tutorialRect.top + (tutorialPhase === 'keepey' ? 25 : 10),
+                // X: centre on the measured element's midpoint
+                // Note: style.transform is overridden by Framer Motion's own transform,
+                // so we manually subtract half the bubble maxWidth (240/2 = 120) to centre it.
+                left: tutorialRect.left + tutorialRect.width / 2 - 120,
                 transform: 'translateX(-50%)',
               }}
               initial={{ opacity: 0, y: 8 }}

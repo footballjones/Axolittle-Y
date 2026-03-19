@@ -7,32 +7,32 @@ import { GameRewards } from './types';
 
 export const GAME_REWARDS: Record<string, GameRewards> = {
   'keepey-upey': {
-    normal: { xp: 1, coins: 15 },
+    normal: { xp: 2, coins: 15 },
     good: { xp: 1, coins: 25 },
     exceptional: { xp: 2, coins: 35, opalChance: 0.1 }, // 10% chance
   },
   'fish-hooks': {
-    normal: { xp: 1, coins: 10 },
+    normal: { xp: 2, coins: 10 },
     good: { xp: 2, coins: 20 },
     exceptional: { xp: 3, coins: 30, opalChance: 0.1 },
   },
   'axolotl-stacker': {
-    normal: { xp: 1, coins: 15 },
+    normal: { xp: 2, coins: 15 },
     good: { xp: 1, coins: 25 },
     exceptional: { xp: 3, coins: 30, opalChance: 0.1 },
   },
   'treasure-hunt': {
-    normal: { xp: 1, coins: 25 },
+    normal: { xp: 2, coins: 25 },
     good: { xp: 2, coins: 40 },
     exceptional: { xp: 3, coins: 50, opalChance: 0.1 },
   },
   'math-rush': {
-    normal: { xp: 1, coins: 20 },
+    normal: { xp: 2, coins: 20 },
     good: { xp: 1, coins: 30 },
     exceptional: { xp: 2, coins: 40, opalChance: 0.1 },
   },
   'coral-code': {
-    normal: { xp: 1, coins: 20 },
+    normal: { xp: 2, coins: 20 },
     good: { xp: 1, coins: 30 },
     exceptional: { xp: 2, coins: 45, opalChance: 0.1 },
   },

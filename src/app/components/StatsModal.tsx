@@ -66,7 +66,7 @@ export function StatsModal({ onClose, stats, name, pendingPoints = 0, onAllocate
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          onClick={hasPoints ? undefined : onClose}
+          onClick={onClose}
           className="absolute inset-0 bg-black/60 backdrop-blur-sm"
         />
 
@@ -145,16 +145,19 @@ export function StatsModal({ onClose, stats, name, pendingPoints = 0, onAllocate
                   </>
                 )}
               </div>
-              {!hasPoints && (
-                <motion.button
-                  onClick={onClose}
-                  className="bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-xl p-2 transition-all border border-white/40"
-                  whileHover={{ scale: 1.1, rotate: 90 }}
-                  whileTap={{ scale: 0.9 }}
-                >
-                  <X className="w-5 h-5 text-white" strokeWidth={2.5} />
-                </motion.button>
-              )}
+              <motion.button
+                onClick={onClose}
+                className="backdrop-blur-sm rounded-xl p-2 transition-all border"
+                style={hasPoints
+                  ? { background: 'rgba(255,255,255,0.12)', borderColor: 'rgba(255,255,255,0.25)' }
+                  : { background: 'rgba(255,255,255,0.2)', borderColor: 'rgba(255,255,255,0.4)' }
+                }
+                whileHover={{ scale: 1.1, rotate: 90 }}
+                whileTap={{ scale: 0.9 }}
+                title="Close — reminder will stay on screen"
+              >
+                <X className={`w-5 h-5 ${hasPoints ? 'text-white/60' : 'text-white'}`} strokeWidth={2.5} />
+              </motion.button>
             </div>
           </div>
 

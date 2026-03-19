@@ -142,10 +142,24 @@ export function LevelUpOverlay({ level, onAssignStat, onDismiss }: LevelUpOverla
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.72 }}
-          className="relative text-white/90 font-semibold text-[15px] mb-7"
+          className="relative text-white/90 font-semibold text-[15px] mb-3"
         >
           Your axolotl is growing stronger!
         </motion.p>
+
+        {/* Rarity hint */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.88 }}
+          className="relative flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl mb-5"
+          style={{ background: 'rgba(0,0,0,0.22)', border: '1px solid rgba(255,255,255,0.2)' }}
+        >
+          <span className="text-base">🥚</span>
+          <p className="text-white/90 text-[11.5px] font-semibold leading-snug">
+            Stronger stats = rarer eggs when you rebirth!
+          </p>
+        </motion.div>
 
         {/* Primary CTA — assign stat */}
         <motion.button

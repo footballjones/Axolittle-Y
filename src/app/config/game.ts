@@ -10,7 +10,7 @@ export const GAME_CONFIG = {
   
   // Energy system
   energyMax: 10,
-  energyRegenRate: 1, // per hour (TBD - placeholder)
+  energyRegenRate: 2, // per hour (1 energy every 30 minutes)
   
   // Nursery
   nurserySlotsOpen: 6,
