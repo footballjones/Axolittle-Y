@@ -140,6 +140,7 @@ export interface GameState {
   miniGameTutorialSeen?: boolean;    // True once the player navigates to the mini games screen
   wellbeingIntroSeen?: boolean;      // false = show intro modal before wellbeing tutorials begin
   wellbeingCompleteSeen?: boolean;   // false = show completion modal + 5 opal reward after water tutorial
+  menuTutorialSeen?: boolean;        // false = show menu walkthrough tutorial after wellbeing
 }
 
 export interface Friend {

@@ -229,5 +229,6 @@ export function getInitialGameState(): GameState {
     waterTutorialSeen: false,     // Show water-change tutorial after poop tutorial
     wellbeingIntroSeen: false,    // Show wellbeing intro modal before feed tutorial
     wellbeingCompleteSeen: false, // Show completion modal + 5 opal reward after water tutorial
+    menuTutorialSeen: false,     // Show menu walkthrough tutorial after wellbeing
   };
 }

@@ -20,6 +20,8 @@ import { JuvenileUnlockModal } from './components/JuvenileUnlockModal';
 import { Level7UnlockModal } from './components/Level7UnlockModal';
 import { WellbeingIntroModal } from './components/WellbeingIntroModal';
 import { WellbeingCompleteModal } from './components/WellbeingCompleteModal';
+import { MenuTutorialOverlay } from './components/MenuTutorialOverlay';
+import { MenuTutorialCompleteModal } from './components/MenuTutorialCompleteModal';
 import { ShopModal } from './components/ShopModal';
 import { SocialModal } from './components/SocialModal';
 import { RebirthModal } from './components/RebirthModal';
@@ -112,6 +114,8 @@ export default function App() {
   const [showJimmyAquarium, setShowJimmyAquarium] = useState(false);
   const [showJuvenileUnlock, setShowJuvenileUnlock] = useState(false);
   const [showLevel7Unlock, setShowLevel7Unlock] = useState(false);
+  const [showMenuTutorial, setShowMenuTutorial] = useState(false);
+  const [showMenuTutorialComplete, setShowMenuTutorialComplete] = useState(false);
   /** Populated when a cloud pull finds two meaningful saves — clears after user resolves. */
   const [conflictSaves, setConflictSaves] = useState<{ local: GameState; cloud: GameState } | null>(null);
 
@@ -495,13 +499,29 @@ export default function App() {
     if (gameState?.waterTutorialSeen === true && prevWaterTut.current === false) delayNextTutorial(1000);
     prevWaterTut.current = gameState?.waterTutorialSeen;
   }, [gameState?.waterTutorialSeen, delayNextTutorial]);
+  // Menu tutorial: auto-start after wellbeing complete
+  useEffect(() => {
+    if (
+      gameState?.wellbeingCompleteSeen === true &&
+      gameState?.menuTutorialSeen === false &&
+      gameState?.tutorialStep === 'done' &&
+      !showMenuTutorial &&
+      !showMenuTutorialComplete &&
+      tutorialAllowed &&
+      currentScreen === 'aquarium'
+    ) {
+      const t = setTimeout(() => setShowMenuTutorial(true), 1500);
+      return () => clearTimeout(t);
+    }
+  }, [gameState?.wellbeingCompleteSeen, gameState?.menuTutorialSeen, gameState?.tutorialStep, tutorialAllowed, currentScreen, showMenuTutorial, showMenuTutorialComplete]);
+
   // ──────────────────────────────────────────────────────────────────────────
 
   // Mini-game screen tutorial: set phase when navigating to games screen
   const isGameLocked = !!gameState?.miniGamesLockedUntil && gameState.miniGamesLockedUntil > Date.now();
   useEffect(() => {
     if (currentScreen !== 'games') { setMgTutPhase(null); return; }
-    if (gameState?.miniGameTutorialSeen || !gameState?.waterTutorialSeen || !gameState?.wellbeingCompleteSeen) return;
+    if (gameState?.miniGameTutorialSeen || !gameState?.waterTutorialSeen || !gameState?.wellbeingCompleteSeen || !gameState?.menuTutorialSeen) return;
     setMgTutPhase(isGameLocked ? 'unlock' : 'keepey');
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentScreen]);
@@ -781,6 +801,7 @@ export default function App() {
                   {/* Hamburger Menu Button */}
                   <motion.button
                     ref={menuButtonRef}
+                    data-menu-id="hamburger"
                     onClick={() => setShowHamburgerMenu(!showHamburgerMenu)}
                     className="relative bg-transparent hover:bg-white/[0.08] rounded-lg transition-all border border-white/30 flex-shrink-0"
                     style={{ padding: '0.54rem' }}
@@ -1079,6 +1100,7 @@ export default function App() {
                       <div className="flex items-center gap-2">
                         {/* Alerts button */}
                         <motion.button
+                          data-menu-id="notifications"
                           onClick={() => setShowNotifPanel(prev => !prev)}
                           className="relative rounded-full p-2 border backdrop-blur-sm active:bg-white/80"
                           style={{
@@ -1108,6 +1130,7 @@ export default function App() {
                         </motion.button>
                         {/* Close button */}
                         <motion.button
+                          data-menu-id="close"
                           onClick={() => { setShowHamburgerMenu(false); setShowNotifPanel(false); setShowHowToPlayPanel(false); setShowInventoryPanel(false); setShowEggsPanel(false); setShowAchievementsPanel(false); }}
                           className="rounded-full p-2 border border-indigo-200/60 bg-white/50 active:bg-white/80 backdrop-blur-sm"
                           whileTap={{ scale: 0.85 }}
@@ -1126,6 +1149,7 @@ export default function App() {
 
                         {/* SPIN WHEEL */}
                         <motion.button
+                          data-menu-id="wheel-spin"
                           onClick={() => setShowSpinWheel(true)}
                           className="group relative flex flex-col items-center justify-center gap-1 py-3 rounded-2xl overflow-hidden"
                           style={{
@@ -1151,6 +1175,7 @@ export default function App() {
 
                         {/* DAILY LOGIN */}
                         <motion.button
+                          data-menu-id="daily-bonus"
                           onClick={() => setShowDailyLogin(true)}
                           className="group relative flex flex-col items-center justify-center gap-1 py-3 rounded-2xl overflow-hidden"
                           style={{
@@ -1176,6 +1201,7 @@ export default function App() {
 
                         {/* STATS */}
                         <motion.button
+                          data-menu-id="stats"
                           onClick={() => { setActiveModal('stats'); setShowHamburgerMenu(false); setShowNotifPanel(false); }}
                           className="group relative flex flex-col items-center justify-center gap-1 py-3 rounded-2xl overflow-hidden"
                           style={{ background: 'linear-gradient(135deg, rgba(14,165,233,0.75) 0%, rgba(2,132,199,0.6) 100%)', border: '1px solid rgba(2,132,199,0.45)' }}
@@ -1198,6 +1224,7 @@ export default function App() {
 
                         {/* EGGS */}
                         <motion.button
+                          data-menu-id="eggs"
                           onClick={() => setShowEggsPanel(true)}
                           className="group relative flex flex-col items-center justify-center gap-1 py-3 rounded-2xl overflow-hidden"
                           style={{
@@ -1215,6 +1242,7 @@ export default function App() {
 
                         {/* SOCIAL */}
                         <motion.button
+                          data-menu-id="social"
                           onClick={() => { setActiveModal('social'); setShowHamburgerMenu(false); setShowNotifPanel(false); setHasPendingPokes(false); }}
                           className="group relative flex flex-col items-center justify-center gap-1 py-3 rounded-2xl overflow-hidden"
                           style={{ background: 'linear-gradient(135deg, rgba(236,72,153,0.75) 0%, rgba(219,39,119,0.6) 100%)', border: '1px solid rgba(219,39,119,0.45)' }}
@@ -1234,6 +1262,7 @@ export default function App() {
 
                         {/* INVENTORY */}
                         <motion.button
+                          data-menu-id="inventory"
                           onClick={() => { setShowInventoryPanel(true); setShowHowToPlayPanel(false); setShowAchievementsPanel(false); setShowEggsPanel(false); }}
                           className="group relative flex flex-col items-center justify-center gap-1 py-3 rounded-2xl overflow-hidden"
                           style={{
@@ -1251,6 +1280,7 @@ export default function App() {
 
                         {/* HOW TO PLAY */}
                         <motion.button
+                          data-menu-id="how-to-play"
                           onClick={() => setShowHowToPlayPanel(true)}
                           className="group relative flex flex-col items-center justify-center gap-1 py-3 rounded-2xl overflow-hidden"
                           style={{
@@ -1272,6 +1302,7 @@ export default function App() {
                           const totalCount = ALL_ACHIEVEMENTS.length;
                           return (
                             <motion.button
+                              data-menu-id="achievements"
                               onClick={() => { setShowAchievementsPanel(true); setShowHowToPlayPanel(false); setShowInventoryPanel(false); setShowEggsPanel(false); }}
                               className="group relative flex flex-col items-center justify-center gap-1 py-3 rounded-2xl overflow-hidden"
                               style={{
@@ -1946,7 +1977,7 @@ export default function App() {
                   )}
 
                   {/* Mini game tutorial — shown after wellbeing completion reward is collected */}
-                  {gameState.playTutorialSeen && gameState.cleanTutorialSeen === true && gameState.waterTutorialSeen === true && gameState.wellbeingCompleteSeen === true && !gameState.miniGameTutorialSeen && gameState.tutorialStep === 'done' && !activeModal && !playMode && tutorialAllowed && (
+                  {gameState.playTutorialSeen && gameState.cleanTutorialSeen === true && gameState.waterTutorialSeen === true && gameState.wellbeingCompleteSeen === true && gameState.menuTutorialSeen === true && !gameState.miniGameTutorialSeen && gameState.tutorialStep === 'done' && !activeModal && !playMode && tutorialAllowed && (
                     <motion.div
                       className="absolute inset-0 pointer-events-none"
                       style={{ zIndex: 45 }}
@@ -2430,6 +2461,33 @@ export default function App() {
                 s ? { ...s, wellbeingCompleteSeen: true, opals: (s.opals ?? 0) + 5 } : s
               )
             }
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Menu tutorial overlay */}
+      {showMenuTutorial && (
+        <MenuTutorialOverlay
+          menuOpen={showHamburgerMenu}
+          onOpenMenu={() => setShowHamburgerMenu(true)}
+          onComplete={() => {
+            setShowMenuTutorial(false);
+            setShowMenuTutorialComplete(true);
+          }}
+        />
+      )}
+
+      {/* Menu tutorial completion modal — grants 10 opals */}
+      <AnimatePresence>
+        {showMenuTutorialComplete && (
+          <MenuTutorialCompleteModal
+            onCollect={() => {
+              setShowMenuTutorialComplete(false);
+              setGameState(s =>
+                s ? { ...s, menuTutorialSeen: true, opals: (s.opals ?? 0) + 10 } : s
+              );
+              delayNextTutorial(1500);
+            }}
           />
         )}
       </AnimatePresence>
