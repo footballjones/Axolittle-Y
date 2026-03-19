@@ -1,4 +1,5 @@
 import { useState, useEffect, useLayoutEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { User, Users, Info, Zap, Lock } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { GAME_CONFIG } from '../config/game';
@@ -568,13 +569,14 @@ export function MiniGameMenu({ onClose: _onClose, onSelectGame, energy = 10, max
         </p>
       </motion.div>
 
-      {/* ── Tutorial overlays — fixed so they stay pinned over the target element ── */}
-      <AnimatePresence>
-        {tutorialPhase && tutorialRect && (
+      {/* ── Tutorial overlays — portalled to document.body so position:fixed is
+           always relative to the true viewport, not any transformed ancestor ── */}
+      {tutorialPhase && tutorialRect && createPortal(
+        <AnimatePresence>
           <motion.div
             key={tutorialPhase}
             className="fixed inset-0 pointer-events-none"
-            style={{ zIndex: 60 }}
+            style={{ zIndex: 9999 }}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -587,12 +589,10 @@ export function MiniGameMenu({ onClose: _onClose, onSelectGame, energy = 10, max
             <motion.div
               className="absolute flex flex-col items-center gap-0.5"
               style={{
+                // Y: float above the measured element
                 bottom: window.innerHeight - tutorialRect.top + 10,
-                // Unlock banner spans full width so pin to screen centre;
-                // keepey tile is in col-1 so centre on the tile itself.
-                left: tutorialPhase === 'unlock'
-                  ? window.innerWidth / 2
-                  : tutorialRect.left + tutorialRect.width / 2,
+                // X: centre on the measured element's midpoint (works for both unlock btn and keepey tile)
+                left: tutorialRect.left + tutorialRect.width / 2,
                 transform: 'translateX(-50%)',
               }}
               initial={{ opacity: 0, y: 8 }}
@@ -644,7 +644,7 @@ export function MiniGameMenu({ onClose: _onClose, onSelectGame, energy = 10, max
                 style={{
                   borderLeft: '8px solid transparent',
                   borderRight: '8px solid transparent',
-                  borderTop: `9px solid ${tutorialPhase === 'unlock' ? 'rgba(255,255,255,0.97)' : 'rgba(255,255,255,0.97)'}`,
+                  borderTop: '9px solid rgba(255,255,255,0.97)',
                 }}
               />
 
@@ -658,8 +658,9 @@ export function MiniGameMenu({ onClose: _onClose, onSelectGame, energy = 10, max
               </motion.span>
             </motion.div>
           </motion.div>
-        )}
-      </AnimatePresence>
+        </AnimatePresence>,
+        document.body
+      )}
     </div>
   );
 }
