@@ -223,7 +223,7 @@ export function MiniGameMenu({ onClose: _onClose, onSelectGame, energy = 10, max
   }, [tutorialPhase]);
 
   const isLocked = !!miniGamesLockedUntil && miniGamesLockedUntil > Date.now();
-  const multiplayerLevelLocked = (currentLevel ?? 0) < 10;
+  const multiplayerLevelLocked = (currentLevel ?? 0) < 7;
 
   // Live countdown for the mini-game lock
   useEffect(() => {
@@ -490,7 +490,7 @@ export function MiniGameMenu({ onClose: _onClose, onSelectGame, energy = 10, max
             const soloLevelLocked = multiplayerLevelLocked &&
               (game.id === 'axolotl-stacker' || game.id === 'coral-code');
             const tileIsLocked = isLocked || soloLevelLocked;
-            const lockReason = soloLevelLocked ? 'Reach Lv.10' : undefined;
+            const lockReason = soloLevelLocked ? 'Reach Lv.7' : undefined;
 
             return game.id === 'keepey-upey' ? (
               // Wrapper div gives us a ref to measure the Keepey Upey tile's exact position
@@ -533,7 +533,7 @@ export function MiniGameMenu({ onClose: _onClose, onSelectGame, energy = 10, max
           <h3 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-white to-rose-100 drop-shadow-sm">Multiplayer Games</h3>
           {multiplayerLevelLocked && (
             <span className="ml-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-white/20 text-white/70 border border-white/20">
-              🔒 Lv.10
+              🔒 Lv.7
             </span>
           )}
         </div>
@@ -550,7 +550,7 @@ export function MiniGameMenu({ onClose: _onClose, onSelectGame, energy = 10, max
               onSelectGame={onSelectGame}
               energy={energy}
               isLocked={isLocked || multiplayerLevelLocked}
-              lockReason={multiplayerLevelLocked ? 'Reach Lv.10' : undefined}
+              lockReason={multiplayerLevelLocked ? 'Reach Lv.7' : undefined}
             />
           ))}
         </div>

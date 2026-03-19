@@ -17,6 +17,7 @@ import { ActionButtons } from './components/ActionButtons';
 import { AquariumBackground } from './components/AquariumBackground';
 import { MiniGameMenu } from './components/MiniGameMenu';
 import { JuvenileUnlockModal } from './components/JuvenileUnlockModal';
+import { Level7UnlockModal } from './components/Level7UnlockModal';
 import { WellbeingIntroModal } from './components/WellbeingIntroModal';
 import { WellbeingCompleteModal } from './components/WellbeingCompleteModal';
 import { ShopModal } from './components/ShopModal';
@@ -110,6 +111,7 @@ export default function App() {
   /** Show Jimmy & Chubs's aquarium */
   const [showJimmyAquarium, setShowJimmyAquarium] = useState(false);
   const [showJuvenileUnlock, setShowJuvenileUnlock] = useState(false);
+  const [showLevel7Unlock, setShowLevel7Unlock] = useState(false);
   /** Populated when a cloud pull finds two meaningful saves — clears after user resolves. */
   const [conflictSaves, setConflictSaves] = useState<{ local: GameState; cloud: GameState } | null>(null);
 
@@ -456,6 +458,14 @@ export default function App() {
       setShowJuvenileUnlock(true);
     }
   }, [gameState?.axolotl?.stage, gameState?.juvenileUnlockSeen]);
+
+  // Show Level 7 unlock modal the first time the player reaches level 7
+  useEffect(() => {
+    const lvl = gameState?.axolotl ? calculateLevel(gameState.axolotl.experience) : 0;
+    if (lvl >= 7 && !gameState?.level7UnlockSeen && !showLevel7Unlock) {
+      setShowLevel7Unlock(true);
+    }
+  }, [gameState?.axolotl?.experience, gameState?.level7UnlockSeen]);
 
   // ── Tutorial pacing: fire delays whenever a tutorial step completes ─────────
   // stat tutorial seen → 1 s before play tutorial appears
@@ -2432,6 +2442,18 @@ export default function App() {
             onClose={() => {
               setShowJuvenileUnlock(false);
               setGameState(s => s ? { ...s, juvenileUnlockSeen: true } : s);
+            }}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Level 7 games unlock modal */}
+      <AnimatePresence>
+        {showLevel7Unlock && (
+          <Level7UnlockModal
+            onClose={() => {
+              setShowLevel7Unlock(false);
+              setGameState(s => s ? { ...s, level7UnlockSeen: true } : s);
             }}
           />
         )}

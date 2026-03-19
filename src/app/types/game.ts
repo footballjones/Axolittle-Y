@@ -121,6 +121,7 @@ export interface GameState {
   // undefined = existing save (skip). false = new game, not yet seen. true = completed.
   cleanTutorialSeen?: boolean;
   juvenileUnlockSeen?: boolean; // True once the Sprout stage unlock modal has been shown
+  level7UnlockSeen?: boolean;   // True once the Level 7 games unlock modal has been shown
   // ── Jimmy & Chubs ────────────────────────────────────────────────────────────
   lastJimmyGift?: number; // Unix-ms timestamp of last gift received from Jimmy & Chubs
   // ── Audio Settings ────────────────────────────────────────────────────────────
