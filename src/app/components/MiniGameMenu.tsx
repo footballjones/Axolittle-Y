@@ -580,9 +580,12 @@ export function MiniGameMenu({ onClose: _onClose, onSelectGame, energy = 10, max
             <motion.div
               className="absolute flex flex-col items-center gap-0.5"
               style={{
-                // Bubble sits above the target; left is centred on the target
                 bottom: window.innerHeight - tutorialRect.top + 10,
-                left: tutorialRect.left + tutorialRect.width / 2,
+                // Unlock banner spans full width so pin to screen centre;
+                // stacker tile is in col-1 so centre on the tile itself.
+                left: tutorialPhase === 'unlock'
+                  ? window.innerWidth / 2
+                  : tutorialRect.left + tutorialRect.width / 2,
                 transform: 'translateX(-50%)',
               }}
               initial={{ opacity: 0, y: 8 }}
