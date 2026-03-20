@@ -11,7 +11,11 @@ export function useRemoveWhiteBg(src: string, threshold = 240): string | null {
     if (!src) return;
 
     const img = new Image();
-    img.crossOrigin = 'anonymous';
+    // Only set crossOrigin on http/https — custom URL schemes (iOS WKWebView)
+    // treat local assets as same-origin, and setting this breaks image loading.
+    if (location.protocol === 'http:' || location.protocol === 'https:') {
+      img.crossOrigin = 'anonymous';
+    }
     img.onload = () => {
       const canvas = document.createElement('canvas');
       canvas.width = img.naturalWidth;

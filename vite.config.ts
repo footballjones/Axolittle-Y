@@ -1,7 +1,23 @@
-import { defineConfig } from 'vite'
+import { defineConfig, type Plugin } from 'vite'
 import path from 'path'
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
+
+/**
+ * Strip `crossorigin` attributes from built HTML.
+ * Vite adds these by default to <script> and <link> tags, but they cause
+ * WKWebView to enforce CORS checks on local/custom-scheme resources, which
+ * results in a blank white screen on iOS.
+ */
+function removeCrossorigin(): Plugin {
+  return {
+    name: 'remove-crossorigin',
+    enforce: 'post',
+    transformIndexHtml(html) {
+      return html.replace(/ crossorigin/g, '')
+    },
+  }
+}
 
 export default defineConfig({
   plugins: [
@@ -9,6 +25,7 @@ export default defineConfig({
     // Tailwind is not being actively used – do not remove them
     react(),
     tailwindcss(),
+    removeCrossorigin(),
   ],
   resolve: {
     alias: {

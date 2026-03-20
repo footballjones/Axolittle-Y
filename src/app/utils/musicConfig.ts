@@ -13,7 +13,6 @@ export const MUSIC_CONFIG = {
   aquarium: [
     `${base}music/aquarium/Axolotl Keeper.mp3`,
     `${base}music/aquarium/Axolotl Dream Tank.mp3`,
-    `${base}music/aquarium/Axolotl Dream Tank (1).mp3`,
     `${base}music/aquarium/Axolotl Moonlight.mp3`,
     `${base}music/aquarium/Dream Cartridge.mp3`,
   ] as const,

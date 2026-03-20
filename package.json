@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "build": "vite build",
+    "build:ios": "vite build && bash scripts/prepare-ios.sh",
     "dev": "vite",
-    "prepare-ios": "bash scripts/prepare-ios.sh",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "typecheck": "tsc --noEmit",
     "test": "vitest",
