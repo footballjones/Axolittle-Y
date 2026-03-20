@@ -18,7 +18,7 @@ export const GAME_REWARDS: Record<string, GameRewards> = {
   },
   'axolotl-stacker': {
     normal: { xp: 2, coins: 15 },
-    good: { xp: 1, coins: 25 },
+    good: { xp: 2, coins: 25 },
     exceptional: { xp: 3, coins: 30, opalChance: 0.1 },
   },
   'treasure-hunt': {
