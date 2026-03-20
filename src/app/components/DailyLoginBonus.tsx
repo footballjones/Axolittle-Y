@@ -4,9 +4,15 @@
  */
 
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Sparkles } from 'lucide-react';
+import { X, Sparkles, ShieldCheck } from 'lucide-react';
 import { GAME_CONFIG } from '../config/game';
-import { canClaimDailyLogin, calculateLoginStreak, checkLoginStreakMilestone } from '../utils/dailySystem';
+import {
+  canClaimDailyLogin,
+  calculateLoginStreak,
+  checkLoginStreakMilestone,
+  canUseForgiveness,
+  LOGIN_MILESTONES,
+} from '../utils/dailySystem';
 
 interface DailyLoginBonusProps {
   isOpen: boolean;
@@ -14,23 +20,30 @@ interface DailyLoginBonusProps {
   onClaim: (reward: { coins: number; opals?: number; decoration?: string }) => void;
   lastLoginDate?: string;
   loginStreak?: number;
+  lastMissForgivenDate?: string;
   coins: number;
   opals: number;
 }
 
-export function DailyLoginBonus({ 
-  isOpen, 
-  onClose, 
-  onClaim, 
-  lastLoginDate, 
+export function DailyLoginBonus({
+  isOpen,
+  onClose,
+  onClaim,
+  lastLoginDate,
   loginStreak = 0,
+  lastMissForgivenDate,
   coins: _coins,
   opals: _opals,
 }: DailyLoginBonusProps) {
   const canClaim = canClaimDailyLogin(lastLoginDate);
-  const { streak: newStreak } = calculateLoginStreak(lastLoginDate, loginStreak);
+  const { streak: newStreak, usedForgiveness, wasBroken } = calculateLoginStreak(
+    lastLoginDate,
+    loginStreak,
+    lastMissForgivenDate
+  );
   const milestone = checkLoginStreakMilestone(newStreak);
   const milestoneReward = milestone ? GAME_CONFIG.loginStreakRewards[milestone as keyof typeof GAME_CONFIG.loginStreakRewards] : null;
+  const hasForgiveness = canUseForgiveness(lastMissForgivenDate);
 
   const handleClaim = () => {
     if (!canClaim) return;
@@ -41,6 +54,7 @@ export function DailyLoginBonus({
 
     // Add milestone rewards if reached
     if (milestoneReward) {
+      reward.coins += milestoneReward.coins;
       reward.opals = milestoneReward.opals;
       if (milestoneReward.decoration) {
         reward.decoration = milestoneReward.decoration;
@@ -52,6 +66,9 @@ export function DailyLoginBonus({
   };
 
   if (!isOpen) return null;
+
+  // Find the next upcoming milestone
+  const nextMilestone = LOGIN_MILESTONES.find(m => newStreak < m);
 
   return (
     <AnimatePresence>
@@ -104,6 +121,33 @@ export function DailyLoginBonus({
 
               {/* Content */}
               <div className="px-6 pb-6">
+                {/* Forgiveness used notification */}
+                {canClaim && usedForgiveness && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-emerald-50 rounded-xl px-3 py-2 mb-3 border border-emerald-200 flex items-center gap-2"
+                  >
+                    <ShieldCheck className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                    <p className="text-xs text-emerald-700 font-medium">
+                      Free miss used! Streak saved.
+                    </p>
+                  </motion.div>
+                )}
+
+                {/* Streak broken notification */}
+                {canClaim && wasBroken && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-red-50 rounded-xl px-3 py-2 mb-3 border border-red-200"
+                  >
+                    <p className="text-xs text-red-600 font-medium text-center">
+                      Streak reset — you missed more than 1 day.
+                    </p>
+                  </motion.div>
+                )}
+
                 {/* Daily coin reward */}
                 {canClaim && (
                   <motion.div
@@ -144,19 +188,36 @@ export function DailyLoginBonus({
                     <p className="text-lg font-bold text-violet-800 mt-2">
                       {newStreak} {newStreak === 1 ? 'day' : 'days'}
                     </p>
+                    {nextMilestone && (
+                      <p className="text-[10px] text-violet-400 mt-0.5">
+                        Next milestone in {nextMilestone - newStreak} {nextMilestone - newStreak === 1 ? 'day' : 'days'}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Free miss indicator */}
+                  <div className="flex items-center justify-center gap-1.5 mb-3 px-3 py-1.5 rounded-lg bg-violet-50">
+                    <ShieldCheck className="w-3.5 h-3.5 text-violet-500" />
+                    <span className="text-[11px] font-medium text-violet-600">
+                      Free miss: {hasForgiveness && !usedForgiveness ? (
+                        <span className="text-emerald-600">Available</span>
+                      ) : (
+                        <span className="text-violet-400">Recharging</span>
+                      )}
+                    </span>
                   </div>
 
                   {/* Milestone progress */}
                   <div className="space-y-2">
-                    {[7, 30, 100].map(milestoneDays => {
+                    {LOGIN_MILESTONES.map(milestoneDays => {
                       const isReached = newStreak >= milestoneDays;
-                      const isNext = newStreak < milestoneDays && (milestoneDays === 7 || newStreak >= [7, 30, 100].find(d => d < milestoneDays)!);
-                      
+                      const reward = GAME_CONFIG.loginStreakRewards[milestoneDays as keyof typeof GAME_CONFIG.loginStreakRewards];
+
                       return (
                         <div
                           key={milestoneDays}
                           className={`flex items-center justify-between px-3 py-2 rounded-lg ${
-                            isReached ? 'bg-violet-100' : isNext ? 'bg-violet-50' : 'bg-gray-50'
+                            isReached ? 'bg-violet-100' : 'bg-gray-50'
                           }`}
                         >
                           <div className="flex items-center gap-2">
@@ -169,11 +230,16 @@ export function DailyLoginBonus({
                               Day {milestoneDays}
                             </span>
                           </div>
-                          <div className="flex items-center gap-1">
-                            <Sparkles className="w-3 h-3 text-violet-500" />
-                            <span className="text-xs font-bold text-violet-700">
-                              {GAME_CONFIG.loginStreakRewards[milestoneDays as keyof typeof GAME_CONFIG.loginStreakRewards].opals} 🪬
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-bold text-amber-600">
+                              +{reward.coins} 🪙
                             </span>
+                            <div className="flex items-center gap-0.5">
+                              <Sparkles className="w-3 h-3 text-violet-500" />
+                              <span className="text-[10px] font-bold text-violet-700">
+                                +{reward.opals} 🪬
+                              </span>
+                            </div>
                           </div>
                         </div>
                       );
@@ -194,7 +260,7 @@ export function DailyLoginBonus({
                         Streak Milestone Reached!
                       </p>
                       <p className="text-xs text-purple-600">
-                        +{milestoneReward.opals} Opals
+                        +{milestoneReward.coins} Coins & +{milestoneReward.opals} Opals
                         {milestoneReward.decoration && ' + Exclusive Decoration'}
                       </p>
                     </div>

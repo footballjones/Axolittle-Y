@@ -2623,6 +2623,7 @@ export default function App() {
             onClaim={handleDailyLoginClaim}
             lastLoginDate={gameState.lastLoginDate}
             loginStreak={gameState.loginStreak}
+            lastMissForgivenDate={gameState.lastMissForgivenDate}
             coins={gameState.coins}
             opals={gameState.opals || 0}
           />

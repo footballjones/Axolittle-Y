@@ -25,9 +25,9 @@ export const GAME_CONFIG = {
   
   // Life stages (by level)
   stages: {
-    baby: { minLevel: 1, maxLevel: 9 },
-    juvenile: { minLevel: 10, maxLevel: 19 },
-    adult: { minLevel: 20, maxLevel: 29 },
+    hatchling: { minLevel: 1, maxLevel: 9 },
+    sprout: { minLevel: 10, maxLevel: 19 },
+    guardian: { minLevel: 20, maxLevel: 29 },
     elder: { minLevel: 30, maxLevel: 40 },
   },
   
@@ -55,8 +55,10 @@ export const GAME_CONFIG = {
   // Daily login bonus
   dailyLoginCoinBonus: 100, // Coins for daily login
   loginStreakRewards: {
-    7: { opals: 15, decoration: null },
-    30: { opals: 20, decoration: null },
-    100: { opals: 20, decoration: 'decoration-streak-100' }, // Exclusive decoration
+    3:  { opals: 5,  coins: 200, decoration: null },
+    7:  { opals: 15, coins: 300, decoration: null },
+    14: { opals: 20, coins: 500, decoration: null },
+    30: { opals: 30, coins: 750, decoration: null },
+    50: { opals: 50, coins: 1000, decoration: 'decoration-streak-50' }, // Exclusive decoration
   },
 } as const;

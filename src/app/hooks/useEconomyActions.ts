@@ -78,7 +78,11 @@ export function useEconomyActions({ setGameState, setNotifications }: UseEconomy
       if (!prev) return prev;
 
       const today = getTodayDateString();
-      const { streak: newStreak } = calculateLoginStreak(prev.lastLoginDate, prev.loginStreak || 0);
+      const { streak: newStreak, usedForgiveness } = calculateLoginStreak(
+        prev.lastLoginDate,
+        prev.loginStreak || 0,
+        prev.lastMissForgivenDate
+      );
 
       const newCoins = prev.coins + reward.coins;
       const newOpals = (prev.opals || 0) + (reward.opals || 0);
@@ -102,6 +106,7 @@ export function useEconomyActions({ setGameState, setNotifications }: UseEconomy
         lastLoginDate: today,
         lastLoginBonusDate: today,
         loginStreak: newStreak,
+        lastMissForgivenDate: usedForgiveness ? today : prev.lastMissForgivenDate,
         unlockedDecorations: newUnlockedDecorations,
       });
     });

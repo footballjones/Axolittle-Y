@@ -17,6 +17,8 @@ export function AxolotlDisplay({ axolotl, foodItems, onEatFood, clickTarget, pla
   const [facingLeft, setFacingLeft] = useState(false);
   const [wiggling, setWiggling] = useState(false);
   const foodFirstSeenRef = useRef<number | null>(null);
+  // Ref to the wrapper div so we can read the parent container's pixel dimensions
+  const wrapperRef = useRef<HTMLDivElement>(null);
 
   // Track previous position + move start time so we can interpolate visual position
   const prevPosRef = useRef({ x: 50, y: 75 });
@@ -81,7 +83,8 @@ export function AxolotlDisplay({ axolotl, foodItems, onEatFood, clickTarget, pla
     };
   }, []);
 
-  // Continuous proximity check (every 200ms) — axolotl eats food when it physically reaches it.
+  // Continuous proximity check (every 100ms) — axolotl eats food when it overlaps it.
+  // Hit zone is an ellipse matching the full axolotl image size in % coordinates.
   useEffect(() => {
     const interval = setInterval(() => {
       const items = foodItemsRef.current;
@@ -89,18 +92,43 @@ export function AxolotlDisplay({ axolotl, foodItems, onEatFood, clickTarget, pla
 
       const axPos = getAxolotlVisualPos();
 
+      // Derive hit radius from the axolotl's pixel size vs the container size.
+      // Fall back to sensible defaults if the DOM isn't ready yet.
+      const container = wrapperRef.current?.parentElement;
+      const containerW = container?.clientWidth ?? 400;
+      const containerH = container?.clientHeight ?? 600;
+      // Use the current rendered size (kept in sync via getSize below).
+      // We capture it fresh each tick via the closure over axolotl.stage.
+      const currentSize = (() => {
+        switch (axolotl.stage) {
+          case 'hatchling': return 96;
+          case 'sprout':    return 132;
+          case 'guardian':  return 168;
+          case 'elder':     return 186;
+          default:          return 96;
+        }
+      })();
+      // ~22% of image size — axolotl PNG has large transparent padding, body is small relative to image
+      const hitX = (currentSize * 0.22 / containerW) * 100;
+      const hitY = (currentSize * 0.22 / containerH) * 100;
+      // The visible axolotl body sits below the image center (gills/head above).
+      // Shift the hit zone center downward so it lands on the actual body.
+      const hitOffsetY = (currentSize * 0.15 / containerH) * 100;
+
       for (const food of items) {
         const distX = food.x - axPos.x;
-        const distY = getFoodVisualY(food) - axPos.y;
-        if (Math.sqrt(distX * distX + distY * distY) < 5) {
+        // Offset Y center downward toward the actual body (axPos.y + hitOffsetY is body center)
+        const distY = getFoodVisualY(food) - (axPos.y + hitOffsetY);
+        // Ellipse check: (dx/rx)² + (dy/ry)² < 1
+        if ((distX / hitX) ** 2 + (distY / hitY) ** 2 < 1) {
           onEatFoodRef.current(food.id);
           return;
         }
       }
-    }, 200);
+    }, 100);
 
     return () => clearInterval(interval);
-  }, [getFoodVisualY, getAxolotlVisualPos]);
+  }, [getFoodVisualY, getAxolotlVisualPos, axolotl.stage]);
 
   // Auto-seek: after 7s swim toward closest food
   useEffect(() => {
@@ -151,11 +179,11 @@ export function AxolotlDisplay({ axolotl, foodItems, onEatFood, clickTarget, pla
 
   const getSize = () => {
     switch (axolotl.stage) {
-      case 'baby':
+      case 'hatchling':
         return 96;
-      case 'juvenile':
+      case 'sprout':
         return 132;
-      case 'adult':
+      case 'guardian':
         return 168;
       case 'elder':
         return 186;
@@ -168,6 +196,7 @@ export function AxolotlDisplay({ axolotl, foodItems, onEatFood, clickTarget, pla
 
   return (
     <motion.div
+      ref={wrapperRef}
       className="absolute"
       animate={{
         left: `${position.x}%`,
