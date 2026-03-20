@@ -6,7 +6,7 @@ describe('gameLogic', () => {
     it('should create axolotl with provided name', () => {
       const axo = generateAxolotl('Test Name');
       expect(axo.name).toBe('Test Name');
-      expect(axo.stage).toBe('baby');
+      expect(axo.stage).toBe('hatchling');
       expect(axo.experience).toBe(0);
     });
 

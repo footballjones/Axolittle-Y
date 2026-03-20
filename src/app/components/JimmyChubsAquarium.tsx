@@ -159,7 +159,7 @@ export function JimmyChubsAquarium({ onBack }: Props) {
       >
         {/* Background image */}
         <img
-          src="/aquarium-bg.png"
+          src={`${import.meta.env.BASE_URL}aquarium-bg.png`}
           alt=""
           className="absolute inset-0 w-full h-full object-cover pointer-events-none"
           draggable={false}

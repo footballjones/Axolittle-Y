@@ -19,12 +19,13 @@ export default defineConfig({
 
   // File types to support raw imports. Never add .css, .tsx, or .ts files to this.
   assetsInclude: ['**/*.svg', '**/*.csv', '**/*.png'],
-  
+
+  // Relative base path so built assets work under file:// in iOS WKWebView
+  base: './',
+
   // Build configuration for iOS wrapper
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
-    // Ensure relative paths work in iOS bundle
-    base: './',
   },
 })

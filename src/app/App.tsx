@@ -234,7 +234,7 @@ export default function App() {
     enabled: !!shouldPlayMiniGameMusic,
     musicEnabled: gameState?.musicEnabled !== false,
     volume: 0.25,
-    startingTrack: '/music/mini-games/Axolittle mini game screen.mp3',
+    startingTrack: `${import.meta.env.BASE_URL}music/mini-games/Axolittle mini game screen.mp3`,
   });
   
   // Level-up callback — shows the fanfare overlay; does NOT force open the stats modal

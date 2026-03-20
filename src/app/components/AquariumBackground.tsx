@@ -46,7 +46,7 @@ export function AquariumBackground({ background, decorations }: AquariumBackgrou
     <div className="absolute inset-0 overflow-hidden">
       {/* Base aquarium background image */}
       <img
-        src="/aquarium-bg.png"
+        src={`${import.meta.env.BASE_URL}aquarium-bg.png`}
         alt="Aquarium background"
         className="absolute inset-0 w-full h-full object-cover"
         style={{ zIndex: 0 }}

@@ -132,27 +132,27 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
   {
     id: 'first-steps',
     name: 'First Steps',
-    description: 'Your axolotl reaches the Juvenile stage.',
+    description: 'Your axolotl reaches the Sprout stage.',
     emoji: '🌱',
     category: 'progression',
     coinReward: 10,
     check: s => {
       const cur = s.axolotl;
-      if (cur && ['juvenile', 'adult', 'elder'].includes(cur.stage)) return true;
-      return s.lineage.some(a => ['juvenile', 'adult', 'elder'].includes(a.stage));
+      if (cur && ['sprout', 'guardian', 'elder'].includes(cur.stage)) return true;
+      return s.lineage.some(a => ['sprout', 'guardian', 'elder'].includes(a.stage));
     },
   },
   {
     id: 'all-grown-up',
     name: 'All Grown Up',
-    description: 'Your axolotl reaches the Adult stage.',
+    description: 'Your axolotl reaches the Guardian stage.',
     emoji: '🌿',
     category: 'progression',
     coinReward: 15,
     check: s => {
       const cur = s.axolotl;
-      if (cur && ['adult', 'elder'].includes(cur.stage)) return true;
-      return s.lineage.some(a => ['adult', 'elder'].includes(a.stage));
+      if (cur && ['guardian', 'elder'].includes(cur.stage)) return true;
+      return s.lineage.some(a => ['guardian', 'elder'].includes(a.stage));
     },
   },
   {

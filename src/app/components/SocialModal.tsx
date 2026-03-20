@@ -968,7 +968,7 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
 
                 {/* Stage progress */}
                 {(() => {
-                  const stages: Friend['stage'][] = ['baby', 'juvenile', 'adult', 'elder'];
+                  const stages: Friend['stage'][] = ['hatchling', 'sprout', 'guardian', 'elder'];
                   const currentIdx = stages.indexOf(viewingStatsFriend.stage);
                   return (
                     <div

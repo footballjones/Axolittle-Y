@@ -2,11 +2,11 @@ import { Axolotl, LifeStage, GameState, SecondaryStats } from '../types/game';
 import { GAME_CONFIG } from '../config/game';
 import { updateWellbeingStats } from '../axolotl/needsSystem';
 
-// Life stages are now based on level only (Baby L1-9, Juvenile L10-19, Adult L20-29, Elder L30-40)
+// Life stages are now based on level only (Hatchling L1-9, Sprout L10-19, Guardian L20-29, Elder L30-40)
 export const STAGE_REQUIREMENTS = {
-  baby: { minLevel: 1, maxLevel: 9 },
-  juvenile: { minLevel: 10, maxLevel: 19 },
-  adult: { minLevel: 20, maxLevel: 29 },
+  hatchling: { minLevel: 1, maxLevel: 9 },
+  sprout: { minLevel: 10, maxLevel: 19 },
+  guardian: { minLevel: 20, maxLevel: 29 },
   elder: { minLevel: 30, maxLevel: 40 },
 };
 
@@ -82,7 +82,7 @@ export function generateAxolotl(
   return {
     id: `axo-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
     name,
-    stage: 'baby' as LifeStage,
+    stage: 'hatchling' as LifeStage,
     stats: {
       hunger: 50,
       happiness: 50,
@@ -150,7 +150,7 @@ export function feedAxolotl(axolotl: Axolotl, amount: number = 25): Axolotl {
 export function checkEvolution(axolotl: Axolotl): { axolotl: Axolotl; didLevelUp: boolean } {
   const level = calculateLevel(axolotl.experience);
   const lastLevel = axolotl.lastLevel || level;
-  const stages: LifeStage[] = ['baby', 'juvenile', 'adult', 'elder'];
+  const stages: LifeStage[] = ['hatchling', 'sprout', 'guardian', 'elder'];
   const currentIndex = stages.indexOf(axolotl.stage);
 
   const didLevelUp = level > lastLevel;

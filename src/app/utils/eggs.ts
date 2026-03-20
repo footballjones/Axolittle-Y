@@ -197,7 +197,7 @@ export function createBreedingEgg(parent1: Axolotl, parent2: Axolotl): Egg {
 }
 
 /**
- * Hatch an egg into a new axolotl at Baby, Level 1
+ * Hatch an egg into a new axolotl at Hatchling, Level 1
  * The egg's color/pattern may already include recessive expression from breeding/rebirth
  */
 export function hatchEgg(egg: Egg, name: string): Axolotl {

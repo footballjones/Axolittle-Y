@@ -50,7 +50,7 @@ export function KeepeyUpey({ onEnd, onDeductEnergy, onApplyReward, energy, sound
 
   // Pre-load the bounce sound once
   useEffect(() => {
-    const audio = new Audio('/sounds/Axolittle Keepey Upey.mp3');
+    const audio = new Audio(`${import.meta.env.BASE_URL}sounds/Axolittle Keepey Upey.mp3`);
     audio.preload = 'auto';
     audio.volume = 0.6;
     bounceSfxRef.current = audio;

@@ -374,7 +374,7 @@ export function useGameActions({
       friendCode: normalizedCode,
       name: data.username ?? data.axolotl_name ?? normalizedCode,
       axolotlName: data.axolotl_name ?? 'Mystery Axo',
-      stage: (data.stage as Friend['stage']) ?? 'adult',
+      stage: (data.stage as Friend['stage']) ?? 'guardian',
       generation: data.generation ?? 1,
       lastSync: Date.now(),
     };
@@ -427,12 +427,12 @@ export function useGameActions({
       const friend = prev.friends.find(f => f.id === friendId);
       if (!friend) return prev;
 
-      if (prev.axolotl.stage !== 'adult' && prev.axolotl.stage !== 'elder') {
+      if (prev.axolotl.stage !== 'guardian' && prev.axolotl.stage !== 'elder') {
         setNotifications(prev => [...prev, {
           id: `notif-${Date.now()}`,
           type: 'milestone',
           emoji: '⚠️',
-          message: 'Your axolotl must be an adult or elder to breed!',
+          message: 'Your axolotl must be a Guardian or Elder to breed!',
           time: 'now',
           read: false,
         }]);
