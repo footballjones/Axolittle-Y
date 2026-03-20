@@ -143,7 +143,7 @@ export function HatchingIntroScreen({ onComplete }: Props) {
               animate={{ opacity: [0.55, 1, 0.55] }}
               transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
             >
-              Tap it to help it hatch 👆
+              Tap it to help it hatch
             </motion.p>
 
             {/* Egg area */}

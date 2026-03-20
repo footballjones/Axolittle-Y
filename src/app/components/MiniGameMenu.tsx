@@ -654,14 +654,6 @@ export function MiniGameMenu({ onClose: _onClose, onSelectGame, energy = 10, max
                 }}
               />
 
-              {/* Bouncing finger */}
-              <motion.span
-                className="text-2xl select-none leading-none"
-                animate={{ y: [0, 8, 0] }}
-                transition={{ duration: 0.85, repeat: Infinity, ease: 'easeInOut' }}
-              >
-                👇
-              </motion.span>
             </motion.div>
           </motion.div>
         </AnimatePresence>,

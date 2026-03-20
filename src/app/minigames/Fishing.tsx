@@ -738,11 +738,11 @@ export function Fishing({ onEnd, onDeductEnergy, onApplyReward, energy, strength
                       </h2>
                       <div className="space-y-2 text-blue-700 text-sm font-medium">
                         <p className="flex items-center justify-center gap-2">
-                          <span className="text-lg">👆</span>
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="5" r="2"/><path d="M12 7v8"/><path d="M9 18h6"/></svg>
                           Hold to lower your line
                         </p>
                         <p className="flex items-center justify-center gap-2">
-                          <span className="text-lg">👋</span>
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
                           Release to reel in your catch!
                         </p>
                         <p className="flex items-center justify-center gap-2">

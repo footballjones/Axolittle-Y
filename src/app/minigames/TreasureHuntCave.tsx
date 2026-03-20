@@ -478,7 +478,7 @@ export function TreasureHuntCave({ onEnd, onDeductEnergy, onApplyReward, energy 
                       </h2>
                       <div className="space-y-2 text-amber-700 text-sm font-medium">
                         <p className="flex items-center justify-center gap-2">
-                          <span className="text-lg">👆</span>
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="5" r="2"/><path d="M12 7v8"/><path d="M9 18h6"/></svg>
                           Tap top/bottom to move up/down
                         </p>
                         <p className="flex items-center justify-center gap-2">

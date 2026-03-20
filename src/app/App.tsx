@@ -1859,14 +1859,6 @@ export default function App() {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.3, duration: 0.4 }}
                       >
-                        {/* Upward caret pointing to banner above */}
-                        <motion.span
-                          className="text-xl select-none"
-                          animate={{ y: [0, -6, 0] }}
-                          transition={{ duration: 0.8, repeat: Infinity, ease: 'easeInOut' }}
-                        >
-                          ☝️
-                        </motion.span>
                         <div
                           className="w-0 h-0"
                           style={{
@@ -1996,13 +1988,6 @@ export default function App() {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.3, duration: 0.4 }}
                       >
-                        <motion.span
-                          className="text-xl select-none"
-                          animate={{ y: [0, -6, 0] }}
-                          transition={{ duration: 0.8, repeat: Infinity, ease: 'easeInOut' }}
-                        >
-                          ☝️
-                        </motion.span>
                         <div
                           className="w-0 h-0"
                           style={{
@@ -2087,14 +2072,6 @@ export default function App() {
                                   borderTop: '9px solid rgba(255,255,255,0.97)',
                                 }}
                               />
-                              {/* Bouncing finger pointing at Clean button */}
-                              <motion.span
-                                className="text-2xl select-none"
-                                animate={{ y: [0, 8, 0] }}
-                                transition={{ duration: 0.85, repeat: Infinity, ease: 'easeInOut' }}
-                              >
-                                👇
-                              </motion.span>
                             </motion.div>
                           </motion.div>
                         )}
@@ -2150,14 +2127,6 @@ export default function App() {
                             borderTop: '9px solid rgba(255,255,255,0.97)',
                           }}
                         />
-                        {/* Bouncing finger */}
-                        <motion.span
-                          className="text-2xl select-none"
-                          animate={{ y: [0, 8, 0] }}
-                          transition={{ duration: 0.85, repeat: Infinity, ease: 'easeInOut' }}
-                        >
-                          👇
-                        </motion.span>
                       </motion.div>
                     </motion.div>
                   )}

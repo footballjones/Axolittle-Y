@@ -127,7 +127,7 @@ export function LoginScreen({ onClose }: LoginScreenProps = {}) {
 
   return (
     <div
-      className="fixed inset-0 flex flex-col items-center justify-center p-6 overflow-hidden"
+      className="fixed inset-0 flex flex-col items-center justify-center p-4 overflow-y-auto"
       style={{ background: 'linear-gradient(180deg, #041428 0%, #0a1e3d 50%, #0d2847 100%)', zIndex: 60 }}
     >
       {/* Back button — only shown when used as an in-game overlay */}
@@ -165,7 +165,7 @@ export function LoginScreen({ onClose }: LoginScreenProps = {}) {
         style={{ maxWidth: 300 }}
       >
         {/* Axolotl image */}
-        <div className="flex justify-center mb-4">
+        <div className="flex justify-center mb-2">
           <div className="relative">
             <motion.div
               animate={{ scale: [1, 1.2, 1], opacity: [0.25, 0.55, 0.25] }}
@@ -176,11 +176,11 @@ export function LoginScreen({ onClose }: LoginScreenProps = {}) {
             <motion.img
               src={axolotlImg}
               alt="Axolotl"
-              animate={{ y: [0, -12, 0], rotate: [0, 1.2, 0, -1.2, 0] }}
+              animate={{ y: [0, -8, 0], rotate: [0, 1.2, 0, -1.2, 0] }}
               transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
               style={{
-                width: 180,
-                borderRadius: 20,
+                width: 140,
+                borderRadius: 16,
                 boxShadow: '0 0 30px rgba(56,189,248,0.2), 0 0 70px rgba(168,85,247,0.1)',
                 maskImage: 'radial-gradient(ellipse 90% 85% at center, black 55%, transparent 100%)',
                 WebkitMaskImage: 'radial-gradient(ellipse 90% 85% at center, black 55%, transparent 100%)',
@@ -190,9 +190,9 @@ export function LoginScreen({ onClose }: LoginScreenProps = {}) {
         </div>
 
         {/* Title */}
-        <div className="text-center mb-4">
+        <div className="text-center mb-2">
           <h1
-            className="text-3xl font-black tracking-tight"
+            className="text-2xl font-black tracking-tight"
             style={{
               background: 'linear-gradient(135deg, #67e8f9 0%, #a78bfa 35%, #f0abfc 65%, #67e8f9 100%)',
               WebkitBackgroundClip: 'text',
@@ -206,7 +206,7 @@ export function LoginScreen({ onClose }: LoginScreenProps = {}) {
 
         {/* Card */}
         <div
-          className="relative rounded-2xl p-5 backdrop-blur-xl"
+          className="relative rounded-2xl p-4 backdrop-blur-xl"
           style={{
             background: 'linear-gradient(145deg, rgba(6,13,26,0.88) 0%, rgba(10,20,45,0.92) 100%)',
             border: '1px solid rgba(56,189,248,0.15)',

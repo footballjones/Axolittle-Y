@@ -22,13 +22,13 @@ export function PinPad({ value, onChange, maxLength = 4, disabled = false }: Pin
   return (
     <div>
       {/* PIN dots */}
-      <div className="flex justify-center gap-4 mb-5">
+      <div className="flex justify-center gap-3 mb-3">
         {Array.from({ length: maxLength }).map((_, i) => (
           <motion.div
             key={i}
             animate={i < value.length ? { scale: [1, 1.3, 1] } : { scale: 1 }}
             transition={{ duration: 0.15 }}
-            className="w-4 h-4 rounded-full border-2 transition-colors"
+            className="w-3 h-3 rounded-full border-2 transition-colors"
             style={{
               background: i < value.length ? 'rgba(56,189,248,1)' : 'transparent',
               borderColor: i < value.length ? 'rgba(56,189,248,1)' : 'rgba(56,189,248,0.3)',
@@ -38,7 +38,7 @@ export function PinPad({ value, onChange, maxLength = 4, disabled = false }: Pin
       </div>
 
       {/* Number pad */}
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-3 gap-1.5">
         {KEYS.map((key, i) =>
           key === '' ? (
             <div key={i} />
@@ -48,12 +48,12 @@ export function PinPad({ value, onChange, maxLength = 4, disabled = false }: Pin
               whileTap={{ scale: 0.88 }}
               onClick={() => handleKey(key)}
               disabled={disabled}
-              className="py-3.5 rounded-xl font-bold text-xl transition-opacity disabled:opacity-40"
+              className="py-2 rounded-xl font-bold transition-opacity disabled:opacity-40"
               style={{
                 background: 'rgba(56,189,248,0.07)',
                 border: '1px solid rgba(56,189,248,0.15)',
                 color: key === 'del' ? 'rgba(56,189,248,0.5)' : 'rgba(207,250,254,0.9)',
-                fontSize: key === 'del' ? 18 : 22,
+                fontSize: key === 'del' ? 15 : 18,
               }}
             >
               {key === 'del' ? '⌫' : key}
