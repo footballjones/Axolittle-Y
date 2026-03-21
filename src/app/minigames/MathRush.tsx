@@ -65,24 +65,24 @@ function generateQuestion(questionCount: number): Question {
     a = 1 + Math.floor(Math.random() * range);
     b = 1 + Math.floor(Math.random() * range);
     answer = a + b;
-    questionText = `${a} ${theme.name} + ${b} ${theme.name} = ?`;
+    questionText = `${a} + ${b} = ?`;
   } else if (op === '-') {
     const range = hasDivision ? 20 : 15;
     a = 2 + Math.floor(Math.random() * range);
     b = 1 + Math.floor(Math.random() * a);
     answer = a - b;
-    questionText = `${a} ${theme.name} − ${b} ${theme.name} = ?`;
+    questionText = `${a} − ${b} = ?`;
   } else if (op === '×') {
     const maxFactor = hasDivision ? 10 : 8;
     a = 2 + Math.floor(Math.random() * maxFactor);
     b = 2 + Math.floor(Math.random() * maxFactor);
     answer = a * b;
-    questionText = `${a} × ${b} ${theme.name} = ?`;
+    questionText = `${a} × ${b} = ?`;
   } else if (op === '÷') {
     b = 2 + Math.floor(Math.random() * 8);
     answer = 2 + Math.floor(Math.random() * 8);
     a = b * answer;
-    questionText = `${a} ${theme.name} ÷ ${b} = ?`;
+    questionText = `${a} ÷ ${b} = ?`;
   } else {
     // √ square root
     const square = PERFECT_SQUARES[Math.floor(Math.random() * PERFECT_SQUARES.length)];
