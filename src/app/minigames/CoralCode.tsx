@@ -11,6 +11,7 @@ import { MiniGameProps } from './types';
 import { calculateRewards } from './config';
 import { Egg as EggIcon, Fish, Waves, Trophy, Star, Gamepad2, Rocket, Zap } from 'lucide-react';
 import { CoinIcon, OpalIcon } from '../components/icons';
+import coralCodeBg from '../../assets/coral-code.png';
 
 const MAX_GUESSES = 10;
 
@@ -266,7 +267,11 @@ export function CoralCode({ onEnd, onDeductEnergy, onApplyReward, energy }: Mini
       {/* Ocean background */}
       <div
         className="relative w-full h-full flex flex-col overflow-hidden"
-        style={{ background: 'linear-gradient(180deg, #0a1628 0%, #0d2545 40%, #0e3060 100%)' }}
+        style={{
+          backgroundImage: `url(${coralCodeBg})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        }}
       >
         <OceanBubbles />
 
