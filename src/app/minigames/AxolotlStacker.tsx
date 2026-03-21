@@ -11,6 +11,7 @@ import { MiniGameProps } from './types';
 import { calculateRewards } from './config';
 import { Layers, Target, AlertTriangle, Star, Trophy, Gamepad2, Rocket } from 'lucide-react';
 import { CoinIcon, OpalIcon } from '../components/icons';
+import stackerBg from '../../assets/Axolotl stacker.png';
 
 const CANVAS_W = 360;
 const CANVAS_H = 640;
@@ -50,6 +51,14 @@ export function AxolotlStacker({ onEnd, onDeductEnergy, onApplyReward, energy }:
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
   const animationFrameRef = useRef<number | null>(null);
+  const bgImageRef = useRef<HTMLImageElement | null>(null);
+
+  // Preload background image once
+  useEffect(() => {
+    const img = new Image();
+    img.src = stackerBg;
+    img.onload = () => { bgImageRef.current = img; };
+  }, []);
   const gameRef = useRef<{
     isPlaying: boolean;
     isPaused: boolean;
@@ -87,8 +96,18 @@ export function AxolotlStacker({ onEnd, onDeductEnergy, onApplyReward, energy }:
     const game = gameRef.current;
     
     // Background
-    ctx.fillStyle = '#0e2233';
-    ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+    const bg = bgImageRef.current;
+    if (bg && bg.complete) {
+      const scale = Math.max(CANVAS_W / bg.naturalWidth, CANVAS_H / bg.naturalHeight);
+      const drawW = bg.naturalWidth * scale;
+      const drawH = bg.naturalHeight * scale;
+      const offsetX = (CANVAS_W - drawW) / 2;
+      const offsetY = (CANVAS_H - drawH) / 2;
+      ctx.drawImage(bg, offsetX, offsetY, drawW, drawH);
+    } else {
+      ctx.fillStyle = '#0e2233';
+      ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+    }
 
     // Draw stack
     for (let i = 0; i < game.stack.length; i++) {
