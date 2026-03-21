@@ -20,7 +20,7 @@ const ORB_COLORS = [
   { id: 'coral',  label: 'Coral',    from: '#ff6b6b', to: '#e84545', shadow: '#ff6b6b' },
   { id: 'sun',    label: 'Sun',      from: '#ffe234', to: '#ffa502', shadow: '#ffcc00' },
   { id: 'kelp',   label: 'Kelp',     from: '#2ed573', to: '#17a85a', shadow: '#2ed573' },
-  { id: 'ocean',  label: 'Ocean',    from: '#45cfff', to: '#1e9de0', shadow: '#45cfff' },
+  { id: 'ocean',  label: 'Ocean',    from: '#1a7abf', to: '#0d4d8a', shadow: '#1a7abf' },
   { id: 'urchin', label: 'Urchin',   from: '#d76dff', to: '#9b3fd4', shadow: '#d76dff' },
   { id: 'clown',  label: 'Clown',    from: '#ff9f43', to: '#e07020', shadow: '#ff9f43' },
 ] as const;
