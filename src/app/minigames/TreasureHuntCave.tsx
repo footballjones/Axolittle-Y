@@ -9,6 +9,8 @@ import { motion } from 'motion/react';
 import { GameWrapper } from './GameWrapper';
 import { MiniGameProps } from './types';
 import { calculateRewards } from './config';
+import { Gem, AlertTriangle, Zap, Star, Trophy, Gamepad2, Rocket, Target } from 'lucide-react';
+import { CoinIcon, OpalIcon } from '../components/icons';
 
 const CANVAS_W = 360;
 const CANVAS_H = 640;
@@ -137,7 +139,7 @@ export function TreasureHuntCave({ onEnd, onDeductEnergy, onApplyReward, energy 
         ctx.fillStyle = '#fff';
         ctx.font = '16px Arial';
         ctx.textAlign = 'center';
-        ctx.fillText('👹', x + w / 2, y + h / 2 + 5);
+        ctx.fillText('X', x + w / 2, y + h / 2 + 5);
       }
     }
 
@@ -148,8 +150,8 @@ export function TreasureHuntCave({ onEnd, onDeductEnergy, onApplyReward, energy 
       
       ctx.font = '24px Arial';
       ctx.textAlign = 'center';
-      const emoji = gem.value === 3 ? '💎' : gem.value === 2 ? '💍' : '💠';
-      ctx.fillText(emoji, x, y);
+      const gemText = gem.value === 3 ? '***' : gem.value === 2 ? '**' : '*';
+      ctx.fillText(gemText, x, y);
     }
 
     // Draw player
@@ -157,7 +159,7 @@ export function TreasureHuntCave({ onEnd, onDeductEnergy, onApplyReward, energy 
     const playerY = (game.playerY / 100) * CANVAS_H;
     ctx.font = '40px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText('🦎', playerX, playerY);
+    ctx.fillText('@', playerX, playerY);
   }, []);
 
   const gameLoop = useCallback(() => {
@@ -283,7 +285,7 @@ export function TreasureHuntCave({ onEnd, onDeductEnergy, onApplyReward, energy 
 
     // Score
     ctx.fillStyle = '#fff';
-    ctx.fillText(`💎 ${game.gemsCollected}`, 15, 50);
+    ctx.fillText(`Gems: ${game.gemsCollected}`, 15, 50);
     ctx.fillText(`Distance: ${Math.floor(game.distance)}`, 15, 65);
 
     animationFrameRef.current = requestAnimationFrame(gameLoop);
@@ -469,9 +471,9 @@ export function TreasureHuntCave({ onEnd, onDeductEnergy, onApplyReward, energy 
                       <motion.div
                         animate={{ scale: [1, 1.1, 1], rotate: [0, 5, -5, 0] }}
                         transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-                        className="text-6xl mb-4"
+                        className="flex justify-center mb-4"
                       >
-                        💎
+                        <Gem className="w-16 h-16 text-amber-500" />
                       </motion.div>
                       <h2 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-600 to-amber-800 mb-4">
                         Treasure Hunt Cave
@@ -482,15 +484,15 @@ export function TreasureHuntCave({ onEnd, onDeductEnergy, onApplyReward, energy 
                           Tap top/bottom to move up/down
                         </p>
                         <p className="flex items-center justify-center gap-2">
-                          <span className="text-lg">💎</span>
+                          <Gem className="w-5 h-5 text-amber-500" />
                           Collect gems for points
                         </p>
                         <p className="flex items-center justify-center gap-2">
-                          <span className="text-lg">⚠️</span>
+                          <AlertTriangle className="w-5 h-5 text-red-500" />
                           Avoid rocks and creatures!
                         </p>
                         <p className="flex items-center justify-center gap-2">
-                          <span className="text-lg">⚡</span>
+                          <Zap className="w-5 h-5 text-amber-500" />
                           Watch your stamina
                         </p>
                       </div>
@@ -502,15 +504,15 @@ export function TreasureHuntCave({ onEnd, onDeductEnergy, onApplyReward, energy 
                     >
                       <span className="relative z-10 flex items-center justify-center gap-2">
                         <span>Start Game</span>
-                        <span className="text-xl">🚀</span>
+                        <Rocket className="w-5 h-5" />
                       </span>
                     </motion.button>
                   </>
                 ) : gameEnded && finalRewards ? (
                   <>
                     <div className="text-center mb-6">
-                      <div className="text-6xl mb-4">
-                        {score >= 50 ? '✨' : score >= 25 ? '🎉' : '🎮'}
+                      <div className="flex justify-center mb-4">
+                        {score >= 50 ? <Star className="w-16 h-16 text-amber-400" /> : score >= 25 ? <Trophy className="w-16 h-16 text-yellow-500" /> : <Gamepad2 className="w-16 h-16 text-amber-400" />}
                       </div>
                       <h2 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-600 to-amber-800 mb-4">
                         Game Over!
@@ -519,7 +521,7 @@ export function TreasureHuntCave({ onEnd, onDeductEnergy, onApplyReward, energy 
                         Score: {score}
                       </p>
                       <p className="text-amber-600 text-center mb-4 text-sm font-medium">
-                        {score >= 50 ? '🌟 Exceptional treasure hunter!' : score >= 25 ? '🎯 Great exploration!' : '💪 Keep exploring!'}
+                        {score >= 50 ? 'Exceptional treasure hunter!' : score >= 25 ? 'Great exploration!' : 'Keep exploring!'}
                       </p>
                       
                       {hadEnergyAtStart && finalRewards && (finalRewards.xp > 0 || finalRewards.coins > 0) ? (
@@ -527,16 +529,16 @@ export function TreasureHuntCave({ onEnd, onDeductEnergy, onApplyReward, energy 
                           <p className="text-amber-700 font-bold text-lg mb-2">Rewards:</p>
                           <div className="flex flex-col gap-2 text-amber-800">
                             <div className="flex items-center justify-center gap-2">
-                              <span className="text-xl">⭐</span>
+                              <Star className="w-5 h-5 text-yellow-400" />
                               <span className="font-semibold">+{finalRewards.xp} XP</span>
                             </div>
                             <div className="flex items-center justify-center gap-2">
-                              <span className="text-xl">💰</span>
+                              <CoinIcon size={20} />
                               <span className="font-semibold">+{finalRewards.coins} Coins</span>
                             </div>
                             {finalRewards.opals && (
                               <div className="flex items-center justify-center gap-2">
-                                <span className="text-xl">🪬</span>
+                                <OpalIcon size={20} />
                                 <span className="font-semibold">+{finalRewards.opals} Opals</span>
                               </div>
                             )}

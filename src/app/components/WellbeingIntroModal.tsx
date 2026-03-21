@@ -1,15 +1,17 @@
 import { motion } from 'motion/react';
+import { Worm, Sparkles, Brush, Droplets } from 'lucide-react';
+import React from 'react';
 
 interface WellbeingIntroModalProps {
   axolotlName: string;
   onStart: () => void;
 }
 
-const STEPS = [
-  { emoji: '🪱', label: 'Feed' },
-  { emoji: '✨', label: 'Play' },
-  { emoji: '🧹', label: 'Clean' },
-  { emoji: '💧', label: 'Water' },
+const STEPS: Array<{ icon: React.ReactNode; label: string }> = [
+  { icon: <Worm className="w-6 h-6 text-emerald-400" />, label: 'Feed' },
+  { icon: <Sparkles className="w-6 h-6 text-violet-400" />, label: 'Play' },
+  { icon: <Brush className="w-6 h-6 text-rose-400" />, label: 'Clean' },
+  { icon: <Droplets className="w-6 h-6 text-sky-400" />, label: 'Water' },
 ];
 
 export function WellbeingIntroModal({ axolotlName, onStart }: WellbeingIntroModalProps) {
@@ -34,11 +36,11 @@ export function WellbeingIntroModal({ axolotlName, onStart }: WellbeingIntroModa
         <div className="px-6 pt-7 pb-5 text-center">
           {/* Animated axolotl glow */}
           <motion.div
-            className="text-5xl mb-3 select-none"
+            className="flex justify-center mb-3"
             animate={{ scale: [1, 1.08, 1], filter: ['drop-shadow(0 0 6px rgba(167,139,250,0.4))', 'drop-shadow(0 0 18px rgba(167,139,250,0.8))', 'drop-shadow(0 0 6px rgba(167,139,250,0.4))'] }}
             transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
           >
-            🦎
+            <Droplets className="w-12 h-12 text-teal-400" />
           </motion.div>
 
           <h2 className="text-white text-[19px] font-extrabold leading-tight">
@@ -57,21 +59,21 @@ export function WellbeingIntroModal({ axolotlName, onStart }: WellbeingIntroModa
             transition={{ delay: 0.3, duration: 0.4 }}
           >
             <motion.span
-              className="text-lg select-none"
+              className="select-none"
               animate={{ scale: [1, 1.2, 1] }}
               transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
             >
-              ✨
+              <Sparkles className="w-5 h-5 text-amber-300" />
             </motion.span>
             <p className="text-amber-300 text-[11.5px] font-semibold leading-snug">
               Complete it and earn <span className="text-amber-200 font-extrabold">5 free Opals!</span>
             </p>
             <motion.span
-              className="text-lg select-none"
+              className="select-none"
               animate={{ scale: [1, 1.2, 1] }}
               transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut', delay: 0.7 }}
             >
-              ✨
+              <Sparkles className="w-5 h-5 text-amber-300" />
             </motion.span>
           </motion.div>
         </div>
@@ -90,12 +92,12 @@ export function WellbeingIntroModal({ axolotlName, onStart }: WellbeingIntroModa
               transition={{ delay: 0.25 + i * 0.08, duration: 0.35 }}
             >
               <motion.div
-                className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl"
+                className="w-12 h-12 rounded-2xl flex items-center justify-center"
                 style={{ background: 'rgba(139,92,246,0.18)', border: '1.5px solid rgba(139,92,246,0.3)' }}
                 animate={{ y: [0, -4, 0] }}
                 transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut', delay: i * 0.4 }}
               >
-                {s.emoji}
+                {s.icon}
               </motion.div>
               <span className="text-white/70 text-[10px] font-semibold tracking-wide uppercase">
                 {s.label}
@@ -118,7 +120,7 @@ export function WellbeingIntroModal({ axolotlName, onStart }: WellbeingIntroModa
               animate={{ x: ['-100%', '200%'] }}
               transition={{ duration: 1.8, repeat: Infinity, repeatDelay: 2.5, ease: 'easeInOut' }}
             />
-            <span className="relative">Let's Start! ✨</span>
+            <span className="relative inline-flex items-center gap-1.5">Let's Start! <Sparkles className="w-4 h-4" /></span>
           </motion.button>
         </div>
       </motion.div>

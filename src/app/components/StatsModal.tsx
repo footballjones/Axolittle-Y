@@ -1,4 +1,4 @@
-import { X, Dumbbell, Brain, Heart, Zap, Plus } from 'lucide-react';
+import { X, Dumbbell, Brain, Heart, Zap, Plus, Target, Trophy, Lightbulb } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { SecondaryStats } from '../types/game';
 
@@ -106,7 +106,7 @@ export function StatsModal({ onClose, stats, name, pendingPoints = 0, onAllocate
                     animate={{ scale: [0, 1.4, 1], opacity: [0, 1, 0.7] }}
                     transition={{ delay: 0.2 + i * 0.1, duration: 0.5 }}
                   >
-                    ✦
+                    <Zap className="w-3 h-3" />
                   </motion.span>
                 ))}
               </>
@@ -122,7 +122,7 @@ export function StatsModal({ onClose, stats, name, pendingPoints = 0, onAllocate
                       transition={{ delay: 0.1 }}
                       className="text-[10px] font-black tracking-widest uppercase text-white/80 mb-0.5"
                     >
-                      ⚡ Level Up!
+                      <span className="inline-flex items-center gap-1"><Zap className="w-3 h-3" /> Level Up!</span>
                     </motion.div>
                     <motion.h2
                       initial={{ opacity: 0, y: -4 }}
@@ -172,7 +172,7 @@ export function StatsModal({ onClose, stats, name, pendingPoints = 0, onAllocate
                 className="rounded-2xl px-4 py-3 flex items-center gap-3 border"
                 style={{ background: 'rgba(251,191,36,0.15)', borderColor: 'rgba(251,191,36,0.4)' }}
               >
-                <span className="text-2xl">🎯</span>
+                <Target className="w-6 h-6 text-amber-600" />
                 <p className="text-amber-800 font-bold text-sm">
                   Tap any stat below to add +1 point!
                 </p>
@@ -240,13 +240,13 @@ export function StatsModal({ onClose, stats, name, pendingPoints = 0, onAllocate
                 style={{ background: 'rgba(251,191,36,0.12)', borderColor: 'rgba(251,191,36,0.3)' }}
               >
                 <p className="text-xs text-amber-700 font-medium">
-                  🏆 You earn 1 stat point every level-up — choose wisely!
+                  <span className="inline-flex items-center gap-1"><Trophy className="w-3.5 h-3.5 text-amber-600" /> You earn 1 stat point every level-up — choose wisely!</span>
                 </p>
               </motion.div>
             ) : (
               <div className="bg-indigo-50 rounded-2xl p-3 sm:p-4 border border-indigo-100">
                 <p className="text-xs text-indigo-700 text-center font-medium">
-                  💡 Earn stat points by leveling up through mini-games
+                  <span className="inline-flex items-center gap-1"><Lightbulb className="w-3.5 h-3.5 text-indigo-500" /> Earn stat points by leveling up through mini-games</span>
                 </p>
               </div>
             )}

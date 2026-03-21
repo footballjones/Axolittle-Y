@@ -1,4 +1,5 @@
 import { motion } from 'motion/react';
+import { PartyPopper, Sparkles, Gem } from 'lucide-react';
 
 interface WellbeingCompleteModalProps {
   axolotlName: string;
@@ -53,11 +54,11 @@ export function WellbeingCompleteModal({ axolotlName, onCollect }: WellbeingComp
         {/* Header */}
         <div className="px-6 pt-7 pb-4 text-center">
           <motion.div
-            className="text-5xl mb-3 select-none"
+            className="flex justify-center mb-3"
             animate={{ rotate: [0, -8, 8, -4, 0], scale: [1, 1.12, 1] }}
             transition={{ duration: 0.8, delay: 0.3 }}
           >
-            🎉
+            <PartyPopper className="w-12 h-12 text-emerald-300" />
           </motion.div>
 
           <h2 className="text-white text-[20px] font-extrabold leading-tight">
@@ -90,22 +91,22 @@ export function WellbeingCompleteModal({ axolotlName, onCollect }: WellbeingComp
             transition={{ delay: 0.45, type: 'spring', stiffness: 280, damping: 22 }}
           >
             <motion.span
-              className="text-3xl select-none"
+              className="select-none"
               animate={{ rotate: [0, 15, -10, 0], scale: [1, 1.2, 1] }}
               transition={{ duration: 0.7, delay: 0.6 }}
             >
-              ✨
+              <Sparkles className="w-8 h-8 text-emerald-300" />
             </motion.span>
             <div className="text-left">
               <p className="text-emerald-300 text-[10px] font-bold uppercase tracking-widest">Reward</p>
               <p className="text-white text-[22px] font-extrabold leading-none">+5 Opals</p>
             </div>
             <motion.span
-              className="text-3xl select-none"
+              className="select-none"
               animate={{ rotate: [0, -15, 10, 0], scale: [1, 1.2, 1] }}
               transition={{ duration: 0.7, delay: 0.65 }}
             >
-              ✨
+              <Sparkles className="w-8 h-8 text-emerald-300" />
             </motion.span>
           </motion.div>
         </div>
@@ -127,7 +128,7 @@ export function WellbeingCompleteModal({ axolotlName, onCollect }: WellbeingComp
               animate={{ x: ['-100%', '200%'] }}
               transition={{ duration: 1.8, repeat: Infinity, repeatDelay: 2.5, ease: 'easeInOut' }}
             />
-            <span className="relative">Collect Reward! 💎</span>
+            <span className="relative inline-flex items-center gap-1.5">Collect Reward! <Gem className="w-4 h-4" /></span>
           </motion.button>
         </div>
       </motion.div>

@@ -1,20 +1,21 @@
 import { motion } from 'motion/react';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, Code, Layers, Brain } from 'lucide-react';
 
 interface Level7UnlockModalProps {
   onClose: () => void;
 }
 
+const SPARKLE_COLORS_L7 = ['#60a5fa','#a78bfa','#34d399','#f472b6','#fbbf24','#fb923c'];
 const SPARKLES_BURST = [
-  { emoji: '⭐', angle: 0,   dist: 130 },
-  { emoji: '✨', angle: 40,  dist: 150 },
-  { emoji: '🌟', angle: 80,  dist: 125 },
-  { emoji: '💫', angle: 120, dist: 145 },
-  { emoji: '⭐', angle: 160, dist: 120 },
-  { emoji: '✨', angle: 200, dist: 148 },
-  { emoji: '🌟', angle: 240, dist: 128 },
-  { emoji: '🎉', angle: 280, dist: 152 },
-  { emoji: '🎊', angle: 320, dist: 118 },
+  { angle: 0,   dist: 130 },
+  { angle: 40,  dist: 150 },
+  { angle: 80,  dist: 125 },
+  { angle: 120, dist: 145 },
+  { angle: 160, dist: 120 },
+  { angle: 200, dist: 148 },
+  { angle: 240, dist: 128 },
+  { angle: 280, dist: 152 },
+  { angle: 320, dist: 118 },
 ];
 
 export function Level7UnlockModal({ onClose }: Level7UnlockModalProps) {
@@ -39,12 +40,14 @@ export function Level7UnlockModal({ onClose }: Level7UnlockModalProps) {
           return (
             <motion.span
               key={i}
-              className="absolute text-2xl select-none"
+              className="absolute select-none"
               initial={{ opacity: 0, scale: 0, x: 0, y: 0 }}
               animate={{ opacity: [0, 1, 0.8, 0], scale: [0, 1.6, 1, 0], x: tx, y: ty }}
               transition={{ duration: 1.4, delay: 0.2 + i * 0.07, ease: 'easeOut' }}
             >
-              {s.emoji}
+              <svg width="20" height="20" viewBox="0 0 24 24" fill={SPARKLE_COLORS_L7[i % SPARKLE_COLORS_L7.length]}>
+                <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z" />
+              </svg>
             </motion.span>
           );
         })}
@@ -135,7 +138,7 @@ export function Level7UnlockModal({ onClose }: Level7UnlockModalProps) {
             </div>
             <div className="bg-indigo-50 px-4 py-3 flex items-center gap-4">
               <div className="flex items-center gap-2">
-                <span className="text-2xl">🪸</span>
+                <Code className="w-6 h-6 text-indigo-500 flex-shrink-0" strokeWidth={1.5} />
                 <div>
                   <p className="text-slate-800 font-bold text-xs">Coral Code</p>
                   <p className="text-slate-500 text-[10px]">Crack the pattern!</p>
@@ -143,7 +146,7 @@ export function Level7UnlockModal({ onClose }: Level7UnlockModalProps) {
               </div>
               <div className="w-px h-8 bg-indigo-200" />
               <div className="flex items-center gap-2">
-                <span className="text-2xl">🫧</span>
+                <Layers className="w-6 h-6 text-sky-500 flex-shrink-0" strokeWidth={1.5} />
                 <div>
                   <p className="text-slate-800 font-bold text-xs">Axolotl Stacker</p>
                   <p className="text-slate-500 text-[10px]">Stack them high!</p>
@@ -159,7 +162,7 @@ export function Level7UnlockModal({ onClose }: Level7UnlockModalProps) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.75 }}
           >
-            <span className="text-lg flex-shrink-0">🧠</span>
+            <Brain className="w-5 h-5 text-sky-500 flex-shrink-0" strokeWidth={2} />
             <p className="text-sky-800 text-[11.5px] leading-snug">
               <span className="font-bold">Tip:</span> Coral Code boosts Intellect, Axolotl Stacker boosts Speed. Play both to grow well-rounded stats!
             </p>
@@ -180,7 +183,7 @@ export function Level7UnlockModal({ onClose }: Level7UnlockModalProps) {
               animate={{ x: ['-100%', '200%'] }}
               transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 1, ease: 'easeInOut' }}
             />
-            <span className="relative z-10">Let's Play! 🎮</span>
+            <span className="relative z-10">Let's Play!</span>
           </motion.button>
         </div>
       </motion.div>

@@ -4,7 +4,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X } from 'lucide-react';
+import { X, Egg as EggIcon } from 'lucide-react';
 
 interface EggHatchModalProps {
   isOpen: boolean;
@@ -79,7 +79,7 @@ export function EggHatchModal({ isOpen, onClose, onConfirm, eggRarity: _eggRarit
                 </button>
 
                 <div className="text-center">
-                  <div className="text-5xl mb-3">🐣</div>
+                  <div className="flex justify-center mb-3"><EggIcon className="w-12 h-12 text-violet-500" /></div>
                   <h2 className="text-2xl font-bold text-violet-800 mb-1">
                     Hatch Your Egg!
                   </h2>

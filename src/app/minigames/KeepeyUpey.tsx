@@ -11,6 +11,8 @@ import { GameWrapper } from './GameWrapper';
 import { MiniGameProps } from './types';
 import { calculateRewards } from './config';
 import keepeyBg from '../../assets/keepey-bg.png';
+import { Zap, Target, Star, Trophy, Gamepad2, Rocket } from 'lucide-react';
+import { CoinIcon, OpalIcon } from '../components/icons';
 
 const CANVAS_W = 360;
 const CANVAS_H = 640;
@@ -612,9 +614,9 @@ export function KeepeyUpey({ onEnd, onDeductEnergy, onApplyReward, energy, sound
                           rotate: [0, 5, -5, 0]
                         }}
                         transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-                        className="text-6xl mb-4"
+                        className="flex justify-center mb-4"
                       >
-                        🪁
+                        <Zap className="w-16 h-16 text-purple-500" />
                       </motion.div>
                       <h2 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-indigo-600 mb-4">
                         Keepey Upey
@@ -625,11 +627,11 @@ export function KeepeyUpey({ onEnd, onDeductEnergy, onApplyReward, energy, sound
                           Tap to bounce upward!
                         </p>
                         <p className="flex items-center justify-center gap-2">
-                          <span className="text-lg">⚡</span>
+                          <Zap className="w-5 h-5 text-amber-500" />
                           Stay afloat as long as you can
                         </p>
                         <p className="flex items-center justify-center gap-2">
-                          <span className="text-lg">🎯</span>
+                          <Target className="w-5 h-5 text-red-500" />
                           Avoid obstacles and walls
                         </p>
                       </div>
@@ -642,7 +644,7 @@ export function KeepeyUpey({ onEnd, onDeductEnergy, onApplyReward, energy, sound
                     >
                       <span className="relative z-10 flex items-center justify-center gap-2">
                         <span>Start Game</span>
-                        <span className="text-xl">🚀</span>
+                        <Rocket className="w-5 h-5" />
                       </span>
                       <motion.div
                         className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
@@ -654,8 +656,8 @@ export function KeepeyUpey({ onEnd, onDeductEnergy, onApplyReward, energy, sound
                 ) : gameEnded && finalRewards ? (
                   <>
                     <div className="text-center mb-6">
-                      <div className="text-6xl mb-4">
-                        {score >= 30 ? '✨' : score >= 15 ? '🎉' : '🎮'}
+                      <div className="flex justify-center mb-4">
+                        {score >= 30 ? <Star className="w-16 h-16 text-amber-400" /> : score >= 15 ? <Trophy className="w-16 h-16 text-yellow-500" /> : <Gamepad2 className="w-16 h-16 text-purple-400" />}
                       </div>
                       <h2 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-indigo-600 mb-4">
                         Game Over!
@@ -664,7 +666,7 @@ export function KeepeyUpey({ onEnd, onDeductEnergy, onApplyReward, energy, sound
                         Survived: {score} seconds
                       </p>
                       <p className="text-purple-600 text-center mb-4 text-sm font-medium">
-                        {score >= 30 ? '🌟 Exceptional performance!' : score >= 15 ? '🎯 Good job!' : '💪 Keep practicing!'}
+                        {score >= 30 ? 'Exceptional performance!' : score >= 15 ? 'Good job!' : 'Keep practicing!'}
                       </p>
                       
                       {/* Rewards display - only show if energy was used */}
@@ -673,16 +675,16 @@ export function KeepeyUpey({ onEnd, onDeductEnergy, onApplyReward, energy, sound
                           <p className="text-purple-700 font-bold text-lg mb-2">Rewards:</p>
                           <div className="flex flex-col gap-2 text-purple-800">
                             <div className="flex items-center justify-center gap-2">
-                              <span className="text-xl">⭐</span>
+                              <Star className="w-5 h-5 text-yellow-400" />
                               <span className="font-semibold">+{finalRewards.xp} XP</span>
                             </div>
                             <div className="flex items-center justify-center gap-2">
-                              <span className="text-xl">💰</span>
+                              <CoinIcon size={20} />
                               <span className="font-semibold">+{finalRewards.coins} Coins</span>
                             </div>
                             {finalRewards.opals && (
                               <div className="flex items-center justify-center gap-2">
-                                <span className="text-xl">🪬</span>
+                                <OpalIcon size={20} />
                                 <span className="font-semibold">+{finalRewards.opals} Opals</span>
                               </div>
                             )}
@@ -792,7 +794,7 @@ export function KeepeyUpey({ onEnd, onDeductEnergy, onApplyReward, energy, sound
           >
             <div className="bg-white/80 backdrop-blur-sm rounded-2xl px-6 py-4 border-2 border-purple-400">
               <p className="text-purple-800 font-bold text-lg text-center">
-                Tap to bounce! 🎈
+                Tap to bounce!
               </p>
             </div>
           </motion.div>

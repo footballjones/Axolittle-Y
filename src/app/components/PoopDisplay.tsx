@@ -1,6 +1,7 @@
 import { motion } from 'motion/react';
 import { PoopItem } from '../types/game';
 import { useMemo } from 'react';
+import { Brush } from 'lucide-react';
 
 interface PoopDisplayProps {
   poop: PoopItem;
@@ -33,7 +34,7 @@ export function PoopDisplay({ poop, cleaningMode, onClean }: PoopDisplayProps) {
         pointerEvents: cleaningMode ? 'auto' : 'none',
       }}
     >
-      {/* Cleaning mode: pulsing amber ring + "🧹 tap!" badge */}
+      {/* Cleaning mode: pulsing amber ring + "Tap!" badge */}
       {cleaningMode && (
         <>
           <motion.div
@@ -67,7 +68,7 @@ export function PoopDisplay({ poop, cleaningMode, onClean }: PoopDisplayProps) {
             animate={{ y: [0, -3, 0] }}
             transition={{ duration: 0.8, repeat: Infinity, ease: 'easeInOut' }}
           >
-            🧹 Tap!
+            <span className="inline-flex items-center gap-0.5"><Brush className="w-2.5 h-2.5" /> Tap!</span>
           </motion.div>
         </>
       )}

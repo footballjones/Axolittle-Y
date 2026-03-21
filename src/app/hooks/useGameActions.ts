@@ -58,7 +58,7 @@ export function useGameActions({
       setNotifications(prev => [...prev, {
         id: `achievement-${id}-${Date.now()}`,
         type: 'achievement' as const,
-        emoji: achievement.emoji,
+        icon: achievement.icon,
         message: `Achievement Unlocked: ${achievement.name} — tap Achievements to claim your reward!`,
         time: 'now',
         read: false,
@@ -386,7 +386,7 @@ export function useGameActions({
       setNotifications(n => [...n, {
         id: `notif-${Date.now()}`,
         type: 'friend',
-        emoji: '🤝',
+        icon: 'Users',
         message: `Added ${realFriend.name} as a friend!`,
         time: 'now',
         read: false,
@@ -407,7 +407,7 @@ export function useGameActions({
       setNotifications(prev => [...prev, {
         id: `notif-${Date.now()}`,
         type: 'friend',
-        emoji: '👋',
+        icon: 'UserMinus',
         message: `Removed ${friend.name} from friends`,
         time: 'now',
         read: false,
@@ -431,7 +431,7 @@ export function useGameActions({
         setNotifications(prev => [...prev, {
           id: `notif-${Date.now()}`,
           type: 'milestone',
-          emoji: '⚠️',
+          icon: 'AlertTriangle',
           message: 'Your axolotl must be a Guardian or Elder to breed!',
           time: 'now',
           read: false,
@@ -452,7 +452,7 @@ export function useGameActions({
         setNotifications(prev => [...prev, {
           id: `notif-${Date.now()}`,
           type: 'milestone',
-          emoji: '🥚',
+          icon: 'Egg',
           message: 'Breeding successful! Egg is incubating.',
           time: 'now',
           read: false,
@@ -468,7 +468,7 @@ export function useGameActions({
           setNotifications(prev => [...prev, {
             id: `notif-${Date.now()}`,
             type: 'milestone',
-            emoji: '🥚',
+            icon: 'Egg',
             message: 'Breeding successful! Egg added to nursery.',
             time: 'now',
             read: false,
@@ -483,7 +483,7 @@ export function useGameActions({
           setNotifications(prev => [...prev, {
             id: `notif-${Date.now()}`,
             type: 'milestone',
-            emoji: '⚠️',
+            icon: 'AlertTriangle',
             message: 'Nursery storage is full!',
             time: 'now',
             read: false,
@@ -595,8 +595,8 @@ export function useGameActions({
         setNotifications(prevNotifs => [...prevNotifs, {
           id: `notif-${Date.now()}`,
           type: 'milestone',
-          emoji: '⚠️',
-          message: `Not enough opals! You need ${boostCost} 🪬 to boost an egg.`,
+          icon: 'AlertTriangle',
+          message: `Not enough opals! You need ${boostCost} opals to boost an egg.`,
           time: 'now',
           read: false,
         }]);
@@ -607,7 +607,7 @@ export function useGameActions({
         setNotifications(prevNotifs => [...prevNotifs, {
           id: `notif-${Date.now()}`,
           type: 'milestone',
-          emoji: '⚡',
+          icon: 'Zap',
           message: 'Egg boosted! Ready to hatch instantly.',
           time: 'now',
           read: false,
@@ -627,7 +627,7 @@ export function useGameActions({
         setNotifications(prevNotifs => [...prevNotifs, {
           id: `notif-${Date.now()}`,
           type: 'milestone',
-          emoji: '⚡',
+          icon: 'Zap',
           message: 'Egg boosted! Ready to hatch instantly.',
           time: 'now',
           read: false,
@@ -652,7 +652,7 @@ export function useGameActions({
     setNotifications(prev => [...prev, {
       id: `notif-${Date.now()}`,
       type: 'gift',
-      emoji: '🎁',
+      icon: 'Gift',
       message: 'Gift feature coming soon! You\'ll be able to send eggs to friends.',
       time: 'now',
       read: false,
@@ -691,7 +691,7 @@ export function useGameActions({
         setNotifications(prevNotifs => [...prevNotifs, {
           id: `notif-${Date.now()}`,
           type: 'milestone',
-          emoji: '🗑️',
+          icon: 'Trash2',
           message: 'Egg discarded.',
           time: 'now',
           read: false,
@@ -707,7 +707,7 @@ export function useGameActions({
         setNotifications(prevNotifs => [...prevNotifs, {
           id: `notif-${Date.now()}`,
           type: 'milestone',
-          emoji: '🗑️',
+          icon: 'Trash2',
           message: 'Egg discarded.',
           time: 'now',
           read: false,
@@ -771,9 +771,9 @@ export function useGameActions({
         setNotifications(prevNotifs => [...prevNotifs, {
           id: `notif-${Date.now()}`,
           type: 'milestone',
-          emoji: result.tier === 'exceptional' ? '✨' : result.tier === 'good' ? '🎉' : '🎮',
+          icon: result.tier === 'exceptional' ? 'Sparkles' : result.tier === 'good' ? 'Star' : 'Gamepad2',
           message: result.coins > 0
-            ? `Earned ${result.xp} XP and ${result.coins} coins!${result.opals ? ` +${result.opals} 🪬` : ''}`
+            ? `Earned ${result.xp} XP and ${result.coins} coins!${result.opals ? ` +${result.opals} opals` : ''}`
             : `Earned ${result.xp} XP!`,
           time: 'now',
           read: false,
@@ -782,7 +782,7 @@ export function useGameActions({
         setNotifications(prevNotifs => [...prevNotifs, {
           id: `notif-${Date.now()}`,
           type: 'milestone',
-          emoji: '⚡',
+          icon: 'Zap',
           message: 'No energy! Played for fun but no rewards earned. Energy regenerates over time.',
           time: 'now',
           read: false,
@@ -884,7 +884,7 @@ export function useGameActions({
     setNotifications(prev => [...prev, {
       id: `notif-${Date.now()}`,
       type: 'milestone',
-      emoji: '🦐',
+      icon: 'Droplets',
       message: `Added ${pack.count} shrimp to your tank! They'll help maintain cleanliness.`,
       time: 'now',
       read: false,

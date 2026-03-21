@@ -6,6 +6,7 @@
 
 import { useEffect, useRef } from 'react';
 import { motion } from 'motion/react';
+import { Zap, Egg as EggIcon } from 'lucide-react';
 
 interface LevelUpOverlayProps {
   level: number;
@@ -14,19 +15,21 @@ interface LevelUpOverlayProps {
 }
 
 // Sparkle burst definitions — angle (degrees) + distance (px from centre)
+// Colors cycle through warm/cool hues for variety
+const SPARKLE_COLORS = ['#fbbf24','#f472b6','#a78bfa','#34d399','#60a5fa','#fb923c'];
 const SPARKLES = [
-  { emoji: '⭐', angle: 0,   dist: 115 },
-  { emoji: '✨', angle: 30,  dist: 140 },
-  { emoji: '🌟', angle: 60,  dist: 118 },
-  { emoji: '💫', angle: 90,  dist: 142 },
-  { emoji: '⭐', angle: 120, dist: 112 },
-  { emoji: '✨', angle: 150, dist: 138 },
-  { emoji: '🌟', angle: 180, dist: 116 },
-  { emoji: '💫', angle: 210, dist: 145 },
-  { emoji: '⭐', angle: 240, dist: 110 },
-  { emoji: '🎉', angle: 270, dist: 148 },
-  { emoji: '🎊', angle: 300, dist: 122 },
-  { emoji: '⚡', angle: 330, dist: 140 },
+  { angle: 0,   dist: 115 },
+  { angle: 30,  dist: 140 },
+  { angle: 60,  dist: 118 },
+  { angle: 90,  dist: 142 },
+  { angle: 120, dist: 112 },
+  { angle: 150, dist: 138 },
+  { angle: 180, dist: 116 },
+  { angle: 210, dist: 145 },
+  { angle: 240, dist: 110 },
+  { angle: 270, dist: 148 },
+  { angle: 300, dist: 122 },
+  { angle: 330, dist: 140 },
 ];
 
 export function LevelUpOverlay({ level, onAssignStat, onDismiss }: LevelUpOverlayProps) {
@@ -62,7 +65,7 @@ export function LevelUpOverlay({ level, onAssignStat, onDismiss }: LevelUpOverla
           return (
             <motion.span
               key={i}
-              className="absolute text-xl select-none"
+              className="absolute select-none"
               style={{ originX: '50%', originY: '50%' }}
               initial={{ opacity: 0, scale: 0, x: 0, y: 0 }}
               animate={{
@@ -77,7 +80,9 @@ export function LevelUpOverlay({ level, onAssignStat, onDismiss }: LevelUpOverla
                 ease: 'easeOut',
               }}
             >
-              {s.emoji}
+              <svg width="18" height="18" viewBox="0 0 24 24" fill={SPARKLE_COLORS[i % SPARKLE_COLORS.length]}>
+                <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z" />
+              </svg>
             </motion.span>
           );
         })}
@@ -123,7 +128,7 @@ export function LevelUpOverlay({ level, onAssignStat, onDismiss }: LevelUpOverla
           transition={{ delay: 0.32 }}
           className="relative text-white/90 font-black text-[11px] tracking-[0.22em] uppercase mb-1"
         >
-          ⚡ Level Up!
+          <span className="inline-flex items-center gap-1"><Zap className="w-3 h-3 text-white/90" strokeWidth={2.5} /> Level Up!</span>
         </motion.p>
 
         {/* Big level number */}
@@ -155,7 +160,7 @@ export function LevelUpOverlay({ level, onAssignStat, onDismiss }: LevelUpOverla
           className="relative flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl mb-5"
           style={{ background: 'rgba(0,0,0,0.22)', border: '1px solid rgba(255,255,255,0.2)' }}
         >
-          <span className="text-base">🥚</span>
+          <EggIcon className="w-4 h-4 text-white/80 flex-shrink-0" strokeWidth={2} />
           <p className="text-white/90 text-[11.5px] font-semibold leading-snug">
             Stronger stats = rarer eggs when you rebirth!
           </p>
@@ -172,7 +177,7 @@ export function LevelUpOverlay({ level, onAssignStat, onDismiss }: LevelUpOverla
           whileHover={{ scale: 1.025 }}
           style={{ boxShadow: '0 10px 28px rgba(0,0,0,0.28)' }}
         >
-          ⚡ Assign Stat Point
+          <span className="inline-flex items-center gap-1.5"><Zap className="w-4 h-4" strokeWidth={2.5} /> Assign Stat Point</span>
         </motion.button>
 
         {/* Dismiss — secondary */}

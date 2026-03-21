@@ -2,20 +2,23 @@
  * Menu Tutorial Complete Modal — awards 10 opals after completing the menu walkthrough.
  */
 import { motion } from 'motion/react';
+import { BookOpen } from 'lucide-react';
+import { OpalIcon } from './icons';
 
 interface MenuTutorialCompleteModalProps {
   onCollect: () => void;
 }
 
+const SPARKLE_COLORS_MT = ['#a78bfa','#60a5fa','#34d399','#f472b6','#fbbf24','#fb923c'];
 const SPARKLES = [
-  { emoji: '⭐', angle: 0,   dist: 110 },
-  { emoji: '✨', angle: 45,  dist: 130 },
-  { emoji: '🌟', angle: 90,  dist: 105 },
-  { emoji: '💫', angle: 135, dist: 125 },
-  { emoji: '⭐', angle: 180, dist: 115 },
-  { emoji: '✨', angle: 225, dist: 135 },
-  { emoji: '🌟', angle: 270, dist: 108 },
-  { emoji: '💫', angle: 315, dist: 128 },
+  { angle: 0,   dist: 110 },
+  { angle: 45,  dist: 130 },
+  { angle: 90,  dist: 105 },
+  { angle: 135, dist: 125 },
+  { angle: 180, dist: 115 },
+  { angle: 225, dist: 135 },
+  { angle: 270, dist: 108 },
+  { angle: 315, dist: 128 },
 ];
 
 export function MenuTutorialCompleteModal({ onCollect }: MenuTutorialCompleteModalProps) {
@@ -38,12 +41,14 @@ export function MenuTutorialCompleteModal({ onCollect }: MenuTutorialCompleteMod
           return (
             <motion.span
               key={i}
-              className="absolute text-xl select-none"
+              className="absolute select-none"
               initial={{ opacity: 0, scale: 0, x: 0, y: 0 }}
               animate={{ opacity: [0, 1, 0.8, 0], scale: [0, 1.4, 1, 0], x: tx, y: ty }}
               transition={{ duration: 1.3, delay: 0.2 + i * 0.06, ease: 'easeOut' }}
             >
-              {s.emoji}
+              <svg width="18" height="18" viewBox="0 0 24 24" fill={SPARKLE_COLORS_MT[i % SPARKLE_COLORS_MT.length]}>
+                <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z" />
+              </svg>
             </motion.span>
           );
         })}
@@ -75,12 +80,12 @@ export function MenuTutorialCompleteModal({ onCollect }: MenuTutorialCompleteMod
           />
 
           <motion.div
-            className="relative text-4xl mb-2"
+            className="relative flex justify-center mb-2"
             initial={{ scale: 0 }}
             animate={{ scale: 1, rotate: [0, 10, -10, 0] }}
             transition={{ delay: 0.3, duration: 0.6, ease: 'easeOut' }}
           >
-            📚
+            <BookOpen className="w-10 h-10 text-white" strokeWidth={1.5} />
           </motion.div>
 
           <motion.p
@@ -115,22 +120,22 @@ export function MenuTutorialCompleteModal({ onCollect }: MenuTutorialCompleteMod
               style={{ background: 'linear-gradient(135deg, #e0e7ff, #ede9fe)' }}
             >
               <motion.span
-                className="text-3xl"
+                className="flex items-center"
                 animate={{ scale: [1, 1.15, 1] }}
                 transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
               >
-                💎
+                <OpalIcon size={28} className="text-violet-500" />
               </motion.span>
               <div>
                 <p className="text-indigo-900 font-black text-lg leading-none">+10 Opals</p>
                 <p className="text-indigo-500 text-[10px] font-medium mt-0.5">Tutorial reward</p>
               </div>
               <motion.span
-                className="text-3xl"
+                className="flex items-center"
                 animate={{ scale: [1, 1.15, 1] }}
                 transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut', delay: 0.3 }}
               >
-                💎
+                <OpalIcon size={28} className="text-violet-500" />
               </motion.span>
             </div>
           </motion.div>
@@ -150,7 +155,7 @@ export function MenuTutorialCompleteModal({ onCollect }: MenuTutorialCompleteMod
               animate={{ x: ['-100%', '200%'] }}
               transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 1, ease: 'easeInOut' }}
             />
-            <span className="relative z-10">Collect Reward! 💎</span>
+            <span className="relative z-10 inline-flex items-center gap-1.5">Collect Reward! <OpalIcon size={16} /></span>
           </motion.button>
         </div>
       </motion.div>

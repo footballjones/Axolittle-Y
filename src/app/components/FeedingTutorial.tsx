@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { Star } from 'lucide-react';
 
 interface FeedingTutorialProps {
   step: 'feed' | 'eat' | 'xp-tip';
@@ -80,7 +81,7 @@ export function FeedingTutorial({ step, axolotlName, onXpTipDismiss }: FeedingTu
                 {axolotlName} is hungry!
               </p>
               <p className="text-slate-500 text-[11.5px] leading-snug mt-0.5">
-                Tap <span className="text-emerald-600 font-bold">Feed</span> to drop a worm 🪱
+                Tap <span className="text-emerald-600 font-bold">Feed</span> to drop a worm
               </p>
             </div>
 
@@ -150,7 +151,7 @@ export function FeedingTutorial({ step, axolotlName, onXpTipDismiss }: FeedingTu
                 Now tap the worm!
               </p>
               <p className="text-slate-500 text-[11.5px] leading-snug mt-0.5">
-                Tap near it to guide {axolotlName} over to eat 😋
+                Tap near it to guide {axolotlName} over to eat
               </p>
             </div>
           </motion.div>
@@ -188,7 +189,7 @@ export function FeedingTutorial({ step, axolotlName, onXpTipDismiss }: FeedingTu
             >
               {/* Icon + header */}
               <div className="flex items-center gap-2.5 mb-3">
-                <span className="text-2xl">⭐</span>
+                <Star className="w-6 h-6 text-amber-400 fill-amber-400" />
                 <div>
                   <p className="text-slate-800 text-[14px] font-black leading-tight">
                     Feeding earns XP!

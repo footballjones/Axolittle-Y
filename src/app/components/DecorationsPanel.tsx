@@ -1,24 +1,25 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Leaf, Mountain, Shell, Waves, Settings, Wrench, Sparkles, Droplets, FlaskConical } from 'lucide-react';
 import { DECORATIONS } from '../data/decorations';
+import { GameIcon, CoinIcon } from './icons';
 
 const DECO_CATEGORIES = [
-  { type: 'plant',      label: 'Plants',      emoji: '🌿', color: 'rgba(134,239,172,0.2)',  border: 'rgba(74,222,128,0.35)'  },
-  { type: 'rock',       label: 'Rocks',        emoji: '🪨', color: 'rgba(203,213,225,0.25)', border: 'rgba(148,163,184,0.35)' },
-  { type: 'ornament',   label: 'Ornaments',    emoji: '🐚', color: 'rgba(253,186,116,0.2)',  border: 'rgba(251,146,60,0.3)'   },
-  { type: 'background', label: 'Backgrounds',  emoji: '🌊', color: 'rgba(147,210,255,0.2)',  border: 'rgba(56,189,248,0.3)'   },
+  { type: 'plant',      label: 'Plants',      icon: <Leaf size={14} />,     color: 'rgba(134,239,172,0.2)',  border: 'rgba(74,222,128,0.35)'  },
+  { type: 'rock',       label: 'Rocks',        icon: <Mountain size={14} />, color: 'rgba(203,213,225,0.25)', border: 'rgba(148,163,184,0.35)' },
+  { type: 'ornament',   label: 'Ornaments',    icon: <Shell size={14} />,    color: 'rgba(253,186,116,0.2)',  border: 'rgba(251,146,60,0.3)'   },
+  { type: 'background', label: 'Backgrounds',  icon: <Waves size={14} />,    color: 'rgba(147,210,255,0.2)',  border: 'rgba(56,189,248,0.3)'   },
 ];
 
 const FILTER_DEFS = [
-  { id: 'filter-basic',    name: 'Basic Filter',   emoji: '⚙️', description: 'Slow but steady filtration' },
-  { id: 'filter-advanced', name: 'Advanced Filter', emoji: '🔧', description: 'Faster, cleaner water' },
-  { id: 'filter-premium',  name: 'Premium Filter',  emoji: '✨', description: 'Crystal-clear perfection' },
+  { id: 'filter-basic',    name: 'Basic Filter',   icon: <Settings size={18} />,  description: 'Slow but steady filtration' },
+  { id: 'filter-advanced', name: 'Advanced Filter', icon: <Wrench size={18} />,    description: 'Faster, cleaner water' },
+  { id: 'filter-premium',  name: 'Premium Filter',  icon: <Sparkles size={18} />,  description: 'Crystal-clear perfection' },
 ];
 
 const TREATMENT_DEFS = [
-  { id: 'treatment-water',   name: 'Water Treatment',  emoji: '💧', description: 'Restores water quality +30' },
-  { id: 'treatment-miracle', name: 'Miracle Treatment', emoji: '🧪', description: 'Fully restores all stats' },
+  { id: 'treatment-water',   name: 'Water Treatment',  icon: <Droplets size={18} />,     description: 'Restores water quality +30' },
+  { id: 'treatment-miracle', name: 'Miracle Treatment', icon: <FlaskConical size={18} />, description: 'Fully restores all stats' },
 ];
 
 type InventoryTab = 'decorations' | 'wellbeing';
@@ -26,7 +27,7 @@ type InventoryTab = 'decorations' | 'wellbeing';
 interface PendingTreatmentUse {
   id: string;
   name: string;
-  emoji: string;
+  icon: React.ReactNode;
   description: string;
   count: number;
 }
@@ -123,7 +124,7 @@ export function DecorationsPanel({
           className="flex items-center gap-1 px-2.5 py-1 rounded-full flex-shrink-0"
           style={{ background: 'rgba(255,255,255,0.7)', border: '1px solid rgba(253,230,138,0.6)' }}
         >
-          <span className="text-amber-500 text-sm">🪙</span>
+          <CoinIcon size={14} className="text-amber-500" />
           <span className="text-amber-800 text-[10px] font-black tabular-nums">{coins}</span>
         </div>
       </div>
@@ -131,8 +132,8 @@ export function DecorationsPanel({
       {/* Tab bar */}
       <div className="flex mx-4 mb-2 rounded-2xl p-1 flex-shrink-0 gap-1" style={{ background: 'rgba(255,255,255,0.5)', border: '1px solid rgba(20,184,166,0.2)' }}>
         {([
-          { id: 'decorations' as const, label: '🪴 Decorations' },
-          { id: 'wellbeing' as const, label: '🩺 Wellbeing' },
+          { id: 'decorations' as const, label: 'Decorations' },
+          { id: 'wellbeing' as const, label: 'Wellbeing' },
         ]).map(tab => (
           <motion.button
             key={tab.id}
@@ -191,7 +192,7 @@ export function DecorationsPanel({
             >
               {!hasDecoItems ? (
                 <div className="flex flex-col items-center justify-center gap-4 opacity-60 py-16">
-                  <span className="text-5xl">🪴</span>
+                  <Leaf size={48} className="text-teal-400" />
                   <div className="text-center">
                     <p className="text-slate-600 font-bold text-sm">No decorations owned yet</p>
                     <p className="text-slate-400 text-[11px] mt-1">Buy them from the Shop → Decorations tab!</p>
@@ -203,7 +204,7 @@ export function DecorationsPanel({
                     className="flex items-center gap-2 w-full px-3 py-2.5 active:bg-teal-50/40"
                     onClick={() => toggleCategory(group.type)}
                   >
-                    <span className="text-base">{group.emoji}</span>
+                    {group.icon}
                     <span className="flex-1 text-left text-[11px] font-black tracking-widest uppercase" style={{ color: 'rgba(15,118,110,0.75)' }}>
                       {group.label}
                     </span>
@@ -241,14 +242,14 @@ export function DecorationsPanel({
                                 {isEquipped && (
                                   <div className="absolute top-1.5 right-1.5 text-[6px] font-black text-white px-1 py-0.5 rounded-full" style={{ background: 'linear-gradient(135deg,#34d399,#10b981)' }}>ON</div>
                                 )}
-                                <div className="w-11 h-11 rounded-xl flex items-center justify-center text-2xl shadow-sm" style={{ background: group.color }}>
-                                  {item.emoji}
+                                <div className="w-11 h-11 rounded-xl flex items-center justify-center shadow-sm" style={{ background: group.color }}>
+                                  <GameIcon name={item.icon} size={22} />
                                 </div>
                                 <span className="text-[10px] font-bold text-slate-700 text-center leading-tight">{item.name}</span>
                                 {item.type === 'background' ? (
                                   <motion.button onClick={() => onEquip(item.id)} className="w-full py-1 rounded-xl text-[9px] font-black text-white"
                                     style={{ background: isEquipped ? 'linear-gradient(135deg,#34d399,#10b981)' : 'linear-gradient(135deg,#38bdf8,#0ea5e9)' }} whileTap={{ scale: 0.94 }}>
-                                    {isEquipped ? '✓ Active' : 'Use'}
+                                    {isEquipped ? 'Active' : 'Use'}
                                   </motion.button>
                                 ) : isEquipped ? (
                                   <motion.button onClick={() => onEquip(item.id)} className="w-full py-1 rounded-xl text-[9px] font-black"
@@ -285,7 +286,7 @@ export function DecorationsPanel({
             >
               {!hasWellbeingItems ? (
                 <div className="flex flex-col items-center justify-center gap-4 opacity-60 py-16">
-                  <span className="text-5xl">🩺</span>
+                  <Droplets size={48} className="text-sky-400" />
                   <div className="text-center">
                     <p className="text-slate-600 font-bold text-sm">No wellbeing items yet</p>
                     <p className="text-slate-400 text-[11px] mt-1">Buy filters, shrimp & treatments from the Shop!</p>
@@ -297,7 +298,7 @@ export function DecorationsPanel({
                   {ownedFilterDefs.length > 0 && (
                     <div className="rounded-2xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.35)', border: '1px solid rgba(56,189,248,0.18)' }}>
                       <button className="flex items-center gap-2 w-full px-3 py-2.5 active:bg-sky-50/40" onClick={() => toggleCategory('filters')}>
-                        <span className="text-base">⚙️</span>
+                        <Settings size={14} />
                         <span className="flex-1 text-left text-[11px] font-black tracking-widest uppercase" style={{ color: 'rgba(14,116,144,0.8)' }}>Filters</span>
                         <span className="text-[10px] text-slate-400 font-medium mr-1">({ownedFilterDefs.length})</span>
                         <motion.div animate={{ rotate: openCategories['filters'] ? 180 : 0 }} transition={{ duration: 0.22 }}>
@@ -313,14 +314,14 @@ export function DecorationsPanel({
                                 return (
                                   <div key={f.id} className="flex items-center gap-3 rounded-2xl px-3 py-2.5"
                                     style={{ background: isEquipped ? 'linear-gradient(135deg, rgba(220,252,231,0.9), rgba(187,247,208,0.85))' : 'linear-gradient(135deg, rgba(240,249,255,0.9), rgba(224,242,254,0.85))', border: isEquipped ? '1.5px solid rgba(134,239,172,0.7)' : '1.5px solid rgba(186,230,253,0.6)' }}>
-                                    <span className="text-xl flex-shrink-0">{f.emoji}</span>
+                                    <span className="flex-shrink-0">{f.icon}</span>
                                     <div className="flex-1 min-w-0">
                                       <p className="text-[12px] font-bold text-slate-700">{f.name}</p>
                                       <p className="text-[10px] text-slate-400 font-medium">{f.description}</p>
                                     </div>
                                     {isEquipped ? (
                                       <div className="flex items-center gap-1 text-[10px] font-black px-2.5 py-1 rounded-xl flex-shrink-0" style={{ background: 'linear-gradient(135deg, #4ade80, #16a34a)', color: '#fff', boxShadow: '0 2px 6px rgba(74,222,128,0.35)' }}>
-                                        ✓ Equipped
+                                        Equipped
                                       </div>
                                     ) : (
                                       <motion.button onClick={() => onEquipFilter?.(f.id)} whileTap={{ scale: 0.94 }}
@@ -343,7 +344,7 @@ export function DecorationsPanel({
                   {storedShrimp > 0 && (
                     <div className="rounded-2xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.35)', border: '1px solid rgba(251,207,232,0.3)' }}>
                       <button className="flex items-center gap-2 w-full px-3 py-2.5 active:bg-pink-50/40" onClick={() => toggleCategory('shrimp')}>
-                        <span className="text-base">🦐</span>
+                        <span className="text-base">Shrimp</span>
                         <span className="flex-1 text-left text-[11px] font-black tracking-widest uppercase" style={{ color: 'rgba(157,23,77,0.7)' }}>Stored Shrimp</span>
                         <span className="text-[10px] text-slate-400 font-medium mr-1">({storedShrimp})</span>
                         <motion.div animate={{ rotate: openCategories['shrimp'] ? 180 : 0 }} transition={{ duration: 0.22 }}>
@@ -355,7 +356,7 @@ export function DecorationsPanel({
                           <motion.div key="shrimp-content" initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.25 }} style={{ overflow: 'hidden' }}>
                             <div className="px-3 pb-3">
                               <div className="flex items-center gap-3 rounded-2xl px-3 py-2.5" style={{ background: 'linear-gradient(135deg, rgba(255,241,242,0.9), rgba(252,231,243,0.85))', border: '1.5px solid rgba(251,207,232,0.6)' }}>
-                                <span className="text-2xl">🦐</span>
+                                <span className="text-2xl text-pink-400">~</span>
                                 <div className="flex-1 min-w-0">
                                   <p className="text-[12px] font-bold text-slate-700">{storedShrimp} shrimp ready</p>
                                   <p className="text-[10px] text-slate-400 font-medium">Add them to your aquarium to clean</p>
@@ -380,7 +381,7 @@ export function DecorationsPanel({
                   {storedTreatmentEntries.length > 0 && (
                     <div className="rounded-2xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.35)', border: '1px solid rgba(167,243,208,0.25)' }}>
                       <button className="flex items-center gap-2 w-full px-3 py-2.5 active:bg-teal-50/40" onClick={() => toggleCategory('treatments')}>
-                        <span className="text-base">🧪</span>
+                        <FlaskConical size={14} />
                         <span className="flex-1 text-left text-[11px] font-black tracking-widest uppercase" style={{ color: 'rgba(13,148,136,0.75)' }}>Treatments</span>
                         <span className="text-[10px] text-slate-400 font-medium mr-1">({storedTreatmentEntries.reduce((s, t) => s + (storedTreatments[t.id] ?? 0), 0)})</span>
                         <motion.div animate={{ rotate: openCategories['treatments'] ? 180 : 0 }} transition={{ duration: 0.22 }}>
@@ -395,13 +396,13 @@ export function DecorationsPanel({
                                 const count = storedTreatments[t.id] ?? 0;
                                 return (
                                   <div key={t.id} className="flex items-center gap-3 rounded-2xl px-3 py-2.5" style={{ background: 'linear-gradient(135deg, rgba(240,253,250,0.9), rgba(204,251,241,0.85))', border: '1.5px solid rgba(167,243,208,0.6)' }}>
-                                    <span className="text-xl flex-shrink-0">{t.emoji}</span>
+                                    <span className="flex-shrink-0">{t.icon}</span>
                                     <div className="flex-1 min-w-0">
                                       <p className="text-[12px] font-bold text-slate-700">{t.name} <span className="text-teal-500 font-black">×{count}</span></p>
                                       <p className="text-[10px] text-slate-400 font-medium">{t.description}</p>
                                     </div>
                                     <motion.button
-                                      onClick={() => setPendingTreatmentUse({ id: t.id, name: t.name, emoji: t.emoji, description: t.description, count })}
+                                      onClick={() => setPendingTreatmentUse({ id: t.id, name: t.name, icon: t.icon, description: t.description, count })}
                                       whileTap={{ scale: 0.94 }}
                                       className="text-[10px] font-black px-2.5 py-1 rounded-xl flex-shrink-0 text-white"
                                       style={{ background: 'linear-gradient(135deg, #34d399, #0d9488)', boxShadow: '0 2px 6px rgba(52,211,153,0.35)' }}
@@ -440,7 +441,7 @@ export function DecorationsPanel({
             transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
           >
             <div className="flex flex-col items-center gap-1 mb-4">
-              <span className="text-4xl mb-1">{pendingTreatmentUse.emoji}</span>
+              <span className="text-4xl mb-1">{pendingTreatmentUse.icon}</span>
               <p className="text-[14px] font-black text-slate-800 text-center">{pendingTreatmentUse.name}</p>
               <p className="text-[11px] text-slate-500 text-center">{pendingTreatmentUse.description}</p>
               {pendingTreatmentUse.count > 1 && (
@@ -463,7 +464,7 @@ export function DecorationsPanel({
                 className="flex-1 py-3 rounded-2xl text-[13px] font-black text-white"
                 style={{ background: 'linear-gradient(135deg, #34d399, #0d9488)', boxShadow: '0 4px 14px rgba(52,211,153,0.4)' }}
               >
-                ✓ Use Now
+                Use Now
               </motion.button>
             </div>
           </motion.div>
@@ -486,7 +487,7 @@ export function DecorationsPanel({
               transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
             >
               <div className="flex flex-col items-center gap-1 mb-4">
-                <span className="text-4xl mb-1">🦐</span>
+                <span className="text-4xl mb-1 text-pink-400">~</span>
                 <p className="text-[14px] font-black text-slate-800">Add Shrimp to Aquarium</p>
                 <p className="text-[11px] text-slate-500">{storedShrimp} shrimp stored · select in groups of 10</p>
               </div>
@@ -532,7 +533,7 @@ export function DecorationsPanel({
                   className="flex-1 py-3 rounded-2xl text-[13px] font-black text-white"
                   style={{ background: 'linear-gradient(135deg, #f472b6, #e11d48)', boxShadow: '0 4px 14px rgba(244,114,182,0.4)' }}
                 >
-                  🦐 Add {deployCount} Shrimp
+                  Add {deployCount} Shrimp
                 </motion.button>
               </div>
             </motion.div>

@@ -346,7 +346,7 @@ export function LoginScreen({ onClose }: LoginScreenProps = {}) {
                   className="w-full py-2.5 rounded-xl font-black text-white text-sm disabled:opacity-40 transition-opacity mt-4"
                   style={{ background: 'linear-gradient(135deg, #2563eb 0%, #7c3aed 50%, #2563eb 100%)' }}
                 >
-                  {loading ? 'Creating account…' : '🐟 Create My Account'}
+                  {loading ? 'Creating account…' : 'Create My Account'}
                 </motion.button>
               </motion.div>
             )}

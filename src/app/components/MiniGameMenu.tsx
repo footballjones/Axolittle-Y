@@ -1,8 +1,9 @@
 import { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { User, Users, Info, Zap, Lock } from 'lucide-react';
+import { User, Users, Info, Zap, Lock, Circle, Hash, Layers, Gem, Code, Fish } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { GAME_CONFIG } from '../config/game';
+import { CoinIcon } from './icons';
 
 const UNLOCK_GAMES_COST = 5; // opals
 
@@ -21,7 +22,7 @@ interface MiniGameMenuProps {
 }
 
 interface GameTileProps {
-  game: { id: string; name: string; emoji: string; color: string; description: string; coins: string; players?: string };
+  game: { id: string; name: string; iconNode: React.ReactNode; color: string; description: string; coins: string; players?: string };
   index: number;
   delayOffset?: number;
   expandedId: string | null;
@@ -70,84 +71,76 @@ function GameTile({ game, index, delayOffset = 0, expandedId, onToggleInfo, onSe
         <div className="flex flex-col items-center text-center gap-1.5">
           <div className={`bg-gradient-to-br ${game.color} rounded-xl w-11 h-11 flex items-center justify-center transition-transform shadow-lg ring-1 ring-white/30`}>
             {game.id === 'fish-hooks' ? (
-              // 🪝 Hook swings like a pendulum
               <motion.span
-                className="text-xl leading-none inline-block"
+                className="inline-flex"
                 style={{ transformOrigin: 'top center' }}
                 animate={{ rotate: [-20, 20, -20] }}
                 transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
               >
-                {game.emoji}
+                {game.iconNode}
               </motion.span>
             ) : game.id === 'keepey-upey' ? (
-              // 🎈 Balloon drifts and bobs like floating
               <motion.span
-                className="text-xl leading-none inline-block"
+                className="inline-flex"
                 animate={{ x: [-5, 4, -3, 6, -5], y: [-4, 5, -6, 2, -4] }}
                 transition={{
                   x: { duration: 9, repeat: Infinity, ease: 'easeInOut' },
                   y: { duration: 7, repeat: Infinity, ease: 'easeInOut' },
                 }}
               >
-                {game.emoji}
+                {game.iconNode}
               </motion.span>
             ) : game.id === 'math-rush' ? (
-              // 🔢 Numbers pulse — quiz urgency
               <motion.span
-                className="text-xl leading-none inline-block"
+                className="inline-flex"
                 animate={{ scale: [1, 1.2, 1], opacity: [1, 0.7, 1] }}
                 transition={{ duration: 0.8, repeat: Infinity, repeatDelay: 1.4, ease: 'easeInOut' }}
               >
-                {game.emoji}
+                {game.iconNode}
               </motion.span>
             ) : game.id === 'axolotl-stacker' ? (
-              // 🥞 Stack wobbles side to side — balancing
               <motion.span
-                className="text-xl leading-none inline-block"
+                className="inline-flex"
                 animate={{ rotate: [-6, 6, -6] }}
                 transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
               >
-                {game.emoji}
+                {game.iconNode}
               </motion.span>
             ) : game.id === 'treasure-hunt' ? (
-              // 💎 Gem sparkles with a scale pulse
               <motion.span
-                className="text-xl leading-none inline-block"
+                className="inline-flex"
                 animate={{ scale: [1, 1.25, 1], filter: ['brightness(1)', 'brightness(1.5)', 'brightness(1)'] }}
                 transition={{ duration: 1.6, repeat: Infinity, repeatDelay: 0.8, ease: 'easeInOut' }}
               >
-                {game.emoji}
+                {game.iconNode}
               </motion.span>
             ) : game.id === 'coral-code' ? (
-              // 🪸 Coral sways gently in the current
               <motion.span
-                className="text-xl leading-none inline-block"
+                className="inline-flex"
                 style={{ transformOrigin: 'bottom center' }}
                 animate={{ rotate: [-5, 5, -5] }}
                 transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
               >
-                {game.emoji}
+                {game.iconNode}
               </motion.span>
             ) : game.id === 'fishing' ? (
-              // 🎣 Rod bobs up and down — waiting for a bite
               <motion.span
-                className="text-xl leading-none inline-block"
+                className="inline-flex"
                 animate={{ y: [-3, 3, -3], rotate: [-4, 4, -4] }}
                 transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
               >
-                {game.emoji}
+                {game.iconNode}
               </motion.span>
             ) : game.id === 'bite-tag' ? (
-              // 🦷 Tooth chomps with a quick scale squeeze
               <motion.span
-                className="text-xl leading-none inline-block"
+                className="inline-flex"
                 animate={{ scaleY: [1, 0.75, 1], scaleX: [1, 1.1, 1] }}
                 transition={{ duration: 0.35, repeat: Infinity, repeatDelay: 2, ease: 'easeInOut' }}
               >
-                {game.emoji}
+                {game.iconNode}
               </motion.span>
             ) : (
-              <span className="text-xl leading-none">{game.emoji}</span>
+              <span className="inline-flex">{game.iconNode}</span>
             )}
           </div>
           <h4 className="font-bold text-slate-800 text-sm leading-tight">{game.name}</h4>
@@ -181,12 +174,12 @@ function GameTile({ game, index, delayOffset = 0, expandedId, onToggleInfo, onSe
             <div className="px-3 pb-3 pt-0.5 flex flex-col items-center gap-1.5 border-t border-purple-100/40">
               <p className="text-[10px] text-slate-500 leading-tight text-center mt-1.5">{game.description}</p>
               <div className="flex items-center gap-1 flex-wrap justify-center">
-                <span className="text-[10px] font-bold text-amber-700 bg-amber-100/80 px-2 py-0.5 rounded-full">
-                  💰 {game.coins}
+                <span className="text-[10px] font-bold text-amber-700 bg-amber-100/80 px-2 py-0.5 rounded-full flex items-center gap-0.5">
+                  <CoinIcon size={10} /> {game.coins}
                 </span>
                 {game.players && (
-                  <span className="text-[10px] font-bold text-cyan-700 bg-cyan-100/80 px-2 py-0.5 rounded-full">
-                    👥 {game.players}
+                  <span className="text-[10px] font-bold text-cyan-700 bg-cyan-100/80 px-2 py-0.5 rounded-full flex items-center gap-0.5">
+                    <Users size={10} /> {game.players}
                   </span>
                 )}
               </div>
@@ -312,7 +305,7 @@ export function MiniGameMenu({ onClose: _onClose, onSelectGame, energy = 10, max
     {
       id: 'keepey-upey',
       name: 'Keepey Upey',
-      emoji: '🎈',
+      iconNode: <Circle size={24} className="text-white" />,
       color: 'from-fuchsia-400 to-pink-500',
       description: 'Keep It Up!',
       coins: '15-35',
@@ -320,7 +313,7 @@ export function MiniGameMenu({ onClose: _onClose, onSelectGame, energy = 10, max
     {
       id: 'math-rush',
       name: 'Math Rush',
-      emoji: '🔢',
+      iconNode: <Hash size={24} className="text-white" />,
       color: 'from-violet-400 to-indigo-600',
       description: 'Solve math fast!',
       coins: '20-40',
@@ -328,7 +321,7 @@ export function MiniGameMenu({ onClose: _onClose, onSelectGame, energy = 10, max
     {
       id: 'axolotl-stacker',
       name: 'Axolotl Stacker',
-      emoji: '🥞',
+      iconNode: <Layers size={24} className="text-white" />,
       color: 'from-blue-500 to-indigo-600',
       description: 'Stack them high!',
       coins: '15-30',
@@ -337,7 +330,7 @@ export function MiniGameMenu({ onClose: _onClose, onSelectGame, energy = 10, max
     {
       id: 'coral-code',
       name: 'Coral Code',
-      emoji: '🪸',
+      iconNode: <Code size={24} className="text-white" />,
       color: 'from-purple-500 to-violet-600',
       description: 'Crack the code',
       coins: '20-45',
@@ -348,7 +341,7 @@ export function MiniGameMenu({ onClose: _onClose, onSelectGame, energy = 10, max
     {
       id: 'fishing',
       name: 'Fishing',
-      emoji: '🎣',
+      iconNode: <Fish size={24} className="text-white" />,
       color: 'from-amber-400 to-orange-500',
       description: 'Catch the most!',
       coins: '30-60',
@@ -357,7 +350,7 @@ export function MiniGameMenu({ onClose: _onClose, onSelectGame, energy = 10, max
     {
       id: 'bite-tag',
       name: 'Bite Tag',
-      emoji: '🦷',
+      iconNode: <Zap size={24} className="text-white" />,
       color: 'from-rose-500 to-red-600',
       description: 'Tag other axolotls!',
       coins: '25-55',
@@ -469,7 +462,6 @@ export function MiniGameMenu({ onClose: _onClose, onSelectGame, energy = 10, max
                   : 'bg-white/10 border-white/10 text-white/40 cursor-not-allowed'
               }`}
             >
-              <span>✨</span>
               <span>Unlock Now — {UNLOCK_GAMES_COST} Opals</span>
               <span className={`ml-auto text-[10px] font-semibold ${opals >= UNLOCK_GAMES_COST ? 'text-violet-200' : 'text-white/30'}`}>
                 (you have {opals})
@@ -535,8 +527,8 @@ export function MiniGameMenu({ onClose: _onClose, onSelectGame, energy = 10, max
           </div>
           <h3 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-white to-rose-100 drop-shadow-sm">Multiplayer Games</h3>
           {multiplayerLevelLocked && (
-            <span className="ml-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-white/20 text-white/70 border border-white/20">
-              🔒 Lv.10
+            <span className="ml-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-white/20 text-white/70 border border-white/20 flex items-center gap-1">
+              <Lock size={10} /> Lv.10
             </span>
           )}
         </div>
@@ -567,8 +559,8 @@ export function MiniGameMenu({ onClose: _onClose, onSelectGame, energy = 10, max
       >
         <p className="text-xs text-white/90 text-center font-medium">
           {energy <= 0
-            ? '⚡ No energy! You can still play for fun, but no XP or coins will be earned. Energy regenerates over time.'
-            : '💡 Playing mini-games earns coins and boosts your axolotl\'s stats!'}
+            ? 'No energy! You can still play for fun, but no XP or coins will be earned. Energy regenerates over time.'
+            : 'Playing mini-games earns coins and boosts your axolotl\'s stats!'}
         </p>
       </motion.div>
 
@@ -617,7 +609,7 @@ export function MiniGameMenu({ onClose: _onClose, onSelectGame, energy = 10, max
                   }}
                 >
                   <p className="text-slate-800 text-[13px] font-bold leading-snug">
-                    Games are locked! 🔒
+                    Games are locked!
                   </p>
                   <p className="text-slate-500 text-[11.5px] leading-snug mt-1">
                     The water change locked games for 2 hrs.{' '}
@@ -636,10 +628,10 @@ export function MiniGameMenu({ onClose: _onClose, onSelectGame, energy = 10, max
                   }}
                 >
                   <p className="text-slate-800 text-[13px] font-bold leading-snug">
-                    Let's play! 🎮
+                    Let's play!
                   </p>
                   <p className="text-slate-500 text-[11.5px] leading-snug mt-1">
-                    Start with <span className="text-indigo-600 font-bold">Keepey Upey 🎈</span> — keep the balloon in the air to earn XP & coins!
+                    Start with <span className="text-indigo-600 font-bold">Keepey Upey</span> — keep the balloon in the air to earn XP & coins!
                   </p>
                 </div>
               )}

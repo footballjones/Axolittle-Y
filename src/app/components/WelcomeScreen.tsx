@@ -145,9 +145,9 @@ function CoralReef() {
         animate={{ rotate: [0, 8, 0] }}
         transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
       >
-        <div style={{ fontSize: 14, opacity: 0.2, filter: 'drop-shadow(0 0 3px rgba(255,180,100,0.3))' }}>
-          ✦
-        </div>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="rgba(255,180,100,0.2)" style={{ filter: 'drop-shadow(0 0 3px rgba(255,180,100,0.3))' }}>
+          <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z" />
+        </svg>
       </motion.div>
 
       {/* Shell */}

@@ -27,10 +27,10 @@ function rowToNotification(row: FriendNotificationRow): GameNotification {
     return {
       id: row.id,
       type: 'gift',
-      emoji: '🎁',
+      icon: 'Gift',
       message: row.opals > 0
-        ? `${row.sender_name} sent you ${row.opals} opals! 💜`
-        : `${row.sender_name} sent you ${row.coins} coins! 🪙`,
+        ? `${row.sender_name} sent you ${row.opals} opals!`
+        : `${row.sender_name} sent you ${row.coins} coins!`,
       time: 'Just now',
       read: false,
     };
@@ -38,7 +38,7 @@ function rowToNotification(row: FriendNotificationRow): GameNotification {
   return {
     id: row.id,
     type: 'poke',
-    emoji: '👉',
+    icon: 'ChevronRight',
     message: `${row.sender_name} poked you!`,
     time: 'Just now',
     read: false,

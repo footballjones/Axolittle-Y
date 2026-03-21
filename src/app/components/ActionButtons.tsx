@@ -64,7 +64,7 @@ export function ActionButtons({
       glowColor: 'rgba(94,234,212,0.45)',
       disabled: isHungerFull || !canAffordFeed,
       value: stats.hunger,
-      cost: '10🪙',
+      cost: '10',
       cantAfford: !canAffordFeed,
     },
     {

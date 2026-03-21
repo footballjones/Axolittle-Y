@@ -45,7 +45,7 @@ export interface DecorationItem {
   name: string;
   type: 'plant' | 'rock' | 'ornament' | 'background';
   cost: number;
-  emoji: string;
+  icon: string;
   size?: 'sm' | 'md' | 'lg' | 'xl';   // Rendered size in the aquarium
   layer?: 'floor' | 'mid' | 'tall';    // Vertical placement layer in the aquarium
 }

@@ -37,7 +37,8 @@ import { EggsPanel } from './components/EggsPanel';
 import { DecorationsPanel } from './components/DecorationsPanel';
 import { SpinWheel } from './components/SpinWheel';
 import { DailyLoginBonus } from './components/DailyLoginBonus';
-import { Coins, Sparkles, Menu, X, Check, ChevronDown, ShoppingCart, Gamepad2, Home, Settings } from 'lucide-react';
+import { Coins, Sparkles, Menu, X, Check, ChevronDown, ShoppingCart, Gamepad2, Home, Settings, Gift, Dices, BarChart2, Egg as EggIcon, Users, Backpack, HelpCircle, Trophy, Bell, Zap } from 'lucide-react';
+import { GameIcon, CoinIcon } from './components/icons';
 import { motion, AnimatePresence } from 'motion/react';
 import { KeepeyUpey } from './minigames/KeepeyUpey';
 import { FlappyFishHooks } from './minigames/FlappyFishHooks';
@@ -408,14 +409,14 @@ export default function App() {
           loaded.friends = [JIMMY_CHUBS_FRIEND, ...loaded.friends];
         }
         const giftMsg = gift.opals > 0
-          ? `Jimmy & Chubs sent you ${gift.opals} opals! 💜`
-          : `Jimmy & Chubs sent you ${gift.coins} coins! 🪙`;
+          ? `Jimmy & Chubs sent you ${gift.opals} opals!`
+          : `Jimmy & Chubs sent you ${gift.coins} coins!`;
         // Queue notification after state is set
         setTimeout(() => {
           setNotifications(prev => [{
             id: `jimmy-gift-${now}`,
             type: 'gift',
-            emoji: '🎁',
+            icon: 'Gift',
             message: giftMsg,
             time: 'Just now',
             read: false,
@@ -953,9 +954,9 @@ export default function App() {
                         <motion.span
                           animate={{ rotate: [-10, 10, -10] }}
                           transition={{ duration: 0.7, repeat: Infinity, ease: 'easeInOut' }}
-                          style={{ fontSize: 15 }}
+                          className="flex items-center"
                         >
-                          🧹
+                          <Sparkles className="w-4 h-4 text-rose-600" strokeWidth={2} />
                         </motion.span>
                         <span style={{ fontSize: 12, fontWeight: 800, color: '#9f1239', whiteSpace: 'nowrap' }}>
                           Tap a poop to clean it!
@@ -990,9 +991,9 @@ export default function App() {
                         <motion.span
                           animate={{ scale: [1, 1.25, 1], rotate: [0, 15, -15, 0] }}
                           transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
-                          style={{ fontSize: 15 }}
+                          className="flex items-center"
                         >
-                          ✨
+                          <Sparkles className="w-4 h-4 text-violet-600" strokeWidth={2} />
                         </motion.span>
                         <span style={{ fontSize: 12, fontWeight: 800, color: '#5b21b6', whiteSpace: 'nowrap' }}>
                           Tap the aquarium to play!
@@ -1032,9 +1033,9 @@ export default function App() {
                         <motion.span
                           animate={{ scale: [1, 1.35, 1] }}
                           transition={{ duration: 1.1, repeat: Infinity, ease: 'easeInOut' }}
-                          style={{ fontSize: 14 }}
+                          className="flex items-center"
                         >
-                          ⚡
+                          <Zap className="w-4 h-4 text-amber-900" strokeWidth={2.5} />
                         </motion.span>
                         <span style={{ fontSize: 12, fontWeight: 800, color: '#78350f', whiteSpace: 'nowrap' }}>
                           Stat point ready — tap to assign!
@@ -1118,7 +1119,7 @@ export default function App() {
                               <span className="text-[7px] font-black text-white leading-none px-0.5">{unreadCount}</span>
                             </motion.div>
                           )}
-                          <span className="text-[1.1rem] leading-none">🔔</span>
+                          <Bell className="w-5 h-5 text-indigo-400" strokeWidth={2} />
                         </motion.button>
                         {/* Settings button */}
                         <motion.button
@@ -1159,7 +1160,7 @@ export default function App() {
                           whileTap={{ scale: 0.93 }}
                         >
                           <div className="absolute inset-0 opacity-0 group-active:opacity-100 transition-opacity rounded-2xl" style={{ background: 'rgba(255,255,255,0.35)' }} />
-                          <span className="text-[2rem]">🎰</span>
+                          <Dices className="w-8 h-8 text-violet-700" strokeWidth={1.5} />
                           <span className="text-[11px] font-bold text-violet-800 tracking-wider uppercase">Wheel Spin</span>
                           {gameState && canSpinToday(gameState.lastSpinDate) && (
                             <motion.div
@@ -1185,7 +1186,7 @@ export default function App() {
                           whileTap={{ scale: 0.93 }}
                         >
                           <div className="absolute inset-0 opacity-0 group-active:opacity-100 transition-opacity rounded-2xl" style={{ background: 'rgba(255,255,255,0.35)' }} />
-                          <span className="text-[2rem]">🎁</span>
+                          <Gift className="w-8 h-8 text-amber-700" strokeWidth={1.5} />
                           <span className="text-[11px] font-bold text-amber-800 tracking-wider uppercase">Daily Bonus</span>
                           {gameState && canClaimDailyLogin(gameState.lastLoginDate) && (
                             <motion.div
@@ -1208,7 +1209,7 @@ export default function App() {
                           whileTap={{ scale: 0.93 }}
                         >
                           <div className="absolute inset-0 opacity-0 group-active:opacity-100 transition-opacity rounded-2xl" style={{ background: 'rgba(255,255,255,0.35)' }} />
-                          <span className="text-[2rem]">📊</span>
+                          <BarChart2 className="w-8 h-8 text-sky-700" strokeWidth={1.5} />
                           <span className="text-[11px] font-bold text-sky-800 tracking-wider uppercase">Stats</span>
                           {(gameState?.pendingStatPoints ?? 0) > 0 && (
                             <motion.div
@@ -1236,7 +1237,7 @@ export default function App() {
                           whileTap={{ scale: 0.93 }}
                         >
                           <div className="absolute inset-0 opacity-0 group-active:opacity-100 transition-opacity rounded-2xl" style={{ background: 'rgba(255,255,255,0.35)' }} />
-                          <span className="text-[2rem]">🥚</span>
+                          <EggIcon className="w-8 h-8 text-indigo-700" strokeWidth={1.5} />
                           <span className="text-[11px] font-bold text-indigo-800 tracking-wider uppercase">Eggs</span>
                         </motion.button>
 
@@ -1256,7 +1257,7 @@ export default function App() {
                               transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
                             />
                           )}
-                          <span className="text-[2rem]">👥</span>
+                          <Users className="w-8 h-8 text-pink-700" strokeWidth={1.5} />
                           <span className="text-[11px] font-bold text-pink-800 tracking-wider uppercase">Social</span>
                         </motion.button>
 
@@ -1274,7 +1275,7 @@ export default function App() {
                           whileTap={{ scale: 0.93 }}
                         >
                           <div className="absolute inset-0 opacity-0 group-active:opacity-100 transition-opacity rounded-2xl" style={{ background: 'rgba(255,255,255,0.35)' }} />
-                          <span className="text-[2rem]">🎒</span>
+                          <Backpack className="w-8 h-8 text-teal-700" strokeWidth={1.5} />
                           <span className="text-[11px] font-bold text-teal-800 tracking-wider uppercase">Inventory</span>
                         </motion.button>
 
@@ -1292,7 +1293,7 @@ export default function App() {
                           whileTap={{ scale: 0.93 }}
                         >
                           <div className="absolute inset-0 opacity-0 group-active:opacity-100 transition-opacity rounded-2xl" style={{ background: 'rgba(255,255,255,0.35)' }} />
-                          <span className="text-[2rem]">💡</span>
+                          <HelpCircle className="w-8 h-8 text-cyan-700" strokeWidth={1.5} />
                           <span className="text-[11px] font-bold text-cyan-800 tracking-wider uppercase">How to Play</span>
                         </motion.button>
 
@@ -1314,7 +1315,7 @@ export default function App() {
                               whileTap={{ scale: 0.93 }}
                             >
                               <div className="absolute inset-0 opacity-0 group-active:opacity-100 transition-opacity rounded-2xl" style={{ background: 'rgba(255,255,255,0.35)' }} />
-                              <span className="text-[2rem]">🏆</span>
+                              <Trophy className="w-8 h-8 text-amber-700" strokeWidth={1.5} />
                               <span className="text-[11px] font-bold text-amber-800 tracking-wider uppercase">Achievements</span>
                               <span className="text-[9px] font-semibold text-amber-700/70">{unlockedCount}/{totalCount}</span>
                             </motion.button>
@@ -1343,7 +1344,7 @@ export default function App() {
                               style={{ width: '40%' }}
                             />
                           )}
-                          <span className="text-[2rem]">{showRebirthButton ? '✨' : '🔒'}</span>
+                          {showRebirthButton ? <Sparkles className="w-8 h-8 text-violet-600" strokeWidth={1.5} /> : <EggIcon className="w-8 h-8 text-slate-400" strokeWidth={1.5} />}
                           <div className="flex flex-col items-start">
                             <span className={`text-[13px] font-black tracking-wider uppercase ${showRebirthButton ? 'text-violet-700' : 'text-slate-400'}`}>
                               {showRebirthButton ? 'Rebirth Available' : 'Rebirth'}
@@ -1386,14 +1387,14 @@ export default function App() {
                           {/* Tips list */}
                           <div className="flex-1 overflow-y-auto overscroll-contain px-4 py-4 space-y-2.5" style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-y' }}>
                             {[
-                              { emoji: '🍤', color: 'rgba(16,185,129,0.12)', border: 'rgba(52,211,153,0.18)', title: 'Keep Your Axolotl Fed', tip: "Tap Feed to drop food pellets. Your axolotl swims up and eats them. Hunger drops over time — don't let it bottom out!" },
-                              { emoji: '🎮', color: 'rgba(139,92,246,0.12)', border: 'rgba(167,139,250,0.18)', title: 'Play Mini Games', tip: 'Head to Mini Games to earn XP and coins. Level up your axolotl to unlock the ability to rebirth at Level 40.' },
-                              { emoji: '🧹', color: 'rgba(14,165,233,0.12)', border: 'rgba(56,189,248,0.18)', title: 'Clean the Tank', tip: "Tap Clean to remove poops and keep the tank clean. If cleanliness drops below 50% for more than a day, it will start to affect water quality decay." },
-                              { emoji: '💧', color: 'rgba(99,102,241,0.12)', border: 'rgba(129,140,248,0.18)', title: 'Change the Water', tip: 'Tap Water to refresh the tank and directly boost water quality. Good water quality slows decay of other stats.' },
-                              { emoji: '🌱', color: 'rgba(34,197,94,0.12)', border: 'rgba(74,222,128,0.18)', title: 'Evolve Through 4 Stages', tip: 'Your axolotl grows from Hatchling → Sprout → Guardian → Elder. Keep all stats high to evolve faster. Eggs hatch into Hatchling at Level 1.' },
-                              { emoji: '✨', color: 'rgba(168,85,247,0.12)', border: 'rgba(216,180,254,0.18)', title: 'Rebirth for Bonuses', tip: 'At Elder stage (Level 40) you can Rebirth — start a new generation with bonus coins and inherited colour traits.' },
-                              { emoji: '🛍️', color: 'rgba(245,158,11,0.12)', border: 'rgba(251,191,36,0.18)', title: 'Customize Your Tank', tip: 'Tap the Shop button in the Aquarium to buy decorations, plants, and filters. Unlock backgrounds with opals.' },
-                              { emoji: '👥', color: 'rgba(236,72,153,0.12)', border: 'rgba(244,114,182,0.18)', title: 'Play with Friends', tip: 'Add friends via code in Social. Poke them, visit their tanks, or hatch eggs together.' },
+                              { icon: 'Utensils', color: 'rgba(16,185,129,0.12)', border: 'rgba(52,211,153,0.18)', title: 'Keep Your Axolotl Fed', tip: "Tap Feed to drop food pellets. Your axolotl swims up and eats them. Hunger drops over time — don't let it bottom out!" },
+                              { icon: 'Gamepad2', color: 'rgba(139,92,246,0.12)', border: 'rgba(167,139,250,0.18)', title: 'Play Mini Games', tip: 'Head to Mini Games to earn XP and coins. Level up your axolotl to unlock the ability to rebirth at Level 40.' },
+                              { icon: 'Sparkles', color: 'rgba(14,165,233,0.12)', border: 'rgba(56,189,248,0.18)', title: 'Clean the Tank', tip: "Tap Clean to remove poops and keep the tank clean. If cleanliness drops below 50% for more than a day, it will start to affect water quality decay." },
+                              { icon: 'Droplets', color: 'rgba(99,102,241,0.12)', border: 'rgba(129,140,248,0.18)', title: 'Change the Water', tip: 'Tap Water to refresh the tank and directly boost water quality. Good water quality slows decay of other stats.' },
+                              { icon: 'Sprout', color: 'rgba(34,197,94,0.12)', border: 'rgba(74,222,128,0.18)', title: 'Evolve Through 4 Stages', tip: 'Your axolotl grows from Hatchling → Sprout → Guardian → Elder. Keep all stats high to evolve faster. Eggs hatch into Hatchling at Level 1.' },
+                              { icon: 'RefreshCw', color: 'rgba(168,85,247,0.12)', border: 'rgba(216,180,254,0.18)', title: 'Rebirth for Bonuses', tip: 'At Elder stage (Level 40) you can Rebirth — start a new generation with bonus coins and inherited colour traits.' },
+                              { icon: 'ShoppingCart', color: 'rgba(245,158,11,0.12)', border: 'rgba(251,191,36,0.18)', title: 'Customize Your Tank', tip: 'Tap the Shop button in the Aquarium to buy decorations, plants, and filters. Unlock backgrounds with opals.' },
+                              { icon: 'Users', color: 'rgba(236,72,153,0.12)', border: 'rgba(244,114,182,0.18)', title: 'Play with Friends', tip: 'Add friends via code in Social. Poke them, visit their tanks, or hatch eggs together.' },
                             ].map((item, i) => (
                               <motion.div
                                 key={i}
@@ -1403,7 +1404,7 @@ export default function App() {
                                 className="flex gap-3 px-4 py-3.5 rounded-2xl"
                                 style={{ background: 'rgba(255,255,255,0.6)', border: `1px solid ${item.border}` }}
                               >
-                                <span className="text-2xl flex-shrink-0 mt-0.5">{item.emoji}</span>
+                                <span className="flex-shrink-0 mt-0.5 text-slate-500"><GameIcon name={item.icon} size={22} /></span>
                                 <div>
                                   <p className="text-slate-700 font-bold text-[12px] leading-tight">{item.title}</p>
                                   <p className="text-slate-500 text-[11px] leading-snug mt-1">{item.tip}</p>
@@ -1477,7 +1478,7 @@ export default function App() {
                           {/* Panel header */}
                           <div className="flex items-center justify-between px-5 pt-5 pb-3 flex-shrink-0">
                             <div className="flex items-center gap-2">
-                              <span className="text-xl">🏆</span>
+                              <Trophy className="w-5 h-5 text-amber-400" strokeWidth={2} />
                               <h3 className="text-white font-bold text-base">Achievement Center</h3>
                             </div>
                             <motion.button
@@ -1553,7 +1554,7 @@ export default function App() {
                           <div className="flex-1 overflow-y-auto overscroll-contain px-3 py-3 space-y-2" style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-y' }}>
                             {notifications.length === 0 ? (
                               <div className="flex flex-col items-center justify-center h-full gap-3 opacity-50">
-                                <span className="text-4xl">🔕</span>
+                                <Bell className="w-10 h-10 text-slate-400" strokeWidth={1.5} />
                                 <p className="text-slate-500 text-sm">No notifications yet</p>
                               </div>
                             ) : notifications.map((notif, i) => (
@@ -1584,7 +1585,7 @@ export default function App() {
                                   className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-xl"
                                   style={{ background: !notif.read ? 'rgba(221,214,254,0.6)' : 'rgba(241,245,249,0.8)' }}
                                 >
-                                  {notif.emoji}
+                                  <GameIcon name={notif.icon} size={20} />
                                 </div>
                                 <div className="flex-1 min-w-0">
                                   <p className={`text-[12px] leading-snug ${!notif.read ? 'text-slate-800 font-semibold' : 'text-slate-400'}`}>{notif.message}</p>
@@ -1685,7 +1686,7 @@ export default function App() {
                             className="absolute pointer-events-none select-none"
                             style={{ left: `${x}%`, bottom: `${bottom}%`, fontSize: 14, zIndex: 18, opacity: 0.85 }}
                           >
-                            🦐
+                            ~
                           </div>
                         );
                       })}
@@ -1807,7 +1808,7 @@ export default function App() {
                           }}
                         >
                           <p className="text-slate-800 text-[13px] font-bold leading-snug">
-                            Welcome to your aquarium! 🌊
+                            Welcome to your aquarium!
                           </p>
                           <p className="text-slate-500 text-[11.5px] leading-snug mt-0.5">
                             Swipe <span className="text-cyan-600 font-bold">left & right</span> to explore your whole tank
@@ -1877,7 +1878,7 @@ export default function App() {
                           }}
                         >
                           <p className="text-slate-800 text-[13px] font-bold leading-snug">
-                            You leveled up! 🎉
+                            You leveled up!
                           </p>
                           <p className="text-slate-500 text-[11.5px] leading-snug mt-0.5">
                             Tap the glowing button above to assign your stat point!
@@ -1888,7 +1889,7 @@ export default function App() {
 
                           {/* Why stats matter */}
                           <p className="text-slate-700 text-[12px] font-bold leading-snug mb-1">
-                            🥚 Why do stats matter?
+                            Why do stats matter?
                           </p>
                           <p className="text-slate-500 text-[11px] leading-snug">
                             The stronger your axolotl, the better chance you get a{' '}
@@ -1899,7 +1900,7 @@ export default function App() {
 
                           {/* Rarity ladder */}
                           <div className="mt-2 flex items-center justify-center gap-1">
-                            {['⚪ Common','🔵 Rare','🟣 Epic','🟡 Legendary','🔴 Mythic'].map((r, i) => (
+                            {['Common','Rare','Epic','Legendary','Mythic'].map((r, i) => (
                               <div
                                 key={i}
                                 className="text-[8.5px] font-bold px-1 py-0.5 rounded-md leading-none"
@@ -1949,7 +1950,7 @@ export default function App() {
                           }}
                         >
                           <p className="text-slate-800 text-[13px] font-bold leading-snug">
-                            Now go play! ✨
+                            Now go play!
                           </p>
                           <p className="text-slate-500 text-[11.5px] leading-snug mt-0.5">
                             Tap <span className="text-violet-600 font-bold">Playtime</span> to boost happiness
@@ -1981,7 +1982,7 @@ export default function App() {
                       {/* Dim overlay */}
                       <div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.45)' }} />
 
-                      {/* Bubble near top pointing up to the 🎮 button in the header */}
+                      {/* Bubble near top pointing up to the games button in the header */}
                       <motion.div
                         className="absolute top-[18%] left-0 right-0 flex flex-col items-center gap-1 px-4"
                         initial={{ opacity: 0, y: 10 }}
@@ -2006,7 +2007,7 @@ export default function App() {
                           }}
                         >
                           <p className="text-slate-800 text-[13px] font-bold leading-snug">
-                            Play a mini game! 🎮
+                            Play a mini game!
                           </p>
                           <p className="text-slate-500 text-[11.5px] leading-snug mt-0.5">
                             Tap the controller above to earn XP and coins
@@ -2060,7 +2061,7 @@ export default function App() {
                               >
                                 <p className="text-slate-800 text-[13px] font-bold leading-snug">
                                   Yikes, there's poop!<br />
-                                  Tap <span className="text-rose-500">Clean</span> to start 🧹
+                                  Tap <span className="text-rose-500">Clean</span> to start
                                 </p>
                               </div>
                               {/* Downward caret */}
@@ -2112,7 +2113,7 @@ export default function App() {
                           }}
                         >
                           <p className="text-slate-800 text-[13px] font-bold leading-snug">
-                            Water quality is low! 💧
+                            Water quality is low!
                           </p>
                           <p className="text-slate-500 text-[11.5px] leading-snug mt-0.5">
                             Tap <span className="text-indigo-600 font-bold">Water Quality</span> to do a water change

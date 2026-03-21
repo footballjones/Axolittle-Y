@@ -6,6 +6,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X } from 'lucide-react';
+import { CoinIcon, OpalIcon } from './icons';
 import { canSpinToday } from '../utils/dailySystem';
 
 interface SpinWheelProps {
@@ -314,9 +315,11 @@ export function SpinWheel({ isOpen, onClose, onSpin, lastSpinDate }: SpinWheelPr
                           x={CX} y={CY}
                           textAnchor="middle"
                           dominantBaseline="middle"
-                          fontSize="18"
+                          fontSize="10"
+                          fill="white"
+                          fontWeight="bold"
                         >
-                          🎰
+                          SPIN
                         </text>
                       </motion.g>
                     </svg>
@@ -340,8 +343,8 @@ export function SpinWheel({ isOpen, onClose, onSpin, lastSpinDate }: SpinWheelPr
                       animate={{ opacity: 1, y: 0,  scale: 1    }}
                       exit={{    opacity: 0, y: 8,  scale: 0.92 }}
                     >
-                      <span className="text-2xl">
-                        {result.type === 'opals' ? '💎' : '🪙'}
+                      <span className="flex items-center justify-center">
+                        {result.type === 'opals' ? <OpalIcon size={28} className="text-violet-300" /> : <CoinIcon size={28} className="text-amber-300" />}
                       </span>
                       <div>
                         <p className="text-white font-black text-sm leading-tight">
@@ -350,7 +353,7 @@ export function SpinWheel({ isOpen, onClose, onSpin, lastSpinDate }: SpinWheelPr
                         <p className="text-xs mt-0.5" style={{
                           color: result.type === 'opals' ? '#67e8f9' : '#fcd34d',
                         }}>
-                          {result.type === 'opals' ? 'Rare reward! 🎉' : 'Nice spin!'}
+                          {result.type === 'opals' ? 'Rare reward!' : 'Nice spin!'}
                         </p>
                       </div>
                     </motion.div>
@@ -383,7 +386,7 @@ export function SpinWheel({ isOpen, onClose, onSpin, lastSpinDate }: SpinWheelPr
                 </motion.button>
                 {!canSpinToday(lastSpinDate) && !spinning && (
                   <p className="text-center text-violet-400/50 text-xs mt-2">
-                    Next spin available tomorrow 🌅
+                    Next spin available tomorrow
                   </p>
                 )}
               </div>

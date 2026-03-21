@@ -1,5 +1,5 @@
 import { motion } from 'motion/react';
-import { X, RotateCcw, Sparkles } from 'lucide-react';
+import { X, RotateCcw, Sparkles, Clover, Egg as EggIcon, Flame } from 'lucide-react';
 import { Axolotl } from '../types/game';
 
 interface RebirthModalProps {
@@ -27,8 +27,8 @@ export function RebirthModal({ onClose, onConfirm, currentAxolotl }: RebirthModa
     streak === 0 ? 'No bonus yet' :
     streak < 3   ? 'Building luck...' :
     streak < 6   ? 'Good luck bonus!' :
-    streak < 9   ? 'Almost there! 🔥' :
-                   'Max luck! ✨';
+    streak < 9   ? 'Almost there!' :
+                   'Max luck!';
 
   const luckBarColor =
     luckPercent >= 80 ? 'from-amber-400 via-orange-400 to-rose-400' :
@@ -117,7 +117,7 @@ export function RebirthModal({ onClose, onConfirm, currentAxolotl }: RebirthModa
             >
               <div className="flex items-center justify-between mb-2">
                 <span className="text-white font-bold text-sm flex items-center gap-1.5">
-                  🍀 Rebirth Luck
+                  <Clover className="w-4 h-4 text-emerald-400" strokeWidth={2} /> Rebirth Luck
                 </span>
                 {effectiveScoreBonus > 0 && (
                   <motion.span
@@ -191,7 +191,7 @@ export function RebirthModal({ onClose, onConfirm, currentAxolotl }: RebirthModa
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.35 }}
             >
-              <span className="text-3xl">🥚</span>
+              <EggIcon className="w-8 h-8 text-violet-300" strokeWidth={1.5} />
               <div>
                 <p className="text-white font-bold text-sm">A new egg will be placed in your nursery.</p>
                 <p className="text-white/60 text-xs mt-0.5">Hatch the egg to name and raise your next axolotl.</p>

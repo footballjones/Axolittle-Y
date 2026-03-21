@@ -58,7 +58,7 @@ export function useEconomyActions({ setGameState, setNotifications }: UseEconomy
       setNotifications(prevNotifs => [...prevNotifs, {
         id: `notif-${Date.now()}`,
         type: 'milestone',
-        emoji: reward.type === 'opals' ? '🪬' : '🪙',
+        icon: reward.type === 'opals' ? 'Droplets' : 'Coins',
         message: `Won ${reward.amount} ${reward.type === 'opals' ? 'Opals' : 'Coins'} from spin wheel!`,
         time: 'now',
         read: false,
@@ -93,7 +93,7 @@ export function useEconomyActions({ setGameState, setNotifications }: UseEconomy
       setNotifications(prevNotifs => [...prevNotifs, {
         id: `notif-${Date.now()}`,
         type: 'milestone',
-        emoji: '🎁',
+        icon: 'Gift',
         message: `Daily login bonus: ${reward.coins} coins${reward.opals ? ` + ${reward.opals} opals` : ''}!`,
         time: 'now',
         read: false,

@@ -12,7 +12,7 @@ export interface Achievement {
   id: string;
   name: string;
   description: string;
-  emoji: string;
+  icon: string;
   category: AchievementCategory;
   /** Coins awarded when this achievement is first unlocked (default 0) */
   coinReward?: number;
@@ -25,14 +25,14 @@ export interface Achievement {
 export interface AchievementCategoryMeta {
   id: AchievementCategory;
   label: string;
-  emoji: string;
+  icon: string;
 }
 
 export const ACHIEVEMENT_CATEGORIES: AchievementCategoryMeta[] = [
-  { id: 'nurture',    label: 'Nurture',    emoji: '🌿' },
-  { id: 'minigames',  label: 'Mini Games', emoji: '🎮' },
-  { id: 'progression',label: 'Progression',emoji: '📈' },
-  { id: 'genetics',   label: 'Genetics',   emoji: '🥚' },
-  { id: 'social',     label: 'Social',     emoji: '👥' },
-  { id: 'daily',      label: 'Daily Habits',emoji: '🎁' },
+  { id: 'nurture',    label: 'Nurture',     icon: 'Leaf'     },
+  { id: 'minigames',  label: 'Mini Games',  icon: 'Gamepad2' },
+  { id: 'progression',label: 'Progression', icon: 'TrendingUp' },
+  { id: 'genetics',   label: 'Genetics',    icon: 'Egg'      },
+  { id: 'social',     label: 'Social',      icon: 'Users'    },
+  { id: 'daily',      label: 'Daily Habits',icon: 'Gift'     },
 ];

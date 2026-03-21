@@ -9,6 +9,8 @@ import { motion, AnimatePresence } from 'motion/react';
 import { GameWrapper } from './GameWrapper';
 import { MiniGameProps } from './types';
 import { calculateRewards } from './config';
+import { Egg as EggIcon, Fish, Waves, Trophy, Star, Gamepad2, Rocket, Zap } from 'lucide-react';
+import { CoinIcon, OpalIcon } from '../components/icons';
 
 const MAX_GUESSES = 10;
 
@@ -30,10 +32,12 @@ function getOrb(id: ColorId) {
 
 type Difficulty = 'easy' | 'normal' | 'hard';
 
-const DIFFICULTY_CONFIG: Record<Difficulty, { codeLength: number; colorCount: number; label: string; emoji: string; desc: string }> = {
-  easy:   { codeLength: 3, colorCount: 4, label: 'Beginner',  emoji: '🐣', desc: '3 slots · 4 colors' },
-  normal: { codeLength: 4, colorCount: 5, label: 'Explorer',  emoji: '🐠', desc: '4 slots · 5 colors' },
-  hard:   { codeLength: 5, colorCount: 6, label: 'Master',    emoji: '🦈', desc: '5 slots · 6 colors' },
+import React from 'react';
+
+const DIFFICULTY_CONFIG: Record<Difficulty, { codeLength: number; colorCount: number; label: string; icon: React.ReactNode; desc: string }> = {
+  easy:   { codeLength: 3, colorCount: 4, label: 'Beginner',  icon: <EggIcon className="w-6 h-6" />, desc: '3 slots · 4 colors' },
+  normal: { codeLength: 4, colorCount: 5, label: 'Explorer',  icon: <Fish className="w-6 h-6" />,    desc: '4 slots · 5 colors' },
+  hard:   { codeLength: 5, colorCount: 6, label: 'Master',    icon: <Waves className="w-6 h-6" />,   desc: '5 slots · 6 colors' },
 };
 
 function getAvailableColors(difficulty: Difficulty): ColorId[] {
@@ -313,9 +317,9 @@ export function CoralCode({ onEnd, onDeductEnergy, onApplyReward, energy }: Mini
                       <motion.div
                         animate={{ y: [0, -8, 0], rotate: [0, 4, -4, 0] }}
                         transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
-                        className="text-5xl mb-3"
+                        className="flex justify-center mb-3 text-cyan-400"
                       >
-                        🪸
+                        <Waves className="w-12 h-12" />
                       </motion.div>
                       <h2
                         className="text-2xl font-black mb-1"
@@ -361,7 +365,7 @@ export function CoralCode({ onEnd, onDeductEnergy, onApplyReward, energy }: Mini
                             className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl font-bold text-white relative overflow-hidden"
                             style={{ background: gradients[i], boxShadow: '0 4px 15px rgba(0,0,0,0.3)' }}
                           >
-                            <span className="text-2xl">{cfg.emoji}</span>
+                            <span className="text-white">{cfg.icon}</span>
                             <div className="text-left">
                               <div className="text-sm font-black">{cfg.label}</div>
                               <div className="text-xs opacity-70">{cfg.desc}</div>
@@ -385,9 +389,9 @@ export function CoralCode({ onEnd, onDeductEnergy, onApplyReward, energy }: Mini
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
                         transition={{ type: 'spring', stiffness: 400, damping: 15, delay: 0.1 }}
-                        className="text-5xl mb-3"
+                        className="flex justify-center mb-3"
                       >
-                        {finalScore >= 8 ? '🏆' : finalScore >= 5 ? '🌟' : finalScore > 0 ? '🎮' : '🐡'}
+                        {finalScore >= 8 ? <Trophy className="w-12 h-12 text-amber-400" /> : finalScore >= 5 ? <Star className="w-12 h-12 text-yellow-400" /> : finalScore > 0 ? <Gamepad2 className="w-12 h-12 text-sky-400" /> : <Fish className="w-12 h-12 text-blue-300" />}
                       </motion.div>
                       <h2
                         className="text-2xl font-black mb-1"
@@ -401,7 +405,7 @@ export function CoralCode({ onEnd, onDeductEnergy, onApplyReward, energy }: Mini
                         {finalScore > 0 ? 'Code Cracked!' : 'Out of Guesses!'}
                       </h2>
                       <p className="text-white/50 text-xs mb-1">
-                        {finalScore >= 8 ? '🌊 Master codebreaker!' : finalScore >= 5 ? '🐠 Great solving!' : finalScore > 0 ? '🐙 Nice try!' : '💪 Keep practicing!'}
+                        {finalScore >= 8 ? 'Master codebreaker!' : finalScore >= 5 ? 'Great solving!' : finalScore > 0 ? 'Nice try!' : 'Keep practicing!'}
                       </p>
 
                       {/* Secret code reveal on loss */}
@@ -444,9 +448,9 @@ export function CoralCode({ onEnd, onDeductEnergy, onApplyReward, energy }: Mini
                       <div className="rounded-2xl p-3 mb-4 text-center" style={{ background: 'rgba(46,213,115,0.1)', border: '1px solid rgba(46,213,115,0.25)' }}>
                         <p className="text-emerald-300 text-xs font-bold mb-2">Rewards Earned!</p>
                         <div className="flex justify-center gap-4 text-white text-sm font-bold">
-                          <span>⭐ +{finalRewards.xp} XP</span>
-                          <span>🪙 +{finalRewards.coins}</span>
-                          {finalRewards.opals && <span>🪬 +{finalRewards.opals}</span>}
+                          <span className="inline-flex items-center gap-1"><Star className="w-4 h-4 text-yellow-400" /> +{finalRewards.xp} XP</span>
+                          <span className="inline-flex items-center gap-1"><CoinIcon size={14} /> +{finalRewards.coins}</span>
+                          {finalRewards.opals && <span className="inline-flex items-center gap-1"><OpalIcon size={14} /> +{finalRewards.opals}</span>}
                         </div>
                       </div>
                     ) : hadEnergyAtStart ? null : (
@@ -639,7 +643,7 @@ export function CoralCode({ onEnd, onDeductEnergy, onApplyReward, energy }: Mini
                       animate={{ x: ['-100%', '200%'] }}
                       transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
                     />
-                    <span className="relative">✓ Submit Guess</span>
+                    <span className="relative">Submit Guess</span>
                   </>
                 ) : (
                   <span className="text-white/40">Pick {codeLength - currentGuess.length} more</span>

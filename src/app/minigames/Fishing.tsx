@@ -10,6 +10,8 @@ import { motion } from 'motion/react';
 import { GameWrapper } from './GameWrapper';
 import { MiniGameProps } from './types';
 import { calculateRewards } from './config';
+import { Fish, AlertTriangle, Trophy, Handshake, Star, Rocket, Target } from 'lucide-react';
+import { CoinIcon, OpalIcon } from '../components/icons';
 
 const CANVAS_W = 360;
 const CANVAS_H = 640;
@@ -460,7 +462,7 @@ export function Fishing({ onEnd, onDeductEnergy, onApplyReward, energy, strength
       ctx.fillStyle = `rgba(255, 100, 100, ${e.life * 0.8})`;
       ctx.font = 'bold 16px sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText('💨', e.x, e.y - (1 - e.life) * 30);
+      ctx.fillText('~', e.x, e.y - (1 - e.life) * 30);
     }
 
     // Timer
@@ -729,9 +731,9 @@ export function Fishing({ onEnd, onDeductEnergy, onApplyReward, energy, strength
                           rotate: [0, 5, -5, 0]
                         }}
                         transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-                        className="text-6xl mb-4"
+                        className="flex justify-center mb-4"
                       >
-                        🎣
+                        <Fish className="w-16 h-16 text-blue-500" />
                       </motion.div>
                       <h2 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-600 mb-4">
                         Fishing
@@ -746,11 +748,11 @@ export function Fishing({ onEnd, onDeductEnergy, onApplyReward, energy, strength
                           Release to reel in your catch!
                         </p>
                         <p className="flex items-center justify-center gap-2">
-                          <span className="text-lg">⚠️</span>
+                          <AlertTriangle className="w-5 h-5 text-amber-500" />
                           Don't hold too long or fish escapes
                         </p>
                         <p className="flex items-center justify-center gap-2">
-                          <span className="text-lg">🏆</span>
+                          <Trophy className="w-5 h-5 text-amber-500" />
                           Catch the most weight to win!
                         </p>
                       </div>
@@ -763,7 +765,7 @@ export function Fishing({ onEnd, onDeductEnergy, onApplyReward, energy, strength
                     >
                       <span className="relative z-10 flex items-center justify-center gap-2">
                         <span>Start Game</span>
-                        <span className="text-xl">🚀</span>
+                        <Rocket className="w-5 h-5" />
                       </span>
                       <motion.div
                         className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
@@ -775,8 +777,8 @@ export function Fishing({ onEnd, onDeductEnergy, onApplyReward, energy, strength
                 ) : gameEnded && finalRewards ? (
                   <>
                     <div className="text-center mb-6">
-                      <div className="text-6xl mb-4">
-                        {playerScore > botScore ? '🏆' : playerScore === botScore ? '🤝' : '😅'}
+                      <div className="flex justify-center mb-4">
+                        {playerScore > botScore ? <Trophy className="w-16 h-16 text-amber-400" /> : playerScore === botScore ? <Handshake className="w-16 h-16 text-sky-400" /> : <Fish className="w-16 h-16 text-blue-300" />}
                       </div>
                       <h2 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-600 mb-4">
                         {playerScore > botScore ? 'You Win!' : playerScore === botScore ? "It's a Tie!" : 'Bot Wins!'}
@@ -785,7 +787,7 @@ export function Fishing({ onEnd, onDeductEnergy, onApplyReward, energy, strength
                         You: {playerScore}kg · Bot: {botScore}kg
                       </p>
                       <p className="text-blue-600 text-center mb-4 text-sm font-medium">
-                        {playerScore > botScore ? '🌟 Great fishing!' : playerScore === botScore ? '🎯 So close!' : '💪 Keep practicing!'}
+                        {playerScore > botScore ? 'Great fishing!' : playerScore === botScore ? 'So close!' : 'Keep practicing!'}
                       </p>
                       
                       {/* Rewards display - only show if energy was used */}
@@ -795,17 +797,17 @@ export function Fishing({ onEnd, onDeductEnergy, onApplyReward, energy, strength
                           <div className="flex flex-col gap-2 text-blue-800">
                             {finalRewards.xp > 0 && (
                               <div className="flex items-center justify-center gap-2">
-                                <span className="text-xl">⭐</span>
+                                <Star className="w-5 h-5 text-yellow-400" />
                                 <span className="font-semibold">+{finalRewards.xp} XP</span>
                               </div>
                             )}
                             <div className="flex items-center justify-center gap-2">
-                              <span className="text-xl">💰</span>
+                              <CoinIcon size={20} />
                               <span className="font-semibold">+{finalRewards.coins} Coins</span>
                             </div>
                             {finalRewards.opals && (
                               <div className="flex items-center justify-center gap-2">
-                                <span className="text-xl">🪬</span>
+                                <OpalIcon size={20} />
                                 <span className="font-semibold">+{finalRewards.opals} Opals</span>
                               </div>
                             )}

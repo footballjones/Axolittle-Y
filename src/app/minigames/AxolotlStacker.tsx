@@ -9,6 +9,8 @@ import { motion } from 'motion/react';
 import { GameWrapper } from './GameWrapper';
 import { MiniGameProps } from './types';
 import { calculateRewards } from './config';
+import { Layers, Target, AlertTriangle, Star, Trophy, Gamepad2, Rocket } from 'lucide-react';
+import { CoinIcon, OpalIcon } from '../components/icons';
 
 const CANVAS_W = 360;
 const CANVAS_H = 640;
@@ -350,9 +352,9 @@ export function AxolotlStacker({ onEnd, onDeductEnergy, onApplyReward, energy }:
                       <motion.div
                         animate={{ scale: [1, 1.1, 1], rotate: [0, 5, -5, 0] }}
                         transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-                        className="text-6xl mb-4"
+                        className="flex justify-center mb-4"
                       >
-                        🥞
+                        <Layers className="w-16 h-16 text-purple-500" />
                       </motion.div>
                       <h2 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-indigo-600 mb-4">
                         Axolotl Stacker
@@ -363,11 +365,11 @@ export function AxolotlStacker({ onEnd, onDeductEnergy, onApplyReward, energy }:
                           Tap to drop each block
                         </p>
                         <p className="flex items-center justify-center gap-2">
-                          <span className="text-lg">🎯</span>
+                          <Target className="w-5 h-5 text-purple-600" />
                           Line them up to stack higher!
                         </p>
                         <p className="flex items-center justify-center gap-2">
-                          <span className="text-lg">⚠️</span>
+                          <AlertTriangle className="w-5 h-5 text-amber-500" />
                           Overhangs fall off
                         </p>
                       </div>
@@ -379,15 +381,15 @@ export function AxolotlStacker({ onEnd, onDeductEnergy, onApplyReward, energy }:
                     >
                       <span className="relative z-10 flex items-center justify-center gap-2">
                         <span>Start Game</span>
-                        <span className="text-xl">🚀</span>
+                        <Rocket className="w-5 h-5" />
                       </span>
                     </motion.button>
                   </>
                 ) : gameEnded && finalRewards ? (
                   <>
                     <div className="text-center mb-6">
-                      <div className="text-6xl mb-4">
-                        {score >= 20 ? '✨' : score >= 10 ? '🎉' : '🎮'}
+                      <div className="flex justify-center mb-4">
+                        {score >= 20 ? <Star className="w-16 h-16 text-amber-400" /> : score >= 10 ? <Trophy className="w-16 h-16 text-yellow-500" /> : <Gamepad2 className="w-16 h-16 text-purple-400" />}
                       </div>
                       <h2 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-indigo-600 mb-4">
                         Game Over!
@@ -396,7 +398,7 @@ export function AxolotlStacker({ onEnd, onDeductEnergy, onApplyReward, energy }:
                         Stack height: {score}
                       </p>
                       <p className="text-purple-600 text-center mb-4 text-sm font-medium">
-                        {score >= 20 ? '🌟 Exceptional performance!' : score >= 10 ? '🎯 Good job!' : '💪 Keep practicing!'}
+                        {score >= 20 ? 'Exceptional performance!' : score >= 10 ? 'Good job!' : 'Keep practicing!'}
                       </p>
                       
                       {hadEnergyAtStart && finalRewards && (finalRewards.xp > 0 || finalRewards.coins > 0) ? (
@@ -404,16 +406,16 @@ export function AxolotlStacker({ onEnd, onDeductEnergy, onApplyReward, energy }:
                           <p className="text-purple-700 font-bold text-lg mb-2">Rewards:</p>
                           <div className="flex flex-col gap-2 text-purple-800">
                             <div className="flex items-center justify-center gap-2">
-                              <span className="text-xl">⭐</span>
+                              <Star className="w-5 h-5 text-yellow-400" />
                               <span className="font-semibold">+{finalRewards.xp} XP</span>
                             </div>
                             <div className="flex items-center justify-center gap-2">
-                              <span className="text-xl">💰</span>
+                              <CoinIcon size={20} />
                               <span className="font-semibold">+{finalRewards.coins} Coins</span>
                             </div>
                             {finalRewards.opals && (
                               <div className="flex items-center justify-center gap-2">
-                                <span className="text-xl">🪬</span>
+                                <OpalIcon size={20} />
                                 <span className="font-semibold">+{finalRewards.opals} Opals</span>
                               </div>
                             )}

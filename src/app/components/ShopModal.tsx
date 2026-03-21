@@ -1,13 +1,14 @@
-import { X, Coins, Sparkles, Droplets, Filter, Bug, Gem, Info, ChevronDown } from 'lucide-react';
+import { X, Coins, Sparkles, Droplets, Filter, Bug, Gem, Info, ChevronDown, Leaf, Mountain, Shell, Waves, Settings, Wrench } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useState } from 'react';
 import { DECORATIONS } from '../data/decorations';
+import { GameIcon, CoinIcon } from './icons';
 
 const DECO_CATEGORIES = [
-  { type: 'plant',      label: 'Plants',      emoji: '🌿', color: 'rgba(134,239,172,0.2)',  border: 'rgba(74,222,128,0.35)'  },
-  { type: 'rock',       label: 'Rocks',        emoji: '🪨', color: 'rgba(203,213,225,0.25)', border: 'rgba(148,163,184,0.35)' },
-  { type: 'ornament',   label: 'Ornaments',    emoji: '🐚', color: 'rgba(253,186,116,0.2)',  border: 'rgba(251,146,60,0.3)'   },
-  { type: 'background', label: 'Backgrounds',  emoji: '🌊', color: 'rgba(147,210,255,0.2)',  border: 'rgba(56,189,248,0.3)'   },
+  { type: 'plant',      label: 'Plants',      icon: <Leaf size={14} />,     color: 'rgba(134,239,172,0.2)',  border: 'rgba(74,222,128,0.35)'  },
+  { type: 'rock',       label: 'Rocks',        icon: <Mountain size={14} />, color: 'rgba(203,213,225,0.25)', border: 'rgba(148,163,184,0.35)' },
+  { type: 'ornament',   label: 'Ornaments',    icon: <Shell size={14} />,    color: 'rgba(253,186,116,0.2)',  border: 'rgba(251,146,60,0.3)'   },
+  { type: 'background', label: 'Backgrounds',  icon: <Waves size={14} />,    color: 'rgba(147,210,255,0.2)',  border: 'rgba(56,189,248,0.3)'   },
 ];
 
 interface ShopModalProps {
@@ -37,44 +38,43 @@ interface ShopModalProps {
 }
 
 const COIN_PACKS = [
-  { opals: 5, coins: 500, label: 'Starter', emoji: '🪙' },
-  { opals: 10, coins: 1200, label: 'Popular', emoji: '💰', best: false },
-  { opals: 25, coins: 3500, label: 'Best Value', emoji: '🏆', best: true },
-  { opals: 50, coins: 8000, label: 'Mega Pack', emoji: '👑', best: false },
+  { opals: 5, coins: 500, label: 'Starter' },
+  { opals: 10, coins: 1200, label: 'Popular', best: false },
+  { opals: 25, coins: 3500, label: 'Best Value', best: true },
+  { opals: 50, coins: 8000, label: 'Mega Pack', best: false },
 ];
 
 const OPAL_PACKS = [
-  { price: '$0.99', opals: 10, label: 'A Few', emoji: '💎' },
-  { price: '$2.99', opals: 35, label: 'Handful', emoji: '💎' },
-  { price: '$4.99', opals: 75, label: 'Armful', emoji: '✨' },
-  { price: '$9.99', opals: 200, label: 'Catch of the Day', emoji: '🌟' },
-  { price: '$19.99', opals: 500, label: 'Whale Pack', emoji: '🐋' },
+  { price: '$0.99', opals: 10, label: 'A Few' },
+  { price: '$2.99', opals: 35, label: 'Handful' },
+  { price: '$4.99', opals: 75, label: 'Armful' },
+  { price: '$9.99', opals: 200, label: 'Catch of the Day' },
+  { price: '$19.99', opals: 500, label: 'Whale Pack' },
 ];
 
 const SHRIMP_PACKS = [
-  { count: 10, opals: 10, label: 'Small Colony', emoji: '🦐' },
-  { count: 20, opals: 20, label: 'Medium Colony', emoji: '🦐🦐' },
-  { count: 30, opals: 30, label: 'Large Colony', emoji: '🦐🦐🦐' },
+  { count: 10, opals: 10, label: 'Small Colony' },
+  { count: 20, opals: 20, label: 'Medium Colony' },
+  { count: 30, opals: 30, label: 'Large Colony' },
 ];
 
 const FILTER_OPTIONS = [
-  { id: 'filter-basic', name: 'Basic Filter', coins: 100, opals: 0, emoji: '⚙️', description: 'Slow but steady filtration' },
-  { id: 'filter-advanced', name: 'Advanced Filter', coins: 300, opals: 0, emoji: '🔧', description: 'Faster, cleaner water' },
-  { id: 'filter-premium', name: 'Premium Filter', coins: 0, opals: 50, emoji: '✨', description: 'Crystal-clear perfection' },
+  { id: 'filter-basic', name: 'Basic Filter', coins: 100, opals: 0, icon: <Settings size={18} />, description: 'Slow but steady filtration' },
+  { id: 'filter-advanced', name: 'Advanced Filter', coins: 300, opals: 0, icon: <Wrench size={18} />, description: 'Faster, cleaner water' },
+  { id: 'filter-premium', name: 'Premium Filter', coins: 0, opals: 50, icon: <Sparkles size={18} />, description: 'Crystal-clear perfection' },
 ];
 
 const TREATMENT_OPTIONS = [
-  { id: 'treatment-water', name: 'Water Treatment', opals: 5, emoji: '💧', description: 'Purifies & balances water quality' },
-  { id: 'treatment-miracle', name: 'Miracle Treatment', opals: 15, emoji: '🧪', description: 'Fully restores all water stats' },
+  { id: 'treatment-water', name: 'Water Treatment', opals: 5, icon: <Droplets size={18} />, description: 'Purifies & balances water quality' },
+  { id: 'treatment-miracle', name: 'Miracle Treatment', opals: 15, icon: <Settings size={18} />, description: 'Fully restores all water stats' },
 ];
 
 type TabId = 'currency' | 'decorations' | 'wellbeing';
 
-const TABS: { id: TabId; label: string; emoji: string; activeGradient: string; activeShadow: string; inactiveColor: string }[] = [
+const TABS: { id: TabId; label: string; activeGradient: string; activeShadow: string; inactiveColor: string }[] = [
   {
     id: 'currency',
     label: 'Currency',
-    emoji: '💰',
     activeGradient: 'linear-gradient(135deg, #f59e0b, #d97706)',
     activeShadow: '0 4px 12px rgba(245,158,11,0.45)',
     inactiveColor: 'rgba(146,64,14,0.6)',
@@ -82,7 +82,6 @@ const TABS: { id: TabId; label: string; emoji: string; activeGradient: string; a
   {
     id: 'decorations',
     label: 'Decorations',
-    emoji: '🪴',
     activeGradient: 'linear-gradient(135deg, #34d399, #0d9488)',
     activeShadow: '0 4px 12px rgba(52,211,153,0.45)',
     inactiveColor: 'rgba(13,148,136,0.6)',
@@ -90,7 +89,6 @@ const TABS: { id: TabId; label: string; emoji: string; activeGradient: string; a
   {
     id: 'wellbeing',
     label: 'Wellbeing',
-    emoji: '🩺',
     activeGradient: 'linear-gradient(135deg, #38bdf8, #2563eb)',
     activeShadow: '0 4px 12px rgba(56,189,248,0.45)',
     inactiveColor: 'rgba(14,116,144,0.6)',
@@ -151,7 +149,7 @@ function ShopRowTile({
   disabled,
   cardBg,
   cardBorder,
-  emoji,
+  iconNode,
   title,
   subtitle,
   priceContent,
@@ -161,7 +159,7 @@ function ShopRowTile({
   disabled?: boolean;
   cardBg: string;
   cardBorder: string;
-  emoji: string;
+  iconNode?: React.ReactNode;
   title: string;
   subtitle: string;
   priceContent: React.ReactNode;
@@ -190,7 +188,7 @@ function ShopRowTile({
         animate={{ opacity: [0.3, 0.8, 0.3] }}
         transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut', delay: index * 0.3 }}
       />
-      <div className="text-xl flex-shrink-0 relative z-10">{emoji}</div>
+      {iconNode && <div className="flex-shrink-0 relative z-10">{iconNode}</div>}
       <div className="flex-1 min-w-0 relative z-10">
         <div className="text-violet-900 text-[12px] font-bold">{title}</div>
         <div className="text-violet-500/70 text-[10px] mt-0.5 font-medium">{subtitle}</div>
@@ -369,7 +367,6 @@ export function ShopModal({
                       />
                     )}
                   </AnimatePresence>
-                  <span className="relative z-10 text-[1.1rem] leading-none">{tab.emoji}</span>
                   <span
                     className="relative z-10 text-[8.5px] font-black tracking-widest uppercase leading-none"
                     style={{ color: activeTab === tab.id ? '#fff' : tab.inactiveColor }}
@@ -415,7 +412,7 @@ export function ShopModal({
                           onClick={() => onBuyOpals(pack)}
                           cardBg="linear-gradient(135deg, rgba(255,255,255,0.88) 0%, rgba(240,249,255,0.85) 100%)"
                           cardBorder="1.5px solid rgba(186,230,253,0.6)"
-                          emoji={pack.emoji}
+                          iconNode={<Gem size={20} className="text-violet-500" />}
                           title={pack.label}
                           subtitle={`${pack.opals} Opals`}
                           priceContent={
@@ -478,7 +475,7 @@ export function ShopModal({
                               BEST
                             </motion.div>
                           )}
-                          <div className="text-lg mb-0.5">{pack.emoji}</div>
+                          <div className="mb-0.5"><CoinIcon size={24} className="text-amber-500" /></div>
                           <div className="text-amber-900 text-[12px] font-black">{pack.coins.toLocaleString()}</div>
                           <div className="flex items-center gap-0.5 text-amber-500/70 text-[9px] font-semibold mb-1.5">
                             <Coins className="w-2 h-2" />
@@ -521,7 +518,7 @@ export function ShopModal({
                           className="flex items-center gap-2 w-full px-3 py-2.5 active:bg-teal-50/40"
                           onClick={() => toggleDecoCategory(cat.type)}
                         >
-                          <span className="text-base">{cat.emoji}</span>
+                          {cat.icon}
                           <span className="flex-1 text-left text-[11px] font-black tracking-widest uppercase" style={{ color: 'rgba(15,118,110,0.75)' }}>
                             {cat.label}
                           </span>
@@ -569,10 +566,10 @@ export function ShopModal({
                                         >ON</div>
                                       )}
                                       <div
-                                        className="w-11 h-11 rounded-xl flex items-center justify-center text-2xl shadow-sm"
+                                        className="w-11 h-11 rounded-xl flex items-center justify-center shadow-sm"
                                         style={{ background: cat.color }}
                                       >
-                                        {item.emoji}
+                                        <GameIcon name={item.icon} size={22} />
                                       </div>
                                       <span className="text-[10px] font-bold text-slate-700 text-center leading-tight">{item.name}</span>
                                       {isOwned ? (
@@ -585,7 +582,7 @@ export function ShopModal({
                                             }}
                                             whileTap={{ scale: 0.94 }}
                                           >
-                                            {isEquipped ? '✓ Active' : 'Use'}
+                                            {isEquipped ? 'Active' : 'Use'}
                                           </motion.button>
                                         ) : isEquipped ? (
                                           <motion.button
@@ -673,7 +670,7 @@ export function ShopModal({
                           disabled={!canAffordOpals(pack.opals)}
                           cardBg="linear-gradient(135deg, rgba(255,255,255,0.88) 0%, rgba(255,241,242,0.85) 100%)"
                           cardBorder="1.5px solid rgba(251,207,232,0.65)"
-                          emoji={pack.emoji}
+                          iconNode={<span className="text-pink-400 font-bold text-sm">~</span>}
                           title={pack.label}
                           subtitle={`${pack.count} shrimp`}
                           priceContent={
@@ -740,7 +737,7 @@ export function ShopModal({
                                 ? '1.5px solid rgba(96,165,250,0.7)'
                                 : '1.5px solid rgba(186,230,253,0.6)'
                             }
-                            emoji={filter.emoji}
+                            iconNode={filter.icon}
                             title={filter.name}
                             subtitle={filter.description}
                             priceContent={
@@ -749,7 +746,7 @@ export function ShopModal({
                                   className="flex items-center gap-1 text-[11px] font-black px-3 py-1.5 rounded-xl"
                                   style={{ background: 'linear-gradient(135deg, #4ade80, #16a34a)', color: '#fff', boxShadow: '0 3px 10px rgba(74,222,128,0.4)' }}
                                 >
-                                  ✓ Equipped
+                                  Equipped
                                 </div>
                               ) : isOwned ? (
                                 <div
@@ -794,7 +791,7 @@ export function ShopModal({
                           disabled={!canAffordOpals(treatment.opals)}
                           cardBg="linear-gradient(135deg, rgba(255,255,255,0.88) 0%, rgba(240,253,250,0.85) 100%)"
                           cardBorder="1.5px solid rgba(167,243,208,0.6)"
-                          emoji={treatment.emoji}
+                          iconNode={treatment.icon}
                           title={treatment.name}
                           subtitle={treatment.description}
                           priceContent={
@@ -820,7 +817,7 @@ export function ShopModal({
                     transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
                   >
                     <p className="text-[10px] text-teal-500/70 font-medium">
-                      🌿 Keep shrimp stocked for a naturally cleaner tank!
+                      Keep shrimp stocked for a naturally cleaner tank!
                     </p>
                   </motion.div>
                 </motion.div>
@@ -873,8 +870,8 @@ export function ShopModal({
                 onClick={e => e.stopPropagation()}
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0 shadow-sm" style={{ background: 'rgba(255,255,255,0.7)' }}>
-                    {f.emoji}
+                  <div className="w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-sm" style={{ background: 'rgba(255,255,255,0.7)' }}>
+                    {f.icon}
                   </div>
                   <div className="flex-1 min-w-0">
                     <h4 className="font-black tracking-tight text-[1rem]" style={{ background: 'linear-gradient(135deg, #0284c7, #1d4ed8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
@@ -966,31 +963,31 @@ export function ShopModal({
         {infoModal && (() => {
           const INFO = {
             shrimp: {
-              emoji: '🦐',
+              iconNode: <span className="text-pink-400 font-bold text-xl">~</span>,
               title: 'Ghost Shrimp',
               color: 'linear-gradient(135deg, #db2777, #be123c)',
               bg: 'linear-gradient(160deg, #fff1f2 0%, #fce7f3 100%)',
               border: 'rgba(251,207,232,0.7)',
               body: 'Ghost Shrimp are tiny tank cleaners that munch on algae and leftover food, keeping your aquarium sparkling. The more shrimp you have, the faster your tank stays clean — reducing how quickly the Clean stat drops over time.',
-              tip: '💡 A big colony means less frequent scrubbing!',
+              tip: 'A big colony means less frequent scrubbing!',
             },
             filters: {
-              emoji: '⚙️',
+              iconNode: <Settings size={20} />,
               title: 'Filters',
               color: 'linear-gradient(135deg, #0284c7, #1d4ed8)',
               bg: 'linear-gradient(160deg, #f0f9ff 0%, #e0f2fe 100%)',
               border: 'rgba(186,230,253,0.7)',
               body: 'Filters cycle water through a purification system, slowing the rate at which your Water Quality stat decays. Higher-tier filters keep the water cleaner for longer, so you can go more time between water changes.',
-              tip: '💡 Upgrade your filter to spend less time on maintenance!',
+              tip: 'Upgrade your filter to spend less time on maintenance!',
             },
             treatments: {
-              emoji: '🧪',
+              iconNode: <Droplets size={20} />,
               title: 'Treatments',
               color: 'linear-gradient(135deg, #059669, #0f766e)',
               bg: 'linear-gradient(160deg, #f0fdf4 0%, #ccfbf1 100%)',
               border: 'rgba(167,243,208,0.7)',
               body: 'Treatments are one-time-use boosts that instantly restore your Water Quality stat. Use a Water Treatment for a solid top-up, or break out the Miracle Treatment when things have gotten seriously murky and you need a full reset.',
-              tip: '💡 Keep a Miracle Treatment in reserve for emergencies!',
+              tip: 'Keep a Miracle Treatment in reserve for emergencies!',
             },
           }[infoModal];
 
@@ -1016,8 +1013,8 @@ export function ShopModal({
                 onClick={e => e.stopPropagation()}
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0 shadow-sm" style={{ background: 'rgba(255,255,255,0.7)' }}>
-                    {INFO.emoji}
+                  <div className="w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-sm" style={{ background: 'rgba(255,255,255,0.7)' }}>
+                    {INFO.iconNode}
                   </div>
                   <h4
                     className="font-black tracking-tight"
@@ -1076,7 +1073,7 @@ export function ShopModal({
             >
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0 shadow-sm" style={{ background: 'rgba(255,255,255,0.7)' }}>
-                  {pendingTreatment.emoji}
+                  {pendingTreatment.icon}
                 </div>
                 <div className="flex-1 min-w-0">
                   <h4 className="font-black tracking-tight text-[1rem]" style={{ background: 'linear-gradient(135deg, #059669, #0f766e)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
@@ -1149,8 +1146,8 @@ export function ShopModal({
               onClick={e => e.stopPropagation()}
             >
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0 shadow-sm" style={{ background: 'rgba(255,255,255,0.7)' }}>
-                  🦐
+                <div className="w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-sm" style={{ background: 'rgba(255,255,255,0.7)' }}>
+                  <span className="text-pink-400 font-bold text-xl">~</span>
                 </div>
                 <div className="flex-1 min-w-0">
                   <h4 className="font-black tracking-tight text-[1rem]" style={{ background: 'linear-gradient(135deg, #db2777, #be123c)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>

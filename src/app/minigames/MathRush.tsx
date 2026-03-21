@@ -6,25 +6,28 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import React from 'react';
 import { motion } from 'motion/react';
 import { GameWrapper } from './GameWrapper';
 import { MiniGameProps } from './types';
 import { calculateRewards } from './config';
+import { Droplets, Gem, Zap, Star, Trophy, Gamepad2, Rocket, Target } from 'lucide-react';
+import { CoinIcon, OpalIcon } from '../components/icons';
 
 const INITIAL_TIMER = 10; // seconds per question
 
-const THEMES = [
-  { emoji: '🦐', name: 'ghost shrimp' },
-  { emoji: '🐚', name: 'shells' },
-  { emoji: '💎', name: 'gems' },
-  { emoji: '🫧', name: 'bubbles' },
+const THEMES: Array<{ icon: React.ReactNode; name: string }> = [
+  { icon: <Droplets className="w-10 h-10 text-sky-400" />, name: 'ghost shrimp' },
+  { icon: <Gem className="w-10 h-10 text-violet-400" />, name: 'shells' },
+  { icon: <Gem className="w-10 h-10 text-cyan-400" />, name: 'gems' },
+  { icon: <Zap className="w-10 h-10 text-amber-400" />, name: 'bubbles' },
 ];
 
 interface Question {
   question: string;
   answer: number;
   options: number[];
-  themeEmoji: string;
+  themeIcon: React.ReactNode;
 }
 
 // Perfect squares for square-root questions (Q33+)
@@ -104,7 +107,7 @@ function generateQuestion(questionCount: number): Question {
     [options[i], options[j]] = [options[j], options[i]];
   }
 
-  return { question: questionText, answer, options, themeEmoji: theme.emoji };
+  return { question: questionText, answer, options, themeIcon: theme.icon };
 }
 
 export function MathRush({ onEnd, onDeductEnergy, onApplyReward, energy }: MiniGameProps) {
@@ -217,7 +220,7 @@ export function MathRush({ onEnd, onDeductEnergy, onApplyReward, energy }: MiniG
 
     if (answer === currentQuestion.answer) {
       // Correct!
-      setFeedback({ text: '✓ Correct!', type: 'correct' });
+      setFeedback({ text: 'Correct!', type: 'correct' });
       setScore(prev => prev + 1);
       setTimeout(() => {
         if (isPlaying) { // Only load next if still playing
@@ -226,7 +229,7 @@ export function MathRush({ onEnd, onDeductEnergy, onApplyReward, energy }: MiniG
       }, 500);
     } else {
       // Wrong answer - end game
-      setFeedback({ text: '✗ Wrong!', type: 'wrong' });
+      setFeedback({ text: 'Wrong!', type: 'wrong' });
       setTimeout(() => {
         endGame();
       }, 800);
@@ -281,20 +284,20 @@ export function MathRush({ onEnd, onDeductEnergy, onApplyReward, energy }: MiniG
                           rotate: [0, 5, -5, 0]
                         }}
                         transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-                        className="text-6xl mb-4"
+                        className="flex justify-center mb-4"
                       >
-                        🔢
+                        <Target className="w-16 h-16 text-purple-500" />
                       </motion.div>
                       <h2 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-indigo-600 mb-4">
                         Math Rush
                       </h2>
                       <div className="space-y-2 text-purple-700 text-sm font-medium">
                         <p className="flex items-center justify-center gap-2">
-                          <span className="text-lg">🦐</span>
+                          <Droplets className="w-5 h-5 text-sky-400" />
                           Solve equations before time runs out!
                         </p>
                         <p className="flex items-center justify-center gap-2">
-                          <span className="text-lg">⚡</span>
+                          <Zap className="w-5 h-5 text-amber-400" />
                           Timer speeds up as you go!
                         </p>
                         <div className="bg-purple-100/70 rounded-xl px-3 py-2 text-left text-xs space-y-0.5 mt-1">
@@ -302,7 +305,7 @@ export function MathRush({ onEnd, onDeductEnergy, onApplyReward, energy }: MiniG
                           <p>Q5–12: <span className="font-bold">+ Subtraction</span></p>
                           <p>Q13–24: <span className="font-bold">+ Multiplication</span></p>
                           <p>Q25–32: <span className="font-bold">+ Division</span></p>
-                          <p>Q33+: <span className="font-bold">+ Square Roots 🌟</span></p>
+                          <p>Q33+: <span className="font-bold">+ Square Roots</span></p>
                         </div>
                       </div>
                     </div>
@@ -314,7 +317,7 @@ export function MathRush({ onEnd, onDeductEnergy, onApplyReward, energy }: MiniG
                     >
                       <span className="relative z-10 flex items-center justify-center gap-2">
                         <span>Start Game</span>
-                        <span className="text-xl">🚀</span>
+                        <Rocket className="w-5 h-5" />
                       </span>
                       <motion.div
                         className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
@@ -326,8 +329,8 @@ export function MathRush({ onEnd, onDeductEnergy, onApplyReward, energy }: MiniG
                 ) : gameEnded && finalRewards ? (
                   <>
                     <div className="text-center mb-6">
-                      <div className="text-6xl mb-4">
-                        {score >= 15 ? '✨' : score >= 8 ? '🎉' : '🎮'}
+                      <div className="flex justify-center mb-4">
+                        {score >= 15 ? <Star className="w-16 h-16 text-amber-400" /> : score >= 8 ? <Trophy className="w-16 h-16 text-yellow-500" /> : <Gamepad2 className="w-16 h-16 text-purple-400" />}
                       </div>
                       <h2 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-indigo-600 mb-4">
                         Game Over!
@@ -336,7 +339,7 @@ export function MathRush({ onEnd, onDeductEnergy, onApplyReward, energy }: MiniG
                         {score} correct {score === 1 ? 'answer' : 'answers'}
                       </p>
                       <p className="text-purple-600 text-center mb-4 text-sm font-medium">
-                        {score >= 15 ? '🌟 Exceptional performance!' : score >= 8 ? '🎯 Good job!' : '💪 Keep practicing!'}
+                        {score >= 15 ? 'Exceptional performance!' : score >= 8 ? 'Good job!' : 'Keep practicing!'}
                       </p>
                       
                       {/* Rewards display - only show if energy was used */}
@@ -345,16 +348,16 @@ export function MathRush({ onEnd, onDeductEnergy, onApplyReward, energy }: MiniG
                           <p className="text-purple-700 font-bold text-lg mb-2">Rewards:</p>
                           <div className="flex flex-col gap-2 text-purple-800">
                             <div className="flex items-center justify-center gap-2">
-                              <span className="text-xl">⭐</span>
+                              <Star className="w-5 h-5 text-yellow-400" />
                               <span className="font-semibold">+{finalRewards.xp} XP</span>
                             </div>
                             <div className="flex items-center justify-center gap-2">
-                              <span className="text-xl">💰</span>
+                              <CoinIcon size={20} />
                               <span className="font-semibold">+{finalRewards.coins} Coins</span>
                             </div>
                             {finalRewards.opals && (
                               <div className="flex items-center justify-center gap-2">
-                                <span className="text-xl">🪬</span>
+                                <OpalIcon size={20} />
                                 <span className="font-semibold">+{finalRewards.opals} Opals</span>
                               </div>
                             )}
@@ -459,7 +462,7 @@ export function MathRush({ onEnd, onDeductEnergy, onApplyReward, energy }: MiniG
             className="bg-white/90 backdrop-blur-sm rounded-3xl p-8 mb-6 shadow-2xl border-4 border-purple-300 max-w-md w-full"
           >
             <div className="text-center mb-6">
-              <p className="text-5xl mb-4">{currentQuestion.themeEmoji}</p>
+              <div className="flex justify-center mb-4">{currentQuestion.themeIcon}</div>
               <p className="text-3xl font-bold text-purple-800 mb-2">
                 {currentQuestion.question}
               </p>

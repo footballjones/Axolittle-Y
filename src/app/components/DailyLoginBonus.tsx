@@ -4,7 +4,8 @@
  */
 
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Sparkles, ShieldCheck } from 'lucide-react';
+import { X, Sparkles, ShieldCheck, Gift, Check, Target } from 'lucide-react';
+import { CoinIcon, OpalIcon } from './icons';
 import { GAME_CONFIG } from '../config/game';
 import {
   canClaimDailyLogin,
@@ -109,7 +110,7 @@ export function DailyLoginBonus({
                 </button>
 
                 <div className="text-center">
-                  <div className="text-5xl mb-3">🎁</div>
+                  <div className="flex justify-center mb-3"><Gift className="w-12 h-12 text-violet-500" /></div>
                   <h2 className="text-2xl font-bold text-violet-800 mb-1">
                     Daily Login Bonus
                   </h2>
@@ -156,7 +157,7 @@ export function DailyLoginBonus({
                     className="bg-white/90 backdrop-blur-sm rounded-2xl p-4 mb-4 border-2 border-amber-300"
                   >
                     <div className="text-center">
-                      <div className="text-4xl mb-2">🪙</div>
+                      <div className="flex justify-center mb-2"><CoinIcon size={36} /></div>
                       <p className="text-lg font-bold text-amber-800">
                         {GAME_CONFIG.dailyLoginCoinBonus} Coins
                       </p>
@@ -222,22 +223,22 @@ export function DailyLoginBonus({
                         >
                           <div className="flex items-center gap-2">
                             {isReached ? (
-                              <span className="text-lg">✅</span>
+                              <Check className="w-5 h-5 text-emerald-500" />
                             ) : (
-                              <span className="text-lg">🎯</span>
+                              <Target className="w-5 h-5 text-gray-400" />
                             )}
                             <span className={`text-xs font-bold ${isReached ? 'text-violet-700' : 'text-gray-600'}`}>
                               Day {milestoneDays}
                             </span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <span className="text-[10px] font-bold text-amber-600">
-                              +{reward.coins} 🪙
+                            <span className="text-[10px] font-bold text-amber-600 inline-flex items-center gap-0.5">
+                              +{reward.coins} <CoinIcon size={10} />
                             </span>
                             <div className="flex items-center gap-0.5">
                               <Sparkles className="w-3 h-3 text-violet-500" />
-                              <span className="text-[10px] font-bold text-violet-700">
-                                +{reward.opals} 🪬
+                              <span className="text-[10px] font-bold text-violet-700 inline-flex items-center gap-0.5">
+                                +{reward.opals} <OpalIcon size={10} />
                               </span>
                             </div>
                           </div>
@@ -255,7 +256,7 @@ export function DailyLoginBonus({
                     className="bg-gradient-to-r from-purple-100 to-pink-100 rounded-2xl p-4 mb-4 border-2 border-purple-300"
                   >
                     <div className="text-center">
-                      <div className="text-4xl mb-2">🎉</div>
+                      <div className="flex justify-center mb-2"><Sparkles className="w-10 h-10 text-purple-500" /></div>
                       <p className="text-sm font-bold text-purple-800 mb-1">
                         Streak Milestone Reached!
                       </p>
@@ -284,7 +285,7 @@ export function DailyLoginBonus({
 
                 {!canClaim && (
                   <p className="text-center text-xs text-violet-500 mt-2">
-                    Come back tomorrow for another bonus! 🌅
+                    Come back tomorrow for another bonus!
                   </p>
                 )}
               </div>

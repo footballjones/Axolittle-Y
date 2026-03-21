@@ -1,7 +1,8 @@
-import { useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ChevronDown, X, Lock } from 'lucide-react';
+import { ChevronDown, X, Lock, Flame, Sparkles, Gem, Egg as EggIcon, Droplets, Zap, Waves, AlertTriangle, Lightbulb, Check, Clock, Package, Gift, Trash2 } from 'lucide-react';
 import { Egg, Axolotl } from '../types/game';
+import { OpalIcon } from './icons';
 import { GAME_CONFIG } from '../config/game';
 import { EggHatchModal } from './EggHatchModal';
 import { ReleaseAxolotlModal } from './ReleaseAxolotlModal';
@@ -13,7 +14,7 @@ interface DisplayEgg {
   generation: number;
   parentName: string;
   hatchesIn: string;
-  emoji: string;
+  icon: React.ReactNode;
   rarity: 'Common' | 'Rare' | 'Epic' | 'Legendary' | 'Mythic';
   rarityColor: string;
   rarityBorder: string;
@@ -55,7 +56,7 @@ function getRarityStyle(rarity: 'Common' | 'Rare' | 'Epic' | 'Legendary' | 'Myth
         rarityBorder: 'rgba(239,68,68,0.5)',
         rarityText: 'text-red-600',
         glowColor: 'rgba(248,113,113,0.65)',
-        emoji: '🔥',
+        icon: <Flame className="w-8 h-8 text-red-500" strokeWidth={1.5} />,
       };
     case 'Legendary':
       return {
@@ -63,7 +64,7 @@ function getRarityStyle(rarity: 'Common' | 'Rare' | 'Epic' | 'Legendary' | 'Myth
         rarityBorder: 'rgba(245,158,11,0.5)',
         rarityText: 'text-amber-600',
         glowColor: 'rgba(251,191,36,0.65)',
-        emoji: '✨',
+        icon: <Sparkles className="w-8 h-8 text-amber-400" strokeWidth={1.5} />,
       };
     case 'Epic':
       return {
@@ -71,7 +72,7 @@ function getRarityStyle(rarity: 'Common' | 'Rare' | 'Epic' | 'Legendary' | 'Myth
         rarityBorder: 'rgba(168,85,247,0.45)',
         rarityText: 'text-violet-600',
         glowColor: 'rgba(192,132,252,0.55)',
-        emoji: '💜',
+        icon: <Gem className="w-8 h-8 text-violet-500" strokeWidth={1.5} />,
       };
     case 'Rare':
       return {
@@ -79,7 +80,7 @@ function getRarityStyle(rarity: 'Common' | 'Rare' | 'Epic' | 'Legendary' | 'Myth
         rarityBorder: 'rgba(59,130,246,0.45)',
         rarityText: 'text-blue-600',
         glowColor: 'rgba(96,165,250,0.55)',
-        emoji: '🥚',
+        icon: <EggIcon className="w-8 h-8 text-blue-400" strokeWidth={1.5} />,
       };
     default: // Common
       return {
@@ -87,7 +88,7 @@ function getRarityStyle(rarity: 'Common' | 'Rare' | 'Epic' | 'Legendary' | 'Myth
         rarityBorder: 'rgba(255,255,255,0.38)',
         rarityText: 'text-white',
         glowColor: 'rgba(255,255,255,0.5)',
-        emoji: '🫧',
+        icon: <Droplets className="w-8 h-8 text-white/80" strokeWidth={1.5} />,
       };
   }
 }
@@ -219,7 +220,7 @@ export function EggsPanel({
             >
               <div className="w-full max-w-sm rounded-3xl overflow-hidden bg-gradient-to-br from-violet-100 via-purple-100 to-indigo-100 border-2 border-violet-300/60 shadow-2xl">
                 <div className="px-6 pt-6 pb-4 text-center">
-                  <div className="text-5xl mb-3">🌊</div>
+                  <div className="flex justify-center mb-3"><Waves className="w-12 h-12 text-violet-500" /></div>
                   <h2 className="text-2xl font-bold text-violet-800 mb-2">
                     Hatch This Egg?
                   </h2>
@@ -278,7 +279,7 @@ export function EggsPanel({
             >
               <div className="w-full max-w-sm rounded-3xl overflow-hidden bg-gradient-to-br from-red-100 via-orange-100 to-amber-100 border-2 border-red-300/60 shadow-2xl">
                 <div className="px-6 pt-6 pb-4 text-center">
-                  <div className="text-5xl mb-3">⚠️</div>
+                  <div className="flex justify-center mb-3"><AlertTriangle className="w-12 h-12 text-red-500" /></div>
                   <h2 className="text-2xl font-bold text-red-800 mb-2">
                     Are You Really Sure?
                   </h2>
@@ -437,7 +438,7 @@ export function EggsPanel({
             className="flex items-center gap-2 w-full px-4 py-2.5 active:bg-violet-100/40"
             onClick={() => setTipOpen(o => !o)}
           >
-            <span className="text-base flex-shrink-0">💡</span>
+            <Lightbulb className="w-4 h-4 flex-shrink-0 text-violet-500" />
             <span className="flex-1 text-left text-[11px] font-bold text-violet-700/80">Nursery Tips</span>
             <motion.div animate={{ rotate: tipOpen ? 180 : 0 }} transition={{ duration: 0.22 }}>
               <ChevronDown className="w-3.5 h-3.5 text-violet-400" strokeWidth={2.5} />
@@ -509,7 +510,7 @@ export function EggsPanel({
                 {/* Egg hero */}
                 <div className="flex flex-col items-center pt-1 pb-4">
                   <motion.div
-                    className="w-20 h-20 rounded-2xl flex items-center justify-center text-4xl mb-3 shadow-lg"
+                    className="w-20 h-20 rounded-2xl flex items-center justify-center mb-3 shadow-lg"
                     style={{
                       background: selectedEgg.rarityColor,
                       border: `2px solid ${selectedEgg.rarityBorder}`,
@@ -518,7 +519,7 @@ export function EggsPanel({
                     animate={{ rotate: [0, -5, 5, -3, 3, 0], scale: [1, 1.03, 1] }}
                     transition={{ duration: 3.5, repeat: Infinity, repeatDelay: 1.5, ease: 'easeInOut' }}
                   >
-                    {selectedEgg.emoji}
+                    {selectedEgg.icon}
                   </motion.div>
                   <div className="flex items-center gap-2">
                     <p className="text-slate-800 font-black text-base">{selectedEgg.name}</p>
@@ -545,7 +546,7 @@ export function EggsPanel({
                         : '1px solid rgba(203,213,225,0.5)',
                     }}
                   >
-                    <span className="text-sm">{selectedEgg.hatchesIn === 'Ready!' ? '✅' : '⏳'}</span>
+                    {selectedEgg.hatchesIn === 'Ready!' ? <Check className="w-4 h-4 text-emerald-500" /> : <Clock className="w-4 h-4 text-slate-400" />}
                     <span className={`text-[12px] font-bold ${selectedEgg.hatchesIn === 'Ready!' ? 'text-emerald-600' : 'text-slate-500'}`}>
                       {selectedEgg.hatchesIn === 'Ready!' ? 'Ready to hatch!' : `Hatches in ${selectedEgg.hatchesIn}`}
                     </span>
@@ -562,7 +563,7 @@ export function EggsPanel({
                     className="flex items-center gap-2.5 rounded-2xl px-3.5 py-2.5 mb-3"
                     style={{ background: 'rgba(254,243,199,0.85)', border: '1px solid rgba(245,158,11,0.4)' }}
                   >
-                    <span className="text-lg flex-shrink-0">⚠️</span>
+                    <AlertTriangle className="w-5 h-5 flex-shrink-0 text-amber-600" />
                     <p className="text-[11px] font-semibold text-amber-800 leading-snug">
                       This is your only egg and you have no axolotl. Hatch it to continue!
                     </p>
@@ -606,7 +607,7 @@ export function EggsPanel({
                       disabled={selectedEgg.hatchesIn !== 'Ready!'}
                     >
                       <div className="absolute inset-0 opacity-0 group-active:opacity-100 transition-opacity rounded-2xl" style={{ background: 'rgba(255,255,255,0.35)' }} />
-                      <span className="text-[1.6rem]">{selectedEgg.hatchesIn === 'Ready!' ? '🐣' : '👀'}</span>
+                      {selectedEgg.hatchesIn === 'Ready!' ? <EggIcon className="w-7 h-7 text-emerald-600" /> : <Clock className="w-7 h-7 text-slate-400" />}
                       <span className={`text-[10px] font-black tracking-wider uppercase ${
                         selectedEgg.hatchesIn === 'Ready!' ? 'text-emerald-700' : 'text-slate-500'
                       }`}>
@@ -635,7 +636,7 @@ export function EggsPanel({
                       disabled={!!incubatorEgg || !onMoveToIncubator}
                     >
                       <div className="absolute inset-0 opacity-0 group-active:opacity-100 transition-opacity rounded-2xl" style={{ background: 'rgba(255,255,255,0.35)' }} />
-                      <span className="text-[1.6rem]">📦</span>
+                      <Package className="w-7 h-7 text-violet-600" />
                       <span className={`text-[10px] font-black tracking-wider uppercase ${
                         !incubatorEgg ? 'text-violet-700' : 'text-slate-500'
                       }`}>
@@ -669,9 +670,9 @@ export function EggsPanel({
                     disabled={!onBoost || opals < GAME_CONFIG.eggBoostCost}
                   >
                     <div className="absolute inset-0 opacity-0 group-active:opacity-100 transition-opacity rounded-2xl" style={{ background: 'rgba(255,255,255,0.35)' }} />
-                    <span className="text-[1.6rem]">⚡</span>
+                    <Zap className={`w-6 h-6 ${opals >= GAME_CONFIG.eggBoostCost ? 'text-violet-500' : 'text-slate-400'}`} strokeWidth={2} />
                     <span className={`text-[10px] font-black tracking-wider uppercase ${opals >= GAME_CONFIG.eggBoostCost ? 'text-violet-700' : 'text-slate-500'}`}>Boost</span>
-                    <span className={`text-[9px] ${opals >= GAME_CONFIG.eggBoostCost ? 'text-violet-500' : 'text-slate-400'}`}>{GAME_CONFIG.eggBoostCost} 🪬 opals</span>
+                    <span className={`text-[9px] flex items-center gap-1 ${opals >= GAME_CONFIG.eggBoostCost ? 'text-violet-500' : 'text-slate-400'}`}>{GAME_CONFIG.eggBoostCost} <OpalIcon size={9} /> opals</span>
                   </motion.button>
 
                   {/* Gift */}
@@ -692,7 +693,7 @@ export function EggsPanel({
                     disabled={!onGift || isLastEggWithoutAxolotl}
                   >
                     <div className="absolute inset-0 opacity-0 group-active:opacity-100 transition-opacity rounded-2xl" style={{ background: 'rgba(255,255,255,0.35)' }} />
-                    <span className="text-[1.6rem]">{isLastEggWithoutAxolotl ? '🔒' : '🎁'}</span>
+                    {isLastEggWithoutAxolotl ? <Lock className="w-7 h-7 text-slate-400" /> : <Gift className="w-7 h-7 text-pink-500" />}
                     <span className={`text-[10px] font-black tracking-wider uppercase ${isLastEggWithoutAxolotl ? 'text-slate-400' : 'text-pink-700'}`}>Gift</span>
                     <span className={`text-[9px] ${isLastEggWithoutAxolotl ? 'text-slate-400' : 'text-pink-400'}`}>
                       {isLastEggWithoutAxolotl ? 'Hatch first' : 'Send to friend'}
@@ -717,7 +718,7 @@ export function EggsPanel({
                     disabled={!onDiscard || isLastEggWithoutAxolotl}
                   >
                     <div className="absolute inset-0 opacity-0 group-active:opacity-100 transition-opacity rounded-2xl" style={{ background: 'rgba(255,255,255,0.35)' }} />
-                    <span className="text-[1.6rem]">{isLastEggWithoutAxolotl ? '🔒' : '🗑️'}</span>
+                    {isLastEggWithoutAxolotl ? <Lock className="w-7 h-7 text-slate-400" /> : <Trash2 className="w-7 h-7 text-red-400" />}
                     <span className={`text-[10px] font-black tracking-wider uppercase ${isLastEggWithoutAxolotl ? 'text-slate-400' : 'text-red-500'}`}>Discard</span>
                     <span className={`text-[9px] ${isLastEggWithoutAxolotl ? 'text-slate-400' : 'text-red-300'}`}>
                       {isLastEggWithoutAxolotl ? 'Hatch first' : 'Cannot undo'}
@@ -740,7 +741,7 @@ export function EggsPanel({
             className="absolute bottom-5 left-1/2 -translate-x-1/2 whitespace-nowrap px-4 py-2 rounded-full z-40"
             style={{ background: 'linear-gradient(135deg, rgba(168,85,247,0.9), rgba(217,70,239,0.9))', boxShadow: '0 4px 20px rgba(168,85,247,0.35)' }}
           >
-            <span className="text-white text-[11px] font-bold">Not enough opals! 🪬</span>
+            <span className="text-white text-[11px] font-bold flex items-center gap-1">Not enough opals! <OpalIcon size={11} /></span>
           </motion.div>
         )}
       </AnimatePresence>
@@ -808,14 +809,14 @@ function EggSlot({ slotIndex, egg, onSelect, isIncubator = false }: { slotIndex:
           boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.05)',
         }}
       >
-        <span className={`${isIncubator ? 'text-[2rem]' : 'text-[1.4rem]'} opacity-70`}>🥚</span>
+        <EggIcon className={`${isIncubator ? 'w-8 h-8' : 'w-6 h-6'} text-violet-400/70`} strokeWidth={1.5} />
         <span className="text-[9px] text-violet-600/80 font-bold tracking-wider uppercase">Empty</span>
       </div>
     );
   }
 
   // Ensure egg has all required properties before rendering
-  if (!egg || !egg.rarityColor || !egg.rarityBorder || !egg.glowColor || !egg.emoji || !egg.rarity || !egg.rarityText) {
+  if (!egg || !egg.rarityColor || !egg.rarityBorder || !egg.glowColor || !egg.icon || !egg.rarity || !egg.rarityText) {
     return (
       <div
         className={`${slotSize} rounded-2xl flex flex-col items-center justify-center gap-1.5`}
@@ -825,7 +826,7 @@ function EggSlot({ slotIndex, egg, onSelect, isIncubator = false }: { slotIndex:
           boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.05)',
         }}
       >
-        <span className={`${isIncubator ? 'text-[2rem]' : 'text-[1.4rem]'} opacity-70`}>🥚</span>
+        <EggIcon className={`${isIncubator ? 'w-8 h-8' : 'w-6 h-6'} text-violet-400/70`} strokeWidth={1.5} />
         <span className="text-[9px] text-violet-600/80 font-bold tracking-wider uppercase">Error</span>
       </div>
     );
@@ -859,7 +860,7 @@ function EggSlot({ slotIndex, egg, onSelect, isIncubator = false }: { slotIndex:
 
       {/* Egg */}
       <motion.span
-        className={`${isIncubator ? 'text-[3rem]' : 'text-[2rem]'} leading-none relative z-10 drop-shadow-sm`}
+        className="relative z-10 drop-shadow-sm flex items-center justify-center"
         animate={
           isReady
             ? { scale: [1, 1.1, 1], rotate: [0, -6, 6, -4, 4, 0] }
@@ -872,7 +873,7 @@ function EggSlot({ slotIndex, egg, onSelect, isIncubator = false }: { slotIndex:
           ease: 'easeInOut',
         }}
       >
-        {egg.emoji}
+        {egg.icon}
       </motion.span>
 
       {/* Rarity label */}
@@ -919,7 +920,7 @@ function LockedSlot({ onUnlock }: { onUnlock: () => void }) {
         className="text-[8px] font-black text-violet-700/90 tracking-wide z-10 px-2 py-0.5 rounded-full"
         style={{ background: 'rgba(255,255,255,0.9)', border: '1px solid rgba(168,85,247,0.4)' }}
       >
-        10 🪬 unlock
+        10 <OpalIcon size={8} className="inline" /> unlock
       </span>
     </motion.button>
   );

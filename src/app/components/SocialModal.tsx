@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { X, Users, Copy, Check, ChevronDown, Heart, Waves, Plus } from 'lucide-react';
+import { X, Users, Copy, Check, ChevronDown, Heart, Waves, Plus, Leaf, Sparkles, ChevronRight, Gift, Trash2, BarChart2, Egg, Crown, Sprout, Dumbbell, Droplets, Clock, Fish } from 'lucide-react';
 import { Axolotl, Friend } from '../types/game';
 import { motion, AnimatePresence } from 'motion/react';
+import { CoinIcon } from './icons';
 
 interface GiftResult {
   coins: number;
@@ -174,7 +175,7 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
                       transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
                     />
                   )}
-                  <span className="relative z-10">{tab === 'friends' ? '🫧 Friends' : '🌿 Lineage'}</span>
+                  <span className="relative z-10">{tab === 'friends' ? 'Friends' : 'Lineage'}</span>
                 </motion.button>
               ))}
             </div>
@@ -268,14 +269,14 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
                                         boxShadow: '0 2px 10px rgba(56,189,248,0.2)',
                                       }}
                                     >
-                                      <span className="text-base">🦎</span>
+                                      <Dumbbell className="w-4 h-4 text-sky-400" strokeWidth={2} />
                                     </div>
                                     {/* Star badge */}
                                     <div
                                       className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full flex items-center justify-center"
-                                      style={{ background: 'linear-gradient(135deg, #f59e0b, #fbbf24)', border: '1.5px solid white', fontSize: 7 }}
+                                      style={{ background: 'linear-gradient(135deg, #f59e0b, #fbbf24)', border: '1.5px solid white' }}
                                     >
-                                      ⭐
+                                      <Sparkles className="w-2 h-2 text-amber-900" strokeWidth={2.5} />
                                     </div>
                                   </div>
 
@@ -285,7 +286,7 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
                                       Jimmy &amp; Chubs
                                     </div>
                                     <div className="text-[10px] font-semibold" style={{ color: 'rgba(139,92,246,0.8)' }}>
-                                      Preset Friend · Always here for you 💙
+                                      Preset Friend · Always here for you
                                     </div>
                                   </div>
 
@@ -299,7 +300,7 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
                                       border: '1px solid rgba(56,189,248,0.4)',
                                     }}
                                   >
-                                    <span className="text-base">🏊</span>
+                                    <Waves className="w-4 h-4 text-sky-500" strokeWidth={2} />
                                     <span className="text-[8px] font-black tracking-wide uppercase text-sky-500">Visit</span>
                                   </motion.button>
                                 </div>
@@ -351,7 +352,7 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
                                         boxShadow: '0 2px 10px rgba(139,92,246,0.18)',
                                       }}
                                     >
-                                      <span className="text-base">🦎</span>
+                                      <Users className="w-4 h-4 text-violet-400" strokeWidth={2} />
                                     </div>
                                     {/* Online dot */}
                                     <div
@@ -419,7 +420,7 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
                                           }}
                                           whileTap={{ scale: 0.9 }}
                                         >
-                                          <span className="text-[1.2rem]">🏊</span>
+                                          <Waves className="w-5 h-5 text-sky-500" strokeWidth={2} />
                                           <span className="text-[9px] font-black tracking-wide uppercase text-sky-600">Visit Aquarium</span>
                                         </motion.button>
                                         <motion.button
@@ -431,7 +432,7 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
                                           }}
                                           whileTap={{ scale: 0.9 }}
                                         >
-                                          <span className="text-[1.2rem]">📊</span>
+                                          <BarChart2 className="w-5 h-5 text-indigo-500" strokeWidth={2} />
                                           <span className="text-[9px] font-black tracking-wide uppercase text-indigo-600">View Stats</span>
                                         </motion.button>
                                       </div>
@@ -469,7 +470,7 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
                                               }}
                                               whileTap={pokeActive ? {} : { scale: 0.9 }}
                                             >
-                                              <span className="text-[1.2rem]">{justPokedThis ? '✨' : '👉'}</span>
+                                              {justPokedThis ? <Sparkles className="w-5 h-5 text-amber-500" strokeWidth={2} /> : <ChevronRight className="w-5 h-5 text-amber-500" strokeWidth={2} />}
                                               <span className="text-[9px] font-black tracking-wide uppercase text-amber-600" style={{ lineHeight: 1.2 }}>
                                                 {justPokedThis ? 'Poked!' : isPokeOnCooldown ? formatCooldown(pokeRemaining) : 'Poke'}
                                               </span>
@@ -487,7 +488,7 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
                                             cursor: 'not-allowed',
                                           }}
                                         >
-                                          <span className="text-[1.2rem] grayscale">🥚</span>
+                                          <Egg className="w-5 h-5 text-purple-400/60" strokeWidth={2} />
                                           <span className="text-[9px] font-black tracking-wide uppercase text-purple-400/60">Hatch Together</span>
                                           <span className="text-[7px] font-bold tracking-widest uppercase text-purple-300/50">Coming Soon</span>
                                         </div>
@@ -500,8 +501,8 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
                                         const justGiftedThis = justGifted[friend.id];
                                         const giftLabel = justGiftedThis
                                           ? justGiftedThis.opals > 0
-                                            ? `Sent ${justGiftedThis.opals} opals! 💜`
-                                            : `Sent ${justGiftedThis.coins} coins! 🪙`
+                                            ? `Sent ${justGiftedThis.opals} opals!`
+                                            : `Sent ${justGiftedThis.coins} coins!`
                                           : isGiftOnCooldown
                                             ? formatCooldown(giftRemaining)
                                             : null;
@@ -535,7 +536,7 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
                                             }}
                                             whileTap={justGiftedThis || isGiftOnCooldown ? {} : { scale: 0.95 }}
                                           >
-                                            <span className="text-[1rem]">{justGiftedThis || isGiftOnCooldown ? '✅' : '🎁'}</span>
+                                            {justGiftedThis || isGiftOnCooldown ? <Check className="w-4 h-4 text-green-600" strokeWidth={2.5} /> : <Gift className="w-4 h-4 text-violet-600" strokeWidth={2} />}
                                             <span
                                               className="text-[10px] font-black tracking-wide uppercase"
                                               style={{ color: justGiftedThis || isGiftOnCooldown ? '#16a34a' : '#6d28d9' }}
@@ -562,7 +563,7 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
                                         }}
                                         whileTap={{ scale: 0.95 }}
                                       >
-                                        <span className="text-[1rem]">🗑️</span>
+                                        <Trash2 className="w-4 h-4 text-red-500" strokeWidth={2} />
                                         <span className="text-[10px] font-black tracking-wide uppercase text-red-600">Remove Friend</span>
                                       </motion.button>
                                     </div>
@@ -586,7 +587,7 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
                     }}
                   >
                     <div className="flex items-center gap-1.5 mb-2">
-                      <span className="text-sm">🪬</span>
+                      <Droplets className="w-4 h-4 text-violet-500" />
                       <span className="text-violet-700 text-[11px] font-black tracking-wider uppercase">Your Code</span>
                     </div>
                     <div className="flex items-center gap-2">
@@ -648,7 +649,7 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
                           boxShadow: `0 4px 16px ${axolotl.color}44`,
                         }}
                       >
-                        🦎
+                        <Droplets className="w-7 h-7 text-teal-500" strokeWidth={2} />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
@@ -731,11 +732,11 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
                       animate={{ opacity: 1 }}
                     >
                       <motion.span
-                        className="text-4xl"
+                        className="text-4xl flex items-center justify-center"
                         animate={{ rotate: [0, -8, 8, -5, 5, 0] }}
                         transition={{ duration: 3, repeat: Infinity, repeatDelay: 1 }}
                       >
-                        🌿
+                        <Leaf className="w-10 h-10 text-violet-400/60" strokeWidth={1.5} />
                       </motion.span>
                       <p className="text-violet-400/80 text-[12px] font-medium text-center px-6">
                         No ancestors yet — this is your first generation!
@@ -791,7 +792,7 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
                 {/* Header */}
                 <div className="flex items-center justify-between mb-5">
                   <div>
-                    <div className="text-sky-200/70 text-[10px] font-bold tracking-widest uppercase mb-0.5">🏊 Visiting</div>
+                    <div className="text-sky-200/70 text-[10px] font-bold tracking-widest uppercase mb-0.5">Visiting</div>
                     <h3 className="text-white font-black text-lg leading-tight">{visitingFriend.name}'s Aquarium</h3>
                   </div>
                   <motion.button
@@ -844,15 +845,15 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
                     />
                   ))}
                   {/* Floor seaweed */}
-                  <div className="absolute bottom-2 left-4 text-2xl select-none" style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' }}>🌿</div>
-                  <div className="absolute bottom-2 right-6 text-xl select-none" style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' }}>🪸</div>
+                  <div className="absolute bottom-2 left-4 select-none" style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' }}><Leaf className="w-6 h-6 text-emerald-400/80" strokeWidth={1.5} /></div>
+                  <div className="absolute bottom-2 right-6 select-none" style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' }}><Waves className="w-5 h-5 text-cyan-400/70" strokeWidth={1.5} /></div>
                   {/* Axolotl */}
                   <motion.div
                     className="absolute inset-0 flex flex-col items-center justify-center gap-1"
                     animate={{ y: [-4, 4, -4] }}
                     transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut' }}
                   >
-                    <span className="text-5xl select-none" style={{ filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.4))' }}>🦎</span>
+                    <Droplets className="w-12 h-12 text-teal-300 select-none" strokeWidth={1.5} style={{ filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.4))' }} />
                     <div
                       className="text-white font-black text-[11px] px-2.5 py-0.5 rounded-full"
                       style={{ background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(255,255,255,0.2)' }}
@@ -865,16 +866,16 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
                 {/* Friend info pills */}
                 <div className="flex gap-2 flex-wrap">
                   {[
-                    { label: visitingFriend.axolotlName, icon: '🦎' },
-                    { label: `Gen ${visitingFriend.generation}`, icon: '🌿' },
-                    { label: visitingFriend.stage.charAt(0).toUpperCase() + visitingFriend.stage.slice(1), icon: '⭐' },
-                  ].map(({ label, icon }) => (
+                    { label: visitingFriend.axolotlName, iconEl: <Droplets className="w-3 h-3 text-teal-300" strokeWidth={2} /> },
+                    { label: `Gen ${visitingFriend.generation}`, iconEl: <Leaf className="w-3 h-3 text-emerald-300" strokeWidth={2} /> },
+                    { label: visitingFriend.stage.charAt(0).toUpperCase() + visitingFriend.stage.slice(1), iconEl: <Sparkles className="w-3 h-3 text-yellow-300" strokeWidth={2} /> },
+                  ].map(({ label, iconEl }) => (
                     <div
                       key={label}
                       className="flex items-center gap-1.5 px-2.5 py-1 rounded-full"
                       style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.18)' }}
                     >
-                      <span className="text-[10px]">{icon}</span>
+                      {iconEl}
                       <span className="text-white/80 text-[10px] font-bold capitalize">{label}</span>
                     </div>
                   ))}
@@ -920,7 +921,7 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
                 }} />
                 <div className="relative flex items-center justify-between">
                   <div>
-                    <div className="text-violet-200/70 text-[10px] font-bold tracking-widest uppercase mb-0.5">📊 Profile</div>
+                    <div className="text-violet-200/70 text-[10px] font-bold tracking-widest uppercase mb-0.5">Profile</div>
                     <h3 className="text-white font-black text-lg leading-tight">{viewingStatsFriend.name}</h3>
                   </div>
                   <motion.button
@@ -945,7 +946,7 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
                     className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl flex-shrink-0"
                     style={{ background: 'linear-gradient(135deg, rgba(216,180,254,0.5), rgba(167,139,250,0.4))', border: '1.5px solid rgba(167,139,250,0.4)' }}
                   >
-                    🦎
+                    <Droplets className="w-6 h-6 text-violet-500" strokeWidth={2} />
                   </div>
                   <div>
                     <div className="text-violet-900 font-black text-sm">{viewingStatsFriend.axolotlName}</div>
@@ -980,7 +981,12 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
                         {stages.map((s, i) => {
                           const isActive = i === currentIdx;
                           const isPast = i < currentIdx;
-                          const stageEmojis = ['🥚', '🌱', '🦎', '👑'];
+                          const stageIcons = [
+                            <Egg key="egg" className="w-3.5 h-3.5" strokeWidth={2} />,
+                            <Sprout key="sprout" className="w-3.5 h-3.5" strokeWidth={2} />,
+                            <Droplets key="guardian" className="w-3.5 h-3.5" strokeWidth={2} />,
+                            <Crown key="elder" className="w-3.5 h-3.5" strokeWidth={2} />,
+                          ];
                           return (
                             <div key={s} className="flex-1 flex flex-col items-center gap-1">
                               <div
@@ -991,7 +997,7 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
                                     : 'rgba(216,180,254,0.3)',
                                 }}
                               />
-                              <span className="text-[14px]">{stageEmojis[i]}</span>
+                              <span style={{ color: isActive ? '#6d28d9' : isPast ? '#a78bfa' : 'rgba(139,92,246,0.35)' }}>{stageIcons[i]}</span>
                               <span
                                 className="text-[8px] font-bold capitalize"
                                 style={{ color: isActive ? '#6d28d9' : isPast ? '#a78bfa' : 'rgba(139,92,246,0.35)' }}
@@ -1011,7 +1017,7 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
                   className="rounded-2xl p-3 flex items-center gap-3"
                   style={{ background: 'rgba(255,255,255,0.65)', border: '1px solid rgba(216,180,254,0.4)' }}
                 >
-                  <span className="text-lg">🕐</span>
+                  <Clock className="w-5 h-5 text-violet-400" />
                   <div>
                     <div className="text-[10px] font-black text-violet-500/80 tracking-widest uppercase">Last Active</div>
                     <div className="text-violet-800 font-bold text-xs mt-0.5">
@@ -1061,7 +1067,7 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
               >
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
-                    <span className="text-lg">🐠</span>
+                    <Fish className="w-5 h-5 text-sky-500" />
                     <span className="text-sky-700 text-sm font-black tracking-wider uppercase">Add Friend</span>
                   </div>
                   <motion.button

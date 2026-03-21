@@ -11,6 +11,7 @@
 import { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
+import { GameIcon } from './icons';
 
 interface MenuTutorialOverlayProps {
   /** Whether the hamburger menu is currently open */
@@ -21,22 +22,22 @@ interface MenuTutorialOverlayProps {
   onComplete: () => void;
 }
 
-// Each step: CSS selector (queried inside the menu) + emoji + title + description
+// Each step: CSS selector (queried inside the menu) + icon (Lucide name) + title + description
 const MENU_STEPS: Array<{
   selector: string;
-  emoji: string;
+  icon: string;
   title: string;
   desc: string;
 }> = [
-  { selector: '[data-menu-id="notifications"]', emoji: '🔔', title: 'Notifications', desc: 'Check alerts and updates about your axolotl here.' },
-  { selector: '[data-menu-id="wheel-spin"]',    emoji: '🎰', title: 'Wheel Spin',    desc: 'Spin daily for free coins or opals!' },
-  { selector: '[data-menu-id="daily-bonus"]',   emoji: '🎁', title: 'Daily Bonus',   desc: 'Log in every day to earn streak rewards.' },
-  { selector: '[data-menu-id="stats"]',         emoji: '📊', title: 'Stats',         desc: 'View and assign stat points to make your axolotl stronger.' },
-  { selector: '[data-menu-id="eggs"]',          emoji: '🥚', title: 'Eggs',          desc: 'Manage your eggs and hatch new axolotls.' },
-  { selector: '[data-menu-id="social"]',        emoji: '👥', title: 'Social',        desc: 'Add friends and visit their aquariums.' },
-  { selector: '[data-menu-id="inventory"]',     emoji: '🎒', title: 'Inventory',     desc: 'Use items like shrimp and water treatments.' },
-  { selector: '[data-menu-id="how-to-play"]',   emoji: '💡', title: 'How to Play',   desc: 'Tips and guides for taking care of your axolotl.' },
-  { selector: '[data-menu-id="achievements"]',  emoji: '🏆', title: 'Achievements',  desc: 'Track your progress and earn badges.' },
+  { selector: '[data-menu-id="notifications"]', icon: 'Bell',       title: 'Notifications', desc: 'Check alerts and updates about your axolotl here.' },
+  { selector: '[data-menu-id="wheel-spin"]',    icon: 'Dices',      title: 'Wheel Spin',    desc: 'Spin daily for free coins or opals!' },
+  { selector: '[data-menu-id="daily-bonus"]',   icon: 'Gift',       title: 'Daily Bonus',   desc: 'Log in every day to earn streak rewards.' },
+  { selector: '[data-menu-id="stats"]',         icon: 'BarChart2',  title: 'Stats',         desc: 'View and assign stat points to make your axolotl stronger.' },
+  { selector: '[data-menu-id="eggs"]',          icon: 'Egg',        title: 'Eggs',          desc: 'Manage your eggs and hatch new axolotls.' },
+  { selector: '[data-menu-id="social"]',        icon: 'Users',      title: 'Social',        desc: 'Add friends and visit their aquariums.' },
+  { selector: '[data-menu-id="inventory"]',     icon: 'Backpack',   title: 'Inventory',     desc: 'Use items like shrimp and water treatments.' },
+  { selector: '[data-menu-id="how-to-play"]',   icon: 'HelpCircle', title: 'How to Play',   desc: 'Tips and guides for taking care of your axolotl.' },
+  { selector: '[data-menu-id="achievements"]',  icon: 'Trophy',     title: 'Achievements',  desc: 'Track your progress and earn badges.' },
 ];
 
 export function MenuTutorialOverlay({ menuOpen, onOpenMenu, onComplete }: MenuTutorialOverlayProps) {
@@ -212,7 +213,7 @@ export function MenuTutorialOverlay({ menuOpen, onOpenMenu, onComplete }: MenuTu
               </>
             ) : currentStep && (
               <>
-                <div className="text-2xl mb-1">{currentStep.emoji}</div>
+                <div className="flex justify-center mb-1 text-indigo-500"><GameIcon name={currentStep.icon} size={24} /></div>
                 <p className="text-sm font-black text-slate-800 mb-1">{currentStep.title}</p>
                 <p className="text-xs text-slate-500 leading-relaxed mb-3">{currentStep.desc}</p>
                 <div className="flex items-center justify-between">

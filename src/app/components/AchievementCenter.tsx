@@ -3,6 +3,7 @@ import { Trophy, Lock, Check } from 'lucide-react';
 import { ALL_ACHIEVEMENTS } from '../data/achievements';
 import { ACHIEVEMENT_CATEGORIES } from '../types/achievements';
 import type { GameState } from '../types/game';
+import { GameIcon, CoinIcon, OpalIcon } from './icons';
 
 interface AchievementCenterProps {
   gameState: GameState;
@@ -87,7 +88,7 @@ export function AchievementCenter({ gameState, onClaim }: AchievementCenterProps
             {/* Category header */}
             <div className="flex items-center gap-2 mb-2.5 px-1">
               <div className={`bg-gradient-to-br ${colors.bg} rounded-lg p-1.5 shadow-md`}>
-                <span className="text-sm leading-none">{cat.emoji}</span>
+                <GameIcon name={cat.icon} size={14} className="text-white" />
               </div>
               <h3 className="text-sm font-bold text-white/90 drop-shadow-sm">{cat.label}</h3>
               <span className="ml-auto text-[10px] font-semibold text-white/50">
@@ -117,11 +118,11 @@ export function AchievementCenter({ gameState, onClaim }: AchievementCenterProps
                           : 'bg-white/[0.05] border-white/10'
                       }`}
                     >
-                      {/* Emoji badge */}
-                      <div className={`shrink-0 w-10 h-10 rounded-xl flex items-center justify-center text-xl shadow-inner transition-all ${
+                      {/* Icon badge */}
+                      <div className={`shrink-0 w-10 h-10 rounded-xl flex items-center justify-center shadow-inner transition-all ${
                         isUnlocked ? colors.icon : 'bg-white/5'
                       } ${isUnlocked ? '' : 'grayscale opacity-40'}`}>
-                        {achievement.emoji}
+                        <GameIcon name={achievement.icon} size={20} />
                       </div>
 
                       {/* Text */}
@@ -133,11 +134,9 @@ export function AchievementCenter({ gameState, onClaim }: AchievementCenterProps
                           {achievement.description}
                         </p>
                         {!isUnlocked && hasReward && (
-                          <p className="text-[10px] font-bold text-white/25 mt-0.5">
-                            {[
-                              achievement.coinReward ? `${achievement.coinReward}🪙` : '',
-                              achievement.opalReward ? `${achievement.opalReward}🪬` : '',
-                            ].filter(Boolean).join('  ')}
+                          <p className="text-[10px] font-bold text-white/25 mt-0.5 flex items-center gap-1.5">
+                            {achievement.coinReward ? <><span>{achievement.coinReward}</span><CoinIcon size={10} /></> : null}
+                            {achievement.opalReward ? <><span>{achievement.opalReward}</span><OpalIcon size={10} /></> : null}
                           </p>
                         )}
                       </div>
@@ -150,11 +149,9 @@ export function AchievementCenter({ gameState, onClaim }: AchievementCenterProps
                           className="shrink-0 rounded-xl px-2.5 py-1.5 bg-amber-400 shadow-md shadow-amber-400/30 flex flex-col items-center"
                         >
                           <span className="text-[10px] font-black text-amber-900 leading-none">CLAIM</span>
-                          <span className="text-[9px] font-bold text-amber-800 leading-none mt-0.5">
-                            {[
-                              achievement.coinReward ? `${achievement.coinReward}🪙` : '',
-                              achievement.opalReward ? `${achievement.opalReward}🪬` : '',
-                            ].filter(Boolean).join(' ')}
+                          <span className="text-[9px] font-bold text-amber-800 leading-none mt-0.5 flex items-center gap-1">
+                            {achievement.coinReward ? <><span>{achievement.coinReward}</span><CoinIcon size={9} /></> : null}
+                            {achievement.opalReward ? <><span>{achievement.opalReward}</span><OpalIcon size={9} /></> : null}
                           </span>
                         </motion.button>
                       ) : isPending ? (

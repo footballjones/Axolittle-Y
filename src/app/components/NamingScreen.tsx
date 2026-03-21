@@ -106,7 +106,7 @@ export function NamingScreen({ onComplete }: Props) {
           style={{ background: 'linear-gradient(135deg, #7c3aed, #5b21b6)' }}
           whileTap={{ scale: 0.97 }}
         >
-          Let's Go! 🎉
+          Let's Go!
         </motion.button>
       </motion.div>
     </div>

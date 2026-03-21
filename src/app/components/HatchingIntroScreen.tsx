@@ -304,7 +304,7 @@ export function HatchingIntroScreen({ onComplete }: Props) {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 1.1, duration: 0.45 }}
             >
-              <p className="text-white font-black text-2xl drop-shadow-lg">✨ It hatched! ✨</p>
+              <p className="text-white font-black text-2xl drop-shadow-lg">It hatched!</p>
             </motion.div>
           </motion.div>
         )}
@@ -370,7 +370,7 @@ export function HatchingIntroScreen({ onComplete }: Props) {
                 style={{ background: 'linear-gradient(135deg, #7c3aed, #5b21b6)' }}
                 whileTap={{ scale: 0.97 }}
               >
-                Let's Go! 🎉
+                Let's Go!
               </motion.button>
             </motion.div>
           </motion.div>
