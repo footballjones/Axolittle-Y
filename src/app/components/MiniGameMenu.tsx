@@ -1,6 +1,6 @@
 import { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { User, Users, Info, Zap, Lock, Circle, Hash, Layers, Gem, Code, Fish } from 'lucide-react';
+import { User, Users, Info, Zap, Lock, Circle, Hash, Layers, Gem, Fingerprint, Fish } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { GAME_CONFIG } from '../config/game';
 import { CoinIcon } from './icons';
@@ -117,9 +117,8 @@ function GameTile({ game, index, delayOffset = 0, expandedId, onToggleInfo, onSe
             ) : game.id === 'coral-code' ? (
               <motion.span
                 className="inline-flex"
-                style={{ transformOrigin: 'bottom center' }}
-                animate={{ rotate: [-5, 5, -5] }}
-                transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
+                animate={{ opacity: [1, 0.3, 1], scale: [1, 1.08, 1] }}
+                transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
               >
                 {game.iconNode}
               </motion.span>
@@ -330,8 +329,8 @@ export function MiniGameMenu({ onClose: _onClose, onSelectGame, energy = 10, max
     {
       id: 'coral-code',
       name: 'Coral Code',
-      iconNode: <Code size={24} className="text-white" />,
-      color: 'from-purple-500 to-violet-600',
+      iconNode: <Fingerprint size={24} className="text-white" />,
+      color: 'from-slate-700 to-gray-900',
       description: 'Crack the code',
       coins: '20-45',
     },
