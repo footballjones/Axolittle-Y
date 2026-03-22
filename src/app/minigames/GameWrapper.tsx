@@ -31,7 +31,7 @@ export function GameWrapper({
   return (
     <div className="fixed inset-0 bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 z-50 flex flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 pt-4 pb-2 flex-shrink-0">
+      <div className="flex items-center justify-between px-4 pb-2 flex-shrink-0" style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))' }}>
         <div className="flex items-center gap-3">
           {/* X only shown during active play — result screen has its own exit buttons */}
           {!gameEnded && (
