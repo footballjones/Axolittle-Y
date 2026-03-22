@@ -36,9 +36,65 @@ interface CurrentBlock {
 }
 
 const COLORS = [
-  '#E8A0BF', '#A0D2DB', '#C5A3CF', '#F7C59F', '#B5EAD7',
-  '#FFB7B2', '#B5B9FF', '#FFDAC1', '#E2F0CB', '#C7CEEA',
+  '#FF3366', // hot pink
+  '#FF6B00', // vivid orange
+  '#FFD600', // bright yellow
+  '#00C853', // electric green
+  '#00B0FF', // vivid blue
+  '#D500F9', // electric purple
+  '#FF4081', // rose pink
+  '#00E5FF', // cyan
+  '#76FF03', // lime
+  '#FF6D00', // deep orange
 ];
+
+/** Draw a single tile with bold outline, shadow, and highlight */
+function drawTile(
+  ctx: CanvasRenderingContext2D,
+  x: number, y: number, w: number, h: number,
+  color: string,
+  alpha = 1,
+) {
+  ctx.save();
+  ctx.globalAlpha = alpha;
+
+  // Drop shadow so tile floats above background
+  ctx.shadowColor = 'rgba(0,0,0,0.55)';
+  ctx.shadowBlur = 8;
+  ctx.shadowOffsetY = 4;
+
+  // Main fill
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.roundRect(x, y, w, h, 4);
+  ctx.fill();
+
+  // Clear shadow before decorations
+  ctx.shadowColor = 'transparent';
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetY = 0;
+
+  // Top highlight
+  ctx.fillStyle = 'rgba(255,255,255,0.35)';
+  ctx.beginPath();
+  ctx.roundRect(x + 2, y + 2, w - 4, Math.min(6, h / 3), 2);
+  ctx.fill();
+
+  // Bottom shadow strip
+  ctx.fillStyle = 'rgba(0,0,0,0.22)';
+  ctx.beginPath();
+  ctx.roundRect(x + 2, y + h - 6, w - 4, 4, 2);
+  ctx.fill();
+
+  // White outline — makes tiles pop on any background
+  ctx.strokeStyle = 'rgba(255,255,255,0.85)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.roundRect(x + 1, y + 1, w - 2, h - 2, 4);
+  ctx.stroke();
+
+  ctx.restore();
+}
 
 export function AxolotlStacker({ onEnd, onDeductEnergy, onApplyReward, energy }: MiniGameProps) {
   const [score, setScore] = useState(0);
@@ -114,25 +170,24 @@ export function AxolotlStacker({ onEnd, onDeductEnergy, onApplyReward, energy }:
       const b = game.stack[i];
       // Only draw blocks that are on screen
       if (b.y + BLOCK_HEIGHT < 0 || b.y > CANVAS_H) continue;
-      
-      const color = i === 0 ? '#556' : COLORS[(i - 1) % COLORS.length];
-      ctx.fillStyle = color;
-      ctx.fillRect(b.x, b.y, b.width, BLOCK_HEIGHT - 2);
+
+      const color = i === 0 ? '#4A4E69' : COLORS[(i - 1) % COLORS.length];
+      drawTile(ctx, b.x, b.y, b.width, BLOCK_HEIGHT - 2, color);
     }
 
-    // Draw current block
+    // Draw current (moving) block — slightly brighter pulse via full opacity
     if (game.current && game.isPlaying) {
-      ctx.fillStyle = COLORS[game.score % COLORS.length];
-      ctx.globalAlpha = 0.9;
-      ctx.fillRect(game.current.x, game.current.y, game.current.width, BLOCK_HEIGHT - 2);
-      ctx.globalAlpha = 1;
+      const color = COLORS[game.score % COLORS.length];
+      drawTile(ctx, game.current.x, game.current.y, game.current.width, BLOCK_HEIGHT - 2, color);
     }
 
     // Height display
-    ctx.fillStyle = 'rgba(255,255,255,0.4)';
-    ctx.font = '13px sans-serif';
+    ctx.fillStyle = 'rgba(0,0,0,0.55)';
+    ctx.font = 'bold 13px sans-serif';
     ctx.textAlign = 'right';
     ctx.fillText(`Height: ${game.score}`, CANVAS_W - 10, 24);
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
+    ctx.fillText(`Height: ${game.score}`, CANVAS_W - 11, 23);
   }, []);
 
   const gameLoop = useCallback(() => {
