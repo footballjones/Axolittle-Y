@@ -1,6 +1,6 @@
 import { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { User, Users, Info, Zap, Lock, Circle, Hash, Layers, Gem, Fingerprint, Fish } from 'lucide-react';
+import { User, Users, Info, Zap, Lock, Circle, Hash, Layers, Gem, Fish, Puzzle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { GAME_CONFIG } from '../config/game';
 import { CoinIcon } from './icons';
@@ -329,7 +329,7 @@ export function MiniGameMenu({ onClose: _onClose, onSelectGame, energy = 10, max
     {
       id: 'coral-code',
       name: 'Coral Code',
-      iconNode: <Fingerprint size={24} className="text-white" />,
+      iconNode: <Puzzle size={24} className="text-white" />,
       color: 'from-slate-700 to-gray-900',
       description: 'Crack the code',
       coins: '20-45',
