@@ -111,7 +111,8 @@ export function JimmyChubsAquarium({ onBack }: Props) {
     <div className="fixed inset-0 z-50 flex flex-col" style={{ background: '#041428' }}>
       {/* Header */}
       <div
-        className="flex items-center gap-3 px-4 py-3 z-10 relative"
+        className="flex items-center gap-3 px-4 z-10 relative"
+        style={{ paddingTop: 'max(0.75rem, env(safe-area-inset-top))', paddingBottom: '0.75rem' }}
         style={{ background: 'rgba(4,20,40,0.85)', borderBottom: '1px solid rgba(56,189,248,0.12)' }}
       >
         <motion.button

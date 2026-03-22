@@ -2300,10 +2300,11 @@ export default function App() {
         {showJimmyAquarium && (
           <motion.div
             key="jimmy-aquarium"
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 30 }}
-            transition={{ type: 'spring', stiffness: 300, damping: 28 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            style={{ position: 'fixed', inset: 0, zIndex: 50 }}
           >
             <JimmyChubsAquarium onBack={() => setShowJimmyAquarium(false)} />
           </motion.div>
