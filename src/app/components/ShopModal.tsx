@@ -873,7 +873,7 @@ export function ShopModal({
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.18 }}
-              className="absolute inset-0 z-50 flex items-end justify-center pb-6 px-4"
+              className="absolute inset-0 z-50 flex items-center justify-center px-4"
               style={{ background: 'rgba(15,10,40,0.45)', backdropFilter: 'blur(4px)' }}
               onClick={() => setConfirmFilter(null)}
             >
@@ -994,8 +994,34 @@ export function ShopModal({
               color: 'linear-gradient(135deg, #db2777, #be123c)',
               bg: 'linear-gradient(160deg, #fff1f2 0%, #fce7f3 100%)',
               border: 'rgba(251,207,232,0.7)',
-              body: 'Going away for a few days? Stock up on Ghost Shrimp before you leave. They keep the tank clean, give your axolotl something to snack on, and slow down hunger and cleanliness decay while you\'re gone. The more you have, the longer they last — but they do get eaten, so restock when you\'re back.',
-              tip: 'Best used before a trip — think of them as a vacation mode for your tank.',
+              body: (
+                <div className="space-y-2.5">
+                  <p className="text-slate-700 text-[13px] font-bold leading-snug">
+                    Going somewhere? Fill the tank before you leave!
+                  </p>
+                  <div className="space-y-2">
+                    <div className="flex items-start gap-2.5">
+                      <span className="text-base leading-none mt-0.5">🍽️</span>
+                      <p className="text-slate-600 text-[12px] leading-relaxed">
+                        <span className="font-bold text-slate-700">Your axolotl eats them.</span> Shrimp count as food, so hunger drops way slower while you're away.
+                      </p>
+                    </div>
+                    <div className="flex items-start gap-2.5">
+                      <span className="text-base leading-none mt-0.5">✨</span>
+                      <p className="text-slate-600 text-[12px] leading-relaxed">
+                        <span className="font-bold text-slate-700">They clean the tank.</span> Shrimp eat leftover food and algae, so your Cleanliness stat stays up longer.
+                      </p>
+                    </div>
+                    <div className="flex items-start gap-2.5">
+                      <span className="text-base leading-none mt-0.5">⏳</span>
+                      <p className="text-slate-600 text-[12px] leading-relaxed">
+                        <span className="font-bold text-slate-700">More shrimp = more time.</span> A bigger colony lasts longer. Load up before a long trip!
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ),
+              tip: 'They get eaten over time — restock from the shop when you get back.',
             },
             filters: {
               iconNode: <Settings size={20} />,
@@ -1024,7 +1050,7 @@ export function ShopModal({
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.18 }}
-              className="absolute inset-0 z-50 flex items-end justify-center pb-6 px-4"
+              className="absolute inset-0 z-50 flex items-center justify-center px-4"
               style={{ background: 'rgba(15,10,40,0.45)', backdropFilter: 'blur(4px)' }}
               onClick={() => setInfoModal(null)}
             >
@@ -1058,9 +1084,9 @@ export function ShopModal({
                   </motion.button>
                 </div>
 
-                <p className="text-slate-600 text-[12px] leading-relaxed">
+                <div className="text-slate-600 text-[12px] leading-relaxed">
                   {INFO.body}
-                </p>
+                </div>
 
                 <div
                   className="rounded-2xl px-3.5 py-2.5"
