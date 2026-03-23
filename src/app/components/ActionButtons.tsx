@@ -35,6 +35,8 @@ interface ActionButtonsProps {
   cleanTutorialActive?: boolean;
   playMode?: boolean;
   coins?: number;
+  /** Button labels to dim and block during a tutorial step */
+  lockedButtons?: Set<string>;
 }
 
 export function ActionButtons({
@@ -51,6 +53,7 @@ export function ActionButtons({
   cleanTutorialActive,
   playMode,
   coins = 0,
+  lockedButtons,
 }: ActionButtonsProps) {
   const canAffordFeed = coins >= 10;
   const canAffordWater = coins >= 150;
@@ -108,12 +111,13 @@ export function ActionButtons({
       <div className="grid grid-cols-4 gap-1.5">
         {buttons.map(({ icon: Icon, label, onClick, emptyGradient, fillColor, glowColor, disabled, value, smallIcon, cantAfford }) => {
           const isLow = value < 30;
+          const isTutorialLocked = lockedButtons?.has(label) ?? false;
           return (
             <motion.button
               key={label}
-              onClick={onClick}
-              className={`relative bg-gradient-to-b ${emptyGradient} rounded-xl overflow-hidden border border-white/10 ${(disabled && value < 100) || cantAfford ? 'opacity-60' : ''}`}
-              whileTap={{ scale: 0.93 }}
+              onClick={isTutorialLocked ? undefined : onClick}
+              className={`relative bg-gradient-to-b ${emptyGradient} rounded-xl overflow-hidden border border-white/10 ${(disabled && value < 100) || cantAfford ? 'opacity-60' : ''} ${isTutorialLocked ? 'pointer-events-none opacity-30' : ''}`}
+              whileTap={isTutorialLocked ? {} : { scale: 0.93 }}
               transition={{ type: "spring", stiffness: 400, damping: 17 }}
               style={{ height: 48 }}
             >

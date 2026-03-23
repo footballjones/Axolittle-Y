@@ -750,6 +750,36 @@ export default function App() {
   const opals = gameState.opals || 0; // Default to 0 if not set
   const showRebirthButton = canRebirth(axolotl);
 
+  // ── Tutorial lock ────────────────────────────────────────────────────────
+  // Which wellbeing tutorial step is currently active — used to block all UI
+  // except the single prompted action so players can't wander off mid-tutorial.
+  const tutorialLockMode = ((): 'feed' | 'watch' | 'stat' | 'play' | 'clean' | 'water' | null => {
+    if (!tutorialAllowed || currentScreen !== 'home') return null;
+    const step = gameState.tutorialStep;
+    if (step === 'feed') return 'feed';
+    if (step === 'eat' || step === 'xp-tip') return 'watch';
+    if (step !== 'done') return null;
+    if ((gameState.pendingStatPoints ?? 0) > 0 && !gameState.statTutorialSeen && !activeModal) return 'stat';
+    if (gameState.statTutorialSeen && !gameState.playTutorialSeen && (gameState.pendingStatPoints ?? 0) === 0 && !activeModal && !playMode) return 'play';
+    if (gameState.cleanTutorialSeen === false && gameState.playTutorialSeen === true && !activeModal && !playMode) return 'clean';
+    if (gameState.cleanTutorialSeen === true && gameState.waterTutorialSeen === false && !activeModal && !playMode && !cleaningMode) return 'water';
+    return null;
+  })();
+
+  // ActionButton labels to dim + block during the active tutorial step
+  const lockedActionButtons = new Set<string>();
+  if (tutorialLockMode === 'feed') {
+    ['Playtime', 'Clean', 'Water Quality'].forEach(b => lockedActionButtons.add(b));
+  } else if (tutorialLockMode === 'watch' || tutorialLockMode === 'stat') {
+    ['Feed', 'Playtime', 'Clean', 'Water Quality'].forEach(b => lockedActionButtons.add(b));
+  } else if (tutorialLockMode === 'play') {
+    ['Feed', 'Clean', 'Water Quality'].forEach(b => lockedActionButtons.add(b));
+  } else if (tutorialLockMode === 'clean') {
+    ['Feed', 'Playtime', 'Water Quality'].forEach(b => lockedActionButtons.add(b));
+  } else if (tutorialLockMode === 'water') {
+    ['Feed', 'Playtime', 'Clean'].forEach(b => lockedActionButtons.add(b));
+  }
+
   // Calculate XP and level
   const currentLevel = calculateLevel(axolotl.experience);
   const nextLevelXP = getXPForNextLevel(currentLevel);
@@ -830,6 +860,8 @@ export default function App() {
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     title="Menu"
+                    disabled={tutorialLockMode !== null}
+                    aria-disabled={tutorialLockMode !== null}
                   >
                     {showHamburgerMenu ? (
                       <X className="text-white" style={{ width: '23px', height: '23px' }} strokeWidth={2.5} />
@@ -900,7 +932,7 @@ export default function App() {
                 </AnimatePresence>
                 {/* Home, Mini Games, Shop buttons - evenly spaced */}
                 <div className="flex justify-center items-center mt-1">
-                  <div className="flex items-center gap-6 w-3/4">
+                  <div className={`flex items-center gap-6 w-3/4 ${tutorialLockMode !== null ? 'pointer-events-none opacity-30' : ''}`}>
                   <motion.button
                     onClick={() => { setCurrentScreen('home'); setShowHamburgerMenu(false); }}
                     className="relative bg-transparent border border-white/30 rounded-xl active:bg-white/[0.08] transition-all flex-1"
@@ -2198,6 +2230,7 @@ export default function App() {
                             cleanTutorialActive={cleanTutActive}
                             playMode={playMode}
                             coins={coins}
+                            lockedButtons={lockedActionButtons.size > 0 ? lockedActionButtons : undefined}
                           />
                         </div>
                       </div>
