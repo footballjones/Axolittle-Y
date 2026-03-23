@@ -118,7 +118,8 @@ export default function App() {
   const [showLevel7Unlock, setShowLevel7Unlock] = useState(false);
   const [showShrimpTutorialIntro, setShowShrimpTutorialIntro] = useState(false);
   const [showShrimpInfoModal, setShowShrimpInfoModal] = useState(false);
-  const [shrimpTutorialAwaitingPurchase, setShrimpTutorialAwaitingPurchase] = useState(false);
+  // 'info' = highlight info button first, 'buy' = highlight Small Colony pack, false = not active
+  const [shrimpTutorialShopPhase, setShrimpTutorialShopPhase] = useState<'info' | 'buy' | false>(false);
   const [showMenuTutorial, setShowMenuTutorial] = useState(false);
   const [showMenuTutorialComplete, setShowMenuTutorialComplete] = useState(false);
   /** Populated when a cloud pull finds two meaningful saves — clears after user resolves. */
@@ -2283,15 +2284,17 @@ export default function App() {
           onEquipFilter={handleEquipFilter}
           onBuyShrimp={(pack) => {
             handleBuyShrimp(pack);
-            if (shrimpTutorialAwaitingPurchase) {
-              setShrimpTutorialAwaitingPurchase(false);
+            if (shrimpTutorialShopPhase === 'buy') {
+              setShrimpTutorialShopPhase(false);
               setActiveModal(null);
               setShowShrimpInfoModal(true);
             }
           }}
+          highlightShrimpInfo={shrimpTutorialShopPhase === 'info'}
+          onShrimpInfoRead={() => setShrimpTutorialShopPhase('buy')}
           onBuyTreatment={handleBuyTreatment}
           initialSection={shopSection}
-          highlightShrimp={shrimpTutorialAwaitingPurchase}
+          highlightShrimp={shrimpTutorialShopPhase === 'buy'}
           ownedFilters={gameState?.ownedFilters ?? (gameState?.filterTier ? [gameState.filterTier] : [])}
           equippedFilter={gameState?.equippedFilter ?? gameState?.filterTier}
           ownedDecos={gameState?.unlockedDecorations ?? []}
@@ -2522,7 +2525,7 @@ export default function App() {
           <ShrimpTutorialIntroModal
             onOpenShop={() => {
               setShowShrimpTutorialIntro(false);
-              setShrimpTutorialAwaitingPurchase(true);
+              setShrimpTutorialShopPhase('info');
               setShopSection('wellbeing');
               setActiveModal('shop');
             }}

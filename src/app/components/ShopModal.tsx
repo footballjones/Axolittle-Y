@@ -25,6 +25,10 @@ interface ShopModalProps {
   onStoreTreatment?: (treatment: { id: string; name: string; opals: number }) => void;
   onStoreShrimpInInventory?: (pack: { count: number; opals: number }) => void;
   initialSection?: 'coins' | 'opals' | 'wellbeing' | null;
+  /** When true, pulses a highlight cue on the Ghost Shrimp info button */
+  highlightShrimpInfo?: boolean;
+  /** Called when the shrimp info modal is closed during the tutorial */
+  onShrimpInfoRead?: () => void;
   /** When true, pulses a highlight cue on the Small Colony shrimp pack */
   highlightShrimp?: boolean;
   /** All filter IDs the player has purchased. */
@@ -98,7 +102,7 @@ const TABS: { id: TabId; label: string; activeGradient: string; activeShadow: st
 ];
 
 /* ── Section header ── */
-function SectionHeader({ icon: Icon, iconBg, iconShadow, title, titleGradient, wobbleDirection = 'left', onInfo }: {
+function SectionHeader({ icon: Icon, iconBg, iconShadow, title, titleGradient, wobbleDirection = 'left', onInfo, highlightInfo = false }: {
   icon: typeof Coins;
   iconBg: string;
   iconShadow: string;
@@ -106,6 +110,7 @@ function SectionHeader({ icon: Icon, iconBg, iconShadow, title, titleGradient, w
   titleGradient: string;
   wobbleDirection?: 'left' | 'right';
   onInfo?: () => void;
+  highlightInfo?: boolean;
 }) {
   return (
     <div className="flex items-center gap-2.5 mb-3">
@@ -130,14 +135,33 @@ function SectionHeader({ icon: Icon, iconBg, iconShadow, title, titleGradient, w
           {title}
         </h3>
         {onInfo && (
-          <motion.button
-            onClick={onInfo}
-            className="rounded-full p-1 flex-shrink-0 active:bg-violet-100/60"
-            style={{ background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(196,181,253,0.45)' }}
-            whileTap={{ scale: 0.85 }}
-          >
-            <Info className="w-3.5 h-3.5 text-violet-400" strokeWidth={2.5} />
-          </motion.button>
+          <div className={highlightInfo ? 'relative' : undefined}>
+            {highlightInfo && (
+              <>
+                <motion.div
+                  className="absolute -inset-1.5 rounded-full pointer-events-none"
+                  style={{ border: '2px solid #a78bfa' }}
+                  animate={{ opacity: [0.4, 1, 0.4], scale: [1, 1.2, 1] }}
+                  transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
+                />
+                <motion.div
+                  className="absolute -top-7 left-1/2 -translate-x-1/2 bg-violet-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-lg whitespace-nowrap pointer-events-none z-10"
+                  animate={{ y: [0, -3, 0] }}
+                  transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
+                >
+                  Tap me!
+                </motion.div>
+              </>
+            )}
+            <motion.button
+              onClick={onInfo}
+              className="rounded-full p-1 flex-shrink-0 active:bg-violet-100/60"
+              style={{ background: highlightInfo ? 'rgba(196,181,253,0.4)' : 'rgba(255,255,255,0.6)', border: '1px solid rgba(196,181,253,0.45)' }}
+              whileTap={{ scale: 0.85 }}
+            >
+              <Info className="w-3.5 h-3.5 text-violet-400" strokeWidth={2.5} />
+            </motion.button>
+          </div>
         )}
       </div>
     </div>
@@ -233,6 +257,8 @@ export function ShopModal({
   onStoreTreatment,
   onStoreShrimpInInventory,
   initialSection,
+  highlightShrimpInfo = false,
+  onShrimpInfoRead,
   highlightShrimp = false,
   ownedFilters = [],
   equippedFilter,
@@ -248,7 +274,14 @@ export function ShopModal({
   const [activeTab, setActiveTab] = useState<TabId>(
     initialSection === 'wellbeing' ? 'wellbeing' : 'currency'
   );
+
   const [infoModal, setInfoModal] = useState<'shrimp' | 'filters' | 'treatments' | null>(null);
+
+  const closeInfoModal = () => {
+    const wasShrimp = infoModal === 'shrimp';
+    setInfoModal(null);
+    if (wasShrimp && onShrimpInfoRead) onShrimpInfoRead();
+  };
   const [confirmFilter, setConfirmFilter] = useState<{ filter: typeof FILTER_OPTIONS[number]; mode: 'buy' | 'equip' } | null>(null);
   const [openDecoCategories, setOpenDecoCategories] = useState<Record<string, boolean>>(
     () => Object.fromEntries(DECO_CATEGORIES.map(c => [c.type, true]))
@@ -662,6 +695,7 @@ export function ShopModal({
                       iconShadow="0 3px 10px rgba(244,114,182,0.35)"
                       title="Ghost Shrimp"
                       titleGradient="linear-gradient(135deg, #db2777, #be123c)"
+                      highlightInfo={highlightShrimpInfo}
                       onInfo={() => setInfoModal('shrimp')}
                     />
                     <div className="space-y-1.5">
@@ -1052,7 +1086,7 @@ export function ShopModal({
               transition={{ duration: 0.18 }}
               className="absolute inset-0 z-50 flex items-center justify-center px-4"
               style={{ background: 'rgba(15,10,40,0.45)', backdropFilter: 'blur(4px)' }}
-              onClick={() => setInfoModal(null)}
+              onClick={closeInfoModal}
             >
               <motion.div
                 key="info-card"
@@ -1075,7 +1109,7 @@ export function ShopModal({
                     {INFO.title}
                   </h4>
                   <motion.button
-                    onClick={() => setInfoModal(null)}
+                    onClick={closeInfoModal}
                     className="ml-auto rounded-full p-1.5 active:bg-slate-200/60 flex-shrink-0"
                     style={{ background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(203,213,225,0.5)' }}
                     whileTap={{ scale: 0.85 }}
