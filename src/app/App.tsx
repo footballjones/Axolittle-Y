@@ -2303,7 +2303,14 @@ export default function App() {
           onBuyDecoration={handlePurchase}
           onEquipDecoration={handleEquipDecoration}
           onStoreTreatment={handleStoreTreatment}
-          onStoreShrimpInInventory={handleStoreShrimpInInventory}
+          onStoreShrimpInInventory={(pack) => {
+            handleStoreShrimpInInventory(pack);
+            if (shrimpTutorialShopPhase === 'buy') {
+              setShrimpTutorialShopPhase(false);
+              setActiveModal(null);
+              setShowShrimpInfoModal(true);
+            }
+          }}
         />
       )}
 
