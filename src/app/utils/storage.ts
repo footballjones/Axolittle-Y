@@ -219,6 +219,7 @@ export function getInitialGameState(): GameState {
     equippedFilter: undefined,
     shrimpCount: 0,
     lastShrimpUpdate: undefined,
+    shrimpTutorialSeen: false,
     lastEnergyUpdate: Date.now(), // Initialize energy timestamp
     lastSpinDate: undefined,
     lastLoginDate: undefined,

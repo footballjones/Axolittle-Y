@@ -18,6 +18,7 @@ import { AquariumBackground } from './components/AquariumBackground';
 import { MiniGameMenu } from './components/MiniGameMenu';
 import { JuvenileUnlockModal } from './components/JuvenileUnlockModal';
 import { Level7UnlockModal } from './components/Level7UnlockModal';
+import { ShrimpTutorialIntroModal, ShrimpInfoModal } from './components/ShrimpTutorialModal';
 import { WellbeingIntroModal } from './components/WellbeingIntroModal';
 import { WellbeingCompleteModal } from './components/WellbeingCompleteModal';
 import { MenuTutorialOverlay } from './components/MenuTutorialOverlay';
@@ -115,6 +116,9 @@ export default function App() {
   const [showJimmyAquarium, setShowJimmyAquarium] = useState(false);
   const [showJuvenileUnlock, setShowJuvenileUnlock] = useState(false);
   const [showLevel7Unlock, setShowLevel7Unlock] = useState(false);
+  const [showShrimpTutorialIntro, setShowShrimpTutorialIntro] = useState(false);
+  const [showShrimpInfoModal, setShowShrimpInfoModal] = useState(false);
+  const [shrimpTutorialAwaitingPurchase, setShrimpTutorialAwaitingPurchase] = useState(false);
   const [showMenuTutorial, setShowMenuTutorial] = useState(false);
   const [showMenuTutorialComplete, setShowMenuTutorialComplete] = useState(false);
   /** Populated when a cloud pull finds two meaningful saves — clears after user resolves. */
@@ -471,6 +475,22 @@ export default function App() {
       setShowLevel7Unlock(true);
     }
   }, [gameState?.axolotl?.experience, gameState?.level7UnlockSeen]);
+
+  // Show Ghost Shrimp tutorial when player first reaches level 11 and is on the aquarium screen
+  useEffect(() => {
+    const lvl = gameState?.axolotl ? calculateLevel(gameState.axolotl.experience) : 0;
+    if (
+      lvl >= 11 &&
+      !gameState?.shrimpTutorialSeen &&
+      !showShrimpTutorialIntro &&
+      currentScreen === 'home' &&
+      !activeModal
+    ) {
+      // Grant 10 opals before showing the modal
+      setGameState(s => s ? { ...s, opals: (s.opals ?? 0) + 10 } : s);
+      setShowShrimpTutorialIntro(true);
+    }
+  }, [gameState?.axolotl?.experience, gameState?.shrimpTutorialSeen, currentScreen, activeModal]);
 
   // ── Tutorial pacing: fire delays whenever a tutorial step completes ─────────
   // stat tutorial seen → 1 s before play tutorial appears
@@ -2261,7 +2281,14 @@ export default function App() {
           onBuyOpals={handleBuyOpals}
           onBuyFilter={handleBuyFilter}
           onEquipFilter={handleEquipFilter}
-          onBuyShrimp={handleBuyShrimp}
+          onBuyShrimp={(pack) => {
+            handleBuyShrimp(pack);
+            if (shrimpTutorialAwaitingPurchase) {
+              setShrimpTutorialAwaitingPurchase(false);
+              setActiveModal(null);
+              setShowShrimpInfoModal(true);
+            }
+          }}
           onBuyTreatment={handleBuyTreatment}
           initialSection={shopSection}
           ownedFilters={gameState?.ownedFilters ?? (gameState?.filterTier ? [gameState.filterTier] : [])}
@@ -2483,6 +2510,31 @@ export default function App() {
             onClose={() => {
               setShowLevel7Unlock(false);
               setGameState(s => s ? { ...s, level7UnlockSeen: true } : s);
+            }}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Level 11 — Ghost Shrimp tutorial intro (grants 10 opals) */}
+      <AnimatePresence>
+        {showShrimpTutorialIntro && (
+          <ShrimpTutorialIntroModal
+            onOpenShop={() => {
+              setShowShrimpTutorialIntro(false);
+              setShrimpTutorialAwaitingPurchase(true);
+              setActiveModal('shop');
+            }}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Level 11 — Ghost Shrimp info popup (shown after first purchase) */}
+      <AnimatePresence>
+        {showShrimpInfoModal && (
+          <ShrimpInfoModal
+            onClose={() => {
+              setShowShrimpInfoModal(false);
+              setGameState(s => s ? { ...s, shrimpTutorialSeen: true } : s);
             }}
           />
         )}
