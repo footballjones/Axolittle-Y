@@ -149,7 +149,7 @@ function SectionHeader({ icon: Icon, iconBg, iconShadow, title, titleGradient, w
                   animate={{ y: [0, 3, 0] }}
                   transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
                 >
-                  ↑ Tap me!
+                  ↑ Learn More
                 </motion.div>
               </>
             )}
@@ -718,7 +718,7 @@ export function ShopModal({
                                   animate={{ y: [0, -3, 0] }}
                                   transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
                                 >
-                                  Start here ↓
+                                  Get your shrimp here ↓
                                 </motion.div>
                               </>
                             )}
