@@ -24,7 +24,9 @@ interface ShopModalProps {
   onBuyTreatment?: (treatment: { id: string; name: string; opals: number }) => void;
   onStoreTreatment?: (treatment: { id: string; name: string; opals: number }) => void;
   onStoreShrimpInInventory?: (pack: { count: number; opals: number }) => void;
-  initialSection?: 'coins' | 'opals' | null;
+  initialSection?: 'coins' | 'opals' | 'wellbeing' | null;
+  /** When true, pulses a highlight cue on the Small Colony shrimp pack */
+  highlightShrimp?: boolean;
   /** All filter IDs the player has purchased. */
   ownedFilters?: string[];
   /** The currently active (equipped) filter ID. */
@@ -231,6 +233,7 @@ export function ShopModal({
   onStoreTreatment,
   onStoreShrimpInInventory,
   initialSection,
+  highlightShrimp = false,
   ownedFilters = [],
   equippedFilter,
   ownedDecos = [],
@@ -243,7 +246,7 @@ export function ShopModal({
   const canAffordOpals = (cost: number) => opals >= cost;
 
   const [activeTab, setActiveTab] = useState<TabId>(
-    initialSection ? 'currency' : 'currency'
+    initialSection === 'wellbeing' ? 'wellbeing' : 'currency'
   );
   const [infoModal, setInfoModal] = useState<'shrimp' | 'filters' | 'treatments' | null>(null);
   const [confirmFilter, setConfirmFilter] = useState<{ filter: typeof FILTER_OPTIONS[number]; mode: 'buy' | 'equip' } | null>(null);
@@ -662,29 +665,52 @@ export function ShopModal({
                       onInfo={() => setInfoModal('shrimp')}
                     />
                     <div className="space-y-1.5">
-                      {SHRIMP_PACKS.map((pack, i) => (
-                        <ShopRowTile
-                          key={i}
-                          index={i}
-                          onClick={() => { if (canAffordOpals(pack.opals)) setPendingShrimpPack(pack); }}
-                          disabled={!canAffordOpals(pack.opals)}
-                          cardBg="linear-gradient(135deg, rgba(255,255,255,0.88) 0%, rgba(255,241,242,0.85) 100%)"
-                          cardBorder="1.5px solid rgba(251,207,232,0.65)"
-                          iconNode={<span className="text-pink-400 font-bold text-sm">~</span>}
-                          title={pack.label}
-                          subtitle={`${pack.count} shrimp`}
-                          priceContent={
-                            <PriceBadge
-                              bg={canAffordOpals(pack.opals) ? 'linear-gradient(135deg, #f472b6, #e11d48)' : 'rgba(216,180,254,0.3)'}
-                              border="none"
-                              shadow={canAffordOpals(pack.opals) ? '0 3px 10px rgba(244,114,182,0.3)' : 'none'}
-                              icon={Sparkles}
-                              value={pack.opals}
-                              textColor={canAffordOpals(pack.opals) ? '#fff' : 'rgba(139,92,246,0.4)'}
+                      {SHRIMP_PACKS.map((pack, i) => {
+                        const isHighlighted = highlightShrimp && pack.label === 'Small Colony';
+                        return (
+                          <div key={i} className={isHighlighted ? 'relative' : undefined}>
+                            {isHighlighted && (
+                              <>
+                                {/* Pulsing ring */}
+                                <motion.div
+                                  className="absolute -inset-1 rounded-2xl pointer-events-none"
+                                  style={{ border: '2px solid #f472b6', borderRadius: 16 }}
+                                  animate={{ opacity: [0.4, 1, 0.4], scale: [1, 1.025, 1] }}
+                                  transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
+                                />
+                                {/* Cue label */}
+                                <motion.div
+                                  className="absolute -top-6 left-1/2 -translate-x-1/2 bg-pink-500 text-white text-[10px] font-black px-2.5 py-1 rounded-full shadow-lg whitespace-nowrap pointer-events-none z-10"
+                                  animate={{ y: [0, -3, 0] }}
+                                  transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
+                                >
+                                  Start here ↓
+                                </motion.div>
+                              </>
+                            )}
+                            <ShopRowTile
+                              index={i}
+                              onClick={() => { if (canAffordOpals(pack.opals)) setPendingShrimpPack(pack); }}
+                              disabled={!canAffordOpals(pack.opals)}
+                              cardBg="linear-gradient(135deg, rgba(255,255,255,0.88) 0%, rgba(255,241,242,0.85) 100%)"
+                              cardBorder={isHighlighted ? '1.5px solid rgba(244,114,182,0.9)' : '1.5px solid rgba(251,207,232,0.65)'}
+                              iconNode={<span className="text-pink-400 font-bold text-sm">~</span>}
+                              title={pack.label}
+                              subtitle={`${pack.count} shrimp`}
+                              priceContent={
+                                <PriceBadge
+                                  bg={canAffordOpals(pack.opals) ? 'linear-gradient(135deg, #f472b6, #e11d48)' : 'rgba(216,180,254,0.3)'}
+                                  border="none"
+                                  shadow={canAffordOpals(pack.opals) ? '0 3px 10px rgba(244,114,182,0.3)' : 'none'}
+                                  icon={Sparkles}
+                                  value={pack.opals}
+                                  textColor={canAffordOpals(pack.opals) ? '#fff' : 'rgba(139,92,246,0.4)'}
+                                />
+                              }
                             />
-                          }
-                        />
-                      ))}
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
 

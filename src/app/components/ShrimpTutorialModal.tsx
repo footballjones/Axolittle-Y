@@ -155,7 +155,7 @@ export function ShrimpTutorialIntroModal({ onOpenShop }: ShrimpTutorialIntroProp
           >
             <ShoppingCart className="w-5 h-5 text-sky-500 flex-shrink-0 mt-0.5" strokeWidth={2} />
             <p className="text-sky-800 text-[11.5px] leading-snug">
-              <span className="font-bold">Head to the Shop</span> and grab a pack of Ghost Shrimp. You'll find them in the shop under their own section.
+              Head to the <span className="font-bold">Wellbeing</span> tab in the Shop and grab a <span className="font-bold">Small Colony</span> to get started.
             </p>
           </motion.div>
 

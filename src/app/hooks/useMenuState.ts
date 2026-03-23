@@ -17,7 +17,7 @@ export function useMenuState() {
   const [showAchievementsPanel, setShowAchievementsPanel] = useState(false);
   const [decorationsTab, setDecorationsTab] = useState<'store' | 'owned'>('store');
   const [currentScreen, setCurrentScreen] = useState<'home' | 'games'>('home');
-  const [shopSection, setShopSection] = useState<'coins' | 'opals' | null>(null);
+  const [shopSection, setShopSection] = useState<'coins' | 'opals' | 'wellbeing' | null>(null);
   const [activeGame, setActiveGame] = useState<string | null>(null);
 
   const closeAllPanels = () => {

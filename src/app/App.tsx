@@ -2291,6 +2291,7 @@ export default function App() {
           }}
           onBuyTreatment={handleBuyTreatment}
           initialSection={shopSection}
+          highlightShrimp={shrimpTutorialAwaitingPurchase}
           ownedFilters={gameState?.ownedFilters ?? (gameState?.filterTier ? [gameState.filterTier] : [])}
           equippedFilter={gameState?.equippedFilter ?? gameState?.filterTier}
           ownedDecos={gameState?.unlockedDecorations ?? []}
@@ -2522,6 +2523,7 @@ export default function App() {
             onOpenShop={() => {
               setShowShrimpTutorialIntro(false);
               setShrimpTutorialAwaitingPurchase(true);
+              setShopSection('wellbeing');
               setActiveModal('shop');
             }}
           />
