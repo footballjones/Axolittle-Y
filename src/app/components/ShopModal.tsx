@@ -994,8 +994,8 @@ export function ShopModal({
               color: 'linear-gradient(135deg, #db2777, #be123c)',
               bg: 'linear-gradient(160deg, #fff1f2 0%, #fce7f3 100%)',
               border: 'rgba(251,207,232,0.7)',
-              body: 'Ghost Shrimp are tiny tank cleaners that munch on algae and leftover food, keeping your aquarium sparkling. The more shrimp you have, the faster your tank stays clean — reducing how quickly the Clean stat drops over time.',
-              tip: 'A big colony means less frequent scrubbing!',
+              body: 'Going away for a few days? Stock up on Ghost Shrimp before you leave. They keep the tank clean, give your axolotl something to snack on, and slow down hunger and cleanliness decay while you\'re gone. The more you have, the longer they last — but they do get eaten, so restock when you\'re back.',
+              tip: 'Best used before a trip — think of them as a vacation mode for your tank.',
             },
             filters: {
               iconNode: <Settings size={20} />,
