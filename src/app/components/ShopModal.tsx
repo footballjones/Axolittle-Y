@@ -145,11 +145,11 @@ function SectionHeader({ icon: Icon, iconBg, iconShadow, title, titleGradient, w
                   transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
                 />
                 <motion.div
-                  className="absolute -top-7 left-1/2 -translate-x-1/2 bg-violet-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-lg whitespace-nowrap pointer-events-none z-10"
-                  animate={{ y: [0, -3, 0] }}
+                  className="absolute top-full left-1/2 -translate-x-1/2 mt-1.5 bg-violet-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-lg whitespace-nowrap pointer-events-none z-20"
+                  animate={{ y: [0, 3, 0] }}
                   transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
                 >
-                  Tap me!
+                  ↑ Tap me!
                 </motion.div>
               </>
             )}
