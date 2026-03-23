@@ -753,9 +753,10 @@ export default function App() {
   // ── Tutorial lock ────────────────────────────────────────────────────────
   // Which wellbeing tutorial step is currently active — used to block all UI
   // except the single prompted action so players can't wander off mid-tutorial.
-  const tutorialLockMode = ((): 'feed' | 'watch' | 'stat' | 'play' | 'clean' | 'water' | null => {
+  const tutorialLockMode = ((): 'swipe' | 'feed' | 'watch' | 'stat' | 'play' | 'clean' | 'water' | null => {
     if (!tutorialAllowed || currentScreen !== 'home') return null;
     const step = gameState.tutorialStep;
+    if (step === 'swipe') return 'swipe';
     if (step === 'feed') return 'feed';
     if (step === 'eat' || step === 'xp-tip') return 'watch';
     if (step !== 'done') return null;
@@ -770,7 +771,7 @@ export default function App() {
   const lockedActionButtons = new Set<string>();
   if (tutorialLockMode === 'feed') {
     ['Playtime', 'Clean', 'Water Quality'].forEach(b => lockedActionButtons.add(b));
-  } else if (tutorialLockMode === 'watch' || tutorialLockMode === 'stat') {
+  } else if (tutorialLockMode === 'swipe' || tutorialLockMode === 'watch' || tutorialLockMode === 'stat') {
     ['Feed', 'Playtime', 'Clean', 'Water Quality'].forEach(b => lockedActionButtons.add(b));
   } else if (tutorialLockMode === 'play') {
     ['Feed', 'Clean', 'Water Quality'].forEach(b => lockedActionButtons.add(b));
