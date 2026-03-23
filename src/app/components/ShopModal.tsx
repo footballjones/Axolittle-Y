@@ -1,4 +1,4 @@
-import { X, Coins, Sparkles, Droplets, Filter, Bug, Gem, Info, ChevronDown, Leaf, Mountain, Shell, Waves, Settings, Wrench } from 'lucide-react';
+import { X, Coins, Sparkles, Droplets, Filter, Bug, Gem, Info, ChevronDown, Leaf, Mountain, Shell, Waves, Settings, Wrench, Utensils, TrendingUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useState } from 'react';
 import { DECORATIONS } from '../data/decorations';
@@ -1001,19 +1001,19 @@ export function ShopModal({
                   </p>
                   <div className="space-y-2">
                     <div className="flex items-start gap-2.5">
-                      <span className="text-base leading-none mt-0.5">🍽️</span>
+                      <Utensils className="w-4 h-4 text-pink-400 flex-shrink-0 mt-0.5" strokeWidth={2} />
                       <p className="text-slate-600 text-[12px] leading-relaxed">
                         <span className="font-bold text-slate-700">Your axolotl eats them.</span> Shrimp count as food, so hunger drops way slower while you're away.
                       </p>
                     </div>
                     <div className="flex items-start gap-2.5">
-                      <span className="text-base leading-none mt-0.5">✨</span>
+                      <Sparkles className="w-4 h-4 text-pink-400 flex-shrink-0 mt-0.5" strokeWidth={2} />
                       <p className="text-slate-600 text-[12px] leading-relaxed">
                         <span className="font-bold text-slate-700">They clean the tank.</span> Shrimp eat leftover food and algae, so your Cleanliness stat stays up longer.
                       </p>
                     </div>
                     <div className="flex items-start gap-2.5">
-                      <span className="text-base leading-none mt-0.5">⏳</span>
+                      <TrendingUp className="w-4 h-4 text-pink-400 flex-shrink-0 mt-0.5" strokeWidth={2} />
                       <p className="text-slate-600 text-[12px] leading-relaxed">
                         <span className="font-bold text-slate-700">More shrimp = more time.</span> A bigger colony lasts longer. Load up before a long trip!
                       </p>
