@@ -9,15 +9,18 @@ import UIKit
 import WebKit
 
 class ViewController: UIViewController, WKNavigationDelegate {
+    private let bundledContentScheme = "axolittle"
     var webView: WKWebView!
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        view.backgroundColor = .systemBackground
         
         // Configure WKWebView
         let config = WKWebViewConfiguration()
         config.allowsInlineMediaPlayback = true
         config.mediaTypesRequiringUserActionForPlayback = []
+        config.setURLSchemeHandler(BundleURLSchemeHandler(), forURLScheme: bundledContentScheme)
         
         // Enable data storage for localStorage
         let websiteDataStore = WKWebsiteDataStore.default()
@@ -26,6 +29,9 @@ class ViewController: UIViewController, WKNavigationDelegate {
         // Create web view
         webView = WKWebView(frame: .zero, configuration: config)
         webView.navigationDelegate = self
+        if #available(iOS 16.4, *) {
+            webView.isInspectable = true
+        }
         webView.scrollView.contentInsetAdjustmentBehavior = .never
         webView.scrollView.bounces = false
         webView.isOpaque = false
@@ -41,7 +47,7 @@ class ViewController: UIViewController, WKNavigationDelegate {
         // Set up constraints
         webView.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
-            webView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            webView.topAnchor.constraint(equalTo: view.topAnchor),
             webView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             webView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             webView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
@@ -52,36 +58,75 @@ class ViewController: UIViewController, WKNavigationDelegate {
     }
     
     func loadWebApp() {
-        // Get path to index.html in app bundle
-        guard let htmlPath = Bundle.main.path(forResource: "index", ofType: "html", inDirectory: "dist") else {
-            print("Error: Could not find index.html in bundle")
+        guard let htmlURL = URL(string: "\(bundledContentScheme)://app/index.html") else {
+            showMissingAssetsMessage(details: "Could not create the bundled content URL.")
+            print("Error: Could not create bundled content URL")
             return
         }
-        
-        let htmlURL = URL(fileURLWithPath: htmlPath)
-        let htmlDirectory = htmlURL.deletingLastPathComponent()
-        
+
+        guard Bundle.main.path(forResource: "index", ofType: "html", inDirectory: "dist") != nil else {
+            showMissingAssetsMessage(details: "Could not find dist/index.html in the app bundle.")
+            print("Error: Could not find dist/index.html in bundle")
+            return
+        }
+
         // Load the HTML file
-        webView.loadFileURL(htmlURL, allowingReadAccessTo: htmlDirectory)
+        webView.load(URLRequest(url: htmlURL))
+    }
+
+    private func showMissingAssetsMessage(details: String) {
+        webView.isHidden = true
+
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.numberOfLines = 0
+        label.textAlignment = .center
+        label.textColor = .label
+        label.text = "Missing bundled web assets. \(details) Add index.html and related files to the app target resources."
+
+        view.addSubview(label)
+
+        NSLayoutConstraint.activate([
+            label.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            label.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+            label.leadingAnchor.constraint(greaterThanOrEqualTo: view.leadingAnchor, constant: 24),
+            label.trailingAnchor.constraint(lessThanOrEqualTo: view.trailingAnchor, constant: -24)
+        ])
     }
     
     // Handle navigation errors
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+        showMissingAssetsMessage(details: "Navigation error: \(error.localizedDescription)")
         print("Navigation error: \(error.localizedDescription)")
     }
     
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+        showMissingAssetsMessage(details: "Navigation failed: \(error.localizedDescription)")
         print("Navigation failed: \(error.localizedDescription)")
+    }
+
+    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        webView.evaluateJavaScript("document.body ? document.body.innerText.slice(0, 500) : 'no body'") { result, error in
+            if let error {
+                print("JavaScript inspection error: \(error.localizedDescription)")
+                return
+            }
+
+            if let text = result as? String {
+                print("Web content preview: \(text)")
+            }
+        }
     }
     
     // Prevent external navigation
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
         if navigationAction.navigationType == .linkActivated {
-            // Allow internal navigation, block external links
             if let url = navigationAction.request.url {
-                if url.scheme == "file" || url.host == nil {
+                // Allow our custom scheme and file:// — block everything else (http/https external links)
+                if url.scheme == bundledContentScheme || url.scheme == "file" || url.host == nil {
                     decisionHandler(.allow)
                 } else {
+                    print("[ViewController] Blocked external navigation to: \(url)")
                     decisionHandler(.cancel)
                 }
             } else {
