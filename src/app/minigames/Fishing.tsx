@@ -20,6 +20,7 @@ const SEABED_Y = 580;
 const LINE_DESCEND_BASE = 2.8;
 const LINE_DESCEND_SPEED_BONUS = 1.4; // max bonus from speed stat
 const LINE_ASCEND_SPEED = 5;
+const BOT_SPEED_MULTIPLIER = 0.92; // 8% slower than baseline
 const GAME_DURATION = 45; // 45 seconds
 const ESCAPE_TIMEOUT = 2000;
 
@@ -321,7 +322,7 @@ export function Fishing({ onEnd, onDeductEnergy, onApplyReward, energy, strength
         break;
 
       case 'BOT_CASTING':
-        state.botLineY = Math.min(botTargetDepth, botLineY + LINE_DESCEND_BASE * 1.82);
+        state.botLineY = Math.min(botTargetDepth, botLineY + LINE_DESCEND_BASE * 1.82 * BOT_SPEED_MULTIPLIER);
         // Actively scan for fish while descending
         if (state.botLineY > WATERLINE_Y) botTryCatch(now);
         if (state.botState === 'BOT_HOOKED') break; // caught one
@@ -338,7 +339,7 @@ export function Fishing({ onEnd, onDeductEnergy, onApplyReward, energy, strength
         break;
 
       case 'BOT_REELING':
-        state.botLineY = Math.max(BOAT_Y, botLineY - LINE_ASCEND_SPEED);
+        state.botLineY = Math.max(BOAT_Y, botLineY - LINE_ASCEND_SPEED * BOT_SPEED_MULTIPLIER);
         if (botHooked) {
           botHooked.x = BOT_BOAT_X;
           botHooked.y = state.botLineY;
