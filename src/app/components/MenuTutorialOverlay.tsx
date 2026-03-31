@@ -20,6 +20,14 @@ interface MenuTutorialOverlayProps {
   onOpenMenu: () => void;
   /** Called when the full tutorial is complete (menu closed by user) */
   onComplete: () => void;
+  /** Called to open the spin wheel modal during the tutorial */
+  onOpenSpinWheel: () => void;
+  /** Called to open the daily bonus modal during the tutorial */
+  onOpenDailyBonus: () => void;
+  /** Becomes true once the user has spun the wheel */
+  spinDone: boolean;
+  /** Becomes true once the user has claimed the daily bonus */
+  dailyClaimDone: boolean;
 }
 
 // Each step: CSS selector (queried inside the menu) + icon (Lucide name) + title + description
@@ -28,10 +36,11 @@ const MENU_STEPS: Array<{
   icon: string;
   title: string;
   desc: string;
+  actionLabel?: string; // If set, button shows this instead of "Got it" and triggers an action
 }> = [
   { selector: '[data-menu-id="notifications"]', icon: 'Bell',       title: 'Notifications', desc: 'Check alerts and updates about your axolotl here.' },
-  { selector: '[data-menu-id="wheel-spin"]',    icon: 'Dices',      title: 'Wheel Spin',    desc: 'Spin daily for free coins or opals!' },
-  { selector: '[data-menu-id="daily-bonus"]',   icon: 'Gift',       title: 'Daily Bonus',   desc: 'Log in every day to earn streak rewards.' },
+  { selector: '[data-menu-id="wheel-spin"]',    icon: 'Dices',      title: 'Wheel Spin',    desc: 'Spin once a day for free coins or opals. Every spin counts — let\'s try it now!', actionLabel: 'Spin it!' },
+  { selector: '[data-menu-id="daily-bonus"]',   icon: 'Gift',       title: 'Daily Bonus',   desc: 'Log in every day to earn streak rewards. Your first reward is waiting — go claim it!', actionLabel: 'Claim it!' },
   { selector: '[data-menu-id="stats"]',         icon: 'BarChart2',  title: 'Stats',         desc: 'View and assign stat points to make your axolotl stronger.' },
   { selector: '[data-menu-id="eggs"]',          icon: 'Egg',        title: 'Eggs',          desc: 'Manage your eggs and hatch new axolotls.' },
   { selector: '[data-menu-id="social"]',        icon: 'Users',      title: 'Social',        desc: 'Add friends and visit their aquariums.' },
@@ -40,8 +49,9 @@ const MENU_STEPS: Array<{
   { selector: '[data-menu-id="achievements"]',  icon: 'Trophy',     title: 'Achievements',  desc: 'Track your progress and earn badges.' },
 ];
 
-export function MenuTutorialOverlay({ menuOpen, onOpenMenu, onComplete }: MenuTutorialOverlayProps) {
+export function MenuTutorialOverlay({ menuOpen, onOpenMenu, onComplete, onOpenSpinWheel, onOpenDailyBonus, spinDone, dailyClaimDone }: MenuTutorialOverlayProps) {
   // phase: 0 = "open menu", 1-9 = menu items, 10 = "close menu"
+  // phase 100 = waiting for user to spin wheel, phase 101 = waiting for daily claim
   const [phase, setPhase] = useState(0);
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
   const measureTimer = useRef<ReturnType<typeof setTimeout>>();
@@ -99,12 +109,63 @@ export function MenuTutorialOverlay({ menuOpen, onOpenMenu, onComplete }: MenuTu
   }, [phase, menuOpen, onComplete]);
 
   const handleNext = () => {
-    if (phase >= 1 && phase <= 8) {
+    if (phase === 2) {
+      // Wheel Spin — open the wheel and wait for a spin
+      onOpenSpinWheel();
+      setPhase(100);
+    } else if (phase === 3) {
+      // Daily Bonus — open it and wait for a claim
+      onOpenDailyBonus();
+      setPhase(101);
+    } else if (phase >= 1 && phase <= 8) {
       setPhase(phase + 1);
     } else if (phase === 9) {
       setPhase(10); // "close the menu" phase
     }
   };
+
+  // Advance out of wait phases once the actions are completed
+  useEffect(() => {
+    if (phase === 100 && spinDone) setPhase(3);
+  }, [phase, spinDone]);
+
+  useEffect(() => {
+    if (phase === 101 && dailyClaimDone) setPhase(4);
+  }, [phase, dailyClaimDone]);
+
+  // Wait phases — no spotlight, just a floating prompt at the bottom
+  if (phase === 100 || phase === 101) {
+    const isSpinWait = phase === 100;
+    const banner = (
+      <motion.div
+        className="fixed left-0 right-0 flex justify-center pointer-events-none"
+        style={{ bottom: 'max(5rem, calc(env(safe-area-inset-bottom) + 4.5rem))', zIndex: 10003 }}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35 }}
+      >
+        <div
+          className="mx-4 rounded-2xl px-5 py-3.5 text-center"
+          style={{
+            background: 'rgba(255,255,255,0.97)',
+            border: '2px solid rgba(99,102,241,0.6)',
+            boxShadow: '0 8px 32px rgba(99,102,241,0.3)',
+            maxWidth: 280,
+          }}
+        >
+          <p className="text-sm font-black text-slate-800 mb-0.5">
+            {isSpinWait ? 'Spin to win!' : 'Claim your reward!'}
+          </p>
+          <p className="text-xs text-slate-500">
+            {isSpinWait
+              ? 'Give the wheel a spin to continue the tour.'
+              : 'Claim your daily bonus to continue the tour.'}
+          </p>
+        </div>
+      </motion.div>
+    );
+    return createPortal(banner, document.body);
+  }
 
   if (!targetRect) return null;
 
@@ -221,9 +282,11 @@ export function MenuTutorialOverlay({ menuOpen, onOpenMenu, onComplete }: MenuTu
                   <button
                     onClick={handleNext}
                     className="px-5 py-1.5 rounded-xl text-xs font-bold text-white"
-                    style={{ background: 'linear-gradient(110deg, #6366f1 0%, #8b5cf6 100%)' }}
+                    style={{ background: currentStep?.actionLabel
+                      ? 'linear-gradient(110deg, #f59e0b 0%, #ef4444 100%)'
+                      : 'linear-gradient(110deg, #6366f1 0%, #8b5cf6 100%)' }}
                   >
-                    {phase === 9 ? 'Done' : 'Got it'}
+                    {currentStep?.actionLabel ?? (phase === 9 ? 'Done' : 'Got it')}
                   </button>
                 </div>
               </>

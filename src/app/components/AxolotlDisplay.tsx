@@ -2,6 +2,9 @@ import { motion } from 'motion/react';
 import { Axolotl, FoodItem } from '../types/game';
 import { useEffect, useState, useRef, useCallback } from 'react';
 import axolotlImg from '../../assets/axolotl.png';
+import axolotlRareImg from '../../assets/axolotl-rare-1.png';
+import axolotlEpicImg from '../../assets/axolotl-epic-1.png';
+import axolotlLegendaryImg from '../../assets/axolotl-legendary-1.png';
 
 interface AxolotlDisplayProps {
   axolotl: Axolotl;
@@ -194,6 +197,16 @@ export function AxolotlDisplay({ axolotl, foodItems, onEatFood, clickTarget, pla
 
   const size = getSize();
 
+  const getAxolotlImg = () => {
+    switch (axolotl.rarity) {
+      case 'Rare':      return axolotlRareImg;
+      case 'Epic':      return axolotlEpicImg;
+      case 'Legendary': return axolotlLegendaryImg;
+      case 'Mythic':    return axolotlLegendaryImg; // fallback until mythic art exists
+      default:          return axolotlImg; // Common
+    }
+  };
+
   return (
     <motion.div
       ref={wrapperRef}
@@ -298,7 +311,7 @@ export function AxolotlDisplay({ axolotl, foodItems, onEatFood, clickTarget, pla
 
         {/* Axolotl image — tappable in play mode */}
         <img
-          src={axolotlImg}
+          src={getAxolotlImg()}
           alt="Axolotl"
           width={size}
           height={size}

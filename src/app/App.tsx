@@ -122,6 +122,8 @@ export default function App() {
   const [shrimpTutorialShopPhase, setShrimpTutorialShopPhase] = useState<'info' | 'buy' | false>(false);
   const [showMenuTutorial, setShowMenuTutorial] = useState(false);
   const [showMenuTutorialComplete, setShowMenuTutorialComplete] = useState(false);
+  const [tutorialSpinDone, setTutorialSpinDone] = useState(false);
+  const [tutorialDailyClaimDone, setTutorialDailyClaimDone] = useState(false);
   /** Populated when a cloud pull finds two meaningful saves — clears after user resolves. */
   const [conflictSaves, setConflictSaves] = useState<{ local: GameState; cloud: GameState } | null>(null);
 
@@ -433,20 +435,18 @@ export default function App() {
       if (!loaded.friendCode) loaded.friendCode = generatePermanentFriendCode();
       setGameState(loaded);
 
-      // Check for daily login bonus on app open
+      // Check for daily login bonus on app open.
+      // Suppress auto-pop for players who haven't completed the menu tutorial yet —
+      // the tutorial will guide them to claim it manually for the first time.
       const today = getTodayDateString();
-      if (loaded.lastLoginDate !== today) {
-        // Show daily login bonus if not claimed today
+      if (loaded.lastLoginDate !== today && loaded.menuTutorialSeen !== false) {
         setTimeout(() => {
           setShowDailyLogin(true);
-        }, 1000); // Show after 1 second delay
+        }, 1000);
       }
     } else {
+      // Brand-new player — tutorial handles the first daily bonus claim.
       setGameState(getInitialGameState());
-      // Show daily login for new players
-      setTimeout(() => {
-        setShowDailyLogin(true);
-      }, 2000);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -705,11 +705,20 @@ export default function App() {
 
   // ── Nursery hatch animation (any context) ──
   if (hatchingNurseryEggId) {
+    const hatchingEgg =
+      gameState.incubatorEgg?.id === hatchingNurseryEggId
+        ? gameState.incubatorEgg
+        : (gameState.nurseryEggs ?? []).find(e => e.id === hatchingNurseryEggId);
     return (
       <HatchingIntroScreen
+        rarity={hatchingEgg?.rarity}
         onComplete={(name) => {
           handleHatchEgg(hatchingNurseryEggId, name);
           setHatchingNurseryEggId(null);
+          setActiveModal(null);
+          setShowEggsPanel(false);
+          setShowHamburgerMenu(false);
+          setCurrentScreen('home');
         }}
       />
     );
@@ -2524,6 +2533,10 @@ export default function App() {
             setShowMenuTutorial(false);
             setShowMenuTutorialComplete(true);
           }}
+          onOpenSpinWheel={() => setShowSpinWheel(true)}
+          onOpenDailyBonus={() => setShowDailyLogin(true)}
+          spinDone={tutorialSpinDone && !showSpinWheel}
+          dailyClaimDone={tutorialDailyClaimDone && !showDailyLogin}
         />
       )}
 
@@ -2687,16 +2700,26 @@ export default function App() {
         <>
           <SpinWheel
             isOpen={showSpinWheel}
-            onClose={() => setShowSpinWheel(false)}
-            onSpin={handleSpinWheel}
+            onClose={() => {
+              setShowSpinWheel(false);
+            }}
+            onSpin={(reward) => {
+              handleSpinWheel(reward);
+              if (showMenuTutorial) setTutorialSpinDone(true);
+            }}
             lastSpinDate={gameState.lastSpinDate}
             coins={gameState.coins}
             opals={gameState.opals || 0}
+            tutorialMode={showMenuTutorial}
           />
           <DailyLoginBonus
             isOpen={showDailyLogin}
             onClose={() => setShowDailyLogin(false)}
-            onClaim={handleDailyLoginClaim}
+            onClaim={(reward) => {
+              handleDailyLoginClaim(reward);
+              if (showMenuTutorial) setTutorialDailyClaimDone(true);
+            }}
+            tutorialMode={showMenuTutorial}
             lastLoginDate={gameState.lastLoginDate}
             loginStreak={gameState.loginStreak}
             lastMissForgivenDate={gameState.lastMissForgivenDate}

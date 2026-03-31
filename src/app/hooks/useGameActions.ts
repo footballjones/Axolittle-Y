@@ -546,17 +546,11 @@ export function useGameActions({
           newAxolotl.stats = { ...newAxolotl.stats, waterQuality: 70 };
         }
 
-        const welcomePoop: PoopItem = {
-          id: `poop-initial-${Date.now()}`,
-          x: Math.random() * 60 + 20,
-          createdAt: Date.now(),
-        };
-
         const next: GameState = {
           ...prev,
           axolotl: newAxolotl,
           incubatorEgg: null,
-          poopItems: [welcomePoop],
+          poopItems: [],
           lastPoopTime: Date.now(),
           totalEggsHatched: (prev.totalEggsHatched ?? 0) + 1,
         };

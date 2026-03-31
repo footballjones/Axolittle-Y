@@ -16,6 +16,8 @@ interface SpinWheelProps {
   lastSpinDate?: string;
   coins: number;
   opals: number;
+  /** When true, disables X and backdrop close so the tutorial can control flow */
+  tutorialMode?: boolean;
 }
 
 // ─── Geometry constants ───────────────────────────────────────────────────────
@@ -73,7 +75,7 @@ function slicePath(startDeg: number, endDeg: number): string {
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
-export function SpinWheel({ isOpen, onClose, onSpin, lastSpinDate }: SpinWheelProps) {
+export function SpinWheel({ isOpen, onClose, onSpin, lastSpinDate, tutorialMode }: SpinWheelProps) {
   const [spinning,  setSpinning]  = useState(false);
   const [rotation,  setRotation]  = useState(0);
   const [result,    setResult]    = useState<{ type: SectionType; amount: number } | null>(null);
@@ -138,7 +140,7 @@ export function SpinWheel({ isOpen, onClose, onSpin, lastSpinDate }: SpinWheelPr
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            onClick={onClose}
+            onClick={tutorialMode ? undefined : onClose}
           />
 
           {/* Modal */}
@@ -168,13 +170,15 @@ export function SpinWheel({ isOpen, onClose, onSpin, lastSpinDate }: SpinWheelPr
                       : 'Come back tomorrow!'}
                   </p>
                 </div>
-                <button
-                  onClick={onClose}
-                  className="text-white/40 hover:text-white/80 transition-colors p-1"
-                  type="button"
-                >
-                  <X size={18} strokeWidth={2.5} />
-                </button>
+                {!tutorialMode && (
+                  <button
+                    onClick={onClose}
+                    className="text-white/40 hover:text-white/80 transition-colors p-1"
+                    type="button"
+                  >
+                    <X size={18} strokeWidth={2.5} />
+                  </button>
+                )}
               </div>
 
               {/* ── Wheel ── */}
@@ -382,7 +386,9 @@ export function SpinWheel({ isOpen, onClose, onSpin, lastSpinDate }: SpinWheelPr
                     ? 'Spinning…'
                     : canSpinToday(lastSpinDate)
                       ? 'SPIN!'
-                      : 'Come Back Tomorrow'}
+                      : tutorialMode
+                        ? 'Continue'
+                        : 'Come Back Tomorrow'}
                 </motion.button>
                 {!canSpinToday(lastSpinDate) && !spinning && (
                   <p className="text-center text-violet-400/50 text-xs mt-2">

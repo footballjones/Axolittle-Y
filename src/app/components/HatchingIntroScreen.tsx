@@ -1,7 +1,81 @@
 import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import axolotlImg from '../../assets/axolotl.png';
+import axolotlRareImg from '../../assets/axolotl-rare-1.png';
+import axolotlEpicImg from '../../assets/axolotl-epic-1.png';
+import axolotlLegendaryImg from '../../assets/axolotl-legendary-1.png';
 import startingEggImg from '../../assets/eggs/Starting egg.png';
+
+type Rarity = 'Common' | 'Rare' | 'Epic' | 'Legendary' | 'Mythic';
+
+function getAxolotlImgForRarity(rarity?: Rarity) {
+  switch (rarity) {
+    case 'Rare':      return axolotlRareImg;
+    case 'Epic':      return axolotlEpicImg;
+    case 'Legendary': return axolotlLegendaryImg;
+    case 'Mythic':    return axolotlLegendaryImg;
+    default:          return axolotlImg;
+  }
+}
+
+interface RarityStyle {
+  label: string;
+  gradient: string;
+  glow: string;
+  shimmer: string;
+  badge: string;
+  stars: string;
+}
+
+function getRarityStyle(rarity?: Rarity): RarityStyle {
+  switch (rarity) {
+    case 'Rare':
+      return {
+        label: 'RARE',
+        gradient: 'linear-gradient(135deg, #38bdf8 0%, #818cf8 50%, #38bdf8 100%)',
+        glow: 'rgba(56,189,248,0.7)',
+        shimmer: 'rgba(186,230,253,0.6)',
+        badge: 'linear-gradient(135deg, #0ea5e9, #6366f1)',
+        stars: '✦',
+      };
+    case 'Epic':
+      return {
+        label: 'EPIC',
+        gradient: 'linear-gradient(135deg, #c084fc 0%, #e879f9 50%, #a855f7 100%)',
+        glow: 'rgba(192,132,252,0.8)',
+        shimmer: 'rgba(240,171,252,0.6)',
+        badge: 'linear-gradient(135deg, #a855f7, #ec4899)',
+        stars: '⚡',
+      };
+    case 'Legendary':
+      return {
+        label: 'LEGENDARY',
+        gradient: 'linear-gradient(135deg, #fbbf24 0%, #f97316 40%, #fde68a 70%, #f59e0b 100%)',
+        glow: 'rgba(251,191,36,0.9)',
+        shimmer: 'rgba(253,230,138,0.7)',
+        badge: 'linear-gradient(135deg, #f59e0b, #ef4444)',
+        stars: '🔥',
+      };
+    case 'Mythic':
+      return {
+        label: 'MYTHIC',
+        gradient: 'linear-gradient(135deg, #f472b6 0%, #a78bfa 25%, #34d399 50%, #60a5fa 75%, #f472b6 100%)',
+        glow: 'rgba(167,139,250,0.9)',
+        shimmer: 'rgba(255,255,255,0.7)',
+        badge: 'linear-gradient(135deg, #8b5cf6, #06b6d4, #ec4899)',
+        stars: '✨',
+      };
+    default:
+      return {
+        label: 'NEW AXOLOTL',
+        gradient: 'linear-gradient(135deg, #34d399 0%, #67e8f9 100%)',
+        glow: 'rgba(52,211,153,0.6)',
+        shimmer: 'rgba(167,243,208,0.5)',
+        badge: 'linear-gradient(135deg, #10b981, #06b6d4)',
+        stars: '✦',
+      };
+  }
+}
 
 const TAP_THRESHOLD = 5;
 
@@ -9,6 +83,7 @@ type Phase = 'tapping' | 'hatching' | 'naming';
 
 interface Props {
   onComplete: (name: string) => void;
+  rarity?: Rarity;
 }
 
 // Deterministic particle spread so renders are stable
@@ -25,7 +100,9 @@ const PARTICLES = Array.from({ length: 18 }, (_, i) => {
   };
 });
 
-export function HatchingIntroScreen({ onComplete }: Props) {
+export function HatchingIntroScreen({ onComplete, rarity }: Props) {
+  const revealImg = getAxolotlImgForRarity(rarity);
+  const rarityStyle = getRarityStyle(rarity);
   const [tapCount, setTapCount] = useState(0);
   const [phase, setPhase] = useState<Phase>('tapping');
   const [name, setName] = useState('');
@@ -41,7 +118,7 @@ export function HatchingIntroScreen({ onComplete }: Props) {
     setTapCount(next);
     if (next >= TAP_THRESHOLD) {
       setPhase('hatching');
-      setTimeout(() => setPhase('naming'), 2600);
+      setTimeout(() => setPhase('naming'), 5600);
     }
   }, [phase, tapCount]);
 
@@ -285,7 +362,7 @@ export function HatchingIntroScreen({ onComplete }: Props) {
 
             {/* Axolotl pops in */}
             <motion.img
-              src={axolotlImg}
+              src={revealImg}
               alt="Your axolotl!"
               style={{
                 width: 230, height: 'auto', position: 'absolute',
@@ -296,15 +373,90 @@ export function HatchingIntroScreen({ onComplete }: Props) {
               transition={{ delay: 0.58, duration: 0.92, ease: [0.175, 0.885, 0.32, 1.275] }}
             />
 
-            {/* "It hatched!" text */}
+            {/* Rarity reveal */}
             <motion.div
-              className="absolute text-center"
-              style={{ bottom: '18%' }}
-              initial={{ opacity: 0, y: 18 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 1.1, duration: 0.45 }}
+              className="absolute text-center flex flex-col items-center gap-2"
+              style={{ bottom: '12%' }}
+              initial={{ opacity: 0, scale: 0.4, y: 30 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              transition={{ delay: 1.3, duration: 0.55, ease: [0.175, 0.885, 0.32, 1.275] }}
             >
-              <p className="text-white font-black text-2xl drop-shadow-lg">It hatched!</p>
+              {/* "It hatched!" line */}
+              <p className="text-white/80 font-bold text-base tracking-widest uppercase drop-shadow-lg">
+                It hatched!
+              </p>
+
+              {/* Rarity badge */}
+              <div className="relative">
+                {/* Outer glow pulse */}
+                <motion.div
+                  className="absolute inset-0 rounded-2xl pointer-events-none"
+                  style={{ filter: `blur(18px)`, background: rarityStyle.glow }}
+                  animate={{ opacity: [0.6, 1, 0.6], scale: [1, 1.15, 1] }}
+                  transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
+                />
+
+                <motion.div
+                  className="relative rounded-2xl px-6 py-2.5 flex items-center gap-2.5"
+                  style={{
+                    background: rarityStyle.badge,
+                    boxShadow: `0 0 30px ${rarityStyle.glow}, 0 4px 20px rgba(0,0,0,0.4)`,
+                    border: '1.5px solid rgba(255,255,255,0.25)',
+                  }}
+                  animate={{ scale: [1, 1.04, 1] }}
+                  transition={{ delay: 1.8, duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
+                >
+                  {/* Shimmer sweep */}
+                  <motion.div
+                    className="absolute inset-0 rounded-2xl overflow-hidden pointer-events-none"
+                    initial={false}
+                  >
+                    <motion.div
+                      style={{
+                        position: 'absolute', top: 0, bottom: 0, width: '50%',
+                        background: `linear-gradient(90deg, transparent, ${rarityStyle.shimmer}, transparent)`,
+                      }}
+                      animate={{ x: ['-100%', '250%'] }}
+                      transition={{ delay: 1.9, duration: 1.1, repeat: Infinity, repeatDelay: 2.2, ease: 'easeInOut' }}
+                    />
+                  </motion.div>
+
+                  <span style={{ fontSize: 20 }}>{rarityStyle.stars}</span>
+                  <span
+                    className="font-black tracking-widest text-white"
+                    style={{
+                      fontSize: 22,
+                      textShadow: `0 0 20px ${rarityStyle.glow}, 0 2px 4px rgba(0,0,0,0.5)`,
+                      WebkitTextStroke: '0.5px rgba(255,255,255,0.3)',
+                    }}
+                  >
+                    {rarityStyle.label}
+                  </span>
+                  <span style={{ fontSize: 20 }}>{rarityStyle.stars}</span>
+                </motion.div>
+              </div>
+
+              {/* "You got a [rarity] axolotl!" sub-line */}
+              <motion.p
+                className="text-white/60 text-sm font-semibold tracking-wide"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 1.9, duration: 0.4 }}
+              >
+                You got a{' '}
+                <span
+                  className="font-black"
+                  style={{
+                    background: rarityStyle.gradient,
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text',
+                  }}
+                >
+                  {rarityStyle.label.charAt(0) + rarityStyle.label.slice(1).toLowerCase()}
+                </span>{' '}
+                axolotl!
+              </motion.p>
             </motion.div>
           </motion.div>
         )}
@@ -321,7 +473,7 @@ export function HatchingIntroScreen({ onComplete }: Props) {
             {/* Floating axolotl */}
             <div className="flex-1 flex items-center justify-center">
               <motion.img
-                src={axolotlImg}
+                src={revealImg}
                 alt="Your axolotl"
                 style={{
                   width: 230, height: 'auto',

@@ -24,6 +24,8 @@ interface DailyLoginBonusProps {
   lastMissForgivenDate?: string;
   coins: number;
   opals: number;
+  /** When true, disables X and backdrop close so the tutorial can control flow */
+  tutorialMode?: boolean;
 }
 
 export function DailyLoginBonus({
@@ -33,6 +35,7 @@ export function DailyLoginBonus({
   lastLoginDate,
   loginStreak = 0,
   lastMissForgivenDate,
+  tutorialMode,
   coins: _coins,
   opals: _opals,
 }: DailyLoginBonusProps) {
@@ -81,7 +84,7 @@ export function DailyLoginBonus({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            onClick={onClose}
+            onClick={tutorialMode ? undefined : onClose}
           />
 
           {/* Modal */}
@@ -102,12 +105,14 @@ export function DailyLoginBonus({
             >
               {/* Header */}
               <div className="relative px-6 pt-6 pb-4">
-                <button
-                  onClick={onClose}
-                  className="absolute top-4 right-4 rounded-full p-1.5 border border-violet-200/60 bg-white/60 active:bg-white/90"
-                >
-                  <X className="w-4 h-4 text-violet-400" strokeWidth={2.5} />
-                </button>
+                {!tutorialMode && (
+                  <button
+                    onClick={onClose}
+                    className="absolute top-4 right-4 rounded-full p-1.5 border border-violet-200/60 bg-white/60 active:bg-white/90"
+                  >
+                    <X className="w-4 h-4 text-violet-400" strokeWidth={2.5} />
+                  </button>
+                )}
 
                 <div className="text-center">
                   <div className="flex justify-center mb-3"><Gift className="w-12 h-12 text-violet-500" /></div>
