@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from '../context/AuthContext';
-import { PinPad } from './PinPad';
 import axolotlImg from '../../assets/axolotlnamescreen.png';
 
 type View = 'signin' | 'signup';
@@ -39,7 +38,7 @@ export function LoginScreen({ onClose }: LoginScreenProps = {}) {
 
   const [view, setView] = useState<View>('signin');
   const [username, setUsername] = useState('');
-  const [pin, setPin] = useState('');
+  const [password, setPassword] = useState('');
   const [recoveryEmail, setRecoveryEmail] = useState('');
   const [ageConfirmed, setAgeConfirmed] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -48,39 +47,28 @@ export function LoginScreen({ onClose }: LoginScreenProps = {}) {
 
   const resetForm = (nextView: View) => {
     setUsername('');
-    setPin('');
+    setPassword('');
     setRecoveryEmail('');
     setAgeConfirmed(false);
     setError(null);
     setView(nextView);
   };
 
-  // Auto-submit when PIN reaches 4 digits
-  const handlePinChange = (newPin: string) => {
-    setPin(newPin);
-    setError(null);
-    if (newPin.length === 4) {
-      if (view === 'signin') {
-        handleSignIn(newPin);
-      }
-      // Signup requires the button tap (extra fields to confirm first)
-    }
-  };
-
-  const handleSignIn = async (submittedPin?: string) => {
-    const pinToUse = submittedPin ?? pin;
+  const handleSignIn = async () => {
     if (!isValidUsername(username.trim())) {
       setError('Username must be 3–20 characters: letters, numbers or underscores only.');
       return;
     }
-    if (pinToUse.length < 4) return;
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters.');
+      return;
+    }
     setLoading(true);
     setError(null);
-    const { error } = await signIn(username.trim(), pinToUse);
+    const { error } = await signIn(username.trim(), password);
     setLoading(false);
     if (error) {
       setError(error);
-      setPin('');
     }
   };
 
@@ -89,8 +77,8 @@ export function LoginScreen({ onClose }: LoginScreenProps = {}) {
       setError('Username must be 3–20 characters: letters, numbers or underscores only.');
       return;
     }
-    if (pin.length < 4) {
-      setError('Choose a 4-digit PIN.');
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters.');
       return;
     }
     if (!ageConfirmed) {
@@ -101,13 +89,12 @@ export function LoginScreen({ onClose }: LoginScreenProps = {}) {
     setError(null);
     const { error } = await signUp(
       username.trim(),
-      pin,
+      password,
       recoveryEmail.trim() || undefined,
     );
     setLoading(false);
     if (error) {
       setError(error);
-      setPin('');
     }
   };
 
@@ -248,21 +235,39 @@ export function LoginScreen({ onClose }: LoginScreenProps = {}) {
                   placeholder="your_username"
                   autoCapitalize="none"
                   autoCorrect="off"
-                  className="w-full px-3 py-2.5 rounded-xl text-sm focus:outline-none text-cyan-100 placeholder:text-cyan-300/25 mb-4"
+                  className="w-full px-3 py-2.5 rounded-xl text-sm focus:outline-none text-cyan-100 placeholder:text-cyan-300/25 mb-3"
                   style={{ background: 'rgba(6,13,26,0.8)', border: '1px solid rgba(56,189,248,0.2)' }}
                   onFocus={e => (e.currentTarget.style.borderColor = 'rgba(56,189,248,0.5)')}
                   onBlur={e => (e.currentTarget.style.borderColor = 'rgba(56,189,248,0.2)')}
                 />
 
-                {/* PIN */}
-                <label className="block text-xs text-cyan-200/50 mb-3 font-semibold text-center">
-                  {pin.length === 4 ? 'Signing in…' : 'Enter your PIN'}
-                </label>
-                <PinPad value={pin} onChange={handlePinChange} disabled={loading || pin.length === 4} />
+                {/* Password */}
+                <label className="block text-xs text-cyan-200/50 mb-1 font-semibold">Password</label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={e => { setPassword(e.target.value); setError(null); }}
+                  placeholder="••••••••"
+                  className="w-full px-3 py-2.5 rounded-xl text-sm focus:outline-none text-cyan-100 placeholder:text-cyan-300/25 mb-4"
+                  style={{ background: 'rgba(6,13,26,0.8)', border: '1px solid rgba(56,189,248,0.2)' }}
+                  onFocus={e => (e.currentTarget.style.borderColor = 'rgba(56,189,248,0.5)')}
+                  onBlur={e => (e.currentTarget.style.borderColor = 'rgba(56,189,248,0.2)')}
+                  onKeyDown={e => { if (e.key === 'Enter') handleSignIn(); }}
+                />
 
                 {error && (
-                  <p className="text-xs text-red-400 font-medium text-center mt-3">{error}</p>
+                  <p className="text-xs text-red-400 font-medium text-center mb-3">{error}</p>
                 )}
+
+                <motion.button
+                  onClick={handleSignIn}
+                  disabled={loading || !username.trim() || password.length < 6}
+                  whileTap={{ scale: 0.97 }}
+                  className="w-full py-2.5 rounded-xl font-black text-white text-sm disabled:opacity-40 transition-opacity"
+                  style={{ background: 'linear-gradient(135deg, #2563eb 0%, #7c3aed 50%, #2563eb 100%)' }}
+                >
+                  {loading ? 'Signing in…' : 'Sign In'}
+                </motion.button>
               </motion.div>
             ) : (
               <motion.div
@@ -296,11 +301,23 @@ export function LoginScreen({ onClose }: LoginScreenProps = {}) {
                   3–20 characters · letters, numbers, underscores
                 </p>
 
-                {/* PIN */}
-                <label className="block text-xs text-cyan-200/50 mb-3 font-semibold text-center">
-                  Choose a 4-digit PIN
+                {/* Password */}
+                <label className="block text-xs text-cyan-200/50 mb-1 font-semibold">
+                  Choose a password
                 </label>
-                <PinPad value={pin} onChange={p => { setPin(p); setError(null); }} disabled={loading} />
+                <input
+                  type="password"
+                  value={password}
+                  onChange={e => { setPassword(e.target.value); setError(null); }}
+                  placeholder="••••••••"
+                  className="w-full px-3 py-2.5 rounded-xl text-sm focus:outline-none text-cyan-100 placeholder:text-cyan-300/25 mb-1"
+                  style={{ background: 'rgba(6,13,26,0.8)', border: '1px solid rgba(56,189,248,0.2)' }}
+                  onFocus={e => (e.currentTarget.style.borderColor = 'rgba(56,189,248,0.5)')}
+                  onBlur={e => (e.currentTarget.style.borderColor = 'rgba(56,189,248,0.2)')}
+                />
+                <p className="text-[10px] text-cyan-200/30 mb-3">
+                  At least 6 characters
+                </p>
 
                 {/* Optional parent/guardian email */}
                 <div className="mt-4">
@@ -341,7 +358,7 @@ export function LoginScreen({ onClose }: LoginScreenProps = {}) {
 
                 <motion.button
                   onClick={handleSignUp}
-                  disabled={loading || pin.length < 4 || !username.trim() || !ageConfirmed}
+                  disabled={loading || password.length < 6 || !username.trim() || !ageConfirmed}
                   whileTap={{ scale: 0.97 }}
                   className="w-full py-2.5 rounded-xl font-black text-white text-sm disabled:opacity-40 transition-opacity mt-4"
                   style={{ background: 'linear-gradient(135deg, #2563eb 0%, #7c3aed 50%, #2563eb 100%)' }}

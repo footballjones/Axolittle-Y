@@ -647,6 +647,13 @@ export default function App() {
         ...s,
         playTutorialSeen: true,
         poopItems: [...(s.poopItems ?? []), tutorialPoop],
+        axolotl: s.axolotl ? {
+          ...s.axolotl,
+          stats: {
+            ...s.axolotl.stats,
+            cleanliness: Math.min(s.axolotl.stats.cleanliness, 80),
+          },
+        } : s.axolotl,
       };
     });
     if (playModeTimerRef.current) clearTimeout(playModeTimerRef.current);

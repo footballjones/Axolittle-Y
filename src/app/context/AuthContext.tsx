@@ -23,15 +23,6 @@ function toSyntheticEmail(username: string): string {
   return `${sanitized}@play.axolittle.app`;
 }
 
-/**
- * Pads a 4-digit PIN to meet Supabase's minimum password length of 6.
- * The suffix is app-specific and never visible to users — they always
- * enter exactly 4 digits on the PIN pad.
- */
-function pinToPassword(pin: string): string {
-  return `${pin}-axo`;
-}
-
 /** Returns a user-friendly error message for common Supabase auth errors. */
 function friendlyError(message: string): string {
   if (message.includes('already registered') || message.includes('already exists')) {
@@ -54,18 +45,18 @@ interface AuthContextValue {
   /** True when the user has explicitly chosen to play without an account. */
   isGuest: boolean;
   /**
-   * Creates a new account with a username + 4-digit PIN.
-   * recoveryEmail is optional but strongly encouraged (used if PIN is forgotten).
+   * Creates a new account with a username + password.
+   * recoveryEmail is optional but strongly encouraged (used if password is forgotten).
    */
   signUp: (
     username: string,
-    pin: string,
+    password: string,
     recoveryEmail?: string
   ) => Promise<{ error: string | null }>;
   /**
-   * Signs into an existing account with a username + PIN.
+   * Signs into an existing account with a username + password.
    */
-  signIn: (username: string, pin: string) => Promise<{ error: string | null }>;
+  signIn: (username: string, password: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
   /** Opts the user into anonymous / local-only play. */
   continueAsGuest: () => void;
@@ -109,15 +100,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signUp = useCallback(
-    async (username: string, pin: string, recoveryEmail?: string) => {
+    async (username: string, password: string, recoveryEmail?: string) => {
       if (!isSupabaseConfigured) return { error: 'Supabase is not configured.' };
 
       const { error } = await supabase.auth.signUp({
         email: toSyntheticEmail(username),
-        password: pinToPassword(pin),
+        password,
         options: {
-          // Store the display username and optional recovery email in user metadata.
-          // The synthetic email is never shown to the user.
           data: {
             username,
             recoveryEmail: recoveryEmail?.trim() || null,
@@ -131,12 +120,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [],
   );
 
-  const signIn = useCallback(async (username: string, pin: string) => {
+  const signIn = useCallback(async (username: string, password: string) => {
     if (!isSupabaseConfigured) return { error: 'Supabase is not configured.' };
 
     const { error } = await supabase.auth.signInWithPassword({
       email: toSyntheticEmail(username),
-      password: pinToPassword(pin),
+      password,
     });
 
     if (error) return { error: friendlyError(error.message) };
