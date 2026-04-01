@@ -16,19 +16,6 @@ import { AxolotlDisplay } from './components/AxolotlDisplay';
 import { ActionButtons } from './components/ActionButtons';
 import { AquariumBackground } from './components/AquariumBackground';
 import { MiniGameMenu } from './components/MiniGameMenu';
-import { JuvenileUnlockModal } from './components/JuvenileUnlockModal';
-import { Level7UnlockModal } from './components/Level7UnlockModal';
-import { ShrimpTutorialIntroModal, ShrimpInfoModal } from './components/ShrimpTutorialModal';
-import { WellbeingIntroModal } from './components/WellbeingIntroModal';
-import { WellbeingCompleteModal } from './components/WellbeingCompleteModal';
-import { MenuTutorialOverlay } from './components/MenuTutorialOverlay';
-import { MenuTutorialCompleteModal } from './components/MenuTutorialCompleteModal';
-import { ShopModal } from './components/ShopModal';
-import { SocialModal } from './components/SocialModal';
-import { RebirthModal } from './components/RebirthModal';
-import { StatsModal } from './components/StatsModal';
-import { SettingsModal } from './components/SettingsModal';
-import { WaterChangeModal } from './components/WaterChangeModal';
 import { AchievementCenter } from './components/AchievementCenter';
 import { ALL_ACHIEVEMENTS } from './data/achievements';
 import { FoodDisplay } from './components/FoodDisplay';
@@ -36,19 +23,10 @@ import { FeedingTutorial } from './components/FeedingTutorial';
 import { PoopDisplay } from './components/PoopDisplay';
 import { EggsPanel } from './components/EggsPanel';
 import { DecorationsPanel } from './components/DecorationsPanel';
-import { SpinWheel } from './components/SpinWheel';
-import { DailyLoginBonus } from './components/DailyLoginBonus';
+import { ModalManager } from './components/ModalManager';
 import { Coins, Sparkles, Menu, X, Check, ChevronDown, ShoppingCart, Gamepad2, Home, Settings, Gift, Dices, BarChart2, Egg as EggIcon, Users, Backpack, HelpCircle, Trophy, Bell, Zap } from 'lucide-react';
 import { GameIcon, CoinIcon } from './components/icons';
 import { motion, AnimatePresence } from 'motion/react';
-import { KeepeyUpey } from './minigames/KeepeyUpey';
-import { FlappyFishHooks } from './minigames/FlappyFishHooks';
-import { MathRush } from './minigames/MathRush';
-import { AxolotlStacker } from './minigames/AxolotlStacker';
-import { CoralCode } from './minigames/CoralCode';
-import { TreasureHuntCave } from './minigames/TreasureHuntCave';
-import { Fishing } from './minigames/Fishing';
-import { BiteTag } from './minigames/BiteTag';
 import { useGameActions } from './hooks/useGameActions';
 import { useMenuState } from './hooks/useMenuState';
 import { useWellbeingEngine } from './hooks/useWellbeingEngine';
@@ -61,9 +39,6 @@ import { useCloudSync, SyncStatus } from './hooks/useCloudSync';
 import { sendFriendAction, isSupabaseConfigured, fetchPlayerAchievements, pushAchievements } from './services/supabase';
 import { LoginScreen } from './components/LoginScreen';
 import { SyncIndicator } from './components/SyncIndicator';
-import { SyncConflictModal } from './components/SyncConflictModal';
-import { JimmyChubsAquarium } from './components/JimmyChubsAquarium';
-import { LevelUpOverlay } from './components/LevelUpOverlay';
 import { JIMMY_CHUBS_FRIEND } from './utils/storage';
 
 // Jimmy & Chubs sends a gift every 3.5 days (twice a week)
@@ -340,6 +315,15 @@ export default function App() {
 
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const aquariumScrollRef = useRef<HTMLDivElement>(null);
+
+  const handleCenterAquarium = useCallback(() => {
+    const el = aquariumScrollRef.current;
+    if (el) {
+      isCenteringScroll.current = true;
+      el.scrollLeft = (el.scrollWidth - el.clientWidth) / 2;
+      requestAnimationFrame(() => { isCenteringScroll.current = false; });
+    }
+  }, []);
   const [showScrollHint, setShowScrollHint] = useState(true);
   const hasInitiallyScrolled = useRef(false);
   const isCenteringScroll = useRef(false);
@@ -2339,421 +2323,91 @@ export default function App() {
         </div>
       </div>
 
-      {/* Water Change Confirmation Modal */}
-      {showWaterChangeModal && (
-        <WaterChangeModal
-          onClose={() => setShowWaterChangeModal(false)}
-          onConfirm={handleWaterChange}
-          coins={coins}
-        />
-      )}
-
-      {/* Modals */}
-      {activeModal === 'shop' && (
-        <ShopModal
-          onClose={() => { setActiveModal(null); setShopSection(null); }}
-          coins={coins}
-          opals={opals}
-          onBuyCoins={handleBuyCoins}
-          onBuyOpals={handleBuyOpals}
-          onBuyFilter={handleBuyFilter}
-          onEquipFilter={handleEquipFilter}
-          onBuyShrimp={(pack) => {
-            handleBuyShrimp(pack);
-            if (shrimpTutorialShopPhase === 'buy') {
-              setShrimpTutorialShopPhase(false);
-              setActiveModal(null);
-              setShowShrimpInfoModal(true);
-            }
-          }}
-          highlightShrimpInfo={shrimpTutorialShopPhase === 'info'}
-          onShrimpInfoRead={() => setShrimpTutorialShopPhase('buy')}
-          onBuyTreatment={handleBuyTreatment}
-          initialSection={shopSection}
-          highlightShrimp={shrimpTutorialShopPhase === 'buy'}
-          ownedFilters={gameState?.ownedFilters ?? (gameState?.filterTier ? [gameState.filterTier] : [])}
-          equippedFilter={gameState?.equippedFilter ?? gameState?.filterTier}
-          ownedDecos={gameState?.unlockedDecorations ?? []}
-          equippedDecos={gameState?.customization?.decorations ?? []}
-          activeBackground={gameState?.customization?.background ?? ''}
-          onBuyDecoration={handlePurchase}
-          onEquipDecoration={handleEquipDecoration}
-          onStoreTreatment={handleStoreTreatment}
-          onStoreShrimpInInventory={(pack) => {
-            handleStoreShrimpInInventory(pack);
-            if (shrimpTutorialShopPhase === 'buy') {
-              setShrimpTutorialShopPhase(false);
-              setActiveModal(null);
-              setShowShrimpInfoModal(true);
-            }
-          }}
-        />
-      )}
-
-      {activeModal === 'social' && (
-        <SocialModal
-          onClose={() => setActiveModal(null)}
-          axolotl={axolotl}
-          friendCode={gameState.friendCode ?? ''}
-          friends={friends}
-          onAddFriend={handleAddFriend}
-          onRemoveFriend={handleRemoveFriend}
-          onBreed={handleBreed}
-          onGiftFriend={handleGiftFriend}
-          onPokeFriend={handlePokeFriend}
-          onVisitJimmy={() => {
-            setActiveModal(null);
-            setShowJimmyAquarium(true);
-          }}
-          lineage={lineage}
-        />
-      )}
-
-      {/* Jimmy & Chubs aquarium */}
-      <AnimatePresence>
-        {showJimmyAquarium && (
-          <motion.div
-            key="jimmy-aquarium"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            style={{ position: 'fixed', inset: 0, zIndex: 50 }}
-          >
-            <JimmyChubsAquarium onBack={() => setShowJimmyAquarium(false)} />
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {activeModal === 'rebirth' && showRebirthButton && (
-        <RebirthModal
-          onClose={() => setActiveModal(null)}
-          onConfirm={handleRebirth}
-          currentAxolotl={axolotl}
-        />
-      )}
-
-      {activeModal === 'stats' && (
-        <StatsModal
-          onClose={() => setActiveModal(null)}
-          stats={axolotl.secondaryStats}
-          name={axolotl.name}
-          pendingPoints={gameState?.pendingStatPoints ?? 0}
-          onAllocateStat={(stat) => {
-            setGameState(prev => {
-              if (!prev?.axolotl) return prev;
-              if ((prev.pendingStatPoints ?? 0) <= 0) return prev;
-              const updatedStats = {
-                ...prev.axolotl.secondaryStats,
-                [stat]: Math.min(100, prev.axolotl.secondaryStats[stat] + 1),
-              };
-              const remaining = (prev.pendingStatPoints ?? 0) - 1;
-              // Auto-close when last point is spent
-              if (remaining === 0) setTimeout(() => setActiveModal(null), 300);
-              return {
-                ...prev,
-                pendingStatPoints: remaining,
-                axolotl: { ...prev.axolotl, secondaryStats: updatedStats },
-              };
-            });
-          }}
-        />
-      )}
-
-      {activeModal === 'settings' && (
-        <SettingsModal
-          onClose={() => setActiveModal(null)}
-          onResetGame={() => {
-            localStorage.clear();
-            setGameState(null);
-          }}
-          musicEnabled={gameState?.musicEnabled !== false}
-          onMusicToggle={(enabled) => {
-            setGameState(prev => prev ? { ...prev, musicEnabled: enabled } : null);
-          }}
-          soundEffectsEnabled={gameState?.soundEnabled !== false}
-          onSoundToggle={(enabled) => {
-            setGameState(prev => prev ? { ...prev, soundEnabled: enabled } : null);
-          }}
-          username={user?.user_metadata?.username ?? user?.email?.split('@')[0] ?? null}
-          isGuest={isGuest || !user}
-          onSignOut={async () => {
-            await signOut();
-            setActiveModal(null);
-          }}
-          onSignIn={() => {
-            setActiveModal(null);
-            setShowAuthOverlay(true);
-          }}
-        />
-      )}
-
-      {/* In-game sign-in overlay */}
-      {showAuthOverlay && (
-        <LoginScreen onClose={() => setShowAuthOverlay(false)} />
-      )}
-
-      {/* Cloud save conflict resolution — shown before anything else when two meaningful saves exist */}
-      {conflictSaves && (
-        <SyncConflictModal
-          localState={conflictSaves.local}
-          cloudState={conflictSaves.cloud}
-          onKeepLocal={() => {
-            // User wants to keep what's on this device — dismiss and let the next
-            // debounced push overwrite the (older) cloud save naturally.
-            setConflictSaves(null);
-          }}
-          onUseCloud={() => {
-            // User chose the cloud save — hydrate app state with it.
-            let state = conflictSaves.cloud;
-            if (!state.friendCode) state = { ...state, friendCode: generatePermanentFriendCode() };
-            setGameState(state);
-            setConflictSaves(null);
-          }}
-        />
-      )}
-
-      {/* Wellbeing intro modal — shown before the feed tutorial on new games */}
-      <AnimatePresence>
-        {gameState?.wellbeingIntroSeen === false &&
-          gameState?.tutorialStep === 'feed' &&
-          gameState?.axolotl && (
-          <WellbeingIntroModal
-            axolotlName={gameState.axolotl.name}
-            onStart={() => {
-              // Snap aquarium to center so feed button and worm drop at x=50 are in view
-              const el = aquariumScrollRef.current;
-              if (el) {
-                isCenteringScroll.current = true;
-                el.scrollLeft = (el.scrollWidth - el.clientWidth) / 2;
-                requestAnimationFrame(() => { isCenteringScroll.current = false; });
-              }
-              setGameState(s => s ? { ...s, wellbeingIntroSeen: true } : s);
-            }}
-          />
-        )}
-      </AnimatePresence>
-
-      {/* Wellbeing completion modal — shown after water tutorial, grants 5 opals */}
-      <AnimatePresence>
-        {gameState?.waterTutorialSeen === true &&
-          gameState?.wellbeingCompleteSeen === false &&
-          gameState?.axolotl && (
-          <WellbeingCompleteModal
-            axolotlName={gameState.axolotl.name}
-            onCollect={() =>
-              setGameState(s =>
-                s ? { ...s, wellbeingCompleteSeen: true, opals: (s.opals ?? 0) + 5 } : s
-              )
-            }
-          />
-        )}
-      </AnimatePresence>
-
-      {/* Menu tutorial overlay */}
-      {showMenuTutorial && (
-        <MenuTutorialOverlay
-          menuOpen={showHamburgerMenu}
-          onOpenMenu={() => setShowHamburgerMenu(true)}
-          onComplete={() => {
-            setShowMenuTutorial(false);
-            setShowMenuTutorialComplete(true);
-          }}
-          onOpenSpinWheel={() => setShowSpinWheel(true)}
-          onOpenDailyBonus={() => setShowDailyLogin(true)}
-          spinDone={tutorialSpinDone && !showSpinWheel}
-          dailyClaimDone={tutorialDailyClaimDone && !showDailyLogin}
-        />
-      )}
-
-      {/* Menu tutorial completion modal — grants 10 opals */}
-      <AnimatePresence>
-        {showMenuTutorialComplete && (
-          <MenuTutorialCompleteModal
-            onCollect={() => {
-              setShowMenuTutorialComplete(false);
-              setGameState(s =>
-                s ? { ...s, menuTutorialSeen: true, opals: (s.opals ?? 0) + 10 } : s
-              );
-              delayNextTutorial(1500);
-            }}
-          />
-        )}
-      </AnimatePresence>
-
-      {/* Juvenile stage unlock modal */}
-      <AnimatePresence>
-        {showJuvenileUnlock && gameState?.axolotl && (
-          <JuvenileUnlockModal
-            axolotlName={gameState.axolotl.name}
-            onClose={() => {
-              setShowJuvenileUnlock(false);
-              setGameState(s => s ? { ...s, juvenileUnlockSeen: true } : s);
-            }}
-          />
-        )}
-      </AnimatePresence>
-
-      {/* Level 7 games unlock modal */}
-      <AnimatePresence>
-        {showLevel7Unlock && (
-          <Level7UnlockModal
-            onClose={() => {
-              setShowLevel7Unlock(false);
-              setGameState(s => s ? { ...s, level7UnlockSeen: true } : s);
-            }}
-          />
-        )}
-      </AnimatePresence>
-
-      {/* Level 11 — Ghost Shrimp tutorial intro (grants 10 opals) */}
-      <AnimatePresence>
-        {showShrimpTutorialIntro && (
-          <ShrimpTutorialIntroModal
-            onOpenShop={() => {
-              setShowShrimpTutorialIntro(false);
-              setShrimpTutorialShopPhase('info');
-              setShopSection('wellbeing');
-              setActiveModal('shop');
-            }}
-          />
-        )}
-      </AnimatePresence>
-
-      {/* Level 11 — Ghost Shrimp info popup (shown after first purchase) */}
-      <AnimatePresence>
-        {showShrimpInfoModal && (
-          <ShrimpInfoModal
-            onClose={() => {
-              setShowShrimpInfoModal(false);
-              setGameState(s => s ? { ...s, shrimpTutorialSeen: true } : s);
-            }}
-          />
-        )}
-      </AnimatePresence>
-
-      {/* Level-up fanfare overlay */}
-      <AnimatePresence>
-        {levelUpInfo && (
-          <LevelUpOverlay
-            key={levelUpInfo.level}
-            level={levelUpInfo.level}
-            onAssignStat={() => {
-              setLevelUpInfo(null);
-              setActiveModal('stats');
-              setShowHamburgerMenu(false);
-            }}
-            onDismiss={() => setLevelUpInfo(null)}
-          />
-        )}
-      </AnimatePresence>
-
-      {/* Mini-Games */}
-      <AnimatePresence>
-        {activeGame === 'keepey-upey' && gameState && (
-          <KeepeyUpey
-            onEnd={handleMiniGameEnd}
-            onDeductEnergy={handleDeductEnergy}
-            onApplyReward={handleMiniGameApplyReward}
-            energy={gameState.energy}
-            soundEnabled={gameState.soundEnabled !== false}
-          />
-        )}
-        {activeGame === 'fish-hooks' && gameState && (
-          <FlappyFishHooks
-            onEnd={handleMiniGameEnd}
-            onDeductEnergy={handleDeductEnergy}
-            onApplyReward={handleMiniGameApplyReward}
-            energy={gameState.energy}
-          />
-        )}
-        {activeGame === 'math-rush' && gameState && (
-          <MathRush
-            onEnd={handleMiniGameEnd}
-            onDeductEnergy={handleDeductEnergy}
-            onApplyReward={handleMiniGameApplyReward}
-            energy={gameState.energy}
-          />
-        )}
-        {activeGame === 'axolotl-stacker' && gameState && (
-          <AxolotlStacker
-            onEnd={handleMiniGameEnd}
-            onDeductEnergy={handleDeductEnergy}
-            onApplyReward={handleMiniGameApplyReward}
-            energy={gameState.energy}
-          />
-        )}
-        {activeGame === 'coral-code' && gameState && (
-          <CoralCode
-            onEnd={handleMiniGameEnd}
-            onDeductEnergy={handleDeductEnergy}
-            onApplyReward={handleMiniGameApplyReward}
-            energy={gameState.energy}
-          />
-        )}
-        {activeGame === 'treasure-hunt' && gameState && (
-          <TreasureHuntCave
-            onEnd={handleMiniGameEnd}
-            onDeductEnergy={handleDeductEnergy}
-            onApplyReward={handleMiniGameApplyReward}
-            energy={gameState.energy}
-          />
-        )}
-        {activeGame === 'fishing' && gameState && (
-          <Fishing
-            onEnd={handleMiniGameEnd}
-            onDeductEnergy={handleDeductEnergy}
-            onApplyReward={handleMiniGameApplyReward}
-            energy={gameState.energy}
-            strength={gameState.axolotl?.secondaryStats?.strength || 0}
-            speed={gameState.axolotl?.secondaryStats?.speed || 0}
-          />
-        )}
-        {activeGame === 'bite-tag' && gameState && (
-          <BiteTag
-            onEnd={handleMiniGameEnd}
-            onDeductEnergy={handleDeductEnergy}
-            onApplyReward={handleMiniGameApplyReward}
-            energy={gameState.energy}
-            speed={gameState.axolotl?.secondaryStats?.speed || 0}
-            stamina={gameState.axolotl?.secondaryStats?.stamina || 0}
-          />
-        )}
-      </AnimatePresence>
-
-      {/* Daily Features */}
-      {gameState && (
-        <>
-          <SpinWheel
-            isOpen={showSpinWheel}
-            onClose={() => {
-              setShowSpinWheel(false);
-            }}
-            onSpin={(reward) => {
-              handleSpinWheel(reward);
-              if (showMenuTutorial) setTutorialSpinDone(true);
-            }}
-            lastSpinDate={gameState.lastSpinDate}
-            coins={gameState.coins}
-            opals={gameState.opals || 0}
-            tutorialMode={showMenuTutorial}
-          />
-          <DailyLoginBonus
-            isOpen={showDailyLogin}
-            onClose={() => setShowDailyLogin(false)}
-            onClaim={(reward) => {
-              handleDailyLoginClaim(reward);
-              if (showMenuTutorial) setTutorialDailyClaimDone(true);
-            }}
-            tutorialMode={showMenuTutorial}
-            lastLoginDate={gameState.lastLoginDate}
-            loginStreak={gameState.loginStreak}
-            lastMissForgivenDate={gameState.lastMissForgivenDate}
-            coins={gameState.coins}
-            opals={gameState.opals || 0}
-          />
-        </>
-      )}
+      <ModalManager
+        gameState={gameState}
+        setGameState={setGameState}
+        axolotl={axolotl}
+        coins={coins}
+        opals={opals}
+        friends={friends}
+        lineage={lineage}
+        showRebirthButton={showRebirthButton}
+        user={user ?? null}
+        isGuest={isGuest}
+        signOut={signOut}
+        onCenterAquarium={handleCenterAquarium}
+        activeModal={activeModal}
+        setActiveModal={setActiveModal}
+        showWaterChangeModal={showWaterChangeModal}
+        setShowWaterChangeModal={setShowWaterChangeModal}
+        showJimmyAquarium={showJimmyAquarium}
+        setShowJimmyAquarium={setShowJimmyAquarium}
+        showJuvenileUnlock={showJuvenileUnlock}
+        setShowJuvenileUnlock={setShowJuvenileUnlock}
+        showLevel7Unlock={showLevel7Unlock}
+        setShowLevel7Unlock={setShowLevel7Unlock}
+        showShrimpTutorialIntro={showShrimpTutorialIntro}
+        setShowShrimpTutorialIntro={setShowShrimpTutorialIntro}
+        showShrimpInfoModal={showShrimpInfoModal}
+        setShowShrimpInfoModal={setShowShrimpInfoModal}
+        shrimpTutorialShopPhase={shrimpTutorialShopPhase}
+        setShrimpTutorialShopPhase={setShrimpTutorialShopPhase}
+        showMenuTutorial={showMenuTutorial}
+        showMenuTutorialComplete={showMenuTutorialComplete}
+        setShowMenuTutorialComplete={setShowMenuTutorialComplete}
+        tutorialSpinDone={tutorialSpinDone}
+        setTutorialSpinDone={setTutorialSpinDone}
+        tutorialDailyClaimDone={tutorialDailyClaimDone}
+        setTutorialDailyClaimDone={setTutorialDailyClaimDone}
+        conflictSaves={conflictSaves}
+        setConflictSaves={setConflictSaves}
+        showAuthOverlay={showAuthOverlay}
+        setShowAuthOverlay={setShowAuthOverlay}
+        showSpinWheel={showSpinWheel}
+        setShowSpinWheel={setShowSpinWheel}
+        showDailyLogin={showDailyLogin}
+        setShowDailyLogin={setShowDailyLogin}
+        showHamburgerMenu={showHamburgerMenu}
+        setShowHamburgerMenu={setShowHamburgerMenu}
+        shopSection={shopSection}
+        setShopSection={setShopSection}
+        activeGame={activeGame}
+        levelUpInfo={levelUpInfo}
+        setLevelUpInfo={setLevelUpInfo}
+        delayNextTutorial={delayNextTutorial}
+        onWaterChange={handleWaterChange}
+        onBuyCoins={handleBuyCoins}
+        onBuyOpals={handleBuyOpals}
+        onBuyFilter={handleBuyFilter}
+        onEquipFilter={handleEquipFilter}
+        onBuyShrimp={handleBuyShrimp}
+        onBuyTreatment={handleBuyTreatment}
+        onStoreTreatment={handleStoreTreatment}
+        onStoreShrimpInInventory={handleStoreShrimpInInventory}
+        onBuyDecoration={handlePurchase}
+        onEquipDecoration={handleEquipDecoration}
+        onAddFriend={handleAddFriend}
+        onRemoveFriend={handleRemoveFriend}
+        onBreed={handleBreed}
+        onGiftFriend={handleGiftFriend}
+        onPokeFriend={handlePokeFriend}
+        onRebirth={handleRebirth}
+        onHatchEgg={handleHatchEgg}
+        onMoveToIncubator={handleMoveToIncubator}
+        onBoostEgg={handleBoostEgg}
+        onGiftEgg={handleGiftEgg}
+        onDiscardEgg={handleDiscardEgg}
+        onUnlockNurserySlot={handleUnlockNurserySlot}
+        onReleaseAxolotl={handleReleaseAxolotl}
+        onMiniGameEnd={handleMiniGameEnd}
+        onMiniGameApplyReward={handleMiniGameApplyReward}
+        onDeductEnergy={handleDeductEnergy}
+        onClaimAchievement={handleClaimAchievement}
+        onUnlockGames={handleUnlockGames}
+        onRefillEnergy={handleRefillEnergy}
+        onSpinWheel={handleSpinWheel}
+        onDailyLoginClaim={handleDailyLoginClaim}
+      />
     </div>
   );
 }
