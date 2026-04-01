@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { GameState, SecondaryStats } from './types/game';
 import {
-  generateAxolotl,
   canRebirth,
   calculateLevel,
   getXPForNextLevel,
@@ -28,6 +27,7 @@ import { Coins, Sparkles, Menu, X, Check, ChevronDown, ShoppingCart, Gamepad2, H
 import { GameIcon, CoinIcon } from './components/icons';
 import { motion, AnimatePresence } from 'motion/react';
 import { useGameActions } from './hooks/useGameActions';
+import { useOnboarding } from './hooks/useOnboarding';
 import { useMenuState } from './hooks/useMenuState';
 import { useWellbeingEngine } from './hooks/useWellbeingEngine';
 import { useEconomyActions } from './hooks/useEconomyActions';
@@ -53,8 +53,6 @@ function rollJimmyGift(): { coins: number; opals: number } {
 
 export default function App() {
   const [gameState, setGameState] = useState<GameState | null>(null);
-  const [showHatchingIntro, setShowHatchingIntro] = useState(false);
-  const [hatchingNurseryEggId, setHatchingNurseryEggId] = useState<string | null>(null);
   const [clickTarget, setClickTarget] = useState<{ x: number; y: number; timestamp: number } | null>(null);
   const [tapRipples, setTapRipples] = useState<{ id: number; x: number; y: number }[]>([]);
   const tapRippleCounter = useRef(0);
@@ -64,41 +62,12 @@ export default function App() {
   const [playMode, setPlayMode] = useState(false);
   const playModeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Tracks in-games-screen tutorial phase ('unlock' → prompt to use opals, 'keepey' → prompt to play Keepey Upey)
-  const [mgTutPhase, setMgTutPhase] = useState<'unlock' | 'keepey' | null>(null);
-
-  // ── Tutorial pacing ───────────────────────────────────────────────────────
-  // When a tutorial step completes we don't jump immediately to the next one.
-  // `tutorialAllowed` is set false and re-enabled after the configured delay so
-  // the player has a moment to breathe between prompts.
-  const [tutorialAllowed, setTutorialAllowed] = useState(true);
-  const tutorialDelayRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const delayNextTutorial = useCallback((ms: number) => {
-    setTutorialAllowed(false);
-    if (tutorialDelayRef.current) clearTimeout(tutorialDelayRef.current);
-    tutorialDelayRef.current = setTimeout(() => {
-      setTutorialAllowed(true);
-      tutorialDelayRef.current = null;
-    }, ms);
-  }, []);
-  // ─────────────────────────────────────────────────────────────────────────
-
   // (level-up stat data is now tracked via gameState.pendingStatPoints)
   /** Level-up fanfare overlay: shows when the axolotl gains a level */
   const [levelUpInfo, setLevelUpInfo] = useState<{ level: number } | null>(null);
 
   /** Show Jimmy & Chubs's aquarium */
   const [showJimmyAquarium, setShowJimmyAquarium] = useState(false);
-  const [showJuvenileUnlock, setShowJuvenileUnlock] = useState(false);
-  const [showLevel7Unlock, setShowLevel7Unlock] = useState(false);
-  const [showShrimpTutorialIntro, setShowShrimpTutorialIntro] = useState(false);
-  const [showShrimpInfoModal, setShowShrimpInfoModal] = useState(false);
-  // 'info' = highlight info button first, 'buy' = highlight Small Colony pack, false = not active
-  const [shrimpTutorialShopPhase, setShrimpTutorialShopPhase] = useState<'info' | 'buy' | false>(false);
-  const [showMenuTutorial, setShowMenuTutorial] = useState(false);
-  const [showMenuTutorialComplete, setShowMenuTutorialComplete] = useState(false);
-  const [tutorialSpinDone, setTutorialSpinDone] = useState(false);
-  const [tutorialDailyClaimDone, setTutorialDailyClaimDone] = useState(false);
   /** Populated when a cloud pull finds two meaningful saves — clears after user resolves. */
   const [conflictSaves, setConflictSaves] = useState<{ local: GameState; cloud: GameState } | null>(null);
 
@@ -223,6 +192,47 @@ export default function App() {
     setShopSection,
   } = menuState;
 
+  // ── Onboarding / tutorial state ───────────────────────────────────────────
+  const {
+    showHatchingIntro,
+    setShowHatchingIntro,
+    hatchingNurseryEggId,
+    setHatchingNurseryEggId,
+    handleStart,
+    handleNameAxolotl,
+    tutorialAllowed,
+    delayNextTutorial,
+    swipeTutDoneRef,
+    mgTutPhase,
+    setMgTutPhase,
+    showJuvenileUnlock,
+    setShowJuvenileUnlock,
+    showLevel7Unlock,
+    setShowLevel7Unlock,
+    showShrimpTutorialIntro,
+    setShowShrimpTutorialIntro,
+    showShrimpInfoModal,
+    setShowShrimpInfoModal,
+    shrimpTutorialShopPhase,
+    setShrimpTutorialShopPhase,
+    showMenuTutorial,
+    showMenuTutorialComplete,
+    setShowMenuTutorialComplete,
+    tutorialSpinDone,
+    setTutorialSpinDone,
+    tutorialDailyClaimDone,
+    setTutorialDailyClaimDone,
+    tutorialLockMode,
+    lockedActionButtons,
+  } = useOnboarding({
+    gameState,
+    setGameState,
+    currentScreen,
+    activeModal,
+    playMode,
+    cleaningMode,
+  });
+
   // Aquarium music — play everywhere except minigame page and Jimmy's aquarium
   // Music continues even when modals (shop, social, stats, settings) are open
   // Respects global musicEnabled setting from GameState
@@ -327,8 +337,6 @@ export default function App() {
   const [showScrollHint, setShowScrollHint] = useState(true);
   const hasInitiallyScrolled = useRef(false);
   const isCenteringScroll = useRef(false);
-  // Prevents the swipe-tutorial advance from firing more than once
-  const swipeTutDoneRef = useRef(false);
 
   // Deducts 1 energy when a mini-game attempt begins.
   // Uses functional updater so it's always reading fresh state.
@@ -468,129 +476,7 @@ export default function App() {
     }
   }, [gameState]);
 
-  // Show Juvenile unlock modal the first time the axolotl reaches the Juvenile stage
-  useEffect(() => {
-    if (
-      gameState?.axolotl?.stage === 'sprout' &&
-      !gameState.juvenileUnlockSeen &&
-      !showJuvenileUnlock
-    ) {
-      setShowJuvenileUnlock(true);
-    }
-  }, [gameState?.axolotl?.stage, gameState?.juvenileUnlockSeen]);
-
-  // Show Level 7 unlock modal the first time the player reaches level 7
-  useEffect(() => {
-    const lvl = gameState?.axolotl ? calculateLevel(gameState.axolotl.experience) : 0;
-    if (lvl >= 7 && !gameState?.level7UnlockSeen && !showLevel7Unlock) {
-      setShowLevel7Unlock(true);
-    }
-  }, [gameState?.axolotl?.experience, gameState?.level7UnlockSeen]);
-
-  // Show Ghost Shrimp tutorial when player first reaches level 11 and is on the aquarium screen
-  useEffect(() => {
-    const lvl = gameState?.axolotl ? calculateLevel(gameState.axolotl.experience) : 0;
-    if (
-      lvl >= 11 &&
-      !gameState?.shrimpTutorialSeen &&
-      !showShrimpTutorialIntro &&
-      currentScreen === 'home' &&
-      !activeModal
-    ) {
-      // Grant 10 opals before showing the modal
-      setGameState(s => s ? { ...s, opals: (s.opals ?? 0) + 10 } : s);
-      setShowShrimpTutorialIntro(true);
-    }
-  }, [gameState?.axolotl?.experience, gameState?.shrimpTutorialSeen, currentScreen, activeModal]);
-
-  // ── Tutorial pacing: fire delays whenever a tutorial step completes ─────────
-  // stat tutorial seen → 1 s before play tutorial appears
-  const prevStatTut = useRef(gameState?.statTutorialSeen);
-  useEffect(() => {
-    if (gameState?.statTutorialSeen && !prevStatTut.current) delayNextTutorial(1000);
-    prevStatTut.current = gameState?.statTutorialSeen;
-  }, [gameState?.statTutorialSeen, delayNextTutorial]);
-
-  // play tutorial seen (Playtime tapped) → 4 s so the player can actually play
-  const prevPlayTut = useRef(gameState?.playTutorialSeen);
-  useEffect(() => {
-    if (gameState?.playTutorialSeen && !prevPlayTut.current) delayNextTutorial(4000);
-    prevPlayTut.current = gameState?.playTutorialSeen;
-  }, [gameState?.playTutorialSeen, delayNextTutorial]);
-
-  // poop tutorial done (first poop cleaned) → 1 s before water tutorial
-  const prevCleanTut = useRef(gameState?.cleanTutorialSeen);
-  useEffect(() => {
-    if (gameState?.cleanTutorialSeen === true && prevCleanTut.current === false) delayNextTutorial(1000);
-    prevCleanTut.current = gameState?.cleanTutorialSeen;
-  }, [gameState?.cleanTutorialSeen, delayNextTutorial]);
-
-  // water tutorial done (water change confirmed) → 1 s before mini-game tutorial
-  const prevWaterTut = useRef(gameState?.waterTutorialSeen);
-  useEffect(() => {
-    if (gameState?.waterTutorialSeen === true && prevWaterTut.current === false) delayNextTutorial(1000);
-    prevWaterTut.current = gameState?.waterTutorialSeen;
-  }, [gameState?.waterTutorialSeen, delayNextTutorial]);
-  // Menu tutorial: auto-start after wellbeing complete
-  useEffect(() => {
-    if (
-      gameState?.wellbeingCompleteSeen === true &&
-      !gameState?.menuTutorialSeen &&
-      gameState?.tutorialStep === 'done' &&
-      !showMenuTutorial &&
-      !showMenuTutorialComplete &&
-      tutorialAllowed &&
-      currentScreen === 'home'
-    ) {
-      const t = setTimeout(() => setShowMenuTutorial(true), 1500);
-      return () => clearTimeout(t);
-    }
-  }, [gameState?.wellbeingCompleteSeen, gameState?.menuTutorialSeen, gameState?.tutorialStep, tutorialAllowed, currentScreen, showMenuTutorial, showMenuTutorialComplete]);
-
-  // ──────────────────────────────────────────────────────────────────────────
-
-  // Mini-game screen tutorial: set phase when navigating to games screen
-  const isGameLocked = !!gameState?.miniGamesLockedUntil && gameState.miniGamesLockedUntil > Date.now();
-  useEffect(() => {
-    if (currentScreen !== 'games') { setMgTutPhase(null); return; }
-    if (gameState?.miniGameTutorialSeen || !gameState?.waterTutorialSeen || !gameState?.wellbeingCompleteSeen || !gameState?.menuTutorialSeen) return;
-    setMgTutPhase(isGameLocked ? 'unlock' : 'keepey');
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentScreen]);
-
-  // Advance unlock → stacker once the lock clears
-  useEffect(() => {
-    if (mgTutPhase === 'unlock' && !isGameLocked) setMgTutPhase('keepey');
-  }, [mgTutPhase, isGameLocked]);
-
-  // Mark miniGameTutorialSeen when keepey phase is reached so home-screen bubble doesn't reappear
-  useEffect(() => {
-    if (mgTutPhase === 'keepey') {
-      setGameState(s => s && !s.miniGameTutorialSeen ? { ...s, miniGameTutorialSeen: true } : s);
-    }
-  }, [mgTutPhase]);
-
   // Stats decay, evolution, and energy regen are handled by useWellbeingEngine
-
-  const handleStart = useCallback((name: string) => {
-    setGameState(prev => {
-      const base = prev || getInitialGameState();
-      const axolotl = generateAxolotl(name);
-      // New players start with waterQuality 70 so the water-change tutorial feels relevant
-      const finalAxolotl = base.waterTutorialSeen === false
-        ? { ...axolotl, stats: { ...axolotl.stats, waterQuality: 70 } }
-        : axolotl;
-      return { ...base, axolotl: finalAxolotl };
-    });
-  }, []);
-
-  /** Applied after a rebirth egg hatches: sets the name on the freshly-created axolotl. */
-  const handleNameAxolotl = useCallback((name: string) => {
-    setGameState(prev => {
-      if (!prev?.axolotl) return prev;
-      return { ...prev, axolotl: { ...prev.axolotl, name } };
-    });
-  }, []);
 
   // Cleaning mode: user taps Clean button, then taps individual poops to remove them.
   // Auto-exits after 3 s of inactivity.
@@ -775,37 +661,6 @@ export default function App() {
   const { axolotl, coins, customization, friends, lineage } = gameState;
   const opals = gameState.opals || 0; // Default to 0 if not set
   const showRebirthButton = canRebirth(axolotl);
-
-  // ── Tutorial lock ────────────────────────────────────────────────────────
-  // Which wellbeing tutorial step is currently active — used to block all UI
-  // except the single prompted action so players can't wander off mid-tutorial.
-  const tutorialLockMode = ((): 'swipe' | 'feed' | 'watch' | 'stat' | 'play' | 'clean' | 'water' | null => {
-    if (!tutorialAllowed || currentScreen !== 'home') return null;
-    const step = gameState.tutorialStep;
-    if (step === 'swipe') return 'swipe';
-    if (step === 'feed') return 'feed';
-    if (step === 'eat' || step === 'xp-tip') return 'watch';
-    if (step !== 'done') return null;
-    if ((gameState.pendingStatPoints ?? 0) > 0 && !gameState.statTutorialSeen && !activeModal) return 'stat';
-    if (gameState.statTutorialSeen && !gameState.playTutorialSeen && (gameState.pendingStatPoints ?? 0) === 0 && !activeModal && !playMode) return 'play';
-    if (gameState.cleanTutorialSeen === false && gameState.playTutorialSeen === true && !activeModal && !playMode) return 'clean';
-    if (gameState.cleanTutorialSeen === true && gameState.waterTutorialSeen === false && !activeModal && !playMode && !cleaningMode) return 'water';
-    return null;
-  })();
-
-  // ActionButton labels to dim + block during the active tutorial step
-  const lockedActionButtons = new Set<string>();
-  if (tutorialLockMode === 'feed') {
-    ['Playtime', 'Clean', 'Water Quality'].forEach(b => lockedActionButtons.add(b));
-  } else if (tutorialLockMode === 'swipe' || tutorialLockMode === 'watch' || tutorialLockMode === 'stat') {
-    ['Feed', 'Playtime', 'Clean', 'Water Quality'].forEach(b => lockedActionButtons.add(b));
-  } else if (tutorialLockMode === 'play') {
-    ['Feed', 'Clean', 'Water Quality'].forEach(b => lockedActionButtons.add(b));
-  } else if (tutorialLockMode === 'clean') {
-    ['Feed', 'Playtime', 'Water Quality'].forEach(b => lockedActionButtons.add(b));
-  } else if (tutorialLockMode === 'water') {
-    ['Feed', 'Playtime', 'Clean'].forEach(b => lockedActionButtons.add(b));
-  }
 
   // Calculate XP and level
   const currentLevel = calculateLevel(axolotl.experience);
