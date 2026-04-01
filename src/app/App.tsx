@@ -58,7 +58,7 @@ import { useAquariumMusic, useContextMusic } from './hooks/useAquariumMusic';
 import { getTodayDateString, canSpinToday, canClaimDailyLogin } from './utils/dailySystem';
 import { useAuth } from './context/AuthContext';
 import { useCloudSync, SyncStatus } from './hooks/useCloudSync';
-import { sendFriendAction, isSupabaseConfigured } from './services/supabase';
+import { sendFriendAction, isSupabaseConfigured, fetchPlayerAchievements, pushAchievements } from './services/supabase';
 import { LoginScreen } from './components/LoginScreen';
 import { SyncIndicator } from './components/SyncIndicator';
 import { SyncConflictModal } from './components/SyncConflictModal';
@@ -185,6 +185,32 @@ export default function App() {
       );
     },
   });
+
+  // ── Startup achievement sync ───────────────────────────────────────────────
+  // On first sign-in, pull any achievements stored in Supabase (earned on other
+  // devices) and merge them into the local game state. Also push any local-only
+  // achievements up so the table stays in sync.
+  useEffect(() => {
+    if (!user?.id || !isSupabaseConfigured) return;
+
+    const syncAchievements = async () => {
+      const remoteIds = await fetchPlayerAchievements(user.id);
+      setGameState(prev => {
+        if (!prev) return prev;
+        const localIds = prev.achievements ?? [];
+        // Merge: union of local + remote
+        const merged = Array.from(new Set([...localIds, ...remoteIds]));
+        if (merged.length === localIds.length) return prev; // nothing new
+        // Push any local-only IDs up to Supabase
+        const localOnly = localIds.filter(id => !remoteIds.includes(id));
+        if (localOnly.length > 0) pushAchievements(user.id, localOnly).catch(console.error);
+        return { ...prev, achievements: merged };
+      });
+    };
+
+    syncAchievements();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
 
   // Auto-close the in-game auth overlay once the user successfully signs in
   useEffect(() => {

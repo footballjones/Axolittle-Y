@@ -1,8 +1,11 @@
-import { useState, useEffect } from 'react';
-import { X, Users, Copy, Check, ChevronDown, Heart, Waves, Plus, Leaf, Sparkles, ChevronRight, Gift, Trash2, BarChart2, Egg, Crown, Sprout, Dumbbell, Droplets, Clock, Fish } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { X, Users, Copy, Check, ChevronDown, Heart, Waves, Plus, Leaf, Sparkles, ChevronRight, Gift, Trash2, BarChart2, Egg, Crown, Sprout, Dumbbell, Droplets, Clock, Fish, Trophy, Lock } from 'lucide-react';
 import { Axolotl, Friend } from '../types/game';
 import { motion, AnimatePresence } from 'motion/react';
-import { CoinIcon } from './icons';
+import { GameIcon } from './icons';
+import { ALL_ACHIEVEMENTS } from '../data/achievements';
+import { ACHIEVEMENT_CATEGORIES, type AchievementCategory } from '../types/achievements';
+import { fetchPlayerAchievements, isSupabaseConfigured } from '../services/supabase';
 
 interface GiftResult {
   coins: number;
@@ -62,6 +65,9 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
   const [addFriendError, setAddFriendError] = useState<string | null>(null);
   const [visitingFriend, setVisitingFriend] = useState<Friend | null>(null);
   const [viewingStatsFriend, setViewingStatsFriend] = useState<Friend | null>(null);
+  const [viewingAchievementsFriend, setViewingAchievementsFriend] = useState<Friend | null>(null);
+  const [friendAchievementIds, setFriendAchievementIds] = useState<string[] | null>(null); // null = loading
+  const fetchedFriendIdRef = useRef<string | null>(null);
   // Short-lived visual feedback states (2–2.5s after action)
   const [justPoked, setJustPoked] = useState<Set<string>>(new Set());
   const [justGifted, setJustGifted] = useState<Record<string, GiftResult>>({});
@@ -71,6 +77,49 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
     const id = setInterval(() => setTick(t => t + 1), 60_000);
     return () => clearInterval(id);
   }, []);
+
+  // Fetch real achievements from Supabase when viewing a friend's achievements
+  useEffect(() => {
+    if (!viewingAchievementsFriend) {
+      setFriendAchievementIds(null);
+      fetchedFriendIdRef.current = null;
+      return;
+    }
+    // Avoid re-fetching for the same friend
+    if (fetchedFriendIdRef.current === viewingAchievementsFriend.id) return;
+
+    fetchedFriendIdRef.current = viewingAchievementsFriend.id;
+    setFriendAchievementIds(null); // reset to loading
+
+    if (isSupabaseConfigured) {
+      fetchPlayerAchievements(viewingAchievementsFriend.id).then(ids => {
+        setFriendAchievementIds(ids);
+      }).catch(() => {
+        // Fall back to inferred on error
+        setFriendAchievementIds([]);
+      });
+    } else {
+      // Supabase not available — use empty list (inferred data shown via inferFriendAchievements)
+      setFriendAchievementIds([]);
+    }
+  }, [viewingAchievementsFriend]);
+
+  // Infer which achievements a friend has earned based on their known data
+  const inferFriendAchievements = (friend: Friend): Set<string> => {
+    const earned = new Set<string>(friend.achievements ?? []);
+    // Always: they have an axolotl → hatched it
+    earned.add('hatchling');
+    // Stage-based progression
+    if (['sprout', 'guardian', 'elder'].includes(friend.stage)) earned.add('first-steps');
+    if (['guardian', 'elder'].includes(friend.stage)) earned.add('all-grown-up');
+    if (friend.stage === 'elder') earned.add('elder-wisdom');
+    // Generation-based
+    if (friend.generation >= 2) earned.add('circle-of-life');
+    if (friend.generation >= 5) earned.add('dynasty');
+    // Has at least us as a friend
+    earned.add('first-friend');
+    return earned;
+  };
 
   const myCode = friendCode;
 
@@ -409,8 +458,8 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
                                         </span>
                                       </div>
 
-                                      {/* Action tiles — row 1: Visit + Stats */}
-                                      <div className="grid grid-cols-2 gap-2 mb-2">
+                                      {/* Action tiles — row 1: Visit + Stats + Achievements */}
+                                      <div className="grid grid-cols-3 gap-2 mb-2">
                                         <motion.button
                                           onClick={(e) => { e.stopPropagation(); setVisitingFriend(friend); }}
                                           className="flex flex-col items-center justify-center gap-1 py-3 rounded-xl"
@@ -420,8 +469,8 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
                                           }}
                                           whileTap={{ scale: 0.9 }}
                                         >
-                                          <Waves className="w-5 h-5 text-sky-500" strokeWidth={2} />
-                                          <span className="text-[9px] font-black tracking-wide uppercase text-sky-600">Visit Aquarium</span>
+                                          <Waves className="w-4 h-4 text-sky-500" strokeWidth={2} />
+                                          <span className="text-[8px] font-black tracking-wide uppercase text-sky-600 text-center leading-tight">Visit Aquarium</span>
                                         </motion.button>
                                         <motion.button
                                           onClick={(e) => { e.stopPropagation(); setViewingStatsFriend(friend); }}
@@ -432,8 +481,20 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
                                           }}
                                           whileTap={{ scale: 0.9 }}
                                         >
-                                          <BarChart2 className="w-5 h-5 text-indigo-500" strokeWidth={2} />
-                                          <span className="text-[9px] font-black tracking-wide uppercase text-indigo-600">View Stats</span>
+                                          <BarChart2 className="w-4 h-4 text-indigo-500" strokeWidth={2} />
+                                          <span className="text-[8px] font-black tracking-wide uppercase text-indigo-600 text-center leading-tight">View Stats</span>
+                                        </motion.button>
+                                        <motion.button
+                                          onClick={(e) => { e.stopPropagation(); setViewingAchievementsFriend(friend); }}
+                                          className="flex flex-col items-center justify-center gap-1 py-3 rounded-xl"
+                                          style={{
+                                            background: 'linear-gradient(135deg, rgba(245,158,11,0.18), rgba(251,191,36,0.14))',
+                                            border: '1px solid rgba(245,158,11,0.35)',
+                                          }}
+                                          whileTap={{ scale: 0.9 }}
+                                        >
+                                          <Trophy className="w-4 h-4 text-amber-500" strokeWidth={2} />
+                                          <span className="text-[8px] font-black tracking-wide uppercase text-amber-600 text-center leading-tight">Achievements</span>
                                         </motion.button>
                                       </div>
 
@@ -1036,6 +1097,154 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
             </motion.div>
           </motion.div>
         )}
+      </AnimatePresence>
+
+      {/* ── Friend Achievements Overlay ───────────────────────────────────── */}
+      <AnimatePresence>
+        {viewingAchievementsFriend && (() => {
+          // Merge: real Supabase IDs (if loaded) + inferred from friend data
+          const inferred = inferFriendAchievements(viewingAchievementsFriend);
+          const isLoading = friendAchievementIds === null;
+          const earned: Set<string> = isLoading
+            ? inferred
+            : new Set([...friendAchievementIds, ...inferred]);
+          const earnedCount = ALL_ACHIEVEMENTS.filter(a => earned.has(a.id)).length;
+          return (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[60] flex items-center justify-center p-4"
+              style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(10px)' }}
+              onClick={() => setViewingAchievementsFriend(null)}
+            >
+              <motion.div
+                initial={{ scale: 0.88, opacity: 0, y: 24 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.88, opacity: 0, y: 24 }}
+                transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+                className="relative w-full max-w-sm rounded-3xl overflow-hidden flex flex-col"
+                style={{
+                  background: 'linear-gradient(160deg, #fffbeb 0%, #fef3c7 50%, #fef9c3 100%)',
+                  border: '1.5px solid rgba(245,158,11,0.4)',
+                  boxShadow: '0 24px 64px -12px rgba(245,158,11,0.3)',
+                  maxHeight: '80vh',
+                }}
+                onClick={e => e.stopPropagation()}
+              >
+                {/* Header */}
+                <div
+                  className="relative px-5 py-4 flex-shrink-0"
+                  style={{ background: 'linear-gradient(135deg, #d97706 0%, #b45309 50%, #92400e 100%)' }}
+                >
+                  <div className="absolute inset-0 opacity-10" style={{
+                    backgroundImage: 'radial-gradient(circle at 1px 1px, white 1px, transparent 1px)',
+                    backgroundSize: '28px 28px',
+                  }} />
+                  <div className="relative flex items-center justify-between">
+                    <div>
+                      <div className="text-amber-200/70 text-[10px] font-bold tracking-widest uppercase mb-0.5">Achievements</div>
+                      <h3 className="text-white font-black text-lg leading-tight">{viewingAchievementsFriend.name}</h3>
+                      <p className="text-amber-200/80 text-xs mt-0.5">
+                        {isLoading ? 'Loading…' : `${earnedCount} / ${ALL_ACHIEVEMENTS.length} earned`}
+                      </p>
+                    </div>
+                    <motion.button
+                      onClick={() => setViewingAchievementsFriend(null)}
+                      className="rounded-full p-1.5 flex-shrink-0"
+                      style={{ background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.25)' }}
+                      whileTap={{ scale: 0.85 }}
+                    >
+                      <X className="w-4 h-4 text-white/80" strokeWidth={2.5} />
+                    </motion.button>
+                  </div>
+                </div>
+
+                {/* Loading state */}
+                {isLoading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                      className="w-8 h-8 rounded-full border-2 border-amber-300 border-t-amber-600"
+                    />
+                  </div>
+                ) : (
+                  /* Achievement list — scrollable */
+                  <div className="overflow-y-auto flex-1 px-4 py-4 space-y-4">
+                    {(ACHIEVEMENT_CATEGORIES as { id: AchievementCategory; label: string; icon: string }[]).map(cat => {
+                      const catAchievements = ALL_ACHIEVEMENTS.filter(a => a.category === cat.id);
+                      const catEarned = catAchievements.filter(a => earned.has(a.id)).length;
+                      return (
+                        <div key={cat.id}>
+                          {/* Category header */}
+                          <div className="flex items-center gap-2 mb-2">
+                            <GameIcon name={cat.icon} size={14} className="text-amber-600" />
+                            <span className="text-[10px] font-black tracking-widest uppercase text-amber-700">{cat.label}</span>
+                            <span className="text-[10px] text-amber-500/70 font-medium ml-auto">{catEarned}/{catAchievements.length}</span>
+                          </div>
+                          <div className="space-y-2">
+                            {catAchievements.map(achievement => {
+                              const isEarned = earned.has(achievement.id);
+                              return (
+                                <div
+                                  key={achievement.id}
+                                  className="flex items-center gap-3 rounded-2xl px-3 py-2.5"
+                                  style={{
+                                    background: isEarned
+                                      ? 'rgba(255,255,255,0.8)'
+                                      : 'rgba(255,255,255,0.35)',
+                                    border: isEarned
+                                      ? '1px solid rgba(245,158,11,0.4)'
+                                      : '1px solid rgba(245,158,11,0.15)',
+                                    opacity: isEarned ? 1 : 0.55,
+                                  }}
+                                >
+                                  <div
+                                    className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
+                                    style={{
+                                      background: isEarned
+                                        ? 'linear-gradient(135deg, rgba(245,158,11,0.25), rgba(251,191,36,0.2))'
+                                        : 'rgba(0,0,0,0.06)',
+                                      border: isEarned
+                                        ? '1px solid rgba(245,158,11,0.4)'
+                                        : '1px solid rgba(0,0,0,0.08)',
+                                    }}
+                                  >
+                                    {isEarned
+                                      ? <GameIcon name={achievement.icon} size={16} className="text-amber-600" />
+                                      : <Lock className="w-3.5 h-3.5 text-slate-400" strokeWidth={2} />
+                                    }
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <p className={`text-xs font-black leading-tight ${isEarned ? 'text-amber-900' : 'text-slate-500'}`}>
+                                      {achievement.name}
+                                    </p>
+                                    <p className={`text-[10px] leading-snug mt-0.5 ${isEarned ? 'text-amber-700/80' : 'text-slate-400'}`}>
+                                      {achievement.description}
+                                    </p>
+                                  </div>
+                                  {isEarned && (
+                                    <div
+                                      className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
+                                      style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)' }}
+                                    >
+                                      <Check className="w-3 h-3 text-white" strokeWidth={3} />
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </motion.div>
+            </motion.div>
+          );
+        })()}
       </AnimatePresence>
 
       {/* Add Friend Modal */}

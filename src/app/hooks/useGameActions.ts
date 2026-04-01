@@ -16,7 +16,7 @@ import { GAME_CONFIG } from '../config/game';
 import { GameNotification } from '../data/notifications';
 import { GameResult } from '../minigames/types';
 import { checkAchievements, ALL_ACHIEVEMENTS } from '../data/achievements';
-import { supabase, isSupabaseConfigured } from '../services/supabase';
+import { supabase, isSupabaseConfigured, pushAchievements } from '../services/supabase';
 
 interface UseGameActionsProps {
   gameState: GameState | null;
@@ -64,6 +64,11 @@ export function useGameActions({
         read: false,
       }]);
     });
+
+    // Dual-write to Supabase (fire-and-forget — local state is source of truth)
+    if (userId) {
+      pushAchievements(userId, newIds).catch(console.error);
+    }
 
     return {
       ...newState,

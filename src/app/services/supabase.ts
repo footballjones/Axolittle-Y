@@ -92,6 +92,42 @@ export async function markNotificationApplied(notifId: string): Promise<void> {
   if (error) console.error('[markNotificationApplied]', error);
 }
 
+// ─── user_achievements helpers ────────────────────────────────────────────────
+
+/**
+ * Upserts a batch of achievement IDs for the authenticated user.
+ * Safe to call with IDs that already exist (ON CONFLICT DO NOTHING via UNIQUE constraint).
+ */
+export async function pushAchievements(userId: string, achievementIds: string[]): Promise<void> {
+  if (!isSupabaseConfigured || achievementIds.length === 0) return;
+
+  const rows = achievementIds.map(id => ({ player_id: userId, achievement_id: id }));
+  const { error } = await supabase
+    .from('user_achievements')
+    .upsert(rows, { onConflict: 'player_id,achievement_id', ignoreDuplicates: true });
+
+  if (error) console.error('[pushAchievements]', error);
+}
+
+/**
+ * Fetches all achievement IDs for any player (public read via RLS).
+ * Returns [] on error or when Supabase is not configured.
+ */
+export async function fetchPlayerAchievements(playerId: string): Promise<string[]> {
+  if (!isSupabaseConfigured) return [];
+
+  const { data, error } = await supabase
+    .from('user_achievements')
+    .select('achievement_id')
+    .eq('player_id', playerId);
+
+  if (error) {
+    console.error('[fetchPlayerAchievements]', error);
+    return [];
+  }
+  return (data ?? []).map((r: { achievement_id: string }) => r.achievement_id);
+}
+
 /**
  * Subscribes to new friend_notifications rows for this user via Realtime.
  * Returns the channel so the caller can unsubscribe on cleanup.
