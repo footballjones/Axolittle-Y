@@ -133,13 +133,17 @@ export function MenuTutorialOverlay({ menuOpen, onOpenMenu, onComplete, onOpenSp
     if (phase === 101 && dailyClaimDone) setPhase(4);
   }, [phase, dailyClaimDone]);
 
-  // Wait phases — no spotlight, just a floating prompt at the bottom
+  // Wait phases — no spotlight, just a floating prompt
   if (phase === 100 || phase === 101) {
     const isSpinWait = phase === 100;
     const banner = (
       <motion.div
         className="fixed left-0 right-0 flex justify-center pointer-events-none"
-        style={{ bottom: 'max(5rem, calc(env(safe-area-inset-bottom) + 4.5rem))', zIndex: 10003 }}
+        // Spin-wait: top of screen so it doesn't cover the wheel
+        // Daily-claim-wait: bottom, above the action buttons
+        style={isSpinWait
+          ? { top: 'max(1rem, env(safe-area-inset-top))', zIndex: 10003 }
+          : { bottom: 'max(5rem, calc(env(safe-area-inset-bottom) + 4.5rem))', zIndex: 10003 }}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35 }}
