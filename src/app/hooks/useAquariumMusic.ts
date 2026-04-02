@@ -75,6 +75,8 @@ export function useContextMusic({
   const playTrack = useCallback((src: string) => {
     if (!audioRef.current) return;
 
+    // Pause first to cleanly abort any in-flight play() promise
+    audioRef.current.pause();
     audioRef.current.src = src;
     audioRef.current.currentTime = 0;
 
@@ -164,14 +166,27 @@ export function useContextMusic({
     }
   };
 
-  // Start or stop based on both enabled AND musicEnabled (global setting)
+  // Keep refs to the latest start/stop so the enable effect doesn't re-fire
+  // every time those callbacks get a new reference (e.g. StrictMode double-mount).
+  const startRef = useRef(start);
+  const stopRef = useRef(stop);
+  useEffect(() => {
+    startRef.current = start;
+    stopRef.current = stop;
+  });
+
+  // Start or stop based on both enabled AND musicEnabled (global setting).
+  // Deps intentionally omit start/stop — we use refs so this only fires on
+  // actual enabled/musicEnabled changes, preventing double-play in StrictMode.
   useEffect(() => {
     if (enabled && musicEnabled) {
-      start();
+      startRef.current();
     } else {
-      stop();
+      stopRef.current();
     }
-  }, [enabled, musicEnabled, start, stop]);
+    return () => stopRef.current(); // Stop on cleanup (unmount or re-run)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enabled, musicEnabled]);
 
   // Cleanup on unmount
   useEffect(() => {
