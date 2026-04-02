@@ -192,6 +192,15 @@ export function useOnboarding({
     prevWaterTut.current = gameState?.waterTutorialSeen;
   }, [gameState?.waterTutorialSeen, delayNextTutorial]);
 
+  // Hide the tutorial overlay as soon as the completion modal is shown
+  // (both flags can become true simultaneously, leaving the overlay's blocking
+  //  strips on top of the "Collect Reward!" button)
+  useEffect(() => {
+    if (showMenuTutorialComplete && showMenuTutorial) {
+      setShowMenuTutorial(false);
+    }
+  }, [showMenuTutorialComplete, showMenuTutorial]);
+
   // Menu tutorial: auto-start after wellbeing complete
   useEffect(() => {
     if (
