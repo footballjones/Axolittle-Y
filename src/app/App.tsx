@@ -24,7 +24,7 @@ import { EggsPanel } from './components/EggsPanel';
 import { DecorationsPanel } from './components/DecorationsPanel';
 import { ModalManager } from './components/ModalManager';
 import { Coins, Sparkles, Menu, X, Check, ChevronDown, ShoppingCart, Gamepad2, Home, Settings, Gift, Dices, BarChart2, Egg as EggIcon, Users, Backpack, HelpCircle, Trophy, Bell, Zap } from 'lucide-react';
-import { GameIcon, CoinIcon } from './components/icons';
+import { GameIcon } from './components/icons';
 import { motion, AnimatePresence } from 'motion/react';
 import { useGameActions } from './hooks/useGameActions';
 import { useOnboarding } from './hooks/useOnboarding';

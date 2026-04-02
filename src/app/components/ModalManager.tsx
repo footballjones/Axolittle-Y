@@ -13,7 +13,6 @@ import { AnimatePresence, motion } from 'motion/react';
 import { GameState, Axolotl, Friend, SecondaryStats } from '../types/game';
 import { GameResult } from '../minigames/types';
 import { generatePermanentFriendCode } from '../utils/storage';
-import { GAME_CONFIG } from '../config/game';
 
 // Modals
 import { WaterChangeModal } from './WaterChangeModal';
@@ -101,8 +100,8 @@ export interface ModalManagerProps {
   setShowDailyLogin: (v: boolean) => void;
   showHamburgerMenu: boolean;
   setShowHamburgerMenu: (v: boolean) => void;
-  shopSection: string | null;
-  setShopSection: (v: string | null) => void;
+  shopSection: 'coins' | 'opals' | 'wellbeing' | null;
+  setShopSection: (v: 'coins' | 'opals' | 'wellbeing' | null) => void;
   activeGame: string | null;
   levelUpInfo: { level: number } | null;
   setLevelUpInfo: (v: { level: number } | null) => void;
@@ -130,8 +129,7 @@ export interface ModalManagerProps {
   onStoreShrimpInInventory: (pack: any) => void;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onBuyDecoration: (id: any) => void;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  onEquipDecoration: (id: any, type: any) => void;
+  onEquipDecoration: (decorationId: string) => void;
   onAddFriend: (code: string) => Promise<string | null>;
   onRemoveFriend: (friendId: string) => void;
   onBreed: (friendId: string) => void;
@@ -147,8 +145,8 @@ export interface ModalManagerProps {
   onDiscardEgg: (eggId: string) => void;
   onUnlockNurserySlot: () => void;
   onReleaseAxolotl: () => void;
-  onMiniGameEnd: () => void;
-  onMiniGameApplyReward: (result: GameResult) => void;
+  onMiniGameEnd: (result: GameResult) => void;
+  onMiniGameApplyReward: (coins: number, opals?: number) => void;
   onDeductEnergy: () => void;
   onClaimAchievement: (achievementId: string) => void;
   onUnlockGames: () => void;

@@ -34,7 +34,7 @@ export function useEconomyActions({ setGameState, setNotifications }: UseEconomy
       setNotifications(prev => [...prev, {
         id: `achievement-${id}-${Date.now()}`,
         type: 'achievement' as const,
-        emoji: achievement.emoji,
+        icon: achievement.icon,
         message: `Achievement Unlocked: ${achievement.name} — tap Achievements to claim your reward!`,
         time: 'now',
         read: false,
