@@ -154,6 +154,7 @@ export interface Friend {
   stage: LifeStage;
   generation: number;
   lastSync: number;
+  achievements?: string[]; // Achievement IDs earned by this friend
 }
 
 export interface BreedingRequest {

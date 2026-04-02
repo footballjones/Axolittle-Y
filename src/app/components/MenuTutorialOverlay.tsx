@@ -141,9 +141,8 @@ export function MenuTutorialOverlay({ menuOpen, onOpenMenu, onComplete, onOpenSp
         className="fixed left-0 right-0 flex justify-center pointer-events-none"
         // Spin-wait: top of screen so it doesn't cover the wheel
         // Daily-claim-wait: bottom, above the action buttons
-        style={isSpinWait
-          ? { top: 'max(1rem, env(safe-area-inset-top))', zIndex: 10003 }
-          : { bottom: 'max(5rem, calc(env(safe-area-inset-bottom) + 4.5rem))', zIndex: 10003 }}
+        // Both banners go to the top so they never cover the modal content below
+        style={{ top: 'max(1rem, env(safe-area-inset-top))', zIndex: 10003 }}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35 }}
