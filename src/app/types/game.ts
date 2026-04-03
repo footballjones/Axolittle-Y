@@ -122,7 +122,7 @@ export interface GameState {
   cleanTutorialSeen?: boolean;
   juvenileUnlockSeen?: boolean; // True once the Sprout stage unlock modal has been shown
   level7UnlockSeen?: boolean;   // True once the Level 7 games unlock modal has been shown
-  shrimpTutorialSeen?: boolean; // True once the Level 11 ghost shrimp tutorial has been shown
+  shrimpTutorialSeen?: boolean; // True once the Level 12 ghost shrimp tutorial has been shown
   // ── Jimmy & Chubs ────────────────────────────────────────────────────────────
   lastJimmyGift?: number; // Unix-ms timestamp of last gift received from Jimmy & Chubs
   // ── Audio Settings ────────────────────────────────────────────────────────────

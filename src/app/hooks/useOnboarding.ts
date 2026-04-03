@@ -155,7 +155,7 @@ export function useOnboarding({
   useEffect(() => {
     const lvl = gameState?.axolotl ? calculateLevel(gameState.axolotl.experience) : 0;
     if (
-      lvl >= 11 &&
+      lvl >= 12 &&
       !gameState?.shrimpTutorialSeen &&
       !showShrimpTutorialIntro &&
       currentScreen === 'home' &&

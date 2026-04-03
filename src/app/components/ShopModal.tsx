@@ -701,6 +701,8 @@ export function ShopModal({
                     <div className="space-y-1.5">
                       {SHRIMP_PACKS.map((pack, i) => {
                         const isHighlighted = highlightShrimp && pack.label === 'Small Colony';
+                        // During the tutorial the highlighted pack is free
+                        const effectivePack = isHighlighted ? { ...pack, opals: 0 } : pack;
                         return (
                           <div key={i} className={isHighlighted ? 'relative' : undefined}>
                             {isHighlighted && (
@@ -724,22 +726,33 @@ export function ShopModal({
                             )}
                             <ShopRowTile
                               index={i}
-                              onClick={() => { if (canAffordOpals(pack.opals)) setPendingShrimpPack(pack); }}
-                              disabled={!canAffordOpals(pack.opals)}
+                              onClick={() => setPendingShrimpPack(effectivePack)}
+                              disabled={false}
                               cardBg="linear-gradient(135deg, rgba(255,255,255,0.88) 0%, rgba(255,241,242,0.85) 100%)"
                               cardBorder={isHighlighted ? '1.5px solid rgba(244,114,182,0.9)' : '1.5px solid rgba(251,207,232,0.65)'}
                               iconNode={<span className="text-pink-400 font-bold text-sm">~</span>}
                               title={pack.label}
                               subtitle={`${pack.count} shrimp`}
                               priceContent={
-                                <PriceBadge
-                                  bg={canAffordOpals(pack.opals) ? 'linear-gradient(135deg, #f472b6, #e11d48)' : 'rgba(216,180,254,0.3)'}
-                                  border="none"
-                                  shadow={canAffordOpals(pack.opals) ? '0 3px 10px rgba(244,114,182,0.3)' : 'none'}
-                                  icon={Sparkles}
-                                  value={pack.opals}
-                                  textColor={canAffordOpals(pack.opals) ? '#fff' : 'rgba(139,92,246,0.4)'}
-                                />
+                                isHighlighted ? (
+                                  <PriceBadge
+                                    bg="linear-gradient(135deg, #f472b6, #e11d48)"
+                                    border="none"
+                                    shadow="0 3px 10px rgba(244,114,182,0.3)"
+                                    icon={Sparkles}
+                                    value="FREE"
+                                    textColor="#fff"
+                                  />
+                                ) : (
+                                  <PriceBadge
+                                    bg={canAffordOpals(pack.opals) ? 'linear-gradient(135deg, #f472b6, #e11d48)' : 'rgba(216,180,254,0.3)'}
+                                    border="none"
+                                    shadow={canAffordOpals(pack.opals) ? '0 3px 10px rgba(244,114,182,0.3)' : 'none'}
+                                    icon={Sparkles}
+                                    value={pack.opals}
+                                    textColor={canAffordOpals(pack.opals) ? '#fff' : 'rgba(139,92,246,0.4)'}
+                                  />
+                                )
                               }
                             />
                           </div>
