@@ -5,7 +5,7 @@
  * all state and handlers are owned higher up and passed in as props.
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   X,
@@ -135,6 +135,8 @@ export function HamburgerMenu({
   onClaimAchievement,
   isTutorialActive = false,
 }: HamburgerMenuProps) {
+  const [highlightAchievementId, setHighlightAchievementId] = useState<string | null>(null);
+
   return (
     <>
       {/* Blurred backdrop */}
@@ -568,7 +570,7 @@ export function HamburgerMenu({
                   <h3 className="text-white font-bold text-base">Achievement Center</h3>
                 </div>
                 <motion.button
-                  onClick={() => setShowAchievementsPanel(false)}
+                  onClick={() => { setShowAchievementsPanel(false); setHighlightAchievementId(null); }}
                   className="rounded-full p-2 border border-white/20 bg-white/10 active:bg-white/20"
                   whileTap={{ scale: 0.85 }}
                 >
@@ -577,7 +579,7 @@ export function HamburgerMenu({
               </div>
               {/* Scrollable content */}
               <div className="flex-1 overflow-y-auto overscroll-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
-                <AchievementCenter gameState={gameState} onClaim={onClaimAchievement} />
+                <AchievementCenter gameState={gameState} onClaim={onClaimAchievement} highlightId={highlightAchievementId} />
               </div>
             </motion.div>
           )}
@@ -656,6 +658,10 @@ export function HamburgerMenu({
                         setShowHamburgerMenu(false);
                         setShowNotifPanel(false);
                         setHasPendingPokes(false);
+                      } else if (notif.type === 'achievement' && notif.metadata?.achievementId) {
+                        setHighlightAchievementId(notif.metadata.achievementId);
+                        setShowAchievementsPanel(true);
+                        setShowNotifPanel(false);
                       }
                     }}
                     className="flex items-center gap-3 w-full px-4 py-3 rounded-2xl text-left"

@@ -35,9 +35,10 @@ export function useEconomyActions({ setGameState, setNotifications }: UseEconomy
         id: `achievement-${id}-${Date.now()}`,
         type: 'achievement' as const,
         icon: achievement.icon,
-        message: `Achievement Unlocked: ${achievement.name} — tap Achievements to claim your reward!`,
+        message: `Achievement Unlocked: ${achievement.name} — tap to claim your reward!`,
         time: 'now',
         read: false,
+        metadata: { achievementId: id },
       }]);
     });
     return {
@@ -55,15 +56,6 @@ export function useEconomyActions({ setGameState, setNotifications }: UseEconomy
       const newCoins = reward.type === 'coins' ? prev.coins + reward.amount : prev.coins;
       const newOpals = reward.type === 'opals' ? (prev.opals || 0) + reward.amount : prev.opals;
 
-      setNotifications(prevNotifs => [...prevNotifs, {
-        id: `notif-${Date.now()}`,
-        type: 'milestone',
-        icon: reward.type === 'opals' ? 'Droplets' : 'Coins',
-        message: `Won ${reward.amount} ${reward.type === 'opals' ? 'Opals' : 'Coins'} from spin wheel!`,
-        time: 'now',
-        read: false,
-      }]);
-
       return withAchievements({
         ...prev,
         coins: newCoins,
@@ -71,7 +63,7 @@ export function useEconomyActions({ setGameState, setNotifications }: UseEconomy
         lastSpinDate: today,
       });
     });
-  }, [setGameState, setNotifications, withAchievements]);
+  }, [setGameState, withAchievements]);
 
   const handleDailyLoginClaim = useCallback((reward: { coins: number; opals?: number; decoration?: string }) => {
     setGameState(prev => {
@@ -90,15 +82,6 @@ export function useEconomyActions({ setGameState, setNotifications }: UseEconomy
         ? [...prev.unlockedDecorations, reward.decoration]
         : prev.unlockedDecorations;
 
-      setNotifications(prevNotifs => [...prevNotifs, {
-        id: `notif-${Date.now()}`,
-        type: 'milestone',
-        icon: 'Gift',
-        message: `Daily login bonus: ${reward.coins} coins${reward.opals ? ` + ${reward.opals} opals` : ''}!`,
-        time: 'now',
-        read: false,
-      }]);
-
       return withAchievements({
         ...prev,
         coins: newCoins,
@@ -110,7 +93,7 @@ export function useEconomyActions({ setGameState, setNotifications }: UseEconomy
         unlockedDecorations: newUnlockedDecorations,
       });
     });
-  }, [setGameState, setNotifications, withAchievements]);
+  }, [setGameState, withAchievements]);
 
   return {
     showSpinWheel,

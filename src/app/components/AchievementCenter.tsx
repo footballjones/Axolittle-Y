@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Trophy, Lock, Check } from 'lucide-react';
 import { ALL_ACHIEVEMENTS } from '../data/achievements';
@@ -8,6 +9,8 @@ import { GameIcon, CoinIcon, OpalIcon } from './icons';
 interface AchievementCenterProps {
   gameState: GameState;
   onClaim: (id: string) => void;
+  /** When set, scrolls to and briefly highlights this achievement ID. */
+  highlightId?: string | null;
 }
 
 const CATEGORY_COLORS: Record<string, { bg: string; text: string; border: string; icon: string }> = {
@@ -19,9 +22,20 @@ const CATEGORY_COLORS: Record<string, { bg: string; text: string; border: string
   daily:      { bg: 'from-amber-400 to-orange-500',    text: 'text-amber-700',   border: 'border-amber-200/60',   icon: 'bg-amber-100'   },
 };
 
-export function AchievementCenter({ gameState, onClaim }: AchievementCenterProps) {
+export function AchievementCenter({ gameState, onClaim, highlightId }: AchievementCenterProps) {
   const unlockedSet = new Set(gameState.achievements ?? []);
   const pendingSet = new Set(gameState.pendingAchievements ?? []);
+  const highlightRef = useRef<HTMLDivElement | null>(null);
+
+  // Scroll to and briefly pulse the highlighted achievement when it changes
+  useEffect(() => {
+    if (!highlightId) return;
+    // Delay to allow panel slide-in animation to finish
+    const timer = setTimeout(() => {
+      highlightRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [highlightId]);
   const totalCount = ALL_ACHIEVEMENTS.length;
   const unlockedCount = unlockedSet.size;
   const progressPercent = (unlockedCount / totalCount) * 100;
@@ -104,12 +118,18 @@ export function AchievementCenter({ gameState, onClaim }: AchievementCenterProps
                   const isPending = pendingSet.has(achievement.id);
                   const hasReward = (achievement.coinReward ?? 0) > 0 || (achievement.opalReward ?? 0) > 0;
 
+                  const isHighlighted = achievement.id === highlightId;
                   return (
                     <motion.div
                       key={achievement.id}
+                      ref={isHighlighted ? highlightRef : null}
                       initial={{ opacity: 0, x: -12 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.15 + catIndex * 0.06 + idx * 0.04 }}
+                      animate={isHighlighted
+                        ? { opacity: 1, x: 0, boxShadow: ['0 0 0 0 rgba(251,191,36,0)', '0 0 0 6px rgba(251,191,36,0.5)', '0 0 0 0 rgba(251,191,36,0)'] }
+                        : { opacity: 1, x: 0 }}
+                      transition={isHighlighted
+                        ? { delay: 0.45, duration: 0.5, boxShadow: { delay: 0.45, duration: 1.2, repeat: 2, ease: 'easeInOut' } }
+                        : { delay: 0.15 + catIndex * 0.06 + idx * 0.04 }}
                       className={`relative flex items-center gap-3 rounded-2xl px-3.5 py-3 border backdrop-blur-sm transition-all ${
                         isPending
                           ? 'bg-amber-400/20 border-amber-300/50 shadow-sm shadow-amber-400/20'
