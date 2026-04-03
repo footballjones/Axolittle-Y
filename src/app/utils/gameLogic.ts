@@ -244,35 +244,35 @@ export function breedAxolotls(
  * Total XP required to reach a given level from level 1.
  *
  * Per-level cost starts at 1 XP (L1→L2) and rises by 1 each level,
- * capping at GAME_CONFIG.xpCapPerLevel (15) from L15→L16 onwards.
+ * capping at GAME_CONFIG.xpCapPerLevel (10) from L10→L11 onwards.
  *
  * Cumulative totals:
  *   Level  2 →   1 XP total   (cost 1)
  *   Level  3 →   3 XP total   (cost 2)
  *   Level  4 →   6 XP total   (cost 3)
  *   ...
- *   Level 16 → 120 XP total   (cost 15 — cap first reached)
- *   Level 17 → 135 XP total   (cost 15)
- *   Level 40 → 480 XP total
+ *   Level 11 →  55 XP total   (cost 10 — cap first reached)
+ *   Level 12 →  65 XP total   (cost 10)
+ *   Level 40 → 345 XP total
  */
 function getXPToReachLevel(level: number): number {
   if (level <= 1) return 0;
-  const cap = GAME_CONFIG.xpCapPerLevel; // 15
-  const capLevel = cap + 1;              // 16 — first level where cap applies
+  const cap = GAME_CONFIG.xpCapPerLevel; // 10
+  const capLevel = cap + 1;              // 11 — first level where cap applies
   if (level <= capLevel) {
     // Triangular number: sum of 1+2+...+(level-1)
     return ((level - 1) * level) / 2;
   }
   // After the cap kicks in, each level costs a flat `cap` XP
-  const xpAtCapLevel = ((capLevel - 1) * capLevel) / 2; // 120
+  const xpAtCapLevel = ((capLevel - 1) * capLevel) / 2; // 55
   return xpAtCapLevel + (level - capLevel) * cap;
 }
 
 export function calculateLevel(experience: number): number {
   if (experience <= 0) return 1;
 
-  const cap = GAME_CONFIG.xpCapPerLevel; // 15
-  const xpAtCapLevel = ((cap * (cap + 1)) / 2); // 120 — XP to reach level 16
+  const cap = GAME_CONFIG.xpCapPerLevel; // 10
+  const xpAtCapLevel = ((cap * (cap + 1)) / 2); // 55 — XP to reach level 11
 
   if (experience >= xpAtCapLevel) {
     // Flat region: each level above 16 costs exactly `cap` XP

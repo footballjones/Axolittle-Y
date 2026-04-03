@@ -694,6 +694,7 @@ export function GameScreen({
                   onUnlockNurserySlot={handleUnlockNurserySlot}
                   onReleaseAxolotl={handleReleaseAxolotl}
                   onClaimAchievement={handleClaimAchievement}
+                  isTutorialActive={_showMenuTutorial}
                 />
               )}
             </AnimatePresence>

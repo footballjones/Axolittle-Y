@@ -4,6 +4,19 @@
  */
 
 /**
+ * Parse a YYYY-MM-DD string as a local-midnight Date.
+ * Avoids timezone-related bugs from `new Date(string)`, which parses
+ * ISO dates as UTC and can shift the date by one day depending on locale.
+ */
+function parseLocalDate(dateStr: string): Date {
+  const parts = dateStr.split('-');
+  const d = new Date();
+  d.setFullYear(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+/**
  * Get today's date in YYYY-MM-DD format
  */
 export function getTodayDateString(): string {
@@ -41,9 +54,8 @@ export function canUseForgiveness(lastMissForgivenDate?: string): boolean {
   if (!lastMissForgivenDate) return true;
 
   const today = new Date();
-  const lastForgiven = new Date(lastMissForgivenDate);
   today.setHours(0, 0, 0, 0);
-  lastForgiven.setHours(0, 0, 0, 0);
+  const lastForgiven = parseLocalDate(lastMissForgivenDate);
 
   const daysSinceForgiven = Math.floor(
     (today.getTime() - lastForgiven.getTime()) / (1000 * 60 * 60 * 24)
@@ -67,11 +79,8 @@ export function calculateLoginStreak(
   }
 
   const today = new Date();
-  const lastLogin = new Date(lastLoginDate);
-
-  // Reset time to midnight for date comparison
   today.setHours(0, 0, 0, 0);
-  lastLogin.setHours(0, 0, 0, 0);
+  const lastLogin = parseLocalDate(lastLoginDate);
 
   const daysDiff = Math.floor((today.getTime() - lastLogin.getTime()) / (1000 * 60 * 60 * 24));
 

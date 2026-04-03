@@ -93,32 +93,47 @@ describe('dailySystem', () => {
       expect(result.wasBroken).toBe(false);
     });
 
-    it('should reset streak if gap is more than 1 day', () => {
+    it('should use forgiveness for a 2-day gap when available', () => {
       vi.setSystemTime(new Date('2024-03-15T10:30:00Z'));
-      const twoDaysAgo = '2024-3-13';
+      const twoDaysAgo = '2024-03-13'; // daysDiff === 2, no recent forgiveness
       const result = calculateLoginStreak(twoDaysAgo, 5);
+      expect(result.streak).toBe(6);
+      expect(result.wasBroken).toBe(false);
+      expect(result.usedForgiveness).toBe(true);
+    });
+
+    it('should reset streak for a 2-day gap when forgiveness was used recently', () => {
+      vi.setSystemTime(new Date('2024-03-15T10:30:00Z'));
+      const twoDaysAgo = '2024-03-13';
+      const recentForgiven = '2024-03-12'; // within the 7-day cooldown
+      const result = calculateLoginStreak(twoDaysAgo, 5, recentForgiven);
+      expect(result.streak).toBe(1);
+      expect(result.wasBroken).toBe(true);
+    });
+
+    it('should reset streak if gap is 3 or more days', () => {
+      vi.setSystemTime(new Date('2024-03-15T10:30:00Z'));
+      const threeDaysAgo = '2024-03-12'; // daysDiff === 3
+      const result = calculateLoginStreak(threeDaysAgo, 5);
       expect(result.streak).toBe(1);
       expect(result.wasBroken).toBe(true);
     });
   });
 
   describe('checkLoginStreakMilestone', () => {
-    it('should return milestone for 7 day streak', () => {
+    // LOGIN_MILESTONES = [3, 7, 14, 30, 50]
+    it('should return milestone for each defined milestone day', () => {
+      expect(checkLoginStreakMilestone(3)).toBe(3);
       expect(checkLoginStreakMilestone(7)).toBe(7);
-    });
-
-    it('should return milestone for 30 day streak', () => {
+      expect(checkLoginStreakMilestone(14)).toBe(14);
       expect(checkLoginStreakMilestone(30)).toBe(30);
-    });
-
-    it('should return milestone for 100 day streak', () => {
-      expect(checkLoginStreakMilestone(100)).toBe(100);
+      expect(checkLoginStreakMilestone(50)).toBe(50);
     });
 
     it('should return null for non-milestone streaks', () => {
       expect(checkLoginStreakMilestone(5)).toBe(null);
       expect(checkLoginStreakMilestone(10)).toBe(null);
-      expect(checkLoginStreakMilestone(50)).toBe(null);
+      expect(checkLoginStreakMilestone(100)).toBe(null);
     });
   });
 });

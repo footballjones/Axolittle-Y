@@ -1,5 +1,6 @@
 import { GameState, Friend } from '../types/game';
 import { GAME_CONFIG } from '../config/game';
+import { calculateLevel } from './gameLogic';
 
 export const JIMMY_CHUBS_ID = 'jimmy-chubs';
 
@@ -111,13 +112,7 @@ function migrateV1toV2(state: StoredState): StoredState {
     
     // Initialize lastLevel if not set (for backwards compatibility)
     if (state.axolotl.lastLevel === undefined) {
-      // Calculate level from experience (Level 1 = 0 XP, Level 2 = 10 XP, then +5 per level)
-      const exp = state.axolotl.experience;
-      if (exp < 10) {
-        state.axolotl.lastLevel = 1;
-      } else {
-        state.axolotl.lastLevel = Math.min(40, Math.floor((exp - 10) / 5) + 2);
-      }
+      state.axolotl.lastLevel = calculateLevel(state.axolotl.experience);
     }
   }
   

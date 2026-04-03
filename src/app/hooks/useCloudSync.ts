@@ -41,8 +41,8 @@ export function useCloudSync({
   onFriendCodeCollision,
 }: UseCloudSyncOptions) {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  /** Guard so we only pull once per session. */
-  const hasPulledRef = useRef(false);
+  /** Tracks which userId has already had its initial pull, so a different account triggers a fresh pull. */
+  const pulledForUserRef = useRef<string | null>(null);
   /** True when the browser reports we have network access. */
   const isOnlineRef = useRef(navigator.onLine);
   /**
@@ -131,10 +131,10 @@ export function useCloudSync({
     };
   }, [doPush, onStatusChange]);
 
-  // ── Pull on first sign-in ─────────────────────────────────────────────────
+  // ── Pull on first sign-in (or when account switches) ─────────────────────
   useEffect(() => {
-    if (!userId || !isSupabaseConfigured || hasPulledRef.current) return;
-    hasPulledRef.current = true;
+    if (!userId || !isSupabaseConfigured || pulledForUserRef.current === userId) return;
+    pulledForUserRef.current = userId;
 
     const pull = async () => {
       onStatusChange('syncing');

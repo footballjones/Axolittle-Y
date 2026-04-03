@@ -110,13 +110,21 @@ export function MenuTutorialOverlay({ menuOpen, onOpenMenu, onComplete, onOpenSp
 
   const handleNext = () => {
     if (phase === 2) {
-      // Wheel Spin — open the wheel and wait for a spin
-      onOpenSpinWheel();
-      setPhase(100);
+      if (spinDone) {
+        // Already spun today (e.g. app was closed and reopened) — skip the wait phase
+        setPhase(3);
+      } else {
+        onOpenSpinWheel();
+        setPhase(100);
+      }
     } else if (phase === 3) {
-      // Daily Bonus — open it and wait for a claim
-      onOpenDailyBonus();
-      setPhase(101);
+      if (dailyClaimDone) {
+        // Already claimed today — skip the wait phase
+        setPhase(4);
+      } else {
+        onOpenDailyBonus();
+        setPhase(101);
+      }
     } else if (phase >= 1 && phase <= 8) {
       setPhase(phase + 1);
     } else if (phase === 9) {
@@ -285,11 +293,13 @@ export function MenuTutorialOverlay({ menuOpen, onOpenMenu, onComplete, onOpenSp
                   <button
                     onClick={handleNext}
                     className="px-5 py-1.5 rounded-xl text-xs font-bold text-white"
-                    style={{ background: currentStep?.actionLabel
+                    style={{ background: currentStep?.actionLabel && !((phase === 2 && spinDone) || (phase === 3 && dailyClaimDone))
                       ? 'linear-gradient(110deg, #f59e0b 0%, #ef4444 100%)'
                       : 'linear-gradient(110deg, #6366f1 0%, #8b5cf6 100%)' }}
                   >
-                    {currentStep?.actionLabel ?? (phase === 9 ? 'Done' : 'Got it')}
+                    {(phase === 2 && spinDone) || (phase === 3 && dailyClaimDone)
+                      ? 'Got it'
+                      : (currentStep?.actionLabel ?? (phase === 9 ? 'Done' : 'Got it'))}
                   </button>
                 </div>
               </>

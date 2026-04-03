@@ -89,6 +89,9 @@ export interface HamburgerMenuProps {
 
   // Achievement handler
   onClaimAchievement: (achievementId: string) => void;
+
+  /** When true (menu tutorial running), tile taps that open sub-panels are suppressed. */
+  isTutorialActive?: boolean;
 }
 
 // ── Component ────────────────────────────────────────────────────────────────
@@ -130,6 +133,7 @@ export function HamburgerMenu({
   onUnlockNurserySlot,
   onReleaseAxolotl,
   onClaimAchievement,
+  isTutorialActive = false,
 }: HamburgerMenuProps) {
   return (
     <>
@@ -140,7 +144,7 @@ export function HamburgerMenu({
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         transition={{ duration: 0.25 }}
-        onClick={() => { setShowHamburgerMenu(false); setShowNotifPanel(false); setShowHowToPlayPanel(false); setShowInventoryPanel(false); setShowEggsPanel(false); }}
+        onClick={() => { if (isTutorialActive) return; setShowHamburgerMenu(false); setShowNotifPanel(false); setShowHowToPlayPanel(false); setShowInventoryPanel(false); setShowEggsPanel(false); }}
       />
       {/* Full-screen popup panel */}
       <motion.div
@@ -184,7 +188,7 @@ export function HamburgerMenu({
             {/* Alerts button */}
             <motion.button
               data-menu-id="notifications"
-              onClick={() => setShowNotifPanel(prev => !prev)}
+              onClick={() => { if (isTutorialActive) return; setShowNotifPanel(prev => !prev); }}
               className="relative rounded-full p-2 border backdrop-blur-sm active:bg-white/80"
               style={{
                 borderColor: showNotifPanel ? 'rgba(6,182,212,0.55)' : 'rgba(165,243,252,0.7)',
@@ -205,7 +209,7 @@ export function HamburgerMenu({
             </motion.button>
             {/* Settings button */}
             <motion.button
-              onClick={() => { setActiveModal('settings'); setShowHamburgerMenu(false); setShowNotifPanel(false); }}
+              onClick={() => { if (isTutorialActive) return; setActiveModal('settings'); setShowHamburgerMenu(false); setShowNotifPanel(false); }}
               className="rounded-full p-2 border border-indigo-200/60 bg-white/50 active:bg-white/80 backdrop-blur-sm"
               whileTap={{ scale: 0.85 }}
             >
@@ -285,7 +289,7 @@ export function HamburgerMenu({
             {/* STATS */}
             <motion.button
               data-menu-id="stats"
-              onClick={() => { setActiveModal('stats'); setShowHamburgerMenu(false); setShowNotifPanel(false); }}
+              onClick={() => { if (isTutorialActive) return; setActiveModal('stats'); setShowHamburgerMenu(false); setShowNotifPanel(false); }}
               className="group relative flex flex-col items-center justify-center gap-1 py-3 rounded-2xl overflow-hidden"
               style={{ background: 'linear-gradient(135deg, rgba(14,165,233,0.75) 0%, rgba(2,132,199,0.6) 100%)', border: '1px solid rgba(2,132,199,0.45)' }}
               whileTap={{ scale: 0.93 }}
@@ -308,7 +312,7 @@ export function HamburgerMenu({
             {/* EGGS */}
             <motion.button
               data-menu-id="eggs"
-              onClick={() => setShowEggsPanel(true)}
+              onClick={() => { if (isTutorialActive) return; setShowEggsPanel(true); }}
               className="group relative flex flex-col items-center justify-center gap-1 py-3 rounded-2xl overflow-hidden"
               style={{
                 background: showEggsPanel
@@ -326,7 +330,7 @@ export function HamburgerMenu({
             {/* SOCIAL */}
             <motion.button
               data-menu-id="social"
-              onClick={() => { setActiveModal('social'); setShowHamburgerMenu(false); setShowNotifPanel(false); setHasPendingPokes(false); }}
+              onClick={() => { if (isTutorialActive) return; setActiveModal('social'); setShowHamburgerMenu(false); setShowNotifPanel(false); setHasPendingPokes(false); }}
               className="group relative flex flex-col items-center justify-center gap-1 py-3 rounded-2xl overflow-hidden"
               style={{ background: 'linear-gradient(135deg, rgba(236,72,153,0.75) 0%, rgba(219,39,119,0.6) 100%)', border: '1px solid rgba(219,39,119,0.45)' }}
               whileTap={{ scale: 0.93 }}
@@ -346,7 +350,7 @@ export function HamburgerMenu({
             {/* INVENTORY */}
             <motion.button
               data-menu-id="inventory"
-              onClick={() => { setShowInventoryPanel(true); setShowHowToPlayPanel(false); setShowAchievementsPanel(false); setShowEggsPanel(false); }}
+              onClick={() => { if (isTutorialActive) return; setShowInventoryPanel(true); setShowHowToPlayPanel(false); setShowAchievementsPanel(false); setShowEggsPanel(false); }}
               className="group relative flex flex-col items-center justify-center gap-1 py-3 rounded-2xl overflow-hidden"
               style={{
                 background: showInventoryPanel
@@ -364,7 +368,7 @@ export function HamburgerMenu({
             {/* HOW TO PLAY */}
             <motion.button
               data-menu-id="how-to-play"
-              onClick={() => setShowHowToPlayPanel(true)}
+              onClick={() => { if (isTutorialActive) return; setShowHowToPlayPanel(true); }}
               className="group relative flex flex-col items-center justify-center gap-1 py-3 rounded-2xl overflow-hidden"
               style={{
                 background: showHowToPlayPanel
@@ -386,7 +390,7 @@ export function HamburgerMenu({
               return (
                 <motion.button
                   data-menu-id="achievements"
-                  onClick={() => { setShowAchievementsPanel(true); setShowHowToPlayPanel(false); setShowInventoryPanel(false); setShowEggsPanel(false); }}
+                  onClick={() => { if (isTutorialActive) return; setShowAchievementsPanel(true); setShowHowToPlayPanel(false); setShowInventoryPanel(false); setShowEggsPanel(false); }}
                   className="group relative flex flex-col items-center justify-center gap-1 py-3 rounded-2xl overflow-hidden"
                   style={{
                     background: showAchievementsPanel

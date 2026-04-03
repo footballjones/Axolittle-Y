@@ -13,6 +13,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { GameState, Axolotl, Friend, SecondaryStats } from '../types/game';
 import { GameResult } from '../minigames/types';
 import { generatePermanentFriendCode } from '../utils/storage';
+import { canSpinToday, canClaimDailyLogin } from '../utils/dailySystem';
 
 // Modals
 import { WaterChangeModal } from './WaterChangeModal';
@@ -447,8 +448,8 @@ export function ModalManager({
           }}
           onOpenSpinWheel={() => setShowSpinWheel(true)}
           onOpenDailyBonus={() => setShowDailyLogin(true)}
-          spinDone={tutorialSpinDone && !showSpinWheel}
-          dailyClaimDone={tutorialDailyClaimDone && !showDailyLogin}
+          spinDone={(tutorialSpinDone || !canSpinToday(gameState?.lastSpinDate)) && !showSpinWheel}
+          dailyClaimDone={(tutorialDailyClaimDone || !canClaimDailyLogin(gameState?.lastLoginDate)) && !showDailyLogin}
         />
       )}
 
