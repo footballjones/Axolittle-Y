@@ -510,6 +510,13 @@ export function useGameActions({
       // No name at rebirth — naming happens after the egg hatches
       const egg = createRebirthEgg(oldAxolotl);
 
+      // If the player has no other eggs, skip the incubation wait so they
+      // aren't stuck with no axolotl and nothing to do.
+      const hasOtherEggs = (prev.nurseryEggs ?? []).length > 0 || !!prev.incubatorEgg;
+      if (!hasOtherEggs) {
+        egg.incubationEndsAt = Date.now();
+      }
+
       return withAchievements({
         ...prev,
         axolotl: null,
@@ -789,6 +796,7 @@ export function useGameActions({
         }]);
       }
 
+      const prevLevelInner = calculateLevel(prev.axolotl.experience);
       const next: GameState = {
         ...prev,
         axolotl: evolvedAxolotl,
@@ -799,7 +807,7 @@ export function useGameActions({
           result.tier === 'exceptional'
             ? (prev.totalExceptionalScores ?? 0) + 1
             : (prev.totalExceptionalScores ?? 0),
-        pendingStatPoints: (prev.pendingStatPoints ?? 0) + (resolvedNewLevel - prevLevel),
+        pendingStatPoints: (prev.pendingStatPoints ?? 0) + (resolvedNewLevel - prevLevelInner),
       };
       return withAchievements(next);
     });

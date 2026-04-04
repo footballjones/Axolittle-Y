@@ -121,19 +121,20 @@ describe('dailySystem', () => {
   });
 
   describe('checkLoginStreakMilestone', () => {
-    // LOGIN_MILESTONES = [3, 7, 14, 30, 50]
+    // LOGIN_MILESTONES = [3, 7, 14, 30, 50, 100]
     it('should return milestone for each defined milestone day', () => {
       expect(checkLoginStreakMilestone(3)).toBe(3);
       expect(checkLoginStreakMilestone(7)).toBe(7);
       expect(checkLoginStreakMilestone(14)).toBe(14);
       expect(checkLoginStreakMilestone(30)).toBe(30);
       expect(checkLoginStreakMilestone(50)).toBe(50);
+      expect(checkLoginStreakMilestone(100)).toBe(100);
     });
 
     it('should return null for non-milestone streaks', () => {
       expect(checkLoginStreakMilestone(5)).toBe(null);
       expect(checkLoginStreakMilestone(10)).toBe(null);
-      expect(checkLoginStreakMilestone(100)).toBe(null);
+      expect(checkLoginStreakMilestone(99)).toBe(null);
     });
   });
 });

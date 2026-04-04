@@ -7,44 +7,44 @@ import { GameRewards } from './types';
 
 export const GAME_REWARDS: Record<string, GameRewards> = {
   'keepey-upey': {
-    normal: { xp: 2, coins: 15 },
-    good: { xp: 1, coins: 25 },
-    exceptional: { xp: 2, coins: 35, opalChance: 0.1 }, // 10% chance
+    normal: { xp: 1, coins: 15 },
+    good: { xp: 2, coins: 25 },
+    exceptional: { xp: 4, coins: 35, opalChance: 0.1 }, // 10% chance
   },
   'fish-hooks': {
-    normal: { xp: 2, coins: 10 },
+    normal: { xp: 1, coins: 10 },
     good: { xp: 2, coins: 20 },
-    exceptional: { xp: 3, coins: 30, opalChance: 0.1 },
+    exceptional: { xp: 4, coins: 30, opalChance: 0.1 },
   },
   'axolotl-stacker': {
-    normal: { xp: 2, coins: 15 },
+    normal: { xp: 1, coins: 15 },
     good: { xp: 2, coins: 25 },
-    exceptional: { xp: 3, coins: 30, opalChance: 0.1 },
+    exceptional: { xp: 4, coins: 30, opalChance: 0.1 },
   },
   'treasure-hunt': {
-    normal: { xp: 2, coins: 25 },
+    normal: { xp: 1, coins: 25 },
     good: { xp: 2, coins: 40 },
-    exceptional: { xp: 3, coins: 50, opalChance: 0.1 },
+    exceptional: { xp: 4, coins: 50, opalChance: 0.1 },
   },
   'math-rush': {
-    normal: { xp: 2, coins: 20 },
-    good: { xp: 1, coins: 30 },
-    exceptional: { xp: 2, coins: 40, opalChance: 0.1 },
+    normal: { xp: 1, coins: 20 },
+    good: { xp: 2, coins: 30 },
+    exceptional: { xp: 4, coins: 40, opalChance: 0.1 },
   },
   'coral-code': {
-    normal: { xp: 2, coins: 20 },
-    good: { xp: 1, coins: 30 },
-    exceptional: { xp: 2, coins: 45, opalChance: 0.1 },
+    normal: { xp: 1, coins: 20 },
+    good: { xp: 2, coins: 30 },
+    exceptional: { xp: 4, coins: 45, opalChance: 0.1 },
   },
   'fishing': {
-    normal: { xp: 0, coins: 30 }, // Only winner gets XP in multiplayer
-    good: { xp: 0, coins: 40 },
-    exceptional: { xp: 1, coins: 60, opalChance: 0.1 }, // Winner only
+    normal: { xp: 1, coins: 30 }, // Only winner gets XP in multiplayer
+    good: { xp: 2, coins: 40 },
+    exceptional: { xp: 4, coins: 60, opalChance: 0.1 }, // Winner only
   },
   'bite-tag': {
-    normal: { xp: 0, coins: 25 }, // Only winner gets XP
-    good: { xp: 0, coins: 35 },
-    exceptional: { xp: 1, coins: 55, opalChance: 0.1 }, // Winner only
+    normal: { xp: 1, coins: 25 }, // Only winner gets XP
+    good: { xp: 2, coins: 35 },
+    exceptional: { xp: 4, coins: 55, opalChance: 0.1 }, // Winner only
   },
 };
 
@@ -53,13 +53,13 @@ export const GAME_REWARDS: Record<string, GameRewards> = {
  * These are placeholders - should be tuned during testing
  */
 export const SCORE_THRESHOLDS: Record<string, { good: number; exceptional: number }> = {
-  'keepey-upey': { good: 30, exceptional: 60 }, // seconds survived
-  'fish-hooks': { good: 10, exceptional: 25 }, // hooks passed
-  'axolotl-stacker': { good: 8, exceptional: 15 }, // stack height
+  'keepey-upey': { good: 15, exceptional: 60 }, // seconds survived
+  'fish-hooks': { good: 7, exceptional: 25 }, // hooks passed
+  'axolotl-stacker': { good: 6, exceptional: 20 }, // stack height
   'treasure-hunt': { good: 15, exceptional: 30 }, // gems + distance
-  'math-rush': { good: 10, exceptional: 20 }, // correct answers
-  'coral-code': { good: 7, exceptional: 10 }, // guesses remaining (10 - guesses used)
-  'fishing': { good: 5, exceptional: 10 }, // fish weight (kg)
+  'math-rush': { good: 7, exceptional: 25 }, // correct answers
+  'coral-code': { good: 5, exceptional: 7 }, // guesses remaining (10 - guesses used)
+  'fishing': { good: 25, exceptional: 100 }, // fish weight (kg)
   'bite-tag': { good: 60, exceptional: 90 }, // seconds survived
 };
 

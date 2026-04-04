@@ -216,4 +216,16 @@ export function useCloudSync({
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
   }, [gameState, userId, pushToCloud]);
+
+  /**
+   * Immediately push the given state to cloud, bypassing the 1500 ms debounce.
+   * Use this after conflict resolution so the user's chosen save is persisted
+   * without waiting for the next state-change cycle.
+   */
+  const forcePush = useCallback(
+    (state: GameState) => pushToCloud(state),
+    [pushToCloud],
+  );
+
+  return { forcePush };
 }

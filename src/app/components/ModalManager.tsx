@@ -93,6 +93,7 @@ export interface ModalManagerProps {
   setTutorialDailyClaimDone: (v: boolean) => void;
   conflictSaves: { local: GameState; cloud: GameState } | null;
   setConflictSaves: (v: { local: GameState; cloud: GameState } | null) => void;
+  onForcePushToCloud: (state: GameState) => void;
   showAuthOverlay: boolean;
   setShowAuthOverlay: (v: boolean) => void;
   showSpinWheel: boolean;
@@ -196,6 +197,7 @@ export function ModalManager({
   setTutorialDailyClaimDone,
   conflictSaves,
   setConflictSaves,
+  onForcePushToCloud,
   showAuthOverlay,
   setShowAuthOverlay,
   showSpinWheel,
@@ -396,7 +398,10 @@ export function ModalManager({
         <SyncConflictModal
           localState={conflictSaves.local}
           cloudState={conflictSaves.cloud}
-          onKeepLocal={() => setConflictSaves(null)}
+          onKeepLocal={() => {
+            if (conflictSaves?.local) onForcePushToCloud(conflictSaves.local);
+            setConflictSaves(null);
+          }}
           onUseCloud={() => {
             let state = conflictSaves.cloud;
             if (!state.friendCode) state = { ...state, friendCode: generatePermanentFriendCode() };

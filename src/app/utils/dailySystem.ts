@@ -100,7 +100,7 @@ export function calculateLoginStreak(
 }
 
 /** All milestone days in ascending order */
-export const LOGIN_MILESTONES = [3, 7, 14, 30, 50] as const;
+export const LOGIN_MILESTONES = [3, 7, 14, 30, 50, 100] as const;
 
 /**
  * Check if login streak milestone is reached

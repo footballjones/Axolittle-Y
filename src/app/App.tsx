@@ -92,7 +92,7 @@ export default function App() {
     handleDailyLoginClaim,
   } = useEconomyActions({ setGameState, setNotifications });
 
-  useCloudSync({
+  const { forcePush } = useCloudSync({
     userId: user?.id ?? null,
     authUsername: (user?.user_metadata?.username as string | undefined) ?? null,
     gameState,
@@ -628,6 +628,7 @@ export default function App() {
         setTutorialDailyClaimDone={setTutorialDailyClaimDone}
         conflictSaves={conflictSaves}
         setConflictSaves={setConflictSaves}
+        onForcePushToCloud={forcePush}
         showAuthOverlay={showAuthOverlay}
         setShowAuthOverlay={setShowAuthOverlay}
         showSpinWheel={showSpinWheel}

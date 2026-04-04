@@ -65,9 +65,10 @@ function getRarityStyle(rarity?: Rarity): RarityStyle {
         badge: 'linear-gradient(135deg, #8b5cf6, #06b6d4, #ec4899)',
         stars: '✨',
       };
+    case 'Common':
     default:
       return {
-        label: 'NEW AXOLOTL',
+        label: 'COMMON',
         gradient: 'linear-gradient(135deg, #34d399 0%, #67e8f9 100%)',
         glow: 'rgba(52,211,153,0.6)',
         shimmer: 'rgba(167,243,208,0.5)',
