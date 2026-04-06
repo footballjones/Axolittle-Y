@@ -197,7 +197,10 @@ export function SettingsModal({
                     ) : (
                       <BellOff className="w-4 h-4 text-slate-500" />
                     )}
-                    <span className="text-white text-sm">Notifications</span>
+                    <div>
+                      <span className="text-white text-sm">Push Notifications</span>
+                      <p className="text-white/30 text-[10px] leading-none mt-0.5">Coming soon</p>
+                    </div>
                   </div>
                   <ToggleSwitch enabled={notificationsEnabled} onToggle={() => setNotificationsEnabled(!notificationsEnabled)} />
                 </div>

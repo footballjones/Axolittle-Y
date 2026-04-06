@@ -112,16 +112,15 @@ export function JimmyChubsAquarium({ onBack }: Props) {
       {/* Header */}
       <div
         className="flex items-center gap-3 px-4 z-10 relative"
-        style={{ paddingTop: 'max(0.75rem, env(safe-area-inset-top))', paddingBottom: '0.75rem' }}
-        style={{ background: 'rgba(4,20,40,0.85)', borderBottom: '1px solid rgba(56,189,248,0.12)' }}
+        style={{ paddingTop: 'max(0.75rem, env(safe-area-inset-top))', paddingBottom: '0.75rem', background: 'rgba(4,20,40,0.85)', borderBottom: '1px solid rgba(56,189,248,0.12)' }}
       >
         <motion.button
           onClick={onBack}
           whileTap={{ scale: 0.9 }}
-          className="flex items-center justify-center w-8 h-8 rounded-full"
+          className="flex items-center justify-center w-11 h-11 rounded-full flex-shrink-0"
           style={{ background: 'rgba(56,189,248,0.12)', border: '1px solid rgba(56,189,248,0.2)' }}
         >
-          <ArrowLeft className="w-4 h-4 text-cyan-300" strokeWidth={2.5} />
+          <ArrowLeft className="w-5 h-5 text-cyan-300" strokeWidth={2.5} />
         </motion.button>
 
         <div>

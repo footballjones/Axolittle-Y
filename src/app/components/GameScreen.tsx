@@ -128,6 +128,7 @@ export interface GameScreenProps {
   handleClaimAchievement: (achievementId: string) => void;
   handleUnlockGames: () => void;
   handleRefillEnergy: () => void;
+  handleAddFriend: (code: string) => Promise<string | null>;
 }
 
 // ── Component ────────────────────────────────────────────────────────────────
@@ -205,6 +206,7 @@ export function GameScreen({
   handleClaimAchievement,
   handleUnlockGames,
   handleRefillEnergy,
+  handleAddFriend,
 }: GameScreenProps) {
   // ── Local UI state (owned by GameScreen) ─────────────────────────────────
   const [clickTarget, setClickTarget] = useState<{ x: number; y: number; timestamp: number } | null>(null);
@@ -697,6 +699,7 @@ export function GameScreen({
                   onUnlockNurserySlot={handleUnlockNurserySlot}
                   onReleaseAxolotl={handleReleaseAxolotl}
                   onClaimAchievement={handleClaimAchievement}
+                  onAddFriend={handleAddFriend}
                   isTutorialActive={_showMenuTutorial}
                 />
               )}

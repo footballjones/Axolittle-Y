@@ -5,7 +5,7 @@ export interface GameNotification {
   message: string;
   time: string;
   read: boolean;
-  metadata?: { achievementId?: string };
+  metadata?: { achievementId?: string; friendCode?: string };
 }
 
 /** @deprecated Replaced by real Supabase-backed notifications. */

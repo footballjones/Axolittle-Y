@@ -90,6 +90,9 @@ export interface HamburgerMenuProps {
   // Achievement handler
   onClaimAchievement: (achievementId: string) => void;
 
+  /** Used for "Add back" on friend_add notifications. */
+  onAddFriend: (code: string) => Promise<string | null>;
+
   /** When true (menu tutorial running), tile taps that open sub-panels are suppressed. */
   isTutorialActive?: boolean;
 }
@@ -133,6 +136,7 @@ export function HamburgerMenu({
   onUnlockNurserySlot,
   onReleaseAxolotl,
   onClaimAchievement,
+  onAddFriend,
   isTutorialActive = false,
 }: HamburgerMenuProps) {
   const [highlightAchievementId, setHighlightAchievementId] = useState<string | null>(null);
@@ -646,47 +650,76 @@ export function HamburgerMenu({
                     <p className="text-slate-500 text-sm">No notifications yet</p>
                   </div>
                 ) : notifications.map((notif, i) => (
-                  <motion.button
+                  <motion.div
                     key={notif.id}
                     initial={{ opacity: 0, x: 16 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: i * 0.05 }}
-                    onClick={() => {
-                      setNotifications(prev => prev.map(n => n.id === notif.id ? { ...n, read: true } : n));
-                      if (notif.type === 'poke' || notif.type === 'friend' || notif.type === 'gift') {
-                        setActiveModal('social');
-                        setShowHamburgerMenu(false);
-                        setShowNotifPanel(false);
-                        setHasPendingPokes(false);
-                      } else if (notif.type === 'achievement' && notif.metadata?.achievementId) {
-                        setHighlightAchievementId(notif.metadata.achievementId);
-                        setShowAchievementsPanel(true);
-                        setShowNotifPanel(false);
-                      }
-                    }}
-                    className="flex items-center gap-3 w-full px-4 py-3 rounded-2xl text-left"
+                    className="flex items-start gap-3 w-full px-4 py-3 rounded-2xl"
                     style={{
                       background: !notif.read
                         ? 'linear-gradient(135deg, rgba(221,214,254,0.7) 0%, rgba(186,230,253,0.5) 100%)'
                         : 'rgba(255,255,255,0.45)',
                       border: !notif.read ? '1px solid rgba(167,139,250,0.35)' : '1px solid rgba(203,213,225,0.4)',
                     }}
-                    whileTap={{ scale: 0.97 }}
                   >
-                    <div
-                      className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-xl"
-                      style={{ background: !notif.read ? 'rgba(221,214,254,0.6)' : 'rgba(241,245,249,0.8)' }}
+                    {/* Tappable main area */}
+                    <button
+                      className="flex items-center gap-3 flex-1 text-left min-w-0"
+                      onClick={() => {
+                        setNotifications(prev => prev.map(n => n.id === notif.id ? { ...n, read: true } : n));
+                        if (notif.type === 'poke' || notif.type === 'gift') {
+                          setActiveModal('social');
+                          setShowHamburgerMenu(false);
+                          setShowNotifPanel(false);
+                          setHasPendingPokes(false);
+                        } else if (notif.type === 'achievement' && notif.metadata?.achievementId) {
+                          setHighlightAchievementId(notif.metadata.achievementId);
+                          setShowAchievementsPanel(true);
+                          setShowNotifPanel(false);
+                        }
+                      }}
                     >
-                      <GameIcon name={notif.icon} size={20} />
+                      <div
+                        className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-xl"
+                        style={{ background: !notif.read ? 'rgba(221,214,254,0.6)' : 'rgba(241,245,249,0.8)' }}
+                      >
+                        <GameIcon name={notif.icon} size={20} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-[12px] leading-snug ${!notif.read ? 'text-slate-800 font-semibold' : 'text-slate-400'}`}>{notif.message}</p>
+                        <p className="text-[9px] text-slate-400 mt-0.5 font-medium">{notif.time}</p>
+                        {/* Add back button for friend_add notifications */}
+                        {notif.type === 'friend' && notif.metadata?.friendCode && (
+                          <motion.button
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              await onAddFriend(notif.metadata!.friendCode!);
+                              setNotifications(prev => prev.filter(n => n.id !== notif.id));
+                            }}
+                            className="mt-1.5 px-3 py-1 rounded-lg text-[10px] font-bold text-white"
+                            style={{ background: 'linear-gradient(110deg, #6366f1 0%, #8b5cf6 100%)' }}
+                            whileTap={{ scale: 0.93 }}
+                          >
+                            Add back
+                          </motion.button>
+                        )}
+                      </div>
+                    </button>
+                    {/* Right-side controls */}
+                    <div className="flex flex-col items-center gap-1.5 flex-shrink-0">
+                      {!notif.read && (
+                        <div className="w-2 h-2 rounded-full bg-violet-500 shadow-sm shadow-violet-400/60 mt-1" />
+                      )}
+                      <motion.button
+                        onClick={() => setNotifications(prev => prev.filter(n => n.id !== notif.id))}
+                        className="w-5 h-5 rounded-full flex items-center justify-center bg-white/60 border border-slate-200/60 active:bg-white"
+                        whileTap={{ scale: 0.85 }}
+                      >
+                        <X className="w-3 h-3 text-slate-400" strokeWidth={2.5} />
+                      </motion.button>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className={`text-[12px] leading-snug ${!notif.read ? 'text-slate-800 font-semibold' : 'text-slate-400'}`}>{notif.message}</p>
-                      <p className="text-[9px] text-slate-400 mt-0.5 font-medium">{notif.time}</p>
-                    </div>
-                    {!notif.read && (
-                      <div className="w-2 h-2 rounded-full bg-violet-500 flex-shrink-0 shadow-sm shadow-violet-400/60" />
-                    )}
-                  </motion.button>
+                  </motion.div>
                 ))}
               </div>
             </motion.div>

@@ -35,6 +35,17 @@ function rowToNotification(row: FriendNotificationRow): GameNotification {
       read: false,
     };
   }
+  if (row.type === 'friend_add') {
+    return {
+      id: row.id,
+      type: 'friend',
+      icon: 'UserPlus',
+      message: `${row.sender_name} added you as a friend!`,
+      time: 'Just now',
+      read: false,
+      metadata: { friendCode: row.friend_code ?? undefined },
+    };
+  }
   return {
     id: row.id,
     type: 'poke',

@@ -16,7 +16,7 @@ import { GAME_CONFIG } from '../config/game';
 import { GameNotification } from '../data/notifications';
 import { GameResult } from '../minigames/types';
 import { checkAchievements, ALL_ACHIEVEMENTS } from '../data/achievements';
-import { supabase, isSupabaseConfigured, pushAchievements } from '../services/supabase';
+import { supabase, isSupabaseConfigured, pushAchievements, sendFriendAddNotification } from '../services/supabase';
 
 interface UseGameActionsProps {
   gameState: GameState | null;
@@ -397,6 +397,15 @@ export function useGameActions({
         time: 'now',
         read: false,
       }]);
+      // Notify the added player so they can add back
+      if (userId && prev.friendCode) {
+        sendFriendAddNotification(
+          userId,
+          data.id,
+          prev.axolotl?.name ?? 'Someone',
+          prev.friendCode,
+        ).catch(console.error);
+      }
       return withAchievements({ ...prev, friends: [...prev.friends, realFriend] });
     });
 
@@ -772,20 +781,19 @@ export function useGameActions({
       const { axolotl: evolvedAxolotl } = checkEvolution(updatedAxolotl);
       const resolvedNewLevel = calculateLevel(evolvedAxolotl.experience);
 
-      // Show appropriate notification based on whether rewards were actually earned
-      const earnedRewards = result.xp > 0 || result.coins > 0;
-      if (earnedRewards) {
+      // Only notify for coin/opal rewards — XP is silent
+      if (result.coins > 0) {
         setNotifications(prevNotifs => [...prevNotifs, {
           id: `notif-${Date.now()}`,
           type: 'milestone',
           icon: result.tier === 'exceptional' ? 'Sparkles' : result.tier === 'good' ? 'Star' : 'Gamepad2',
-          message: result.coins > 0
-            ? `Earned ${result.xp} XP and ${result.coins} coins!${result.opals ? ` +${result.opals} opals` : ''}`
-            : `Earned ${result.xp} XP!`,
+          message: result.opals
+            ? `Earned ${result.coins} coins and ${result.opals} opals!`
+            : `Earned ${result.coins} coins!`,
           time: 'now',
           read: false,
         }]);
-      } else {
+      } else if (result.xp === 0 && result.coins === 0) {
         setNotifications(prevNotifs => [...prevNotifs, {
           id: `notif-${Date.now()}`,
           type: 'milestone',

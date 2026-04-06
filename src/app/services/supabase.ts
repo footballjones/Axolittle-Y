@@ -28,10 +28,11 @@ export interface FriendNotificationRow {
   id: string;
   sender_id: string;
   recipient_id: string;
-  type: 'gift' | 'poke';
+  type: 'gift' | 'poke' | 'friend_add';
   coins: number;
   opals: number;
   sender_name: string;
+  friend_code?: string | null;
   applied: boolean;
   created_at: string;
 }
@@ -60,6 +61,24 @@ export async function sendFriendAction(
     return error.message;
   }
   return null;
+}
+
+/**
+ * Notifies a user that they were added as a friend.
+ * Sends a `friend_add` row so the recipient can add back.
+ * Fire-and-forget — failures are non-critical.
+ */
+export async function sendFriendAddNotification(
+  senderId: string,
+  recipientId: string,
+  senderName: string,
+  senderFriendCode: string,
+): Promise<void> {
+  if (!isSupabaseConfigured) return;
+  const { error } = await supabase
+    .from('friend_notifications')
+    .insert({ sender_id: senderId, recipient_id: recipientId, sender_name: senderName, type: 'friend_add', coins: 0, opals: 0, friend_code: senderFriendCode, applied: false });
+  if (error) console.error('[sendFriendAddNotification]', error);
 }
 
 /** Fetches all unapplied friend_notifications for a user, oldest-first. */

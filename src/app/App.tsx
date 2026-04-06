@@ -588,6 +588,7 @@ export default function App() {
         handleClaimAchievement={handleClaimAchievement}
         handleUnlockGames={handleUnlockGames}
         handleRefillEnergy={handleRefillEnergy}
+        handleAddFriend={handleAddFriend}
       />
 
       <ModalManager

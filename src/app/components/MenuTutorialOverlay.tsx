@@ -86,7 +86,7 @@ export function MenuTutorialOverlay({ menuOpen, onOpenMenu, onComplete, onOpenSp
         measureTimer.current = setTimeout(tryMeasure, 200);
       }
     };
-    measureTimer.current = setTimeout(tryMeasure, 150);
+    measureTimer.current = setTimeout(tryMeasure, 400);
     window.addEventListener('resize', measure);
     return () => {
       if (measureTimer.current) clearTimeout(measureTimer.current);
