@@ -59,6 +59,7 @@ export const GAME_CONFIG = {
     7:  { opals: 15, coins: 300, decoration: null },
     14: { opals: 20, coins: 500, decoration: null },
     30: { opals: 30, coins: 750, decoration: null },
-    50: { opals: 50, coins: 1000, decoration: 'decoration-streak-50' }, // Exclusive decoration
+    50:  { opals: 50,  coins: 1000, decoration: 'decoration-streak-50'  }, // Exclusive decoration
+    100: { opals: 100, coins: 2000, decoration: 'decoration-streak-100' }, // Ultimate milestone
   },
 } as const;

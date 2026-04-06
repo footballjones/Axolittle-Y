@@ -108,6 +108,14 @@ export function MenuTutorialOverlay({ menuOpen, onOpenMenu, onComplete, onOpenSp
     }
   }, [phase, menuOpen, onComplete]);
 
+  // If the user closes the menu early (phases 1-9), reset back to phase 0
+  // so the tutorial re-prompts them to open the menu rather than getting stuck.
+  useEffect(() => {
+    if (phase >= 1 && phase < 10 && !menuOpen) {
+      setPhase(0);
+    }
+  }, [phase, menuOpen]);
+
   const handleNext = () => {
     if (phase === 2) {
       if (spinDone) {

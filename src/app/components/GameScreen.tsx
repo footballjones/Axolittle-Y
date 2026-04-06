@@ -486,7 +486,10 @@ export function GameScreen({
                 </AnimatePresence>
                 {/* Home, Mini Games, Shop buttons - evenly spaced */}
                 <div className="flex justify-center items-center mt-1">
-                  <div className={`flex items-center gap-6 w-3/4 ${tutorialLockMode !== null ? 'pointer-events-none opacity-30' : ''}`}>
+                  {/* Lock nav buttons both during normal tutorial lock modes AND while the
+                      menu tutorial is pending/active. The hamburger button is intentionally
+                      left unlocked so the player can open the menu during the menu tutorial. */}
+                  <div className={`flex items-center gap-6 w-3/4 ${(tutorialLockMode !== null || _showMenuTutorial || (gameState.wellbeingCompleteSeen === true && !gameState.menuTutorialSeen && gameState.tutorialStep === 'done')) ? 'pointer-events-none opacity-30' : ''}`}>
                   <motion.button
                     onClick={() => { setCurrentScreen('home'); setShowHamburgerMenu(false); }}
                     className="relative bg-transparent border border-white/30 rounded-xl active:bg-white/[0.08] transition-all flex-1"
@@ -1275,8 +1278,11 @@ export function GameScreen({
 
                       if (mgTutPhase !== null) {
                         setMgTutPhase(null);
-                        setGameState(s => s && !s.miniGameTutorialSeen ? { ...s, miniGameTutorialSeen: true } : s);
                       }
+                      // Always mark the mini-game tutorial as seen when entering any game.
+                      // This prevents the tutorial from looping if the user enters a game
+                      // before the mgTutPhase effect has had a chance to fire.
+                      setGameState(s => s && !s.miniGameTutorialSeen ? { ...s, miniGameTutorialSeen: true } : s);
 
                       setGameState(prev => {
                         if (!prev) return prev;
