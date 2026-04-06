@@ -54,6 +54,7 @@ export function JimmyChubsAquarium({ onBack }: Props) {
   const [ripple, setRipple] = useState<(Pos & { id: number }) | null>(null);
   const rippleIdRef = useRef(0);
   const containerRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const chubsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Schedule next Chubs autonomous wander
@@ -76,6 +77,14 @@ export function JimmyChubsAquarium({ onBack }: Props) {
     scheduleChubs(jimmyPos.x);
     return () => { if (chubsTimerRef.current) clearTimeout(chubsTimerRef.current); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Center the scroll position on mount
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (el) {
+      el.scrollLeft = (el.scrollWidth - el.clientWidth) / 2;
+    }
   }, []);
 
   const handleTap = useCallback((e: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>) => {
@@ -149,10 +158,15 @@ export function JimmyChubsAquarium({ onBack }: Props) {
         </div>
       </div>
 
-      {/* Aquarium */}
+      {/* Aquarium — horizontally scrollable */}
+      <div
+        ref={scrollRef}
+        className="flex-1 relative overflow-x-auto overflow-y-hidden select-none"
+        style={{ WebkitOverflowScrolling: 'touch' }}
+      >
       <div
         ref={containerRef}
-        className="flex-1 relative overflow-hidden select-none"
+        className="relative h-full w-[250%]"
         style={{ cursor: 'crosshair' }}
         onClick={handleTap}
         onTouchStart={handleTap}
@@ -310,15 +324,16 @@ export function JimmyChubsAquarium({ onBack }: Props) {
           </p>
         </motion.div>
 
-        {/* Tap hint */}
+        {/* Tap/swipe hint */}
         <div className="absolute bottom-4 left-0 right-0 flex justify-center pointer-events-none">
           <span
             className="text-[10px] text-cyan-200/50 font-medium px-3 py-1 rounded-full"
             style={{ background: 'rgba(4,20,40,0.6)' }}
           >
-            Tap anywhere to guide Jimmy &amp; Chubs
+            Tap to guide · swipe to explore
           </span>
         </div>
+      </div>
       </div>
     </div>
   );

@@ -978,48 +978,72 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
               </div>
             </div>
 
-            {/* Aquarium body */}
-            <div className="flex-1 relative overflow-hidden">
-              {visitSnapshotLoading ? (
-                /* Loading state */
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
-                  <Loader2 className="w-8 h-8 text-cyan-400 animate-spin" strokeWidth={2} />
-                  <p className="text-cyan-300/60 text-sm">Loading aquarium…</p>
-                </div>
-              ) : (
-                <>
-                  {/* Background image + tint + decorations */}
-                  <AquariumBackground
-                    background={visitSnapshot?.bgColor ?? '#1e40af'}
-                    decorations={visitSnapshot?.decorations ?? []}
-                  />
-
-                  {/* Floating bubbles */}
-                  {[12, 31, 55, 74, 88].map((x, i) => (
-                    <motion.div
-                      key={i}
-                      className="absolute bottom-0 rounded-full pointer-events-none"
-                      style={{
-                        left: `${x}%`,
-                        width: `${5 + i * 2}px`,
-                        height: `${5 + i * 2}px`,
-                        background: 'rgba(255,255,255,0.12)',
-                        border: '1px solid rgba(255,255,255,0.2)',
-                        zIndex: 5,
-                      }}
-                      animate={{ y: [0, '-100vh', 0], opacity: [0, 0.7, 0] }}
-                      transition={{ duration: 4 + i * 0.8, repeat: Infinity, delay: i * 1.1, ease: 'easeInOut' }}
+            {/* Aquarium body — horizontally scrollable */}
+            <div
+              className="flex-1 overflow-x-auto overflow-y-hidden"
+              style={{ WebkitOverflowScrolling: 'touch' }}
+              ref={(el) => {
+                // Center scroll on mount/friend-change
+                if (el) {
+                  requestAnimationFrame(() => {
+                    el.scrollLeft = (el.scrollWidth - el.clientWidth) / 2;
+                  });
+                }
+              }}
+            >
+              {/* Wide inner container — same 250% as main aquarium */}
+              <div className="relative h-full w-[250%]">
+                {visitSnapshotLoading ? (
+                  /* Loading state */
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
+                    <Loader2 className="w-8 h-8 text-cyan-400 animate-spin" strokeWidth={2} />
+                    <p className="text-cyan-300/60 text-sm">Loading aquarium…</p>
+                  </div>
+                ) : (
+                  <>
+                    {/* Background image + tint + decorations */}
+                    <AquariumBackground
+                      background={visitSnapshot?.bgColor ?? '#1e40af'}
+                      decorations={visitSnapshot?.decorations ?? []}
                     />
-                  ))}
 
-                  {/* Swimming axolotl */}
-                  <FriendAxolotlSwimmer
-                    stage={visitingFriend.stage}
-                    name={visitingFriend.axolotlName}
-                    rarity={visitSnapshot?.axolotlRarity ?? 'Common'}
-                  />
-                </>
-              )}
+                    {/* Floating bubbles */}
+                    {[12, 31, 55, 74, 88].map((x, i) => (
+                      <motion.div
+                        key={i}
+                        className="absolute bottom-0 rounded-full pointer-events-none"
+                        style={{
+                          left: `${x}%`,
+                          width: `${5 + i * 2}px`,
+                          height: `${5 + i * 2}px`,
+                          background: 'rgba(255,255,255,0.12)',
+                          border: '1px solid rgba(255,255,255,0.2)',
+                          zIndex: 5,
+                        }}
+                        animate={{ y: [0, '-100vh', 0], opacity: [0, 0.7, 0] }}
+                        transition={{ duration: 4 + i * 0.8, repeat: Infinity, delay: i * 1.1, ease: 'easeInOut' }}
+                      />
+                    ))}
+
+                    {/* Swimming axolotl */}
+                    <FriendAxolotlSwimmer
+                      stage={visitingFriend.stage}
+                      name={visitingFriend.axolotlName}
+                      rarity={visitSnapshot?.axolotlRarity ?? 'Common'}
+                    />
+
+                    {/* Swipe hint */}
+                    <div className="absolute bottom-4 left-0 right-0 flex justify-center pointer-events-none" style={{ zIndex: 20 }}>
+                      <span
+                        className="text-[10px] text-cyan-200/50 font-medium px-3 py-1 rounded-full"
+                        style={{ background: 'rgba(4,20,40,0.6)' }}
+                      >
+                        Swipe to explore
+                      </span>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
           </motion.div>
         )}
