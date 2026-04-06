@@ -210,7 +210,7 @@ export function useCloudSync({
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
       pushToCloud(gameState);
-    }, 1500);
+    }, 30000);
 
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);

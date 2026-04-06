@@ -19,17 +19,12 @@ export function SyncIndicator({ status }: SyncIndicatorProps) {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    if (status === 'idle' || status === 'guest') {
+    // Only surface problems to the player — hide all success/progress states.
+    if (status === 'error' || status === 'offline') {
+      setVisible(true);
+    } else {
       setVisible(false);
-      return;
     }
-    setVisible(true);
-    // Synced is transient — hide after 2 s
-    if (status === 'synced') {
-      const t = setTimeout(() => setVisible(false), 2000);
-      return () => clearTimeout(t);
-    }
-    // error / offline / syncing → stay visible
   }, [status]);
 
   const config: Record<
