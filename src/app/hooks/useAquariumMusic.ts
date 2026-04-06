@@ -188,6 +188,24 @@ export function useContextMusic({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enabled, musicEnabled]);
 
+  // Pause/resume when iOS WKWebView fires app lifecycle events
+  useEffect(() => {
+    const handlePause = () => {
+      if (audioRef.current) audioRef.current.pause();
+    };
+    const handleResume = () => {
+      if (audioRef.current && audioRef.current.src && musicEnabled && enabled) {
+        audioRef.current.play().catch(() => {});
+      }
+    };
+    document.addEventListener('axo-app-pause', handlePause);
+    document.addEventListener('axo-app-resume', handleResume);
+    return () => {
+      document.removeEventListener('axo-app-pause', handlePause);
+      document.removeEventListener('axo-app-resume', handleResume);
+    };
+  }, [musicEnabled, enabled]);
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {

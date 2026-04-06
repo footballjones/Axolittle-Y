@@ -15,6 +15,10 @@ class ViewController: UIViewController, WKNavigationDelegate {
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .systemBackground
+
+        // Pause/resume music when the app moves to background/foreground
+        NotificationCenter.default.addObserver(self, selector: #selector(appDidEnterBackground), name: UIApplication.didEnterBackgroundNotification, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(appWillEnterForeground), name: UIApplication.willEnterForegroundNotification, object: nil)
         
         // Configure WKWebView
         let config = WKWebViewConfiguration()
@@ -148,5 +152,19 @@ class ViewController: UIViewController, WKNavigationDelegate {
     
     override var preferredStatusBarStyle: UIStatusBarStyle {
         return .darkContent
+    }
+
+    // ── App lifecycle: pause audio when backgrounded, resume when foregrounded ──
+
+    @objc private func appDidEnterBackground() {
+        webView.evaluateJavaScript("document.dispatchEvent(new Event('axo-app-pause'))") { _, _ in }
+    }
+
+    @objc private func appWillEnterForeground() {
+        webView.evaluateJavaScript("document.dispatchEvent(new Event('axo-app-resume'))") { _, _ in }
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
     }
 }
