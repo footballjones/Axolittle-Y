@@ -111,6 +111,37 @@ export async function markNotificationApplied(notifId: string): Promise<void> {
   if (error) console.error('[markNotificationApplied]', error);
 }
 
+// ─── friend snapshot (public profiles data) ───────────────────────────────────
+
+export interface FriendSnapshot {
+  axolotlColor: string;
+  axolotlPattern: string;
+  axolotlRarity: 'Common' | 'Rare' | 'Epic' | 'Legendary' | 'Mythic';
+  bgColor: string;
+  decorations: string[];
+}
+
+/**
+ * Fetches the publicly-visible appearance data for any player from profiles.
+ * Uses the SELECT ALL policy which allows any authenticated user to read profiles.
+ */
+export async function fetchFriendSnapshot(playerId: string): Promise<FriendSnapshot | null> {
+  if (!isSupabaseConfigured) return null;
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('axolotl_color, axolotl_pattern, axolotl_rarity, bg_color, decorations')
+    .eq('id', playerId)
+    .maybeSingle();
+  if (error || !data) return null;
+  return {
+    axolotlColor: data.axolotl_color ?? '#ff6b9d',
+    axolotlPattern: data.axolotl_pattern ?? 'spots',
+    axolotlRarity: (data.axolotl_rarity ?? 'Common') as FriendSnapshot['axolotlRarity'],
+    bgColor: data.bg_color ?? '#1e40af',
+    decorations: (data.decorations as string[]) ?? [],
+  };
+}
+
 // ─── user_achievements helpers ────────────────────────────────────────────────
 
 /**

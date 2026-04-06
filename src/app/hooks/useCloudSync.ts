@@ -76,6 +76,12 @@ export function useCloudSync({
             axolotl_name: state.axolotl.name,
             generation: state.axolotl.generation,
             stage: state.axolotl.stage,
+            // Appearance — lets friends see your real axolotl when they visit
+            axolotl_color: state.axolotl.color,
+            axolotl_pattern: state.axolotl.pattern,
+            axolotl_rarity: state.axolotl.rarity ?? 'Common',
+            bg_color: state.customization.background,
+            decorations: state.customization.decorations,
           },
           { onConflict: 'id' },
         );

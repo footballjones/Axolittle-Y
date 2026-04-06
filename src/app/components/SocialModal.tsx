@@ -1,11 +1,16 @@
 import { useState, useEffect, useRef } from 'react';
-import { X, Users, Copy, Check, ChevronDown, Heart, Waves, Plus, Leaf, Sparkles, ChevronRight, Gift, Trash2, BarChart2, Egg, Crown, Sprout, Dumbbell, Droplets, Clock, Fish, Trophy, Lock } from 'lucide-react';
+import { X, Users, Copy, Check, ChevronDown, Heart, Waves, Plus, Leaf, Sparkles, ChevronRight, Gift, Trash2, BarChart2, Egg, Crown, Sprout, Dumbbell, Droplets, Clock, Fish, Trophy, Lock, ArrowLeft, Loader2 } from 'lucide-react';
 import { Axolotl, Friend } from '../types/game';
 import { motion, AnimatePresence } from 'motion/react';
 import { GameIcon } from './icons';
 import { ALL_ACHIEVEMENTS } from '../data/achievements';
 import { ACHIEVEMENT_CATEGORIES, type AchievementCategory } from '../types/achievements';
-import { fetchPlayerAchievements, isSupabaseConfigured } from '../services/supabase';
+import { fetchPlayerAchievements, fetchFriendSnapshot, FriendSnapshot, isSupabaseConfigured } from '../services/supabase';
+import { AquariumBackground } from './AquariumBackground';
+import axolotlImg from '../../assets/axolotl.png';
+import axolotlRareImg from '../../assets/axolotl-rare-1.png';
+import axolotlEpicImg from '../../assets/axolotl-epic-1.png';
+import axolotlLegendaryImg from '../../assets/axolotl-legendary-1.png';
 
 interface GiftResult {
   coins: number;
@@ -41,6 +46,99 @@ function formatCooldown(ms: number): string {
 
 const JIMMY_CHUBS_ID = 'jimmy-chubs';
 
+// ── Friend Aquarium Swimmer ───────────────────────────────────────────────────
+// Lightweight read-only swimmer: same images as AxolotlDisplay, no food/play logic.
+
+function getFriendAxolotlImg(rarity: string) {
+  switch (rarity) {
+    case 'Rare':      return axolotlRareImg;
+    case 'Epic':      return axolotlEpicImg;
+    case 'Legendary':
+    case 'Mythic':    return axolotlLegendaryImg;
+    default:          return axolotlImg;
+  }
+}
+
+function getFriendAxolotlSize(stage: string) {
+  switch (stage) {
+    case 'hatchling': return 96;
+    case 'sprout':    return 132;
+    case 'guardian':  return 168;
+    case 'elder':     return 186;
+    default:          return 96;
+  }
+}
+
+function FriendAxolotlSwimmer({ stage, name, rarity }: { stage: string; name: string; rarity: string }) {
+  const [pos, setPos] = useState({ x: 50, y: 60 });
+  const [facingLeft, setFacingLeft] = useState(false);
+  const posRef = useRef({ x: 50, y: 60 });
+
+  // Random swim every 10-18 seconds
+  useEffect(() => {
+    const swim = () => {
+      const newX = Math.random() * 50 + 25; // 25-75%
+      const newY = Math.random() * 30 + 35; // 35-65%
+      setFacingLeft(newX < posRef.current.x);
+      posRef.current = { x: newX, y: newY };
+      setPos({ x: newX, y: newY });
+    };
+    const id = setInterval(swim, 10000 + Math.random() * 8000);
+    return () => clearInterval(id);
+  }, []);
+
+  const size = getFriendAxolotlSize(stage);
+  const img = getFriendAxolotlImg(rarity);
+
+  return (
+    <motion.div
+      className="absolute"
+      animate={{ left: `${pos.x}%`, top: `${pos.y}%` }}
+      transition={{ duration: 4, ease: [0.2, 0.8, 0.4, 1] }}
+      style={{ transform: 'translate(-50%, -50%)', zIndex: 10 }}
+    >
+      {/* Bob animation */}
+      <motion.div
+        animate={{ y: [0, -6, 0, 4, 0], rotate: [0, -2, 0, 2, 0] }}
+        transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+        className="relative flex flex-col items-center gap-1"
+      >
+        {/* Glow */}
+        <motion.div
+          className="absolute inset-0 flex items-center justify-center pointer-events-none"
+          animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0.35, 0.2] }}
+          transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
+        >
+          <div style={{
+            width: size * 1.6, height: size * 1.3,
+            background: 'radial-gradient(ellipse at center, rgba(120,180,255,0.3) 0%, rgba(180,100,255,0.15) 35%, transparent 65%)',
+            borderRadius: '50%', filter: 'blur(25px)',
+          }} />
+        </motion.div>
+        <img
+          src={img}
+          alt={name}
+          width={size}
+          height={size}
+          style={{
+            transform: facingLeft ? 'scaleX(-1)' : 'scaleX(1)',
+            filter: 'drop-shadow(0 0 8px rgba(160,120,255,0.4)) drop-shadow(0 0 20px rgba(100,180,255,0.3)) drop-shadow(0 4px 12px rgba(0,0,0,0.25))',
+            objectFit: 'contain',
+            pointerEvents: 'none',
+          }}
+        />
+        {/* Name label */}
+        <div
+          className="text-white font-black text-[10px] px-2.5 py-0.5 rounded-full whitespace-nowrap"
+          style={{ background: 'rgba(0,0,0,0.45)', border: '1px solid rgba(255,255,255,0.2)' }}
+        >
+          {name}
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
 interface SocialModalProps {
   onClose: () => void;
   axolotl: Axolotl;
@@ -64,6 +162,8 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
   const [addFriendLoading, setAddFriendLoading] = useState(false);
   const [addFriendError, setAddFriendError] = useState<string | null>(null);
   const [visitingFriend, setVisitingFriend] = useState<Friend | null>(null);
+  const [visitSnapshot, setVisitSnapshot] = useState<FriendSnapshot | null>(null);
+  const [visitSnapshotLoading, setVisitSnapshotLoading] = useState(false);
   const [viewingStatsFriend, setViewingStatsFriend] = useState<Friend | null>(null);
   const [viewingAchievementsFriend, setViewingAchievementsFriend] = useState<Friend | null>(null);
   const [friendAchievementIds, setFriendAchievementIds] = useState<string[] | null>(null); // null = loading
@@ -77,6 +177,22 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
     const id = setInterval(() => setTick(t => t + 1), 60_000);
     return () => clearInterval(id);
   }, []);
+
+  // Fetch friend's appearance snapshot when visiting their aquarium
+  useEffect(() => {
+    if (!visitingFriend) {
+      setVisitSnapshot(null);
+      return;
+    }
+    setVisitSnapshot(null);
+    setVisitSnapshotLoading(true);
+    fetchFriendSnapshot(visitingFriend.id).then(snapshot => {
+      setVisitSnapshot(snapshot);
+      setVisitSnapshotLoading(false);
+    }).catch(() => {
+      setVisitSnapshotLoading(false);
+    });
+  }, [visitingFriend]);
 
   // Fetch real achievements from Supabase when viewing a friend's achievements
   useEffect(() => {
@@ -811,138 +927,100 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
         </div>
       </motion.div>
 
-      {/* ── Visit Aquarium Overlay ─────────────────────────────────────── */}
+      {/* ── Visit Aquarium Overlay (full-screen) ──────────────────────── */}
       <AnimatePresence>
         {visitingFriend && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[60] flex items-center justify-center p-4"
-            style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(10px)' }}
-            onClick={() => setVisitingFriend(null)}
+            initial={{ opacity: 0, x: '100%' }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: '100%' }}
+            transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+            className="fixed inset-0 z-[60] flex flex-col"
+            style={{ background: '#041428' }}
           >
-            <motion.div
-              initial={{ scale: 0.88, opacity: 0, y: 24 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.88, opacity: 0, y: 24 }}
-              transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-              className="relative w-full max-w-sm overflow-hidden rounded-3xl"
-              style={{
-                background: 'linear-gradient(160deg, #0c4a6e 0%, #075985 40%, #0369a1 100%)',
-                border: '1.5px solid rgba(56,189,248,0.4)',
-                boxShadow: '0 24px 64px -12px rgba(2,132,199,0.5)',
-              }}
-              onClick={(e) => e.stopPropagation()}
+            {/* Header */}
+            <div
+              className="flex items-center gap-3 px-4 z-10 relative flex-shrink-0"
+              style={{ paddingTop: 'max(0.75rem, env(safe-area-inset-top))', paddingBottom: '0.75rem', background: 'rgba(4,20,40,0.85)', borderBottom: '1px solid rgba(56,189,248,0.12)' }}
             >
-              {/* Bubbles decoration */}
-              {[
-                { size: 'w-24 h-24', pos: '-top-8 -right-8', opacity: 0.08 },
-                { size: 'w-16 h-16', pos: 'top-4 -left-6', opacity: 0.06 },
-                { size: 'w-32 h-32', pos: '-bottom-12 -left-10', opacity: 0.07 },
-              ].map((b, i) => (
-                <div
-                  key={i}
-                  className={`absolute ${b.size} ${b.pos} rounded-full pointer-events-none`}
-                  style={{ background: 'white', opacity: b.opacity }}
-                />
-              ))}
-
-              {/* Aquarium scene */}
-              <div className="relative px-5 pt-6 pb-4">
-                {/* Header */}
-                <div className="flex items-center justify-between mb-5">
-                  <div>
-                    <div className="text-sky-200/70 text-[10px] font-bold tracking-widest uppercase mb-0.5">Visiting</div>
-                    <h3 className="text-white font-black text-lg leading-tight">{visitingFriend.name}'s Aquarium</h3>
-                  </div>
-                  <motion.button
-                    onClick={() => setVisitingFriend(null)}
-                    className="rounded-full p-1.5 flex-shrink-0"
-                    style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)' }}
-                    whileTap={{ scale: 0.85 }}
-                  >
-                    <X className="w-4 h-4 text-white/80" strokeWidth={2.5} />
-                  </motion.button>
-                </div>
-
-                {/* Tank window */}
-                <div
-                  className="relative rounded-2xl overflow-hidden mb-4"
-                  style={{
-                    background: 'linear-gradient(180deg, rgba(6,182,212,0.25) 0%, rgba(2,132,199,0.15) 60%, rgba(12,74,110,0.4) 100%)',
-                    border: '1.5px solid rgba(56,189,248,0.3)',
-                    height: '160px',
-                  }}
+              <motion.button
+                onClick={() => setVisitingFriend(null)}
+                whileTap={{ scale: 0.9 }}
+                className="flex items-center justify-center w-11 h-11 rounded-full flex-shrink-0"
+                style={{ background: 'rgba(56,189,248,0.12)', border: '1px solid rgba(56,189,248,0.2)' }}
+              >
+                <ArrowLeft className="w-5 h-5 text-cyan-300" strokeWidth={2.5} />
+              </motion.button>
+              <div>
+                <p className="text-[10px] text-cyan-400/60 font-bold tracking-widest uppercase leading-none mb-0.5">Visiting</p>
+                <h2 className="text-white font-black text-base leading-none">{visitingFriend.name}'s Aquarium</h2>
+              </div>
+              {/* Info pills */}
+              <div className="ml-auto flex gap-1.5 flex-wrap justify-end">
+                <span
+                  className="text-[9px] font-black px-2 py-0.5 rounded-full text-cyan-300"
+                  style={{ background: 'rgba(56,189,248,0.15)', border: '1px solid rgba(56,189,248,0.25)' }}
                 >
-                  {/* Water shimmer */}
-                  <motion.div
-                    className="absolute inset-0 pointer-events-none"
-                    style={{
-                      background: 'linear-gradient(135deg, rgba(255,255,255,0.04) 0%, transparent 50%, rgba(255,255,255,0.03) 100%)',
-                    }}
-                    animate={{ opacity: [0.5, 1, 0.5] }}
-                    transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+                  {visitingFriend.axolotlName}
+                </span>
+                <span
+                  className="text-[9px] font-black px-2 py-0.5 rounded-full text-violet-300"
+                  style={{ background: 'rgba(139,92,246,0.15)', border: '1px solid rgba(139,92,246,0.25)' }}
+                >
+                  {visitingFriend.stage.charAt(0).toUpperCase() + visitingFriend.stage.slice(1)}
+                </span>
+                <span
+                  className="text-[9px] font-black px-2 py-0.5 rounded-full text-emerald-300"
+                  style={{ background: 'rgba(52,211,153,0.15)', border: '1px solid rgba(52,211,153,0.25)' }}
+                >
+                  Gen {visitingFriend.generation}
+                </span>
+              </div>
+            </div>
+
+            {/* Aquarium body */}
+            <div className="flex-1 relative overflow-hidden">
+              {visitSnapshotLoading ? (
+                /* Loading state */
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
+                  <Loader2 className="w-8 h-8 text-cyan-400 animate-spin" strokeWidth={2} />
+                  <p className="text-cyan-300/60 text-sm">Loading aquarium…</p>
+                </div>
+              ) : (
+                <>
+                  {/* Background image + tint + decorations */}
+                  <AquariumBackground
+                    background={visitSnapshot?.bgColor ?? '#1e40af'}
+                    decorations={visitSnapshot?.decorations ?? []}
                   />
+
                   {/* Floating bubbles */}
-                  {[15, 40, 65, 82].map((x, i) => (
+                  {[12, 31, 55, 74, 88].map((x, i) => (
                     <motion.div
                       key={i}
-                      className="absolute bottom-0 rounded-full"
+                      className="absolute bottom-0 rounded-full pointer-events-none"
                       style={{
                         left: `${x}%`,
-                        width: `${6 + i * 2}px`,
-                        height: `${6 + i * 2}px`,
-                        background: 'rgba(255,255,255,0.15)',
-                        border: '1px solid rgba(255,255,255,0.25)',
+                        width: `${5 + i * 2}px`,
+                        height: `${5 + i * 2}px`,
+                        background: 'rgba(255,255,255,0.12)',
+                        border: '1px solid rgba(255,255,255,0.2)',
+                        zIndex: 5,
                       }}
-                      animate={{ y: [0, -130, 0], opacity: [0, 0.8, 0] }}
-                      transition={{
-                        duration: 3 + i * 0.7,
-                        repeat: Infinity,
-                        delay: i * 0.9,
-                        ease: 'easeInOut',
-                      }}
+                      animate={{ y: [0, '-100vh', 0], opacity: [0, 0.7, 0] }}
+                      transition={{ duration: 4 + i * 0.8, repeat: Infinity, delay: i * 1.1, ease: 'easeInOut' }}
                     />
                   ))}
-                  {/* Floor seaweed */}
-                  <div className="absolute bottom-2 left-4 select-none" style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' }}><Leaf className="w-6 h-6 text-emerald-400/80" strokeWidth={1.5} /></div>
-                  <div className="absolute bottom-2 right-6 select-none" style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' }}><Waves className="w-5 h-5 text-cyan-400/70" strokeWidth={1.5} /></div>
-                  {/* Axolotl */}
-                  <motion.div
-                    className="absolute inset-0 flex flex-col items-center justify-center gap-1"
-                    animate={{ y: [-4, 4, -4] }}
-                    transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut' }}
-                  >
-                    <Droplets className="w-12 h-12 text-teal-300 select-none" strokeWidth={1.5} style={{ filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.4))' }} />
-                    <div
-                      className="text-white font-black text-[11px] px-2.5 py-0.5 rounded-full"
-                      style={{ background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(255,255,255,0.2)' }}
-                    >
-                      {visitingFriend.axolotlName}
-                    </div>
-                  </motion.div>
-                </div>
 
-                {/* Friend info pills */}
-                <div className="flex gap-2 flex-wrap">
-                  {[
-                    { label: visitingFriend.axolotlName, iconEl: <Droplets className="w-3 h-3 text-teal-300" strokeWidth={2} /> },
-                    { label: `Gen ${visitingFriend.generation}`, iconEl: <Leaf className="w-3 h-3 text-emerald-300" strokeWidth={2} /> },
-                    { label: visitingFriend.stage.charAt(0).toUpperCase() + visitingFriend.stage.slice(1), iconEl: <Sparkles className="w-3 h-3 text-yellow-300" strokeWidth={2} /> },
-                  ].map(({ label, iconEl }) => (
-                    <div
-                      key={label}
-                      className="flex items-center gap-1.5 px-2.5 py-1 rounded-full"
-                      style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.18)' }}
-                    >
-                      {iconEl}
-                      <span className="text-white/80 text-[10px] font-bold capitalize">{label}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </motion.div>
+                  {/* Swimming axolotl */}
+                  <FriendAxolotlSwimmer
+                    stage={visitingFriend.stage}
+                    name={visitingFriend.axolotlName}
+                    rarity={visitSnapshot?.axolotlRarity ?? 'Common'}
+                  />
+                </>
+              )}
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
