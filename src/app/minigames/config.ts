@@ -36,6 +36,16 @@ export const GAME_REWARDS: Record<string, GameRewards> = {
     good: { xp: 2, coins: 30 },
     exceptional: { xp: 4, coins: 45, opalChance: 0.1 },
   },
+  'tide-tiles': {
+    normal: { xp: 1, coins: 20 },
+    good: { xp: 2, coins: 35 },
+    exceptional: { xp: 4, coins: 50, opalChance: 0.1 },
+  },
+  'bubble-line-up': {
+    normal: { xp: 1, coins: 20 },
+    good: { xp: 2, coins: 30 },
+    exceptional: { xp: 4, coins: 45, opalChance: 0.1 },
+  },
   'fishing': {
     normal: { xp: 1, coins: 30 }, // Only winner gets XP in multiplayer
     good: { xp: 2, coins: 40 },
@@ -59,6 +69,8 @@ export const SCORE_THRESHOLDS: Record<string, { good: number; exceptional: numbe
   'treasure-hunt': { good: 15, exceptional: 30 }, // gems + distance
   'math-rush': { good: 7, exceptional: 25 }, // correct answers
   'coral-code': { good: 5, exceptional: 7 }, // guesses remaining (10 - guesses used)
+  'tide-tiles': { good: 350, exceptional: 900 }, // merged-value score
+  'bubble-line-up': { good: 250, exceptional: 700 }, // chain score
   'fishing': { good: 25, exceptional: 100 }, // fish weight (kg)
   'bite-tag': { good: 60, exceptional: 90 }, // seconds survived
 };

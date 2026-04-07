@@ -1,6 +1,6 @@
 import { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { User, Users, Info, Zap, Lock, Circle, Hash, Layers, Gem, Fish, Puzzle } from 'lucide-react';
+import { User, Users, Info, Zap, Lock, Circle, Hash, Layers, Fish, Puzzle, Grid3X3, Link2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { GAME_CONFIG } from '../config/game';
 import { CoinIcon } from './icons';
@@ -332,6 +332,22 @@ export function MiniGameMenu({ onClose: _onClose, onSelectGame, energy = 10, max
       iconNode: <Puzzle size={24} className="text-white" />,
       color: 'from-slate-700 to-gray-900',
       description: 'Crack the code',
+      coins: '20-45',
+    },
+    {
+      id: 'tide-tiles',
+      name: 'Tide Tiles',
+      iconNode: <Grid3X3 size={24} className="text-white" />,
+      color: 'from-cyan-500 to-blue-700',
+      description: 'Merge the tiles',
+      coins: '20-50',
+    },
+    {
+      id: 'bubble-line-up',
+      name: 'Bubble Line Up',
+      iconNode: <Link2 size={24} className="text-white" />,
+      color: 'from-sky-500 to-indigo-600',
+      description: 'Connect matching bubbles',
       coins: '20-45',
     },
   ];
