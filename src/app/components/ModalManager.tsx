@@ -46,6 +46,8 @@ import { CoralCode } from '../minigames/CoralCode';
 import { TreasureHuntCave } from '../minigames/TreasureHuntCave';
 import { Fishing } from '../minigames/Fishing';
 import { BiteTag } from '../minigames/BiteTag';
+import { TideTiles } from '../minigames/TideTiles';
+import { BubbleLineUp } from '../minigames/BubbleLineUp';
 
 // ── Prop types ────────────────────────────────────────────────────────────────
 
@@ -601,6 +603,22 @@ export function ModalManager({
             energy={gameState.energy}
             speed={gameState.axolotl?.secondaryStats?.speed || 0}
             stamina={gameState.axolotl?.secondaryStats?.stamina || 0}
+          />
+        )}
+        {activeGame === 'tide-tiles' && (
+          <TideTiles
+            onEnd={onMiniGameEnd}
+            onDeductEnergy={onDeductEnergy}
+            onApplyReward={onMiniGameApplyReward}
+            energy={gameState.energy}
+          />
+        )}
+        {activeGame === 'bubble-line-up' && (
+          <BubbleLineUp
+            onEnd={onMiniGameEnd}
+            onDeductEnergy={onDeductEnergy}
+            onApplyReward={onMiniGameApplyReward}
+            energy={gameState.energy}
           />
         )}
       </AnimatePresence>

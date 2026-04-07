@@ -1,6 +1,6 @@
 import { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { User, Users, Info, Zap, Lock, Circle, Hash, Layers, Gem, Fish, Puzzle } from 'lucide-react';
+import { User, Users, Info, Zap, Lock, Circle, Hash, Layers, Fish, Puzzle, Grid3X3, Link2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { GAME_CONFIG } from '../config/game';
 import { CoinIcon } from './icons';
@@ -135,6 +135,22 @@ function GameTile({ game, index, delayOffset = 0, expandedId, onToggleInfo, onSe
                 className="inline-flex"
                 animate={{ scaleY: [1, 0.75, 1], scaleX: [1, 1.1, 1] }}
                 transition={{ duration: 0.35, repeat: Infinity, repeatDelay: 2, ease: 'easeInOut' }}
+              >
+                {game.iconNode}
+              </motion.span>
+            ) : game.id === 'tide-tiles' ? (
+              <motion.span
+                className="inline-flex"
+                animate={{ rotate: [0, 90, 180, 270, 360] }}
+                transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
+              >
+                {game.iconNode}
+              </motion.span>
+            ) : game.id === 'bubble-line-up' ? (
+              <motion.span
+                className="inline-flex"
+                animate={{ scale: [1, 1.2, 1], rotate: [-10, 10, -10] }}
+                transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
               >
                 {game.iconNode}
               </motion.span>
@@ -334,6 +350,22 @@ export function MiniGameMenu({ onClose: _onClose, onSelectGame, energy = 10, max
       description: 'Crack the code',
       coins: '20-45',
     },
+    {
+      id: 'tide-tiles',
+      name: 'Tide Tiles',
+      iconNode: <Grid3X3 size={24} className="text-white" />,
+      color: 'from-cyan-500 to-blue-700',
+      description: 'Merge the tiles',
+      coins: '20-50',
+    },
+    {
+      id: 'bubble-line-up',
+      name: 'Bubble Line Up',
+      iconNode: <Link2 size={24} className="text-white" />,
+      color: 'from-sky-500 to-indigo-600',
+      description: 'Connect matching bubbles',
+      coins: '20-45',
+    },
   ];
 
   const multiplayerGames = [
@@ -482,7 +514,7 @@ export function MiniGameMenu({ onClose: _onClose, onSelectGame, energy = 10, max
         <div className="grid grid-cols-2 gap-2">
           {soloGames.map((game, index) => {
             const soloLevelLocked = soloAdvancedLocked &&
-              (game.id === 'axolotl-stacker' || game.id === 'coral-code');
+              (game.id === 'axolotl-stacker' || game.id === 'coral-code' || game.id === 'tide-tiles' || game.id === 'bubble-line-up');
             const tileIsLocked = isLocked || soloLevelLocked;
             const lockReason = soloLevelLocked ? 'Reach Lv.7' : undefined;
 
