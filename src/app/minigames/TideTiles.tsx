@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion } from 'motion/react';
-import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Grid3X3, RotateCcw } from 'lucide-react';
+import { Grid3X3, RotateCcw } from 'lucide-react';
 import { GameWrapper } from './GameWrapper';
 import { MiniGameProps } from './types';
 import { calculateRewards } from './config';
@@ -176,41 +176,46 @@ export function TideTiles({ onEnd, onDeductEnergy, onApplyReward, energy }: Mini
     return () => window.removeEventListener('keydown', onKey);
   }, [makeMove]);
 
-  const directionButtons = useMemo(() => [
-    { dir: 'up' as const, icon: ChevronUp },
-    { dir: 'left' as const, icon: ChevronLeft },
-    { dir: 'down' as const, icon: ChevronDown },
-    { dir: 'right' as const, icon: ChevronRight },
-  ], []);
+  const swipeStart = useRef<{ x: number; y: number } | null>(null);
+
+  const handlePointerDown = useCallback((e: React.PointerEvent) => {
+    swipeStart.current = { x: e.clientX, y: e.clientY };
+  }, []);
+
+  const handlePointerUp = useCallback((e: React.PointerEvent) => {
+    if (!swipeStart.current) return;
+    const dx = e.clientX - swipeStart.current.x;
+    const dy = e.clientY - swipeStart.current.y;
+    swipeStart.current = null;
+    if (Math.abs(dx) < 10 && Math.abs(dy) < 10) return;
+    if (Math.abs(dx) > Math.abs(dy)) {
+      makeMove(dx > 0 ? 'right' : 'left');
+    } else {
+      makeMove(dy > 0 ? 'down' : 'up');
+    }
+  }, [makeMove]);
 
   return (
     <GameWrapper gameName="Tide Tiles" score={score} onEnd={onEnd} energy={energy} gameEnded={gameEnded}>
       <div className="relative w-full h-full flex items-center justify-center p-4 bg-gradient-to-br from-cyan-950 via-indigo-900 to-violet-900">
         <div className="w-full max-w-sm space-y-4">
-          <div className="grid grid-cols-4 gap-2 bg-black/25 border border-white/15 p-3 rounded-2xl">
+          <div
+            className="grid grid-cols-4 gap-3 bg-black/25 border border-white/15 p-4 rounded-2xl touch-none"
+            onPointerDown={handlePointerDown}
+            onPointerUp={handlePointerUp}
+          >
             {board.flatMap((row, r) => row.map((value, c) => (
               <motion.div
                 key={`${r}-${c}-${value}`}
                 layout
-                className={`h-16 rounded-xl flex items-center justify-center text-xl font-black ${value === 0 ? 'bg-white/10' : tileClass(value)}`}
+                className={`h-20 rounded-xl flex items-center justify-center text-2xl font-black ${value === 0 ? 'bg-white/10' : tileClass(value)}`}
               >
                 {value || ''}
               </motion.div>
             )))}
           </div>
 
-          <div className="grid grid-cols-3 gap-2 max-w-[180px] mx-auto">
-            <div />
-            {directionButtons.slice(0, 1).map(btn => <button key={btn.dir} onClick={() => makeMove(btn.dir)} className="h-12 rounded-xl bg-white/20 border border-white/30 text-white flex items-center justify-center"><btn.icon /></button>)}
-            <div />
-            {directionButtons.slice(1).map(btn => (
-              <button key={btn.dir} onClick={() => makeMove(btn.dir)} className="h-12 rounded-xl bg-white/20 border border-white/30 text-white flex items-center justify-center">
-                <btn.icon />
-              </button>
-            ))}
-          </div>
-
-          <div className="text-center text-white/80 text-xs">Merge matching numbers and build the largest tile possible.</div>
+          <div className="text-center text-white/80 text-xs">Swipe to merge</div>
         </div>
 
         {showOverlay && (
