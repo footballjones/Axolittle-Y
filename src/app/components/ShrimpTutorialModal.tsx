@@ -1,6 +1,5 @@
 import { motion } from 'motion/react';
-import { Droplets, ShoppingCart, Sparkles, RefreshCw } from 'lucide-react';
-import { OpalIcon } from './icons';
+import { Droplets, ShoppingCart, RefreshCw } from 'lucide-react';
 
 // ─── Intro Modal ─────────────────────────────────────────────────────────────
 // Shown when the player first reaches level 11 and enters the aquarium.
@@ -124,28 +123,6 @@ export function ShrimpTutorialIntroModal({ onOpenShop }: ShrimpTutorialIntroProp
 
         {/* Body */}
         <div className="bg-white px-5 py-5 space-y-3">
-          {/* Opal reward */}
-          <motion.div
-            className="rounded-2xl overflow-hidden border-2 border-emerald-200 shadow-sm"
-            initial={{ opacity: 0, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.65 }}
-          >
-            <div className="bg-gradient-to-r from-emerald-500 to-teal-500 px-4 py-2.5 flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-white flex-shrink-0" />
-              <p className="text-white font-black text-sm">Here's a gift to get started!</p>
-            </div>
-            <div className="bg-emerald-50 px-4 py-3 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center flex-shrink-0">
-                <OpalIcon size={22} className="text-emerald-600" />
-              </div>
-              <div>
-                <p className="text-slate-800 font-black text-base">+10 Opals</p>
-                <p className="text-slate-500 text-[11px]">Added to your balance</p>
-              </div>
-            </div>
-          </motion.div>
-
           {/* What to do */}
           <motion.div
             className="rounded-2xl bg-sky-50 border border-sky-100 px-4 py-3 flex items-start gap-2.5"

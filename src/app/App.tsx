@@ -194,10 +194,8 @@ export default function App() {
     showMenuTutorial,
     showMenuTutorialComplete,
     setShowMenuTutorialComplete,
-    tutorialSpinDone,
-    setTutorialSpinDone,
-    tutorialDailyClaimDone,
-    setTutorialDailyClaimDone,
+    showRebirthReady,
+    setShowRebirthReady,
     tutorialLockMode,
     lockedActionButtons,
   } = useOnboarding({
@@ -623,10 +621,8 @@ export default function App() {
         showMenuTutorial={showMenuTutorial}
         showMenuTutorialComplete={showMenuTutorialComplete}
         setShowMenuTutorialComplete={setShowMenuTutorialComplete}
-        tutorialSpinDone={tutorialSpinDone}
-        setTutorialSpinDone={setTutorialSpinDone}
-        tutorialDailyClaimDone={tutorialDailyClaimDone}
-        setTutorialDailyClaimDone={setTutorialDailyClaimDone}
+        showRebirthReady={showRebirthReady}
+        setShowRebirthReady={setShowRebirthReady}
         conflictSaves={conflictSaves}
         setConflictSaves={setConflictSaves}
         onForcePushToCloud={forcePush}

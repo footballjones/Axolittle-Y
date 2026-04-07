@@ -28,11 +28,11 @@ export const GAME_CONFIG = {
     hatchling: { minLevel: 1, maxLevel: 9 },
     sprout: { minLevel: 10, maxLevel: 19 },
     guardian: { minLevel: 20, maxLevel: 29 },
-    elder: { minLevel: 30, maxLevel: 40 },
+    elder: { minLevel: 30, maxLevel: 60 },
   },
-  
+
   // Rebirth
-  rebirthLevel: 40,
+  rebirthLevel: 30,
   
   // Recessive gene expression probability
   recessiveGeneExpressionChance: 0.2, // 20% per trait

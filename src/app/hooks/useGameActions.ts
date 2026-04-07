@@ -517,7 +517,8 @@ export function useGameActions({
       const bonusCoins = oldAxolotl.generation * 10;
 
       // No name at rebirth — naming happens after the egg hatches
-      const egg = createRebirthEgg(oldAxolotl);
+      const playerLevel = calculateLevel(oldAxolotl.experience);
+      const egg = createRebirthEgg(oldAxolotl, undefined, playerLevel);
 
       // If the player has no other eggs, skip the incubation wait so they
       // aren't stuck with no axolotl and nothing to do.

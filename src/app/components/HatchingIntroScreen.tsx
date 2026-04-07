@@ -24,7 +24,6 @@ interface RarityStyle {
   glow: string;
   shimmer: string;
   badge: string;
-  stars: string;
 }
 
 function getRarityStyle(rarity?: Rarity): RarityStyle {
@@ -36,7 +35,6 @@ function getRarityStyle(rarity?: Rarity): RarityStyle {
         glow: 'rgba(56,189,248,0.7)',
         shimmer: 'rgba(186,230,253,0.6)',
         badge: 'linear-gradient(135deg, #0ea5e9, #6366f1)',
-        stars: '✦',
       };
     case 'Epic':
       return {
@@ -45,7 +43,6 @@ function getRarityStyle(rarity?: Rarity): RarityStyle {
         glow: 'rgba(192,132,252,0.8)',
         shimmer: 'rgba(240,171,252,0.6)',
         badge: 'linear-gradient(135deg, #a855f7, #ec4899)',
-        stars: '⚡',
       };
     case 'Legendary':
       return {
@@ -54,7 +51,6 @@ function getRarityStyle(rarity?: Rarity): RarityStyle {
         glow: 'rgba(251,191,36,0.9)',
         shimmer: 'rgba(253,230,138,0.7)',
         badge: 'linear-gradient(135deg, #f59e0b, #ef4444)',
-        stars: '🔥',
       };
     case 'Mythic':
       return {
@@ -63,7 +59,6 @@ function getRarityStyle(rarity?: Rarity): RarityStyle {
         glow: 'rgba(167,139,250,0.9)',
         shimmer: 'rgba(255,255,255,0.7)',
         badge: 'linear-gradient(135deg, #8b5cf6, #06b6d4, #ec4899)',
-        stars: '✨',
       };
     case 'Common':
     default:
@@ -73,7 +68,6 @@ function getRarityStyle(rarity?: Rarity): RarityStyle {
         glow: 'rgba(52,211,153,0.6)',
         shimmer: 'rgba(167,243,208,0.5)',
         badge: 'linear-gradient(135deg, #10b981, #06b6d4)',
-        stars: '✦',
       };
   }
 }
@@ -422,7 +416,6 @@ export function HatchingIntroScreen({ onComplete, rarity }: Props) {
                     />
                   </motion.div>
 
-                  <span style={{ fontSize: 20 }}>{rarityStyle.stars}</span>
                   <span
                     className="font-black tracking-widest text-white"
                     style={{
@@ -433,7 +426,6 @@ export function HatchingIntroScreen({ onComplete, rarity }: Props) {
                   >
                     {rarityStyle.label}
                   </span>
-                  <span style={{ fontSize: 20 }}>{rarityStyle.stars}</span>
                 </motion.div>
               </div>
 

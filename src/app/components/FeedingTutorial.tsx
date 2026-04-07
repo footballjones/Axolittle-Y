@@ -83,6 +83,9 @@ export function FeedingTutorial({ step, axolotlName, onXpTipDismiss }: FeedingTu
               <p className="text-slate-500 text-[11.5px] leading-snug mt-0.5">
                 Tap <span className="text-emerald-600 font-bold">Feed</span> to drop a worm
               </p>
+              <p className="text-amber-600 text-[11px] font-bold mt-1">
+                Costs 10 coins per feed
+              </p>
             </div>
 
             {/* Caret pointing down-left toward Feed button */}

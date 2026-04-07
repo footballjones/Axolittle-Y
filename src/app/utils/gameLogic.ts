@@ -7,7 +7,7 @@ export const STAGE_REQUIREMENTS = {
   hatchling: { minLevel: 1, maxLevel: 9 },
   sprout: { minLevel: 10, maxLevel: 19 },
   guardian: { minLevel: 20, maxLevel: 29 },
-  elder: { minLevel: 30, maxLevel: 40 },
+  elder: { minLevel: 30, maxLevel: 60 },
 };
 
 // STAT_DECAY_RATE moved to axolotl/needsSystem.ts
@@ -177,7 +177,7 @@ export function checkEvolution(axolotl: Axolotl): { axolotl: Axolotl; didLevelUp
 
 export function canRebirth(axolotl: Axolotl): boolean {
   const level = calculateLevel(axolotl.experience);
-  return axolotl.stage === 'elder' && level >= GAME_CONFIG.rebirthLevel; // Level 40 (Elder)
+  return axolotl.stage === 'elder' && level >= GAME_CONFIG.rebirthLevel; // Level 30+ (Elder)
 }
 
 export function getStatColor(value: number): string {
@@ -277,7 +277,7 @@ export function calculateLevel(experience: number): number {
   if (experience >= xpAtCapLevel) {
     // Flat region: each level above 16 costs exactly `cap` XP
     const level = (cap + 1) + Math.floor((experience - xpAtCapLevel) / cap);
-    return Math.min(level, 40);
+    return Math.min(level, 60);
   }
 
   // Progressive region: triangular numbers — solve (n-1)*n/2 <= XP

@@ -142,6 +142,7 @@ export interface GameState {
   wellbeingIntroSeen?: boolean;      // false = show intro modal before wellbeing tutorials begin
   wellbeingCompleteSeen?: boolean;   // false = show completion modal + 5 opal reward after water tutorial
   menuTutorialSeen?: boolean;        // false = show menu walkthrough tutorial after wellbeing
+  rebirthReadySeen?: boolean;        // true once the level-30 rebirth ready popup has been shown
   // ── Daily Bonus ────────────────────────────────────────────────────────────
   lastMissForgivenDate?: string;     // YYYY-MM-DD of last forgiven missed day (1 free miss per 7 days)
 }

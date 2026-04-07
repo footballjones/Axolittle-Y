@@ -257,7 +257,7 @@ export function CoralCode({ onEnd, onDeductEnergy, onApplyReward, energy }: Mini
   return (
     <GameWrapper
       gameName="Coral Code"
-      score={MAX_GUESSES - guesses.length}
+      score={guesses.length}
       onEnd={onEnd}
       energy={energy}
       onPause={() => setIsPaused(!isPaused)}
@@ -396,7 +396,7 @@ export function CoralCode({ onEnd, onDeductEnergy, onApplyReward, energy }: Mini
                         transition={{ type: 'spring', stiffness: 400, damping: 15, delay: 0.1 }}
                         className="flex justify-center mb-3"
                       >
-                        {finalScore >= 8 ? <Trophy className="w-12 h-12 text-amber-400" /> : finalScore >= 5 ? <Star className="w-12 h-12 text-yellow-400" /> : finalScore > 0 ? <Gamepad2 className="w-12 h-12 text-sky-400" /> : <Fish className="w-12 h-12 text-blue-300" />}
+                        {(finalScore > 0 && (MAX_GUESSES - finalScore) === 1) ? <Rocket className="w-12 h-12 text-violet-400" /> : finalScore >= 8 ? <Trophy className="w-12 h-12 text-amber-400" /> : finalScore >= 5 ? <Star className="w-12 h-12 text-yellow-400" /> : finalScore > 0 ? <Gamepad2 className="w-12 h-12 text-sky-400" /> : <Fish className="w-12 h-12 text-blue-300" />}
                       </motion.div>
                       <h2
                         className="text-2xl font-black mb-1"
@@ -410,7 +410,7 @@ export function CoralCode({ onEnd, onDeductEnergy, onApplyReward, energy }: Mini
                         {finalScore > 0 ? 'Code Cracked!' : 'Out of Guesses!'}
                       </h2>
                       <p className="text-white/50 text-xs mb-1">
-                        {finalScore >= 8 ? 'Master codebreaker!' : finalScore >= 5 ? 'Great solving!' : finalScore > 0 ? 'Nice try!' : 'Keep practicing!'}
+                        {(finalScore > 0 && (MAX_GUESSES - finalScore) === 1) ? '1st guess — brilliant!' : finalScore >= 8 ? 'Brilliant codebreaker!' : finalScore >= 5 ? 'Great solving!' : finalScore > 0 ? 'Nice try!' : 'Keep practicing!'}
                       </p>
 
                       {/* Secret code reveal on loss */}
@@ -427,24 +427,19 @@ export function CoralCode({ onEnd, onDeductEnergy, onApplyReward, energy }: Mini
                         </div>
                       )}
 
-                      {/* Score bar */}
-                      <div className="mt-3 rounded-xl p-2.5" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                        <p className="text-white/40 text-xs mb-1.5">Score</p>
-                        <div className="flex justify-center gap-1.5">
-                          {Array.from({ length: MAX_GUESSES }).map((_, i) => (
-                            <div
-                              key={i}
-                              style={{
-                                width: 14, height: 14, borderRadius: 4,
-                                background: i < finalScore
-                                  ? 'linear-gradient(135deg,#2ed573,#17a85a)'
-                                  : 'rgba(255,255,255,0.08)',
-                                boxShadow: i < finalScore ? '0 0 6px #2ed57366' : 'none',
-                              }}
-                            />
-                          ))}
-                        </div>
-                        <p className="text-white font-black text-lg mt-1">{finalScore} / {MAX_GUESSES}</p>
+                      {/* Guesses used */}
+                      <div className="mt-3 rounded-xl p-2.5 text-center" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                        <p className="text-white/40 text-xs mb-1">Guesses used</p>
+                        <p className="text-white font-black text-2xl">
+                          {finalScore > 0
+                            ? (MAX_GUESSES - finalScore) === 1
+                              ? '1st guess!'
+                              : `${MAX_GUESSES - finalScore} / ${MAX_GUESSES}`
+                            : `${MAX_GUESSES} / ${MAX_GUESSES}`}
+                        </p>
+                        {finalScore > 0 && (
+                          <p className="text-white/30 text-[10px] mt-0.5">Fewer guesses = better rewards</p>
+                        )}
                       </div>
                     </div>
 
@@ -505,15 +500,15 @@ export function CoralCode({ onEnd, onDeductEnergy, onApplyReward, energy }: Mini
             {/* Header bar */}
             <div className="flex items-center justify-between flex-shrink-0 px-1">
               <div className="flex items-center gap-1.5">
-                <span className="text-lg">{DIFFICULTY_CONFIG[difficulty].emoji}</span>
+                <span className="text-white/80 flex items-center">{DIFFICULTY_CONFIG[difficulty].icon}</span>
                 <span className="text-white/70 text-xs font-bold">{DIFFICULTY_CONFIG[difficulty].label}</span>
               </div>
               <div
                 className="flex items-center gap-1.5 px-3 py-1 rounded-full"
                 style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)' }}
               >
-                <span className="text-cyan-300 font-black text-sm">{MAX_GUESSES - guesses.length}</span>
-                <span className="text-white/40 text-xs">left</span>
+                <span className="text-cyan-300 font-black text-sm">{guesses.length}/{MAX_GUESSES}</span>
+                <span className="text-white/40 text-xs">guesses</span>
               </div>
             </div>
 

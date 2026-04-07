@@ -61,10 +61,8 @@ export interface UseOnboardingReturn {
   setShowMenuTutorial: (v: boolean) => void;
   showMenuTutorialComplete: boolean;
   setShowMenuTutorialComplete: (v: boolean) => void;
-  tutorialSpinDone: boolean;
-  setTutorialSpinDone: (v: boolean) => void;
-  tutorialDailyClaimDone: boolean;
-  setTutorialDailyClaimDone: (v: boolean) => void;
+  showRebirthReady: boolean;
+  setShowRebirthReady: (v: boolean) => void;
 
   // ── Derived lock state (consumed by aquarium render + ActionButtons) ───────
   tutorialLockMode: 'swipe' | 'feed' | 'watch' | 'stat' | 'play' | 'clean' | 'water' | null;
@@ -126,8 +124,9 @@ export function useOnboarding({
   const [shrimpTutorialShopPhase, setShrimpTutorialShopPhase] = useState<'info' | 'buy' | false>(false);
   const [showMenuTutorial, setShowMenuTutorial] = useState(false);
   const [showMenuTutorialComplete, setShowMenuTutorialComplete] = useState(false);
-  const [tutorialSpinDone, setTutorialSpinDone] = useState(false);
-  const [tutorialDailyClaimDone, setTutorialDailyClaimDone] = useState(false);
+  const [showRebirthReady, setShowRebirthReady] = useState(false);
+  const shrimpTutorialTriggeredRef = useRef(false);
+  const rebirthReadyTriggeredRef = useRef(false);
 
   // ── Mini-game tutorial phase ───────────────────────────────────────────────
   const [mgTutPhase, setMgTutPhase] = useState<'unlock' | 'keepey' | null>(null);
@@ -157,14 +156,30 @@ export function useOnboarding({
     if (
       lvl >= 12 &&
       !gameState?.shrimpTutorialSeen &&
-      !showShrimpTutorialIntro &&
+      !shrimpTutorialTriggeredRef.current &&
       currentScreen === 'home' &&
       !activeModal
     ) {
-      setGameState(s => s ? { ...s, opals: (s.opals ?? 0) + 10 } : s);
+      shrimpTutorialTriggeredRef.current = true;
       setShowShrimpTutorialIntro(true);
     }
-  }, [gameState?.axolotl?.experience, gameState?.shrimpTutorialSeen, currentScreen, activeModal, showShrimpTutorialIntro, setGameState]);
+  }, [gameState?.axolotl?.experience, gameState?.shrimpTutorialSeen, currentScreen, activeModal, setGameState]);
+
+  // Level 30 rebirth ready popup
+  useEffect(() => {
+    const lvl = gameState?.axolotl ? calculateLevel(gameState.axolotl.experience) : 0;
+    if (
+      lvl >= 30 &&
+      gameState?.axolotl?.stage === 'elder' &&
+      !gameState?.rebirthReadySeen &&
+      !rebirthReadyTriggeredRef.current &&
+      currentScreen === 'home' &&
+      !activeModal
+    ) {
+      rebirthReadyTriggeredRef.current = true;
+      setShowRebirthReady(true);
+    }
+  }, [gameState?.axolotl?.experience, gameState?.axolotl?.stage, gameState?.rebirthReadySeen, currentScreen, activeModal]);
 
   // ── Effects: tutorial pacing delays ───────────────────────────────────────
 
@@ -306,10 +321,8 @@ export function useOnboarding({
     setShowMenuTutorial,
     showMenuTutorialComplete,
     setShowMenuTutorialComplete,
-    tutorialSpinDone,
-    setTutorialSpinDone,
-    tutorialDailyClaimDone,
-    setTutorialDailyClaimDone,
+    showRebirthReady,
+    setShowRebirthReady,
     tutorialLockMode,
     lockedActionButtons,
   };

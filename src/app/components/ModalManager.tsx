@@ -32,6 +32,7 @@ import { MenuTutorialCompleteModal } from './MenuTutorialCompleteModal';
 import { JuvenileUnlockModal } from './JuvenileUnlockModal';
 import { Level7UnlockModal } from './Level7UnlockModal';
 import { ShrimpTutorialIntroModal, ShrimpInfoModal } from './ShrimpTutorialModal';
+import { RebirthReadyModal } from './RebirthReadyModal';
 import { LevelUpOverlay } from './LevelUpOverlay';
 import { SpinWheel } from './SpinWheel';
 import { DailyLoginBonus } from './DailyLoginBonus';
@@ -87,10 +88,8 @@ export interface ModalManagerProps {
   showMenuTutorial: boolean;
   showMenuTutorialComplete: boolean;
   setShowMenuTutorialComplete: (v: boolean) => void;
-  tutorialSpinDone: boolean;
-  setTutorialSpinDone: (v: boolean) => void;
-  tutorialDailyClaimDone: boolean;
-  setTutorialDailyClaimDone: (v: boolean) => void;
+  showRebirthReady: boolean;
+  setShowRebirthReady: (v: boolean) => void;
   conflictSaves: { local: GameState; cloud: GameState } | null;
   setConflictSaves: (v: { local: GameState; cloud: GameState } | null) => void;
   onForcePushToCloud: (state: GameState) => void;
@@ -191,10 +190,8 @@ export function ModalManager({
   showMenuTutorial,
   showMenuTutorialComplete,
   setShowMenuTutorialComplete,
-  tutorialSpinDone,
-  setTutorialSpinDone,
-  tutorialDailyClaimDone,
-  setTutorialDailyClaimDone,
+  showRebirthReady,
+  setShowRebirthReady,
   conflictSaves,
   setConflictSaves,
   onForcePushToCloud,
@@ -448,13 +445,8 @@ export function ModalManager({
           menuOpen={_showHamburgerMenu}
           onOpenMenu={() => setShowHamburgerMenu(true)}
           onComplete={() => {
-            // setShowMenuTutorial is owned by App — signal via setShowMenuTutorialComplete
             setShowMenuTutorialComplete(true);
           }}
-          onOpenSpinWheel={() => setShowSpinWheel(true)}
-          onOpenDailyBonus={() => setShowDailyLogin(true)}
-          spinDone={(tutorialSpinDone || !canSpinToday(gameState?.lastSpinDate)) && !showSpinWheel}
-          dailyClaimDone={(tutorialDailyClaimDone || !canClaimDailyLogin(gameState?.lastLoginDate)) && !showDailyLogin}
         />
       )}
 
@@ -619,27 +611,41 @@ export function ModalManager({
         onClose={() => setShowSpinWheel(false)}
         onSpin={(reward) => {
           onSpinWheel(reward);
-          if (showMenuTutorial) setTutorialSpinDone(true);
         }}
         lastSpinDate={gameState.lastSpinDate}
         coins={gameState.coins}
         opals={gameState.opals || 0}
-        tutorialMode={showMenuTutorial}
       />
       <DailyLoginBonus
         isOpen={showDailyLogin}
-        onClose={() => setShowDailyLogin(false)}
+        onClose={() => {
+          setShowDailyLogin(false);
+          if (canSpinToday(gameState.lastSpinDate)) {
+            setTimeout(() => setShowSpinWheel(true), 400);
+          }
+        }}
         onClaim={(reward) => {
           onDailyLoginClaim(reward);
-          if (showMenuTutorial) setTutorialDailyClaimDone(true);
         }}
-        tutorialMode={showMenuTutorial}
+        tutorialMode={false}
         lastLoginDate={gameState.lastLoginDate}
         loginStreak={gameState.loginStreak}
         lastMissForgivenDate={gameState.lastMissForgivenDate}
         coins={gameState.coins}
         opals={gameState.opals || 0}
       />
+
+      {/* Level 30 — Rebirth Ready popup */}
+      <AnimatePresence>
+        {showRebirthReady && (
+          <RebirthReadyModal
+            onClose={() => {
+              setShowRebirthReady(false);
+              setGameState(s => s ? { ...s, rebirthReadySeen: true } : s);
+            }}
+          />
+        )}
+      </AnimatePresence>
     </>
   );
 }

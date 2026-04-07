@@ -20,14 +20,6 @@ interface MenuTutorialOverlayProps {
   onOpenMenu: () => void;
   /** Called when the full tutorial is complete (menu closed by user) */
   onComplete: () => void;
-  /** Called to open the spin wheel modal during the tutorial */
-  onOpenSpinWheel: () => void;
-  /** Called to open the daily bonus modal during the tutorial */
-  onOpenDailyBonus: () => void;
-  /** Becomes true once the user has spun the wheel */
-  spinDone: boolean;
-  /** Becomes true once the user has claimed the daily bonus */
-  dailyClaimDone: boolean;
 }
 
 // Each step: CSS selector (queried inside the menu) + icon (Lucide name) + title + description
@@ -36,22 +28,16 @@ const MENU_STEPS: Array<{
   icon: string;
   title: string;
   desc: string;
-  actionLabel?: string; // If set, button shows this instead of "Got it" and triggers an action
 }> = [
-  { selector: '[data-menu-id="notifications"]', icon: 'Bell',       title: 'Notifications', desc: 'Check alerts and updates about your axolotl here.' },
-  { selector: '[data-menu-id="wheel-spin"]',    icon: 'Dices',      title: 'Wheel Spin',    desc: 'Spin once a day for free coins or opals. Every spin counts — let\'s try it now!', actionLabel: 'Spin it!' },
-  { selector: '[data-menu-id="daily-bonus"]',   icon: 'Gift',       title: 'Daily Bonus',   desc: 'Log in every day to earn streak rewards. Your first reward is waiting — go claim it!', actionLabel: 'Claim it!' },
-  { selector: '[data-menu-id="stats"]',         icon: 'BarChart2',  title: 'Stats',         desc: 'View and assign stat points to make your axolotl stronger.' },
-  { selector: '[data-menu-id="eggs"]',          icon: 'Egg',        title: 'Eggs',          desc: 'Manage your eggs and hatch new axolotls.' },
+  { selector: '[data-menu-id="notifications"]', icon: 'Bell',       title: 'Notifications', desc: 'See alerts and updates here — gifts, pokes, and important news about your axolotl.' },
+  { selector: '[data-menu-id="eggs"]',          icon: 'Egg',        title: 'Eggs',          desc: 'Manage your eggs and hatch new axolotls when they\'re ready.' },
   { selector: '[data-menu-id="social"]',        icon: 'Users',      title: 'Social',        desc: 'Add friends and visit their aquariums.' },
-  { selector: '[data-menu-id="inventory"]',     icon: 'Backpack',   title: 'Inventory',     desc: 'Use items like shrimp and water treatments.' },
+  { selector: '[data-menu-id="inventory"]',     icon: 'Backpack',   title: 'Inventory',     desc: 'Use items like shrimp and water treatments from here.' },
   { selector: '[data-menu-id="how-to-play"]',   icon: 'HelpCircle', title: 'How to Play',   desc: 'Tips and guides for taking care of your axolotl.' },
-  { selector: '[data-menu-id="achievements"]',  icon: 'Trophy',     title: 'Achievements',  desc: 'Track your progress and earn badges.' },
 ];
 
-export function MenuTutorialOverlay({ menuOpen, onOpenMenu, onComplete, onOpenSpinWheel, onOpenDailyBonus, spinDone, dailyClaimDone }: MenuTutorialOverlayProps) {
-  // phase: 0 = "open menu", 1-9 = menu items, 10 = "close menu"
-  // phase 100 = waiting for user to spin wheel, phase 101 = waiting for daily claim
+export function MenuTutorialOverlay({ menuOpen, onOpenMenu, onComplete }: MenuTutorialOverlayProps) {
+  // phase: 0 = "open menu", 1-5 = menu items, 6 = "close menu"
   const [phase, setPhase] = useState(0);
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
   const measureTimer = useRef<ReturnType<typeof setTimeout>>();
@@ -61,9 +47,9 @@ export function MenuTutorialOverlay({ menuOpen, onOpenMenu, onComplete, onOpenSp
     let el: HTMLElement | null = null;
     if (phase === 0) {
       el = document.querySelector('[data-menu-id="hamburger"]');
-    } else if (phase >= 1 && phase <= 9) {
+    } else if (phase >= 1 && phase <= 5) {
       el = document.querySelector(MENU_STEPS[phase - 1].selector);
-    } else if (phase === 10) {
+    } else if (phase === 6) {
       el = document.querySelector('[data-menu-id="close"]');
     }
     if (el) {
@@ -101,90 +87,28 @@ export function MenuTutorialOverlay({ menuOpen, onOpenMenu, onComplete, onOpenSp
     }
   }, [phase, menuOpen]);
 
-  // When phase 10 and user closes menu, tutorial is done
+  // When phase 6 and user closes menu, tutorial is done
   useEffect(() => {
-    if (phase === 10 && !menuOpen) {
+    if (phase === 6 && !menuOpen) {
       onComplete();
     }
   }, [phase, menuOpen, onComplete]);
 
-  // If the user closes the menu early (phases 1-9), reset back to phase 0
+  // If the user closes the menu early (phases 1-5), reset back to phase 0
   // so the tutorial re-prompts them to open the menu rather than getting stuck.
   useEffect(() => {
-    if (phase >= 1 && phase < 10 && !menuOpen) {
+    if (phase >= 1 && phase < 6 && !menuOpen) {
       setPhase(0);
     }
   }, [phase, menuOpen]);
 
   const handleNext = () => {
-    if (phase === 2) {
-      if (spinDone) {
-        // Already spun today (e.g. app was closed and reopened) — skip the wait phase
-        setPhase(3);
-      } else {
-        onOpenSpinWheel();
-        setPhase(100);
-      }
-    } else if (phase === 3) {
-      if (dailyClaimDone) {
-        // Already claimed today — skip the wait phase
-        setPhase(4);
-      } else {
-        onOpenDailyBonus();
-        setPhase(101);
-      }
-    } else if (phase >= 1 && phase <= 8) {
+    if (phase >= 1 && phase <= 4) {
       setPhase(phase + 1);
-    } else if (phase === 9) {
-      setPhase(10); // "close the menu" phase
+    } else if (phase === 5) {
+      setPhase(6); // "close the menu" phase
     }
   };
-
-  // Advance out of wait phases once the actions are completed
-  useEffect(() => {
-    if (phase === 100 && spinDone) setPhase(3);
-  }, [phase, spinDone]);
-
-  useEffect(() => {
-    if (phase === 101 && dailyClaimDone) setPhase(4);
-  }, [phase, dailyClaimDone]);
-
-  // Wait phases — no spotlight, just a floating prompt
-  if (phase === 100 || phase === 101) {
-    const isSpinWait = phase === 100;
-    const banner = (
-      <motion.div
-        className="fixed left-0 right-0 flex justify-center pointer-events-none"
-        // Spin-wait: top of screen so it doesn't cover the wheel
-        // Daily-claim-wait: bottom, above the action buttons
-        // Both banners go to the top so they never cover the modal content below
-        style={{ top: 'max(1rem, env(safe-area-inset-top))', zIndex: 10003 }}
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.35 }}
-      >
-        <div
-          className="mx-4 rounded-2xl px-5 py-3.5 text-center"
-          style={{
-            background: 'rgba(255,255,255,0.97)',
-            border: '2px solid rgba(99,102,241,0.6)',
-            boxShadow: '0 8px 32px rgba(99,102,241,0.3)',
-            maxWidth: 280,
-          }}
-        >
-          <p className="text-sm font-black text-slate-800 mb-0.5">
-            {isSpinWait ? 'Spin to win!' : 'Claim your reward!'}
-          </p>
-          <p className="text-xs text-slate-500">
-            {isSpinWait
-              ? 'Give the wheel a spin to continue the tour.'
-              : 'Claim your daily bonus to continue the tour.'}
-          </p>
-        </div>
-      </motion.div>
-    );
-    return createPortal(banner, document.body);
-  }
 
   if (!targetRect) return null;
 
@@ -196,9 +120,9 @@ export function MenuTutorialOverlay({ menuOpen, onOpenMenu, onComplete, onOpenSp
   const spaceAbove = r.top;
   const placeBelow = spaceBelow > 180 || spaceBelow > spaceAbove;
 
-  // For the "open menu" phase (0) and "close menu" phase (10) use a pointer style
-  const isPromptPhase = phase === 0 || phase === 10;
-  const currentStep = phase >= 1 && phase <= 9 ? MENU_STEPS[phase - 1] : null;
+  // For the "open menu" phase (0) and "close menu" phase (6) use a pointer style
+  const isPromptPhase = phase === 0 || phase === 6;
+  const currentStep = phase >= 1 && phase <= 5 ? MENU_STEPS[phase - 1] : null;
 
   const overlay = (
     <AnimatePresence mode="wait">
@@ -297,17 +221,13 @@ export function MenuTutorialOverlay({ menuOpen, onOpenMenu, onComplete, onOpenSp
                 <p className="text-sm font-black text-slate-800 mb-1">{currentStep.title}</p>
                 <p className="text-xs text-slate-500 leading-relaxed mb-3">{currentStep.desc}</p>
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] text-slate-400 font-medium">{phase}/9</span>
+                  <span className="text-[10px] text-slate-400 font-medium">{phase}/5</span>
                   <button
                     onClick={handleNext}
                     className="px-5 py-1.5 rounded-xl text-xs font-bold text-white"
-                    style={{ background: currentStep?.actionLabel && !((phase === 2 && spinDone) || (phase === 3 && dailyClaimDone))
-                      ? 'linear-gradient(110deg, #f59e0b 0%, #ef4444 100%)'
-                      : 'linear-gradient(110deg, #6366f1 0%, #8b5cf6 100%)' }}
+                    style={{ background: 'linear-gradient(110deg, #6366f1 0%, #8b5cf6 100%)' }}
                   >
-                    {(phase === 2 && spinDone) || (phase === 3 && dailyClaimDone)
-                      ? 'Got it'
-                      : (currentStep?.actionLabel ?? (phase === 9 ? 'Done' : 'Got it'))}
+                    {phase === 5 ? 'Done' : 'Got it'}
                   </button>
                 </div>
               </>

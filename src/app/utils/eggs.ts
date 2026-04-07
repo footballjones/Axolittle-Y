@@ -5,7 +5,7 @@ import { breedAxolotls, generateAxolotl } from './gameLogic';
 /**
  * Create an egg from rebirth (Elder lays egg)
  */
-export function createRebirthEgg(parent: Axolotl, pendingName?: string): Egg {
+export function createRebirthEgg(parent: Axolotl, pendingName?: string, playerLevel?: number): Egg {
   // Roll for recessive expression
   let color = parent.color;
   let pattern = parent.pattern;
@@ -42,6 +42,10 @@ export function createRebirthEgg(parent: Axolotl, pendingName?: string): Egg {
   const currentStreak = parent.rebirthStreak ?? 0;
   const effectiveScore = Math.min(100, poolScore + currentStreak * LUCK_BONUS_PER_STREAK);
 
+  // ── Level-based rarity boost (Level 31-60 = +1% per level, max +30) ──────
+  const levelBonus = playerLevel !== undefined ? Math.max(0, Math.min(30, playerLevel - 30)) : 0;
+  const finalEffectiveScore = Math.min(100, effectiveScore + levelBonus);
+
   // Neglect decay logic: higher rarities can drop if overall fitness (poolScore) is too low
   let minRarity = parentRarity;
 
@@ -64,7 +68,7 @@ export function createRebirthEgg(parent: Axolotl, pendingName?: string): Egg {
   let rarity: 'Common' | 'Rare' | 'Epic' | 'Legendary' | 'Mythic' = minRarity;
   const rand = Math.random();
 
-  if (parent.generation >= 6 || effectiveScore >= 65) {
+  if (parent.generation >= 6 || finalEffectiveScore >= 65) {
     if (rand < 0.05) {
       rarity = 'Mythic';
     } else if (rand < 0.25) {
@@ -76,7 +80,7 @@ export function createRebirthEgg(parent: Axolotl, pendingName?: string): Egg {
     } else {
       rarity = 'Common';
     }
-  } else if (parent.generation >= 5 || effectiveScore >= 50) {
+  } else if (parent.generation >= 5 || finalEffectiveScore >= 50) {
     if (rand < 0.15) {
       rarity = 'Legendary';
     } else if (rand < 0.45) {
@@ -86,7 +90,7 @@ export function createRebirthEgg(parent: Axolotl, pendingName?: string): Egg {
     } else {
       rarity = 'Common';
     }
-  } else if (parent.generation >= 4 || effectiveScore >= 25) {
+  } else if (parent.generation >= 4 || finalEffectiveScore >= 25) {
     if (rand < 0.20) {
       rarity = 'Epic';
     } else if (rand < 0.60) {
@@ -94,7 +98,7 @@ export function createRebirthEgg(parent: Axolotl, pendingName?: string): Egg {
     } else {
       rarity = 'Common';
     }
-  } else if (parent.generation >= 2 || effectiveScore >= 15) {
+  } else if (parent.generation >= 2 || finalEffectiveScore >= 15) {
     if (rand < 0.30) {
       rarity = 'Rare';
     } else {
