@@ -121,7 +121,8 @@ export function AxolotlStacker({ onEnd, onDeductEnergy, onApplyReward, energy }:
     stack: StackBlock[];
     current: CurrentBlock | null;
     score: number;
-    towerOffset: number; // How much the tower has moved down
+    towerOffset: number;
+    fallingPieces: Array<{ x: number; width: number; y: number; vy: number; color: string; alpha: number }>;
     onGameEnd: (() => void) | null;
   }>({
     isPlaying: false,
@@ -130,6 +131,7 @@ export function AxolotlStacker({ onEnd, onDeductEnergy, onApplyReward, energy }:
     current: null,
     score: 0,
     towerOffset: 0,
+    fallingPieces: [],
     onGameEnd: null,
   });
 
@@ -175,6 +177,11 @@ export function AxolotlStacker({ onEnd, onDeductEnergy, onApplyReward, energy }:
       drawTile(ctx, b.x, b.y, b.width, BLOCK_HEIGHT - 2, color);
     }
 
+    // Draw falling cut-off pieces
+    for (const fp of game.fallingPieces) {
+      drawTile(ctx, fp.x, fp.y, fp.width, BLOCK_HEIGHT - 2, fp.color, fp.alpha);
+    }
+
     // Draw current (moving) block — slightly brighter pulse via full opacity
     if (game.current && game.isPlaying) {
       const color = COLORS[game.score % COLORS.length];
@@ -206,6 +213,14 @@ export function AxolotlStacker({ onEnd, onDeductEnergy, onApplyReward, energy }:
         game.current.x = 0;
       }
     }
+
+    // Update falling cut-off pieces
+    for (const fp of game.fallingPieces) {
+      fp.vy += 0.45;
+      fp.y += fp.vy;
+      fp.alpha -= 0.02;
+    }
+    game.fallingPieces = game.fallingPieces.filter(fp => fp.alpha > 0 && fp.y < CANVAS_H + 40);
 
     // Move tower down after threshold
     if (game.score >= TOWER_DROP_THRESHOLD) {
@@ -253,6 +268,17 @@ export function AxolotlStacker({ onEnd, onDeductEnergy, onApplyReward, energy }:
     if (overlapWidth <= 0) {
       if (game.onGameEnd) game.onGameEnd();
       return;
+    }
+
+    // Spawn falling cut-off piece(s) so the player can see what was trimmed
+    const cutColor = COLORS[game.score % COLORS.length];
+    const leftCutW = overlapLeft - cLeft;
+    const rightCutW = cRight - overlapRight;
+    if (leftCutW > 0) {
+      game.fallingPieces.push({ x: cLeft, width: leftCutW, y: c.y, vy: 0, color: cutColor, alpha: 1 });
+    }
+    if (rightCutW > 0) {
+      game.fallingPieces.push({ x: overlapRight, width: rightCutW, y: c.y, vy: 0, color: cutColor, alpha: 1 });
     }
 
     // Place overlapping portion
@@ -305,6 +331,7 @@ export function AxolotlStacker({ onEnd, onDeductEnergy, onApplyReward, energy }:
     game.isPaused = false;
     game.score = 0;
     game.towerOffset = 0;
+    game.fallingPieces = [];
     game.stack = [{
       x: CANVAS_W / 2 - INITIAL_WIDTH / 2,
       width: INITIAL_WIDTH,

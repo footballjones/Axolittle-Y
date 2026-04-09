@@ -63,12 +63,23 @@ export function KeepeyUpey({ onEnd, onDeductEnergy, onApplyReward, energy, sound
   const animationFrameRef = useRef<number | null>(null);
   const lastTouchTimeRef = useRef<number>(0);
   const bgImageRef = useRef<HTMLImageElement | null>(null);
+  // Refs for game loop — avoids recreating gameLoop every second when score state changes
+  const scoreRef = useRef(0);
+  const isPlayingRef = useRef(false);
+  const isPausedRef = useRef(false);
+  const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
 
   // Pre-load background image once
   useEffect(() => {
     const img = new Image();
     img.src = keepeyBg;
     img.onload = () => { bgImageRef.current = img; };
+  }, []);
+
+  // Cache canvas context once — avoids getContext() on every frame
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (canvas) ctxRef.current = canvas.getContext('2d');
   }, []);
   const gameStateRef = useRef<{
     axo: { x: number; y: number; vy: number; size: number };
@@ -96,9 +107,9 @@ export function KeepeyUpey({ onEnd, onDeductEnergy, onApplyReward, energy, sound
   }, []);
 
   const bounce = useCallback(() => {
-    if (!isPlaying || isPaused) return;
+    if (!isPlayingRef.current || isPausedRef.current) return;
     // Bounce gets weaker over time — harder to stay up
-    const force = Math.min(-3, BOUNCE_FORCE_BASE + score * BOUNCE_WEAKEN);
+    const force = Math.min(-3, BOUNCE_FORCE_BASE + scoreRef.current * BOUNCE_WEAKEN);
     gameStateRef.current.axo.vy = force;
     // Spawn decorative bubble
     gameStateRef.current.bubbles.push({
@@ -112,9 +123,10 @@ export function KeepeyUpey({ onEnd, onDeductEnergy, onApplyReward, energy, sound
       bounceSfxRef.current.currentTime = 0;
       bounceSfxRef.current.play().catch(() => {});
     }
-  }, [isPlaying, isPaused, score, soundEnabled]);
+  }, [soundEnabled]);
 
   const spawnObstacle = useCallback(() => {
+    const score = scoreRef.current;
     const side = Math.random() < 0.5 ? 'left' : 'right';
     const y = 50 + Math.random() * (CANVAS_H - 150);
     // Obstacles grow wider and taller over time
@@ -133,14 +145,15 @@ export function KeepeyUpey({ onEnd, onDeductEnergy, onApplyReward, energy, sound
       const spd2 = (OBSTACLE_SPEED_BASE + score * OBSTACLE_SPEED_RAMP) * (otherSide === 'left' ? 1 : -1);
       gameStateRef.current.obstacles.push({ x: otherSide === 'left' ? -w2 : CANVAS_W, y: y2, width: w2, height: h2, speed: spd2 });
     }
-  }, [score]);
+  }, []);
 
   const endGame = useCallback(() => {
+    isPlayingRef.current = false;
     setIsPlaying(false);
     setGameEnded(true);
     // Only calculate and show rewards if energy was available at start
     if (hadEnergyAtStart) {
-      const rewards = calculateRewards('keepey-upey', score);
+      const rewards = calculateRewards('keepey-upey', scoreRef.current);
       cumulativeRef.current.xp += rewards.xp;
       cumulativeRef.current.hadAnyEnergy = true;
       onApplyReward?.(rewards.coins, rewards.opals);
@@ -160,7 +173,7 @@ export function KeepeyUpey({ onEnd, onDeductEnergy, onApplyReward, energy, sound
       });
     }
     setShowOverlay(true);
-  }, [score, hadEnergyAtStart]);
+  }, [hadEnergyAtStart]);
 
   const draw = useCallback((ctx: CanvasRenderingContext2D) => {
     const { axo, obstacles, bubbles } = gameStateRef.current;
@@ -471,25 +484,29 @@ export function KeepeyUpey({ onEnd, onDeductEnergy, onApplyReward, energy, sound
     ctx.fillStyle = 'rgba(255,255,255,0.6)';
     ctx.font = '16px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText(`${score}s`, CANVAS_W / 2, 30);
-  }, [score]);
+    ctx.fillText(`${scoreRef.current}s`, CANVAS_W / 2, 30);
+  }, []);
 
   const gameLoop = useCallback(() => {
-    if (!isPlaying || isPaused) return;
+    if (!isPlayingRef.current || isPausedRef.current) return;
 
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
+    // Use cached context — no getContext() on every frame
+    const ctx = ctxRef.current;
     if (!ctx) return;
 
     const now = performance.now();
     const elapsed = (now - gameStateRef.current.startTime) / 1000;
-    setScore(Math.floor(elapsed));
+    const currentScore = Math.floor(elapsed);
+    // Only trigger a React re-render when the displayed integer changes
+    if (currentScore !== scoreRef.current) {
+      scoreRef.current = currentScore;
+      setScore(currentScore);
+    }
 
     const { axo, obstacles, bubbles } = gameStateRef.current;
 
     // Axo physics — gravity increases over time
-    const gravity = GRAVITY_BASE + score * GRAVITY_RAMP;
+    const gravity = GRAVITY_BASE + scoreRef.current * GRAVITY_RAMP;
     axo.vy += gravity;
     axo.y += axo.vy;
 
@@ -497,7 +514,7 @@ export function KeepeyUpey({ onEnd, onDeductEnergy, onApplyReward, energy, sound
     axo.x += (CANVAS_W / 2 - axo.x) * 0.01;
 
     // Spawn obstacles — interval shrinks over time, lower floor
-    const interval = Math.max(500, 2000 - score * 25);
+    const interval = Math.max(500, 2000 - scoreRef.current * 25);
     if (now - gameStateRef.current.lastObstacleTime > interval) {
       spawnObstacle();
       gameStateRef.current.lastObstacleTime = now;
@@ -539,7 +556,7 @@ export function KeepeyUpey({ onEnd, onDeductEnergy, onApplyReward, energy, sound
     draw(ctx);
 
     animationFrameRef.current = requestAnimationFrame(gameLoop);
-  }, [isPlaying, isPaused, score, spawnObstacle, endGame, draw]);
+  }, [spawnObstacle, endGame, draw]);
 
   const startGame = useCallback(() => {
     // Deduct 1 energy for this attempt (also covers "Play Again"); rewards only if energy was available
@@ -547,6 +564,9 @@ export function KeepeyUpey({ onEnd, onDeductEnergy, onApplyReward, energy, sound
     if (hadEnergy) onDeductEnergy?.();
     setHadEnergyAtStart(hadEnergy);
     reset();
+    scoreRef.current = 0;
+    isPlayingRef.current = true;
+    isPausedRef.current = false;
     setShowOverlay(false);
     setGameEnded(false);
     setFinalRewards(null);
@@ -582,7 +602,7 @@ export function KeepeyUpey({ onEnd, onDeductEnergy, onApplyReward, energy, sound
       score={score}
       onEnd={onEnd}
       energy={energy}
-      onPause={() => setIsPaused(!isPaused)}
+      onPause={() => { const next = !isPaused; isPausedRef.current = next; setIsPaused(next); }}
       isPaused={isPaused}
       gameEnded={gameEnded}
     >

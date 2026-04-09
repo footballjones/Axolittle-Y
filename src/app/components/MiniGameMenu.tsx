@@ -1,9 +1,8 @@
 import { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { User, Users, Info, Zap, Lock, Circle, Hash, Layers, Fish, Puzzle, Grid3X3, Link2 } from 'lucide-react';
+import { User, Users, Zap, Lock, Circle, Hash, Layers, Fish, Puzzle, Grid3X3, Link2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { GAME_CONFIG } from '../config/game';
-import { CoinIcon } from './icons';
 
 const UNLOCK_GAMES_COST = 5; // opals
 
@@ -25,8 +24,6 @@ interface GameTileProps {
   game: { id: string; name: string; iconNode: React.ReactNode; color: string; description: string; coins: string; players?: string };
   index: number;
   delayOffset?: number;
-  expandedId: string | null;
-  onToggleInfo: (id: string) => void;
   onSelectGame: (id: string) => void;
   energy?: number;
   isLocked?: boolean;
@@ -34,8 +31,7 @@ interface GameTileProps {
   tutorialHighlight?: boolean;
 }
 
-function GameTile({ game, index, delayOffset = 0, expandedId, onToggleInfo, onSelectGame, energy: _energy = 0, isLocked = false, lockReason, tutorialHighlight = false }: GameTileProps) {
-  const isExpanded = expandedId === game.id;
+function GameTile({ game, index, delayOffset = 0, onSelectGame, energy: _energy = 0, isLocked = false, lockReason, tutorialHighlight = false }: GameTileProps) {
 
   return (
     <motion.div
@@ -162,46 +158,10 @@ function GameTile({ game, index, delayOffset = 0, expandedId, onToggleInfo, onSe
         </div>
       </button>
 
-      {/* Info button underneath title */}
-      <div className="flex justify-center pb-0 -mt-3">
-        <motion.button
-          onClick={(e) => {
-            e.stopPropagation();
-            onToggleInfo(game.id);
-          }}
-          className="w-5 h-5 flex items-center justify-center"
-          whileTap={{ scale: 0.9 }}
-        >
-          <Info className="w-3 h-3 text-purple-400" strokeWidth={2.5} />
-        </motion.button>
+      {/* Description always visible */}
+      <div className="px-3 pb-3">
+        <p className="text-[10px] text-slate-500 leading-tight text-center">{game.description}</p>
       </div>
-
-      {/* Expandable info section */}
-      <AnimatePresence>
-        {isExpanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2, ease: 'easeInOut' }}
-            className="overflow-hidden"
-          >
-            <div className="px-3 pb-3 pt-0.5 flex flex-col items-center gap-1.5 border-t border-purple-100/40">
-              <p className="text-[10px] text-slate-500 leading-tight text-center mt-1.5">{game.description}</p>
-              <div className="flex items-center gap-1 flex-wrap justify-center">
-                <span className="text-[10px] font-bold text-amber-700 bg-amber-100/80 px-2 py-0.5 rounded-full flex items-center gap-0.5">
-                  <CoinIcon size={10} /> {game.coins}
-                </span>
-                {game.players && (
-                  <span className="text-[10px] font-bold text-cyan-700 bg-cyan-100/80 px-2 py-0.5 rounded-full flex items-center gap-0.5">
-                    <Users size={10} /> {game.players}
-                  </span>
-                )}
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </motion.div>
   );
 }
@@ -209,7 +169,6 @@ function GameTile({ game, index, delayOffset = 0, expandedId, onToggleInfo, onSe
 const REFILL_ENERGY_COST = 10; // opals
 
 export function MiniGameMenu({ onClose: _onClose, onSelectGame, energy = 10, maxEnergy = 10, lastEnergyUpdate, miniGamesLockedUntil, opals = 0, onUnlockGames, onRefillEnergy, currentLevel, tutorialPhase }: MiniGameMenuProps) {
-  const [expandedId, setExpandedId] = useState<string | null>(null);
   const [energyTimeText, setEnergyTimeText] = useState<string>('');
   const [lockTimeText, setLockTimeText] = useState<string>('');
 
@@ -262,10 +221,6 @@ export function MiniGameMenu({ onClose: _onClose, onSelectGame, energy = 10, max
     const interval = setInterval(updateLockTimer, 1000);
     return () => clearInterval(interval);
   }, [miniGamesLockedUntil]);
-
-  const toggleInfo = (id: string) => {
-    setExpandedId(prev => prev === id ? null : id);
-  };
 
   // energy is stored as a float in game state, floor it for display
   const displayEnergy = Math.floor(energy);
@@ -524,8 +479,7 @@ export function MiniGameMenu({ onClose: _onClose, onSelectGame, energy = 10, max
                 <GameTile
                   game={game}
                   index={index}
-                  expandedId={expandedId}
-                  onToggleInfo={toggleInfo}
+
                   onSelectGame={onSelectGame}
                   energy={energy}
                   isLocked={tileIsLocked}
@@ -538,8 +492,6 @@ export function MiniGameMenu({ onClose: _onClose, onSelectGame, energy = 10, max
                 key={game.id}
                 game={game}
                 index={index}
-                expandedId={expandedId}
-                onToggleInfo={toggleInfo}
                 onSelectGame={onSelectGame}
                 energy={energy}
                 isLocked={tileIsLocked}
@@ -571,8 +523,6 @@ export function MiniGameMenu({ onClose: _onClose, onSelectGame, energy = 10, max
               game={game}
               index={index}
               delayOffset={soloGames.length * 0.05}
-              expandedId={expandedId}
-              onToggleInfo={toggleInfo}
               onSelectGame={onSelectGame}
               energy={energy}
               isLocked={isLocked || multiplayerLevelLocked}

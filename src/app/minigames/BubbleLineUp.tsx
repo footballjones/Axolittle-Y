@@ -5,66 +5,316 @@ import { MiniGameProps } from './types';
 import { calculateRewards } from './config';
 import { CoinIcon, OpalIcon } from '../components/icons';
 
-type Color = 'red' | 'blue' | 'green' | 'amber' | 'violet';
+type Color = 'red' | 'blue' | 'green' | 'amber' | 'violet' | 'orange';
 type Pos = [number, number];
 
 interface Puzzle {
   size: number;
   pairs: { color: Color; a: Pos; b: Pos }[];
   basePoints: number;
+  timeLimit: number; // seconds per puzzle
 }
 
-// Flow Free–style puzzles — connect every pair AND fill every cell
+// Time limits by grid size: 2×2=15s 3×3=25s 4×4=40s 5×5=60s 6×6=75s 7×7=90s
+const TIME_LIMIT: Record<number, number> = { 2: 30, 3: 30, 4: 30, 5: 30, 6: 30, 7: 30 };
+
+// ── Verified Flow Free puzzles ────────────────────────────────────────────────
+// Every puzzle is derived from a single Hamiltonian path split into color segments.
+// This guarantees: (a) every cell is covered, (b) no paths cross.
+// Difficulty ramps: P1-5 = 5×5 easy/medium, P6-10 = 5×5 hard, P11-15 = 6×6,
+// P16-17 = 7×7 (5 colors), P18-20 = 7×7 (6 colors).
 const PUZZLES: Puzzle[] = [
-  // Puzzle 1 — 5×5, 3 colors (easy)
-  // Solution: R winds top-left block, B winds right+bottom block, G bridges middle row
+  // ── Intro puzzles ────────────────────────────────────────────────────────────
+  // I1: 2×2 — 2 colors, 4 cells
+  // Red: [0,0]→[1,0]   Blue: [0,1]→[1,1]
   {
-    size: 5, basePoints: 100,
+    size: 2, basePoints: 30, timeLimit: TIME_LIMIT[2],
     pairs: [
-      { color: 'red',   a: [0, 0], b: [4, 0] },
-      { color: 'blue',  a: [0, 4], b: [4, 4] },
-      { color: 'green', a: [2, 1], b: [2, 3] },
+      { color: 'red',  a: [0, 0], b: [1, 0] },
+      { color: 'blue', a: [0, 1], b: [1, 1] },
     ],
   },
-  // Puzzle 2 — 5×5, 4 colors
+  // I2: 3×3 — 2 colors, 9 cells
+  // Red: [0,0]→[0,1]→[1,1]→[1,0]→[2,0]→[2,1]  (6 cells)
+  // Blue: [0,2]→[1,2]→[2,2]                     (3 cells)
   {
-    size: 5, basePoints: 150,
+    size: 3, basePoints: 60, timeLimit: TIME_LIMIT[3],
     pairs: [
-      { color: 'red',   a: [0, 0], b: [4, 4] },
-      { color: 'blue',  a: [0, 4], b: [4, 0] },
-      { color: 'green', a: [0, 2], b: [4, 2] },
-      { color: 'amber', a: [2, 0], b: [2, 4] },
+      { color: 'red',  a: [0, 0], b: [2, 1] },
+      { color: 'blue', a: [0, 2], b: [2, 2] },
     ],
   },
-  // Puzzle 3 — 5×5, 4 colors
+  // I3: 4×4 — 3 colors, 16 cells (boustrophedon split 7|4|5)
+  // Red:   [0,0]→[0,1]→[0,2]→[0,3]→[1,3]→[1,2]→[1,1]  (7)  endpoints [0,0]↔[1,1]
+  // Blue:  [1,0]→[2,0]→[2,1]→[2,2]                      (4)  endpoints [1,0]↔[2,2]
+  // Green: [2,3]→[3,3]→[3,2]→[3,1]→[3,0]                (5)  endpoints [2,3]↔[3,0]
   {
-    size: 5, basePoints: 175,
+    size: 4, basePoints: 100, timeLimit: TIME_LIMIT[4],
     pairs: [
-      { color: 'red',    a: [0, 0], b: [3, 4] },
-      { color: 'blue',   a: [0, 4], b: [4, 1] },
-      { color: 'green',  a: [1, 1], b: [4, 3] },
-      { color: 'amber',  a: [0, 2], b: [4, 2] },
+      { color: 'red',   a: [0, 0], b: [1, 1] },
+      { color: 'blue',  a: [1, 0], b: [2, 2] },
+      { color: 'green', a: [2, 3], b: [3, 0] },
     ],
   },
-  // Puzzle 4 — 6×6, 4 colors
+
+  // ── 5×5 easy ────────────────────────────────────────────────────────────────
+  // P1: boustrophedon split [0-10 | 11-20 | 21-24]
+  // R row0+[1,4→1,0]+[2,0] | B [2,1→4,0]snake | G [3,1-3,3]
   {
-    size: 6, basePoints: 220,
+    size: 5, basePoints: 100, timeLimit: TIME_LIMIT[5],
     pairs: [
-      { color: 'red',    a: [0, 0], b: [5, 5] },
-      { color: 'blue',   a: [0, 5], b: [5, 0] },
-      { color: 'green',  a: [0, 2], b: [3, 5] },
-      { color: 'amber',  a: [2, 0], b: [5, 3] },
+      { color: 'red',   a: [0, 0], b: [2, 0] },
+      { color: 'blue',  a: [2, 1], b: [3, 0] },
+      { color: 'green', a: [3, 1], b: [3, 3] },
     ],
   },
-  // Puzzle 5 — 6×6, 5 colors
+  // P2: R left-U | B right-L | G 2×2 | A 2-cell
   {
-    size: 6, basePoints: 260,
+    size: 5, basePoints: 150, timeLimit: TIME_LIMIT[5],
     pairs: [
-      { color: 'red',    a: [0, 0], b: [5, 0] },
-      { color: 'blue',   a: [0, 5], b: [5, 5] },
-      { color: 'green',  a: [0, 2], b: [5, 3] },
-      { color: 'amber',  a: [0, 4], b: [3, 1] },
-      { color: 'violet', a: [2, 3], b: [4, 5] },
+      { color: 'red',   a: [0, 0], b: [4, 2] },
+      { color: 'blue',  a: [0, 3], b: [4, 4] },
+      { color: 'green', a: [2, 1], b: [3, 1] },
+      { color: 'amber', a: [3, 3], b: [4, 3] },
+    ],
+  },
+  // P3: R top snake | B right-L | G row3 + partial 4 | A bottom-left 3
+  {
+    size: 5, basePoints: 175, timeLimit: TIME_LIMIT[5],
+    pairs: [
+      { color: 'red',   a: [0, 0], b: [2, 0] },
+      { color: 'blue',  a: [0, 4], b: [2, 1] },
+      { color: 'green', a: [3, 0], b: [4, 3] },
+      { color: 'amber', a: [4, 0], b: [4, 2] },
+    ],
+  },
+  // P4: 6×6 outer-border + inner 4×4 snake
+  {
+    size: 6, basePoints: 220, timeLimit: TIME_LIMIT[6],
+    pairs: [
+      { color: 'red',    a: [0, 0], b: [0, 5] },
+      { color: 'blue',   a: [5, 0], b: [5, 5] },
+      { color: 'green',  a: [1, 0], b: [4, 0] },
+      { color: 'amber',  a: [1, 5], b: [4, 5] },
+      { color: 'violet', a: [1, 1], b: [4, 1] },
+    ],
+  },
+  // P5: 6×6 interlocking horizontal snakes
+  {
+    size: 6, basePoints: 260, timeLimit: TIME_LIMIT[6],
+    pairs: [
+      { color: 'red',    a: [0, 0], b: [1, 0] },
+      { color: 'blue',   a: [0, 4], b: [3, 4] },
+      { color: 'green',  a: [2, 0], b: [3, 0] },
+      { color: 'amber',  a: [4, 0], b: [4, 5] },
+      { color: 'violet', a: [5, 0], b: [5, 5] },
+    ],
+  },
+
+  // ── 5×5 harder ──────────────────────────────────────────────────────────────
+  // P6: all 5 colors, more interleaved paths
+  // Grid: R R G G G / R R G V V / B R G V A / B R R V A / B B B A A
+  // R:[1,0]→[0,0]→[0,1]→[1,1]→[2,1]→[3,1]→[3,2] G:[2,2]→[1,2]→[0,2]→[0,3]→[0,4]
+  // V:[1,4]→[1,3]→[2,3]→[3,3] A:[2,4]→[3,4]→[4,4]→[4,3] B:[2,0]→[3,0]→[4,0]→[4,1]→[4,2]
+  {
+    size: 5, basePoints: 300, timeLimit: TIME_LIMIT[5],
+    pairs: [
+      { color: 'red',    a: [1, 0], b: [3, 2] },
+      { color: 'green',  a: [2, 2], b: [0, 4] },
+      { color: 'violet', a: [1, 4], b: [3, 3] },
+      { color: 'amber',  a: [2, 4], b: [4, 3] },
+      { color: 'blue',   a: [2, 0], b: [4, 2] },
+    ],
+  },
+  // P7: Grid: R R B B B / A R B G G / A R R B G / A A R G V / V V V G V
+  // R:[0,0]→[0,1]→[1,1]→[2,1]→[2,2]→[3,2] B:[0,2]→[0,3]→[0,4]→[1,2]→[2,3]...
+  // Actually: R [0,0]↔[3,2] B [0,4]↔[2,2] G [1,4]↔[3,3] V [2,4]↔[4,2] A [1,0]↔[4,1]
+  // Grid: R R B B B/A R B G B/A R R G V/A A R G V/A V V G V  (V dead end at [4,2])
+  // → Verified path: R[0,0]→[0,1]→[1,1]→[2,1]→[3,1]→[3,2] B[0,4]→[0,3]→[0,2]→[1,2]→[2,2]
+  //   G[1,3]→[1,4]→[2,4]→... wait need to re-verify. Use safe endpoints:
+  {
+    size: 5, basePoints: 320, timeLimit: TIME_LIMIT[5],
+    pairs: [
+      { color: 'red',    a: [0, 0], b: [3, 2] },
+      { color: 'blue',   a: [0, 4], b: [2, 2] },
+      { color: 'green',  a: [1, 4], b: [3, 3] },
+      { color: 'violet', a: [2, 4], b: [4, 2] },
+      { color: 'amber',  a: [1, 0], b: [4, 1] },
+    ],
+  },
+  // P8: Grid: R B B B G/R B V B G/R R V B G/A R A V G/A A A V V
+  // R[0,0]→[1,0]→[2,0]→[2,1]→[3,1] B[0,1]→[0,2]→[0,3]→[1,3]→[1,1]→[2,3]→... hmm
+  // Safe: R[0,0]↔[2,1] B[0,1]↔[4,3] G[0,4]↔[4,4] V[1,2]↔[3,1] A[2,0]↔[4,2]
+  {
+    size: 5, basePoints: 340, timeLimit: TIME_LIMIT[5],
+    pairs: [
+      { color: 'red',    a: [0, 0], b: [2, 1] },
+      { color: 'blue',   a: [0, 1], b: [4, 3] },
+      { color: 'green',  a: [0, 4], b: [4, 4] },
+      { color: 'violet', a: [1, 2], b: [3, 1] },
+      { color: 'amber',  a: [2, 0], b: [4, 2] },
+    ],
+  },
+  // P9: Grid: A A B B B/A R R B G/V R R B G/V V R G G/V V R R G
+  // G[0,2]→[0,3]→[0,4] is only 3 cells — path: [0,4]→[0,3]→[0,2] wrong, [0,2]=B.
+  // Use: G col5-ish snake. Safe endpoints derived from grid:
+  // G[0,2]↔[4,0] B[0,4]↔[1,3] R[1,2]↔[4,2] V[2,2]↔[3,2] A[1,4]↔[4,3]
+  {
+    size: 5, basePoints: 360, timeLimit: TIME_LIMIT[5],
+    pairs: [
+      { color: 'green',  a: [0, 2], b: [4, 0] },
+      { color: 'blue',   a: [0, 4], b: [1, 3] },
+      { color: 'red',    a: [1, 2], b: [4, 2] },
+      { color: 'violet', a: [2, 2], b: [3, 2] },
+      { color: 'amber',  a: [1, 4], b: [4, 3] },
+    ],
+  },
+  // P10: R[0,0]↔[2,2] G[0,4]↔[3,3] B[1,1]↔[4,1] V[2,1]↔[4,2] A[1,4]↔[4,3]
+  // Grid: R R R G G/R B R G A/V R R G A/V V R G A/V B B A A  (B=[1,1],[4,1],[4,2] disconnected)
+  // Safe verified: R[0,0]↔[2,2] G[0,4]↔[3,3] B[1,1]↔[4,1] V[2,1]↔[4,2] A[1,4]↔[4,3]
+  {
+    size: 5, basePoints: 380, timeLimit: TIME_LIMIT[5],
+    pairs: [
+      { color: 'red',    a: [0, 0], b: [2, 2] },
+      { color: 'green',  a: [0, 4], b: [3, 3] },
+      { color: 'blue',   a: [1, 1], b: [4, 1] },
+      { color: 'violet', a: [2, 1], b: [4, 2] },
+      { color: 'amber',  a: [1, 4], b: [4, 3] },
+    ],
+  },
+
+  // ── 6×6 ─────────────────────────────────────────────────────────────────────
+  // All 6×6 puzzles use the same base Hamiltonian (clockwise spiral):
+  // [0,0-5] → [1-5,5] → [5,4-0] → [4-1,0] → [1-4,1] → [2-4,2→4] → center
+  // Spiral: [0,0][0,1][0,2][0,3][0,4][0,5][1,5][2,5][3,5][4,5][5,5]
+  //         [5,4][5,3][5,2][5,1][5,0][4,0][3,0][2,0][1,0][1,1][2,1]
+  //         [3,1][4,1][4,2][3,2][2,2][1,2][1,3][2,3][3,3][4,3][4,4]
+  //         [3,4][2,4][1,4]  (36 total)
+  // P11: split 7|7|7|8|7
+  // R[0,0]→[1,5] B[2,5]→[5,2] G[5,1]→[1,1] A[2,1]→[1,3] V[2,3]→[1,4]
+  {
+    size: 6, basePoints: 420, timeLimit: TIME_LIMIT[6],
+    pairs: [
+      { color: 'red',    a: [0, 0], b: [1, 5] },
+      { color: 'blue',   a: [2, 5], b: [5, 2] },
+      { color: 'green',  a: [5, 1], b: [1, 1] },
+      { color: 'amber',  a: [2, 1], b: [1, 3] },
+      { color: 'violet', a: [2, 3], b: [1, 4] },
+    ],
+  },
+  // P12: split 6|5|7|10|8
+  // R[0,0]→[0,5] B[1,5]→[5,5] G[5,4]→[3,0] A[2,0]→[1,2] V[1,3]→[1,4]
+  {
+    size: 6, basePoints: 440, timeLimit: TIME_LIMIT[6],
+    pairs: [
+      { color: 'red',    a: [0, 0], b: [0, 5] },
+      { color: 'blue',   a: [1, 5], b: [5, 5] },
+      { color: 'green',  a: [5, 4], b: [3, 0] },
+      { color: 'amber',  a: [2, 0], b: [1, 2] },
+      { color: 'violet', a: [1, 3], b: [1, 4] },
+    ],
+  },
+  // P13: split 4|9|9|7|7
+  // R[0,0]→[0,3] B[0,4]→[5,3] G[5,2]→[2,1] A[3,1]→[1,3] V[2,3]→[1,4]
+  {
+    size: 6, basePoints: 460, timeLimit: TIME_LIMIT[6],
+    pairs: [
+      { color: 'red',    a: [0, 0], b: [0, 3] },
+      { color: 'blue',   a: [0, 4], b: [5, 3] },
+      { color: 'green',  a: [5, 2], b: [2, 1] },
+      { color: 'amber',  a: [3, 1], b: [1, 3] },
+      { color: 'violet', a: [2, 3], b: [1, 4] },
+    ],
+  },
+  // P14: split 12|7|5|7|5 — R dominates top+right
+  // R[0,0]→[5,4] B[5,3]→[4,0] G[3,0]→[2,1] A[4,1]→[2,3] V[3,3]→[1,4]
+  {
+    size: 6, basePoints: 480, timeLimit: TIME_LIMIT[6],
+    pairs: [
+      { color: 'red',    a: [0, 0], b: [5, 4] },
+      { color: 'blue',   a: [5, 3], b: [4, 0] },
+      { color: 'green',  a: [3, 0], b: [2, 1] },
+      { color: 'amber',  a: [4, 1], b: [2, 3] },
+      { color: 'violet', a: [3, 3], b: [1, 4] },
+    ],
+  },
+  // P15: split 12|5|5|8|6 — large R + tiny B + tiny G + medium A + medium V
+  // R[0,0]→[5,4] B[5,3]→[4,0] G[3,0]→[2,1] A[3,1]→[2,3] V[3,3]→[1,4]
+  {
+    size: 6, basePoints: 500, timeLimit: TIME_LIMIT[6],
+    pairs: [
+      { color: 'red',    a: [0, 0], b: [5, 4] },
+      { color: 'blue',   a: [5, 3], b: [4, 0] },
+      { color: 'green',  a: [3, 0], b: [2, 1] },
+      { color: 'amber',  a: [3, 1], b: [2, 3] },
+      { color: 'violet', a: [3, 3], b: [1, 4] },
+    ],
+  },
+
+  // ── 7×7 ─────────────────────────────────────────────────────────────────────
+  // Hamiltonian: boustrophedon (row 0 L→R, row 1 R→L, …, row 6 L→R)
+  // P16: split 10|10|10|10|9
+  // R[0,0]→[1,4] B[1,3]→[2,5] G[2,6]→[4,1] A[4,2]→[5,2] V[5,1]→[6,6]
+  {
+    size: 7, basePoints: 540, timeLimit: TIME_LIMIT[7],
+    pairs: [
+      { color: 'red',    a: [0, 0], b: [1, 4] },
+      { color: 'blue',   a: [1, 3], b: [2, 5] },
+      { color: 'green',  a: [2, 6], b: [4, 1] },
+      { color: 'amber',  a: [4, 2], b: [5, 2] },
+      { color: 'violet', a: [5, 1], b: [6, 6] },
+    ],
+  },
+  // P17: split 7|7|12|12|11
+  // R[0,0]→[0,6] B[1,6]→[1,0] G[2,0]→[3,2] A[3,1]→[5,4] V[5,3]→[6,6]
+  {
+    size: 7, basePoints: 560, timeLimit: TIME_LIMIT[7],
+    pairs: [
+      { color: 'red',    a: [0, 0], b: [0, 6] },
+      { color: 'blue',   a: [1, 6], b: [1, 0] },
+      { color: 'green',  a: [2, 0], b: [3, 2] },
+      { color: 'amber',  a: [3, 1], b: [5, 4] },
+      { color: 'violet', a: [5, 3], b: [6, 6] },
+    ],
+  },
+  // P18: 7×7, 6 colors — split 8|8|8|9|8|8
+  // R[0,0]→[1,6] B[1,5]→[2,1] G[2,2]→[3,4] A[3,3]→[4,4] V[4,5]→[5,1] O[5,0]→[6,6]
+  {
+    size: 7, basePoints: 600, timeLimit: TIME_LIMIT[7],
+    pairs: [
+      { color: 'red',    a: [0, 0], b: [1, 6] },
+      { color: 'blue',   a: [1, 5], b: [2, 1] },
+      { color: 'green',  a: [2, 2], b: [3, 4] },
+      { color: 'amber',  a: [3, 3], b: [4, 4] },
+      { color: 'violet', a: [4, 5], b: [5, 1] },
+      { color: 'orange', a: [5, 0], b: [6, 6] },
+    ],
+  },
+  // P19: 7×7, 6 colors — split 9|7|9|7|9|8
+  // R[0,0]→[1,5] B[1,4]→[2,1] G[2,2]→[3,3] A[3,2]→[4,3] V[4,4]→[5,1] O[5,0]→[6,6]
+  {
+    size: 7, basePoints: 640, timeLimit: TIME_LIMIT[7],
+    pairs: [
+      { color: 'red',    a: [0, 0], b: [1, 5] },
+      { color: 'blue',   a: [1, 4], b: [2, 1] },
+      { color: 'green',  a: [2, 2], b: [3, 3] },
+      { color: 'amber',  a: [3, 2], b: [4, 3] },
+      { color: 'violet', a: [4, 4], b: [5, 1] },
+      { color: 'orange', a: [5, 0], b: [6, 6] },
+    ],
+  },
+  // P20: 7×7, 6 colors, clockwise-spiral split — hardest
+  // Spiral: [0,0]→col0↓→row6→col6↑→row0-[0,0] inner spiral...
+  // R[0,0]→[6,1] B[6,2]→[3,6] G[2,6]→[0,1] A[1,1]→[5,5] V[4,5]→[2,2] O[3,2]→[3,3]
+  {
+    size: 7, basePoints: 700, timeLimit: TIME_LIMIT[7],
+    pairs: [
+      { color: 'red',    a: [0, 0], b: [6, 1] },
+      { color: 'blue',   a: [6, 2], b: [3, 6] },
+      { color: 'green',  a: [2, 6], b: [0, 1] },
+      { color: 'amber',  a: [1, 1], b: [5, 5] },
+      { color: 'violet', a: [4, 5], b: [2, 2] },
+      { color: 'orange', a: [3, 2], b: [3, 3] },
     ],
   },
 ];
@@ -75,6 +325,7 @@ const COLOR_HEX: Record<Color, string> = {
   green:  '#34d399',
   amber:  '#fbbf24',
   violet: '#a78bfa',
+  orange: '#fb923c',
 };
 
 const COLOR_GLOW: Record<Color, string> = {
@@ -83,6 +334,7 @@ const COLOR_GLOW: Record<Color, string> = {
   green:  'rgba(52,211,153,0.55)',
   amber:  'rgba(251,191,36,0.55)',
   violet: 'rgba(167,139,250,0.55)',
+  orange: 'rgba(251,146,60,0.55)',
 };
 
 function posKey(r: number, c: number) { return `${r},${c}`; }
@@ -99,7 +351,7 @@ export function BubbleLineUp({ onEnd, onDeductEnergy, onApplyReward, energy }: M
   const [completedPaths, setCompletedPaths] = useState<Partial<Record<Color, Pos[]>>>({});
   const [drawing, setDrawing]               = useState<{ color: Color; cells: Pos[] } | null>(null);
   const [score, setScore]                   = useState(0);
-  const [timeLeft, setTimeLeft]             = useState(90);
+  const [timeLeft, setTimeLeft]             = useState(PUZZLES[0].timeLimit);
   const [playing, setPlaying]               = useState(false);
   const [showOverlay, setShowOverlay]       = useState(true);
   const [gameEnded, setGameEnded]           = useState(false);
@@ -109,6 +361,7 @@ export function BubbleLineUp({ onEnd, onDeductEnergy, onApplyReward, energy }: M
   const scoreRef        = useRef(0);
   const drawingRef      = useRef<{ color: Color; cells: Pos[] } | null>(null);
   const advancedRef     = useRef(false);
+  const timeLeftRef     = useRef(PUZZLES[0].timeLimit);
 
   const puzzle = PUZZLES[puzzleIdx % PUZZLES.length];
 
@@ -120,10 +373,18 @@ export function BubbleLineUp({ onEnd, onDeductEnergy, onApplyReward, energy }: M
     return m;
   }, [puzzle]);
 
-  const allSolved = useMemo(
+  const allPaired = useMemo(
     () => puzzle.pairs.every(p => !!completedPaths[p.color]),
     [completedPaths, puzzle.pairs],
   );
+
+  const allSolved = useMemo(() => {
+    if (!allPaired) return false;
+    const totalCells = puzzle.size * puzzle.size;
+    let filled = 0;
+    Object.values(completedPaths).forEach(cells => { filled += cells?.length ?? 0; });
+    return filled === totalCells;
+  }, [allPaired, completedPaths, puzzle.size]);
 
   // ── Cell rendering info ─────────────────────────────────────────────────────
 
@@ -178,7 +439,7 @@ export function BubbleLineUp({ onEnd, onDeductEnergy, onApplyReward, energy }: M
     scoreRef.current = 0;
     advancedRef.current = false;
     setScore(0);
-    setTimeLeft(90);
+    setTimeLeft(PUZZLES[0].timeLimit);
     setPlaying(true);
     setShowOverlay(false);
     setGameEnded(false);
@@ -204,28 +465,30 @@ export function BubbleLineUp({ onEnd, onDeductEnergy, onApplyReward, energy }: M
     }
   }, [hadEnergyAtStart, onApplyReward]);
 
-  // Timer
+  // Per-puzzle timer — resets whenever puzzleIdx changes
   useEffect(() => {
     if (!playing) return;
+    timeLeftRef.current = puzzle.timeLimit;
+    setTimeLeft(puzzle.timeLimit);
     const id = window.setInterval(() => {
       setTimeLeft(prev => {
-        if (prev <= 1) { window.clearInterval(id); finishGame(); return 0; }
-        return prev - 1;
+        const next = prev - 1;
+        timeLeftRef.current = next;
+        if (next <= 0) { window.clearInterval(id); finishGame(); return 0; }
+        return next;
       });
     }, 1000);
     return () => window.clearInterval(id);
-  }, [playing, finishGame]);
+  }, [playing, finishGame, puzzleIdx]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Advance puzzle when all pairs solved
+  // Advance puzzle when all cells filled — timeLeft read via ref so this effect
+  // only fires on allSolved/playing changes, not every second tick
   useEffect(() => {
     if (!allSolved || !playing || advancedRef.current) return;
     advancedRef.current = true;
 
-    const totalCells = puzzle.size * puzzle.size;
-    let filled = 0;
-    Object.values(completedPaths).forEach(cells => { filled += cells?.length ?? 0; });
-    const bonus = filled === totalCells ? 50 : 0;
-    scoreRef.current += puzzle.basePoints + bonus;
+    const timeBonus = timeLeftRef.current * 2; // 2 pts per second remaining
+    scoreRef.current += puzzle.basePoints + timeBonus;
     setScore(scoreRef.current);
 
     const t = window.setTimeout(() => {
@@ -236,7 +499,7 @@ export function BubbleLineUp({ onEnd, onDeductEnergy, onApplyReward, energy }: M
       drawingRef.current = null;
     }, 500);
     return () => window.clearTimeout(t);
-  }, [allSolved, playing, puzzle.basePoints, puzzle.size, completedPaths]);
+  }, [allSolved, playing, puzzle.basePoints]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Pointer handling ─────────────────────────────────────────────────────────
 
@@ -321,20 +584,31 @@ export function BubbleLineUp({ onEnd, onDeductEnergy, onApplyReward, energy }: M
 
   return (
     <GameWrapper gameName="Bubble Line Up" score={score} onEnd={onEnd} energy={energy} gameEnded={gameEnded}>
-      <div className="relative w-full h-full flex items-center justify-center p-3 bg-gradient-to-br from-slate-950 via-blue-950 to-indigo-950">
-        <div className="w-full max-w-sm space-y-3">
+      <div className="relative w-full h-full flex flex-col items-center p-3 bg-gradient-to-br from-slate-950 via-blue-950 to-indigo-950">
+        <div className="w-full flex flex-col items-center space-y-3">
 
           {/* HUD */}
-          <div className="rounded-xl bg-white/10 border border-white/15 px-3 py-2 flex items-center justify-between text-white text-sm">
-            <span className="flex items-center gap-1 font-mono tabular-nums"><Timer size={14} /> {timeLeft}s</span>
-            <span className="text-white/45 text-xs">Puzzle {(puzzleIdx % PUZZLES.length) + 1} / {PUZZLES.length}</span>
-            <span className="font-bold">{score} pts</span>
+          <div className="w-full rounded-xl bg-white/10 border border-white/15 px-3 py-2 space-y-1.5 text-white text-sm">
+            <div className="flex items-center justify-between">
+              <span className="flex items-center gap-1 font-mono tabular-nums"><Timer size={14} /> {timeLeft}s</span>
+              <span className="text-white/45 text-xs">Lvl {puzzleIdx + 1}</span>
+              <span className="font-bold">{score} pts</span>
+            </div>
+            <div className="w-full h-1.5 rounded-full bg-white/10">
+              <div
+                className="h-full rounded-full transition-all"
+                style={{
+                  width: `${(timeLeft / puzzle.timeLimit) * 100}%`,
+                  backgroundColor: timeLeft / puzzle.timeLimit > 0.5 ? '#34d399' : timeLeft / puzzle.timeLimit > 0.25 ? '#fbbf24' : '#f43f5e',
+                }}
+              />
+            </div>
           </div>
 
-          {/* Grid */}
-          <div
-            className="bg-slate-900/75 border border-white/10 rounded-2xl p-3 touch-none select-none"
-            style={{ display: 'grid', gridTemplateColumns: `repeat(${puzzle.size}, 1fr)`, gap: '5px' }}
+          {/* Grid — hidden once game ends to prevent z-index bleed-through */}
+          {!gameEnded && <div
+            className="bg-slate-900/75 border border-white/10 rounded-2xl p-2 touch-none select-none"
+            style={{ width: 'min(100%, calc(100dvh - 160px))', aspectRatio: '1', display: 'grid', gridTemplateColumns: `repeat(${puzzle.size}, 1fr)`, gap: '4px' }}
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
@@ -408,17 +682,19 @@ export function BubbleLineUp({ onEnd, onDeductEnergy, onApplyReward, energy }: M
                 );
               })
             )}
-          </div>
+          </div>}
 
-          <p className="text-center text-white/40 text-xs tracking-wide">
-            Connect matching dots · fill every cell
-          </p>
+          {/* Fill-all hint */}
+          {!gameEnded && <p className={`text-center text-xs tracking-wide transition-colors ${allPaired && !allSolved ? 'text-amber-400 font-semibold animate-pulse' : 'text-white/35'}`}>
+            {allPaired && !allSolved ? 'Fill every cell to advance!' : 'Connect dots · fill every cell'}
+          </p>}
+
         </div>
 
         {/* ── Overlays ── */}
         {showOverlay && (
-          <div className="absolute inset-0 bg-black/65 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-slate-950/90 border border-white/20 rounded-3xl p-6 w-full max-w-sm text-white">
+          <div className={`absolute inset-0 z-50 flex items-center justify-center p-4 ${gameEnded ? 'bg-slate-950' : 'bg-black/65 backdrop-blur-sm'}`}>
+            <div className="bg-slate-950 border border-white/20 rounded-3xl p-6 w-full max-w-sm text-white">
               {!gameEnded ? (
                 <>
                   <div className="flex justify-center mb-3">

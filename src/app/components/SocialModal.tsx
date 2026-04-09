@@ -24,7 +24,7 @@ function rollGift(): GiftResult {
   return { coins: 0, opals: 3 };
 }
 
-// ── 18-hour cooldown helpers (localStorage-backed) ────────────────────────────
+// ── 18-hour poke cooldown helpers (localStorage-backed) ──────────────────────
 const SOCIAL_COOLDOWN_MS = 18 * 60 * 60 * 1000; // 18 hours
 
 function getCooldownRemaining(key: string): number {
@@ -42,6 +42,38 @@ function formatCooldown(ms: number): string {
   const m = Math.floor((ms % 3_600_000) / 60_000);
   if (h > 0) return `${h}h ${m}m`;
   return `${m}m`;
+}
+
+// ── Daily gift limit (10 gifts per day, resets at midnight) ───────────────────
+const GIFT_DAILY_LIMIT = 10;
+const GIFT_COUNT_KEY = 'gift_daily_count';
+
+interface GiftDailyCount {
+  count: number;
+  date: string; // YYYY-MM-DD
+}
+
+function getGiftDailyCount(): GiftDailyCount {
+  const today = new Date().toISOString().split('T')[0];
+  const raw = localStorage.getItem(GIFT_COUNT_KEY);
+  if (!raw) return { count: 0, date: today };
+  try {
+    const data = JSON.parse(raw) as GiftDailyCount;
+    if (data.date !== today) return { count: 0, date: today };
+    return data;
+  } catch {
+    return { count: 0, date: today };
+  }
+}
+
+function incrementGiftCount() {
+  const today = new Date().toISOString().split('T')[0];
+  const current = getGiftDailyCount();
+  localStorage.setItem(GIFT_COUNT_KEY, JSON.stringify({ count: current.count + 1, date: today }));
+}
+
+function getGiftsRemaining(): number {
+  return Math.max(0, GIFT_DAILY_LIMIT - getGiftDailyCount().count);
 }
 
 const JIMMY_CHUBS_ID = 'jimmy-chubs';
@@ -671,26 +703,26 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
                                         </div>
                                       </div>
 
-                                      {/* Send Gift - full width, 18h cooldown */}
+                                      {/* Send Gift - full width, 10 gifts/day limit */}
                                       {(() => {
-                                        const giftRemaining = getCooldownRemaining(`gift_${friend.id}`);
-                                        const isGiftOnCooldown = giftRemaining > 0;
+                                        const giftsLeft = getGiftsRemaining();
+                                        const isGiftLimitReached = giftsLeft === 0;
                                         const justGiftedThis = justGifted[friend.id];
                                         const giftLabel = justGiftedThis
                                           ? justGiftedThis.opals > 0
                                             ? `Sent ${justGiftedThis.opals} opals!`
                                             : `Sent ${justGiftedThis.coins} coins!`
-                                          : isGiftOnCooldown
-                                            ? formatCooldown(giftRemaining)
+                                          : isGiftLimitReached
+                                            ? 'Limit reached today'
                                             : null;
                                         return (
                                           <motion.button
                                             onClick={(e) => {
                                               e.stopPropagation();
-                                              if (isGiftOnCooldown || justGiftedThis) return;
+                                              if (isGiftLimitReached || justGiftedThis) return;
                                               const gift = rollGift();
                                               onGiftFriend(friend.id, gift.coins, gift.opals);
-                                              recordCooldown(`gift_${friend.id}`);
+                                              incrementGiftCount();
                                               setJustGifted(prev => ({ ...prev, [friend.id]: gift }));
                                               setTimeout(() => {
                                                 setJustGifted(prev => {
@@ -703,22 +735,22 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
                                             }}
                                             className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl mb-2"
                                             style={{
-                                              background: justGiftedThis || isGiftOnCooldown
+                                              background: justGiftedThis || isGiftLimitReached
                                                 ? 'linear-gradient(135deg, rgba(134,239,172,0.45), rgba(74,222,128,0.35))'
                                                 : 'linear-gradient(135deg, rgba(99,102,241,0.18), rgba(139,92,246,0.14))',
-                                              border: justGiftedThis || isGiftOnCooldown
+                                              border: justGiftedThis || isGiftLimitReached
                                                 ? '1px solid rgba(74,222,128,0.45)'
                                                 : '1px solid rgba(139,92,246,0.35)',
-                                              opacity: isGiftOnCooldown && !justGiftedThis ? 0.6 : 1,
+                                              opacity: isGiftLimitReached && !justGiftedThis ? 0.6 : 1,
                                             }}
-                                            whileTap={justGiftedThis || isGiftOnCooldown ? {} : { scale: 0.95 }}
+                                            whileTap={justGiftedThis || isGiftLimitReached ? {} : { scale: 0.95 }}
                                           >
-                                            {justGiftedThis || isGiftOnCooldown ? <Check className="w-4 h-4 text-green-600" strokeWidth={2.5} /> : <Gift className="w-4 h-4 text-violet-600" strokeWidth={2} />}
+                                            {justGiftedThis || isGiftLimitReached ? <Check className="w-4 h-4 text-green-600" strokeWidth={2.5} /> : <Gift className="w-4 h-4 text-violet-600" strokeWidth={2} />}
                                             <span
                                               className="text-[10px] font-black tracking-wide uppercase"
-                                              style={{ color: justGiftedThis || isGiftOnCooldown ? '#16a34a' : '#6d28d9' }}
+                                              style={{ color: justGiftedThis || isGiftLimitReached ? '#16a34a' : '#6d28d9' }}
                                             >
-                                              {giftLabel ?? 'Send Gift'}
+                                              {giftLabel ?? `Send Gift (${giftsLeft} left)`}
                                             </span>
                                           </motion.button>
                                         );
@@ -849,61 +881,139 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
                     </div>
                   </div>
 
-                  {/* Ancestors */}
-                  {lineage.length > 0 ? (
-                    <>
-                      <div className="flex items-center gap-2 px-0.5">
-                        <Waves className="w-3.5 h-3.5 text-teal-400" strokeWidth={2} />
-                        <span className="text-violet-700 text-[11px] font-black tracking-wider uppercase">Ancestors</span>
-                        <div
-                          className="px-2 py-0.5 rounded-full text-[10px] font-bold text-teal-500"
-                          style={{ background: 'rgba(204,251,241,0.6)', border: '1px solid rgba(94,234,212,0.4)' }}
-                        >
-                          {lineage.length}
-                        </div>
+                  {/* Axolotl Pokédex */}
+                  <div className="flex items-center justify-between px-0.5">
+                    <div className="flex items-center gap-2">
+                      <Fish className="w-3.5 h-3.5 text-teal-400" strokeWidth={2} />
+                      <span className="text-violet-700 text-[11px] font-black tracking-wider uppercase">Axolodex</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <div
+                        className="px-2 py-0.5 rounded-full text-[10px] font-bold text-teal-500"
+                        style={{ background: 'rgba(204,251,241,0.6)', border: '1px solid rgba(94,234,212,0.4)' }}
+                      >
+                        {lineage.length + 1} discovered
                       </div>
+                    </div>
+                  </div>
 
-                      <div className="space-y-2">
-                        {lineage.slice().reverse().map((ancestor, index) => (
-                          <motion.div
-                            key={ancestor.id}
-                            className="rounded-2xl p-3.5 flex items-center gap-3"
-                            initial={{ opacity: 0, x: -16 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: index * 0.05 }}
-                            style={{
-                              background: 'linear-gradient(135deg, rgba(255,255,255,0.85) 0%, rgba(240,253,250,0.8) 100%)',
-                              border: '1.5px solid rgba(153,246,228,0.5)',
-                              boxShadow: '0 2px 10px -3px rgba(20,184,166,0.1)',
-                            }}
+                  {/* Grid of all axolotls (current + ancestors) */}
+                  <div className="grid grid-cols-3 gap-2">
+                    {/* Current axolotl — always first */}
+                    {(() => {
+                      const rarityColors: Record<string, { bg: string; border: string; text: string; glow: string }> = {
+                        Mythic:    { bg: 'rgba(253,224,71,0.18)',  border: 'rgba(253,224,71,0.55)',  text: '#a16207', glow: 'rgba(253,224,71,0.35)' },
+                        Legendary: { bg: 'rgba(251,146,60,0.18)',  border: 'rgba(251,146,60,0.55)',  text: '#c2410c', glow: 'rgba(251,146,60,0.3)' },
+                        Epic:      { bg: 'rgba(192,132,252,0.18)', border: 'rgba(192,132,252,0.55)', text: '#7e22ce', glow: 'rgba(192,132,252,0.3)' },
+                        Rare:      { bg: 'rgba(96,165,250,0.18)',  border: 'rgba(96,165,250,0.55)',  text: '#1d4ed8', glow: 'rgba(96,165,250,0.25)' },
+                        Common:    { bg: 'rgba(255,255,255,0.7)',   border: 'rgba(216,180,254,0.45)', text: '#6d28d9', glow: 'rgba(167,139,250,0.15)' },
+                      };
+                      const rarity = axolotl.rarity ?? 'Common';
+                      const rc = rarityColors[rarity] ?? rarityColors.Common;
+                      const img = rarity === 'Rare' ? axolotlRareImg : rarity === 'Epic' ? axolotlEpicImg : (rarity === 'Legendary' || rarity === 'Mythic') ? axolotlLegendaryImg : axolotlImg;
+                      return (
+                        <motion.div
+                          key="current"
+                          className="relative rounded-2xl p-2.5 flex flex-col items-center gap-1.5 overflow-hidden"
+                          initial={{ opacity: 0, scale: 0.85 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ delay: 0 }}
+                          style={{
+                            background: rc.bg,
+                            border: `1.5px solid ${rc.border}`,
+                            boxShadow: `0 4px 16px -4px ${rc.glow}`,
+                          }}
+                        >
+                          {/* Entry number */}
+                          <span className="absolute top-1.5 left-2 text-[8px] font-black opacity-40" style={{ color: rc.text }}>
+                            #{String(lineage.length + 1).padStart(3, '0')}
+                          </span>
+                          {/* Current badge */}
+                          <span
+                            className="absolute top-1.5 right-1.5 text-[7px] font-black px-1 py-0.5 rounded-full"
+                            style={{ background: 'rgba(251,191,36,0.85)', color: '#78350f' }}
                           >
-                            <div
-                              className="w-10 h-10 rounded-full shrink-0 border-2 shadow-md"
-                              style={{
-                                backgroundColor: ancestor.color + '55',
-                                borderColor: ancestor.color + '99',
-                                boxShadow: `0 2px 8px ${ancestor.color}44`,
-                              }}
-                            />
-                            <div className="flex-1 min-w-0">
-                              <div className="text-teal-900 font-bold text-[13px] truncate">{ancestor.name}</div>
-                              <div className="text-teal-600/70 text-[11px] font-medium">
-                                Gen {ancestor.generation} · {Math.floor(ancestor.age)} min lived
-                              </div>
-                            </div>
-                            <div
-                              className="text-[10px] font-black text-teal-500 px-2 py-1 rounded-full capitalize shrink-0"
-                              style={{ background: 'rgba(204,251,241,0.5)', border: '1px solid rgba(94,234,212,0.4)' }}
-                            >
-                              Gen {ancestor.generation}
-                            </div>
-                          </motion.div>
-                        ))}
-                      </div>
-                    </>
-                  ) : (
+                            NOW
+                          </span>
+                          {/* Image */}
+                          <div className="mt-3 w-12 h-12 flex items-center justify-center">
+                            <img src={img} alt={axolotl.name} className="w-full h-full object-contain drop-shadow-sm" style={{ filter: `drop-shadow(0 2px 6px ${axolotl.color}55)` }} />
+                          </div>
+                          {/* Color swatch */}
+                          <div className="w-5 h-1.5 rounded-full" style={{ background: axolotl.color }} />
+                          {/* Name */}
+                          <span className="text-[10px] font-black text-center leading-tight truncate w-full text-center" style={{ color: rc.text }}>
+                            {axolotl.name}
+                          </span>
+                          {/* Rarity + Stage */}
+                          <div className="flex flex-col items-center gap-0.5 w-full">
+                            <span className="text-[8px] font-bold opacity-70 capitalize" style={{ color: rc.text }}>{rarity}</span>
+                            <span className="text-[8px] font-medium opacity-50 capitalize" style={{ color: rc.text }}>{axolotl.stage}</span>
+                          </div>
+                        </motion.div>
+                      );
+                    })()}
+
+                    {/* Past axolotls — newest first */}
+                    {lineage.length > 0 && lineage.slice().reverse().map((ancestor, index) => {
+                      const rarityColors: Record<string, { bg: string; border: string; text: string; glow: string }> = {
+                        Mythic:    { bg: 'rgba(253,224,71,0.18)',  border: 'rgba(253,224,71,0.55)',  text: '#a16207', glow: 'rgba(253,224,71,0.35)' },
+                        Legendary: { bg: 'rgba(251,146,60,0.18)',  border: 'rgba(251,146,60,0.55)',  text: '#c2410c', glow: 'rgba(251,146,60,0.3)' },
+                        Epic:      { bg: 'rgba(192,132,252,0.18)', border: 'rgba(192,132,252,0.55)', text: '#7e22ce', glow: 'rgba(192,132,252,0.3)' },
+                        Rare:      { bg: 'rgba(96,165,250,0.18)',  border: 'rgba(96,165,250,0.55)',  text: '#1d4ed8', glow: 'rgba(96,165,250,0.25)' },
+                        Common:    { bg: 'rgba(255,255,255,0.7)',   border: 'rgba(216,180,254,0.45)', text: '#6d28d9', glow: 'rgba(167,139,250,0.15)' },
+                      };
+                      const rarity = ancestor.rarity ?? 'Common';
+                      const rc = rarityColors[rarity] ?? rarityColors.Common;
+                      const img = rarity === 'Rare' ? axolotlRareImg : rarity === 'Epic' ? axolotlEpicImg : (rarity === 'Legendary' || rarity === 'Mythic') ? axolotlLegendaryImg : axolotlImg;
+                      const entryNum = lineage.length - index;
+                      return (
+                        <motion.div
+                          key={ancestor.id}
+                          className="relative rounded-2xl p-2.5 flex flex-col items-center gap-1.5 overflow-hidden"
+                          initial={{ opacity: 0, scale: 0.85 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ delay: (index + 1) * 0.05 }}
+                          style={{
+                            background: rc.bg,
+                            border: `1.5px solid ${rc.border}`,
+                            boxShadow: `0 4px 16px -4px ${rc.glow}`,
+                          }}
+                        >
+                          {/* Entry number */}
+                          <span className="absolute top-1.5 left-2 text-[8px] font-black opacity-40" style={{ color: rc.text }}>
+                            #{String(entryNum).padStart(3, '0')}
+                          </span>
+                          {/* Gen badge */}
+                          <span
+                            className="absolute top-1.5 right-1.5 text-[7px] font-black px-1 py-0.5 rounded-full"
+                            style={{ background: 'rgba(204,251,241,0.8)', color: '#0f766e' }}
+                          >
+                            G{ancestor.generation}
+                          </span>
+                          {/* Image */}
+                          <div className="mt-3 w-12 h-12 flex items-center justify-center opacity-85">
+                            <img src={img} alt={ancestor.name} className="w-full h-full object-contain drop-shadow-sm" style={{ filter: `drop-shadow(0 2px 6px ${ancestor.color}55) grayscale(0.15)` }} />
+                          </div>
+                          {/* Color swatch */}
+                          <div className="w-5 h-1.5 rounded-full" style={{ background: ancestor.color }} />
+                          {/* Name */}
+                          <span className="text-[10px] font-black text-center leading-tight truncate w-full text-center" style={{ color: rc.text }}>
+                            {ancestor.name}
+                          </span>
+                          {/* Rarity + Stage */}
+                          <div className="flex flex-col items-center gap-0.5 w-full">
+                            <span className="text-[8px] font-bold opacity-70 capitalize" style={{ color: rc.text }}>{rarity}</span>
+                            <span className="text-[8px] font-medium opacity-50 capitalize" style={{ color: rc.text }}>{ancestor.stage}</span>
+                          </div>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+
+                  {lineage.length === 0 && (
                     <motion.div
-                      className="flex flex-col items-center justify-center py-10 gap-3 rounded-2xl"
+                      className="flex flex-col items-center justify-center py-6 gap-2 rounded-2xl"
                       style={{ background: 'rgba(255,255,255,0.5)', border: '1.5px dashed rgba(216,180,254,0.5)' }}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
@@ -913,10 +1023,10 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
                         animate={{ rotate: [0, -8, 8, -5, 5, 0] }}
                         transition={{ duration: 3, repeat: Infinity, repeatDelay: 1 }}
                       >
-                        <Leaf className="w-10 h-10 text-violet-400/60" strokeWidth={1.5} />
+                        <Leaf className="w-8 h-8 text-violet-400/60" strokeWidth={1.5} />
                       </motion.span>
-                      <p className="text-violet-400/80 text-[12px] font-medium text-center px-6">
-                        No ancestors yet — this is your first generation!
+                      <p className="text-violet-400/80 text-[11px] font-medium text-center px-6">
+                        Rebirth your axolotl to unlock more entries!
                       </p>
                     </motion.div>
                   )}

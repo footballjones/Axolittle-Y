@@ -202,30 +202,13 @@ export function FeedingTutorial({ step, axolotlName, onXpTipDismiss }: FeedingTu
               </div>
 
               {/* Tip body */}
-              <p className="text-slate-600 text-[12.5px] leading-relaxed">
-                Every time {axolotlName} eats, you earn{' '}
-                <span className="text-slate-800 font-bold">+0.1 XP</span>. Feed up to{' '}
-                <span className="text-slate-800 font-bold">20 times a day</span> to earn a full{' '}
-                <span className="text-yellow-600 font-bold">2 XP daily</span> from feeding!
+              <p className="text-slate-600 text-[12.5px] leading-snug">
+                Each feed = <span className="text-slate-800 font-bold">+0.1 XP</span>.{' '}
+                Max <span className="text-yellow-600 font-bold">2 XP/day</span> (20 feeds).
               </p>
 
-              {/* Progress illustration */}
-              <div className="mt-3 flex items-center gap-1.5">
-                <span className="text-[11px] text-slate-400 font-medium">0</span>
-                <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
-                  <motion.div
-                    className="h-full rounded-full bg-gradient-to-r from-yellow-400 to-amber-500"
-                    initial={{ width: '0%' }}
-                    animate={{ width: '100%' }}
-                    transition={{ delay: 0.5, duration: 2.5, ease: 'easeOut' }}
-                  />
-                </div>
-                <span className="text-[11px] text-amber-600 font-bold">2 XP</span>
-              </div>
-              <p className="text-center text-slate-400 text-[10px] mt-0.5">20 feeds = 2 XP max per day</p>
-
               {/* Dismiss hint */}
-              <p className="text-center text-slate-300 text-[10px] mt-3">Tap anywhere to continue</p>
+              <p className="text-center text-slate-300 text-[10px] mt-3">Tap to continue</p>
             </motion.div>
           </div>
         </motion.div>

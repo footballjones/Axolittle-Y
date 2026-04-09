@@ -70,7 +70,7 @@ export const SCORE_THRESHOLDS: Record<string, { good: number; exceptional: numbe
   'math-rush': { good: 7, exceptional: 25 }, // correct answers
   'coral-code': { good: 5, exceptional: 7 }, // guesses remaining (10 - guesses used)
   'tide-tiles': { good: 350, exceptional: 900 }, // merged-value score
-  'bubble-line-up': { good: 200, exceptional: 500 }, // puzzles solved (100–260 pts each)
+  'bubble-line-up': { good: 400, exceptional: 900 }, // pts per puzzle 100–700, full-grid bonus 50
   'fishing': { good: 25, exceptional: 100 }, // fish weight (kg)
   'bite-tag': { good: 60, exceptional: 90 }, // seconds survived
 };
