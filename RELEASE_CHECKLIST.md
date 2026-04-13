@@ -24,31 +24,21 @@
 
 ---
 
-## 💰 Monetization & Engagement (Status: ❌ Missing)
+## 💰 Monetization & Engagement (Status: ⚠️ Partial)
 
-### Critical for Release
-- [ ] **Rewarded ads system**: 
-  - Watch ad → earn 2-3 Opals
-  - Max 5 per day
-  - Opt-in only (never forced)
-  - Integration with AdMob or similar
-  
-- [ ] **Daily spin wheel**:
-  - One free spin per day
-  - Rewards: Coins (most), Opals (rare)
-  - Visual wheel component
-  - Daily reset logic
-  
-- [ ] **Daily login bonus**:
-  - Small coin reward for opening app
-  - Login streak tracking (7, 30, 100 days)
-  - Streak milestone rewards (Opals)
-  
+### Completed ✅
+- [x] **Daily spin wheel** — one free spin per day, coins/opals rewards, daily reset
+- [x] **Daily login bonus** — coins each day, streak tracking (3/7/14/30/50/100 days), milestone opal rewards
+- [x] **Opals earned in-game** — mini-game exceptional scores, achievements, spin wheel, streak milestones
+
+### Deferred to v2 (not in v1 submission)
+- [ ] **Rewarded ads system** — out of scope for v1; no ad UI exists in the app
 - [ ] **In-App Purchases (IAP)**:
   - Real payment integration (StoreKit for iOS)
-  - Opal purchase packs
+  - Opal purchase packs with real pricing
   - Receipt validation
   - Restore purchases functionality
+  - *Note: dollar-price UI has been removed from v1; opal store shows in-game earning methods only*
 
 ### Nice to Have
 - [ ] **Achievement system**: 

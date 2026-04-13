@@ -263,7 +263,6 @@ export default function App() {
     handleMiniGameApplyReward,
     handleMiniGameEnd,
     handleBuyCoins,
-    handleBuyOpals,
     handleBuyFilter,
     handleEquipFilter,
     handleBuyShrimp,
@@ -642,7 +641,6 @@ export default function App() {
         delayNextTutorial={delayNextTutorial}
         onWaterChange={handleWaterChange}
         onBuyCoins={handleBuyCoins}
-        onBuyOpals={handleBuyOpals}
         onBuyFilter={handleBuyFilter}
         onEquipFilter={handleEquipFilter}
         onBuyShrimp={handleBuyShrimp}

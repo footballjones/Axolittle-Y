@@ -33,9 +33,11 @@ class ViewController: UIViewController, WKNavigationDelegate {
         // Create web view
         webView = WKWebView(frame: .zero, configuration: config)
         webView.navigationDelegate = self
+        #if DEBUG
         if #available(iOS 16.4, *) {
             webView.isInspectable = true
         }
+        #endif
         webView.scrollView.contentInsetAdjustmentBehavior = .never
         webView.scrollView.bounces = false
         webView.isOpaque = false

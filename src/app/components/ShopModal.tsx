@@ -17,7 +17,6 @@ interface ShopModalProps {
   opals: number;
 
   onBuyCoins: (pack: { opals: number; coins: number }) => void;
-  onBuyOpals: (pack: { price: string; opals: number }) => void;
   onBuyShrimp?: (pack: { count: number; opals: number }) => void;
   onBuyFilter?: (filter: { id: string; name: string; coins: number; opals: number }) => void;
   onEquipFilter?: (filterId: string) => void;
@@ -50,13 +49,6 @@ const COIN_PACKS = [
   { opals: 50, coins: 8000, label: 'Mega Pack', best: false },
 ];
 
-const OPAL_PACKS = [
-  { price: '$0.99', opals: 10, label: 'A Few' },
-  { price: '$2.99', opals: 35, label: 'Handful' },
-  { price: '$4.99', opals: 75, label: 'Armful' },
-  { price: '$9.99', opals: 200, label: 'Catch of the Day' },
-  { price: '$19.99', opals: 500, label: 'Whale Pack' },
-];
 
 const SHRIMP_PACKS = [
   { count: 10, opals: 10, label: 'Small Colony' },
@@ -249,7 +241,6 @@ export function ShopModal({
   coins,
   opals,
   onBuyCoins,
-  onBuyOpals,
   onBuyShrimp,
   onBuyFilter,
   onEquipFilter,
@@ -431,40 +422,45 @@ export function ShopModal({
                   transition={{ duration: 0.22 }}
                   className="space-y-5 pt-3"
                 >
-                  {/* Buy Opals */}
+                  {/* Earn Opals */}
                   <div>
                     <SectionHeader
                       icon={Gem}
                       iconBg="linear-gradient(135deg, #22d3ee, #3b82f6)"
                       iconShadow="0 3px 10px rgba(34,211,238,0.35)"
-                      title="Buy Opals"
+                      title="Earn Opals"
                       titleGradient="linear-gradient(135deg, #0891b2, #2563eb)"
                     />
-                    <div className="space-y-1.5">
-                      {OPAL_PACKS.map((pack, i) => (
-                        <ShopRowTile
-                          key={i}
-                          index={i}
-                          onClick={() => onBuyOpals(pack)}
-                          cardBg="linear-gradient(135deg, rgba(255,255,255,0.88) 0%, rgba(240,249,255,0.85) 100%)"
-                          cardBorder="1.5px solid rgba(186,230,253,0.6)"
-                          iconNode={<Gem size={20} className="text-violet-500" />}
-                          title={pack.label}
-                          subtitle={`${pack.opals} Opals`}
-                          priceContent={
-                            <PriceBadge
-                              bg="linear-gradient(135deg, #22d3ee, #3b82f6)"
-                              border="none"
-                              shadow="0 3px 10px rgba(34,211,238,0.3)"
-                              icon={Sparkles}
-                              value={pack.price}
-                              textColor="#fff"
-                            />
-                          }
-                        />
-                      ))}
+                    <div
+                      className="rounded-2xl p-4 space-y-3"
+                      style={{
+                        background: 'linear-gradient(135deg, rgba(240,249,255,0.9), rgba(224,242,254,0.85))',
+                        border: '1.5px solid rgba(186,230,253,0.6)',
+                      }}
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className="rounded-xl p-2 flex-shrink-0" style={{ background: 'linear-gradient(135deg, #22d3ee, #3b82f6)' }}>
+                          <Gem size={18} className="text-white" />
+                        </div>
+                        <div>
+                          <p className="text-[13px] font-black text-slate-700">Ways to earn Opals</p>
+                          <p className="text-[11px] text-slate-500">Keep playing to collect more!</p>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        {[
+                          { icon: <Sparkles size={13} className="text-amber-500" />, text: 'Daily spin wheel — free every day' },
+                          { icon: <TrendingUp size={13} className="text-emerald-500" />, text: 'Reach login streak milestones' },
+                          { icon: <Bug size={13} className="text-violet-500" />, text: 'Unlock achievements' },
+                          { icon: <Gem size={13} className="text-cyan-500" />, text: 'Score exceptional in mini-games' },
+                        ].map(({ icon, text }, i) => (
+                          <div key={i} className="flex items-center gap-2">
+                            <div className="w-5 h-5 rounded-full bg-white/70 flex items-center justify-center flex-shrink-0">{icon}</div>
+                            <p className="text-[12px] text-slate-600">{text}</p>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                    <p className="text-violet-400/50 text-[9px] mt-2 text-center italic">Demo only — no real purchases made.</p>
                   </div>
 
                   {/* Buy Coins */}

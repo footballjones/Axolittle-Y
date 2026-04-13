@@ -117,8 +117,6 @@ export interface ModalManagerProps {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onBuyCoins: (pack: any) => void;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  onBuyOpals: (pack: any) => void;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onBuyFilter: (filter: any) => void;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onEquipFilter: (filterId: any) => void;
@@ -213,7 +211,6 @@ export function ModalManager({
   delayNextTutorial,
   onWaterChange,
   onBuyCoins,
-  onBuyOpals,
   onBuyFilter,
   onEquipFilter,
   onBuyShrimp,
@@ -255,7 +252,6 @@ export function ModalManager({
           coins={coins}
           opals={opals}
           onBuyCoins={onBuyCoins}
-          onBuyOpals={onBuyOpals}
           onBuyFilter={onBuyFilter}
           onEquipFilter={onEquipFilter}
           onBuyShrimp={(pack) => {
