@@ -238,9 +238,12 @@ export function CoralCode({ onEnd, onDeductEnergy, onApplyReward, energy }: Mini
         setGameEnded(true);
         setFinalScore(score);
         if (won) setWinFlash(true);
-        const rewards = hadEnergyAtStart
+        const rawRewards = hadEnergyAtStart
           ? calculateRewards('coral-code', score)
           : { tier: 'normal', xp: 0, coins: 0, opals: undefined };
+        const rewards = selectedDifficulty === 'easy'
+          ? { ...rawRewards, xp: Math.min(rawRewards.xp, 2) }
+          : rawRewards;
         if (hadEnergyAtStart) {
           cumulativeRef.current.xp += rewards.xp;
           cumulativeRef.current.hadAnyEnergy = true;

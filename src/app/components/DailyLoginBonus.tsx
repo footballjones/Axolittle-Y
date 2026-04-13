@@ -89,14 +89,14 @@ export function DailyLoginBonus({
 
           {/* Modal */}
           <motion.div
-            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto"
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}
             onClick={(e) => e.stopPropagation()}
           >
             <div
-              className="w-full max-w-sm rounded-3xl overflow-hidden"
+              className="w-full max-w-sm rounded-3xl overflow-hidden my-auto"
               style={{
                 background: 'linear-gradient(160deg, #f5f3ff 0%, #ede9fe 60%, #fef9c3 100%)',
                 border: '2px solid rgba(168,85,247,0.4)',

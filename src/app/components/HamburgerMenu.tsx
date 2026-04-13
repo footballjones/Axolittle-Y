@@ -442,7 +442,7 @@ export function HamburgerMenu({
                   {showRebirthButton ? 'Rebirth Available' : 'Rebirth'}
                 </span>
                 <span className={`text-[9px] font-medium ${showRebirthButton ? 'text-violet-500/80' : 'text-slate-400/80'}`}>
-                  {showRebirthButton ? 'Start a new generation' : 'Reach Elder \u2022 Level 40'}
+                  {showRebirthButton ? 'Start a new generation' : 'Reach Elder \u2022 Level 30'}
                 </span>
               </div>
             </motion.button>
@@ -480,11 +480,11 @@ export function HamburgerMenu({
               <div className="flex-1 overflow-y-auto overscroll-contain px-4 py-4 space-y-2.5" style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-y' }}>
                 {[
                   { icon: 'Utensils', color: 'rgba(16,185,129,0.12)', border: 'rgba(52,211,153,0.18)', title: 'Keep Your Axolotl Fed', tip: "Tap Feed to drop blood worms. Your axolotl swims up and eats them. Hunger drops over time \u2014 don\u2019t let it bottom out!" },
-                  { icon: 'Gamepad2', color: 'rgba(139,92,246,0.12)', border: 'rgba(167,139,250,0.18)', title: 'Play Mini Games', tip: 'Head to Mini Games to earn XP and coins. Level up your axolotl to unlock the ability to rebirth at Level 40.' },
+                  { icon: 'Gamepad2', color: 'rgba(139,92,246,0.12)', border: 'rgba(167,139,250,0.18)', title: 'Play Mini Games', tip: 'Head to Mini Games to earn XP and coins. Level up your axolotl to unlock the ability to rebirth at Level 30.' },
                   { icon: 'Sparkles', color: 'rgba(14,165,233,0.12)', border: 'rgba(56,189,248,0.18)', title: 'Clean the Tank', tip: "Tap Clean to remove poops and keep the tank clean. If cleanliness drops below 50% for more than a day, it will start to affect water quality." },
                   { icon: 'Droplets', color: 'rgba(99,102,241,0.12)', border: 'rgba(129,140,248,0.18)', title: 'Change the Water', tip: 'You can change the water in the aquarium to clean it, but doing so will lock mini games for 2 hours. The lock can be sped up by spending opals.' },
                   { icon: 'Sprout', color: 'rgba(34,197,94,0.12)', border: 'rgba(74,222,128,0.18)', title: 'Evolve Through 4 Stages', tip: 'Your axolotl grows from Hatchling \u2192 Sprout \u2192 Guardian \u2192 Elder. Keep all stats high to evolve faster. Eggs hatch into Hatchling at Level 1.' },
-                  { icon: 'RefreshCw', color: 'rgba(168,85,247,0.12)', border: 'rgba(216,180,254,0.18)', title: 'Rebirth for Bonuses', tip: 'At Elder stage (Level 40) you can Rebirth \u2014 start a new generation with bonus coins and inherited colour traits.' },
+                  { icon: 'RefreshCw', color: 'rgba(168,85,247,0.12)', border: 'rgba(216,180,254,0.18)', title: 'Rebirth for Bonuses', tip: 'At Elder stage (Level 30) you can Rebirth \u2014 start a new generation with bonus coins and inherited colour traits.' },
                   { icon: 'ShoppingCart', color: 'rgba(245,158,11,0.12)', border: 'rgba(251,191,36,0.18)', title: 'Customize Your Tank', tip: 'Tap the Shop button in the Aquarium to buy decorations, plants, and filters. Unlock backgrounds with opals.' },
                   { icon: 'Users', color: 'rgba(236,72,153,0.12)', border: 'rgba(244,114,182,0.18)', title: 'Play with Friends', tip: 'Add friends via code in Social. Poke them, visit their tanks, or hatch eggs together.' },
                 ].map((item, i) => (

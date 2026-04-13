@@ -8,7 +8,7 @@ import { Axolotl, AxolotlStats, GameState } from '../types/game';
 import { GAME_CONFIG } from '../config/game';
 
 export const STAT_DECAY_RATE = {
-  hunger: 0.5, // per minute
+  hunger: 0.25, // per minute (1 point per 4 minutes)
   happiness: 0.3,
   cleanliness: 0.2,
   waterQuality: 0.0139, // ~5 days to fully deplete (100 / 7200 min)
