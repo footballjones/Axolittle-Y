@@ -357,11 +357,25 @@ export function BubbleLineUp({ onEnd, onDeductEnergy, onApplyReward, energy }: M
   const [gameEnded, setGameEnded]           = useState(false);
   const [hadEnergyAtStart, setHadEnergy]    = useState(false);
   const [finalRewards, setFinalRewards]     = useState<{ tier: string; xp: number; coins: number; opals?: number } | null>(null);
+  const [gridSize, setGridSize]             = useState(300);
 
   const scoreRef        = useRef(0);
   const drawingRef      = useRef<{ color: Color; cells: Pos[] } | null>(null);
   const advancedRef     = useRef(false);
   const timeLeftRef     = useRef(PUZZLES[0].timeLimit);
+  const gridAreaRef     = useRef<HTMLDivElement>(null);
+
+  // Measure available space for the grid so it never overflows on any device/WKWebView.
+  useEffect(() => {
+    const el = gridAreaRef.current;
+    if (!el) return;
+    const obs = new ResizeObserver(entries => {
+      const { width, height } = entries[0].contentRect;
+      setGridSize(Math.floor(Math.min(width, height)));
+    });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
 
   const puzzle = PUZZLES[puzzleIdx % PUZZLES.length];
 
@@ -585,30 +599,30 @@ export function BubbleLineUp({ onEnd, onDeductEnergy, onApplyReward, energy }: M
   return (
     <GameWrapper gameName="Bubble Line Up" score={score} onEnd={onEnd} energy={energy} gameEnded={gameEnded}>
       <div className="relative w-full h-full flex flex-col items-center p-3 bg-gradient-to-br from-slate-950 via-blue-950 to-indigo-950">
-        <div className="w-full flex flex-col items-center space-y-3">
-
-          {/* HUD */}
-          <div className="w-full rounded-xl bg-white/10 border border-white/15 px-3 py-2 space-y-1.5 text-white text-sm">
-            <div className="flex items-center justify-between">
-              <span className="flex items-center gap-1 font-mono tabular-nums"><Timer size={14} /> {timeLeft}s</span>
-              <span className="text-white/45 text-xs">Lvl {puzzleIdx + 1}</span>
-              <span className="font-bold">{score} pts</span>
-            </div>
-            <div className="w-full h-1.5 rounded-full bg-white/10">
-              <div
-                className="h-full rounded-full transition-all"
-                style={{
-                  width: `${(timeLeft / puzzle.timeLimit) * 100}%`,
-                  backgroundColor: timeLeft / puzzle.timeLimit > 0.5 ? '#34d399' : timeLeft / puzzle.timeLimit > 0.25 ? '#fbbf24' : '#f43f5e',
-                }}
-              />
-            </div>
+        {/* HUD */}
+        <div className="w-full flex-shrink-0 rounded-xl bg-white/10 border border-white/15 px-3 py-2 space-y-1.5 text-white text-sm">
+          <div className="flex items-center justify-between">
+            <span className="flex items-center gap-1 font-mono tabular-nums"><Timer size={14} /> {timeLeft}s</span>
+            <span className="text-white/45 text-xs">Lvl {puzzleIdx + 1}</span>
+            <span className="font-bold">{score} pts</span>
           </div>
+          <div className="w-full h-1.5 rounded-full bg-white/10">
+            <div
+              className="h-full rounded-full transition-all"
+              style={{
+                width: `${(timeLeft / puzzle.timeLimit) * 100}%`,
+                backgroundColor: timeLeft / puzzle.timeLimit > 0.5 ? '#34d399' : timeLeft / puzzle.timeLimit > 0.25 ? '#fbbf24' : '#f43f5e',
+              }}
+            />
+          </div>
+        </div>
 
+        {/* Flex area that measures available space for the grid */}
+        <div ref={gridAreaRef} className="flex-1 min-h-0 w-full flex items-center justify-center mt-3">
           {/* Grid — hidden once game ends to prevent z-index bleed-through */}
           {!gameEnded && <div
             className="bg-slate-900/75 border border-white/10 rounded-2xl p-2 touch-none select-none"
-            style={{ width: 'min(100%, calc(100dvh - 160px))', aspectRatio: '1', display: 'grid', gridTemplateColumns: `repeat(${puzzle.size}, 1fr)`, gap: '4px' }}
+            style={{ width: gridSize, height: gridSize, display: 'grid', gridTemplateColumns: `repeat(${puzzle.size}, 1fr)`, gap: '4px' }}
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
@@ -683,13 +697,12 @@ export function BubbleLineUp({ onEnd, onDeductEnergy, onApplyReward, energy }: M
               })
             )}
           </div>}
-
-          {/* Fill-all hint */}
-          {!gameEnded && <p className={`text-center text-xs tracking-wide transition-colors ${allPaired && !allSolved ? 'text-amber-400 font-semibold animate-pulse' : 'text-white/35'}`}>
-            {allPaired && !allSolved ? 'Fill every cell to advance!' : 'Connect dots · fill every cell'}
-          </p>}
-
         </div>
+
+        {/* Fill-all hint */}
+        {!gameEnded && <p className={`flex-shrink-0 text-center text-xs tracking-wide mt-2 transition-colors ${allPaired && !allSolved ? 'text-amber-400 font-semibold animate-pulse' : 'text-white/35'}`}>
+          {allPaired && !allSolved ? 'Fill every cell to advance!' : 'Connect dots · fill every cell'}
+        </p>}
 
         {/* ── Overlays ── */}
         {showOverlay && (

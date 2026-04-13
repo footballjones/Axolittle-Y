@@ -583,6 +583,14 @@ export function KeepeyUpey({ onEnd, onDeductEnergy, onApplyReward, energy, sound
     }
   }, [reset, draw, energy, onDeductEnergy]);
 
+  // Warm-up draw while the overlay is visible so WKWebView JIT-compiles the
+  // canvas draw paths before the user hits Play — eliminates the 1-2 s stutter.
+  useEffect(() => {
+    if (!showOverlay) return;
+    const ctx = ctxRef.current;
+    if (ctx) draw(ctx);
+  }, [showOverlay, draw]);
+
   // Start game loop
   useEffect(() => {
     if (isPlaying && !isPaused) {

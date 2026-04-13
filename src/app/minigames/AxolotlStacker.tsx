@@ -358,16 +358,20 @@ export function AxolotlStacker({ onEnd, onDeductEnergy, onApplyReward, energy }:
     }
   }, [energy, onDeductEnergy, spawnBlock, draw, gameLoop]);
 
-  // Initialize canvas
+  // Initialize canvas + warm-up draw while the overlay is visible so WKWebView
+  // JIT-compiles the canvas draw paths before the user hits Play.
   useEffect(() => {
     const canvas = canvasRef.current;
     if (canvas && !ctxRef.current) {
-      ctxRef.current = canvas.getContext('2d', { 
-        alpha: false, 
-        desynchronized: true 
+      ctxRef.current = canvas.getContext('2d', {
+        alpha: false,
+        desynchronized: true,
       });
     }
-  }, []);
+    if (ctxRef.current && showOverlay) {
+      draw(ctxRef.current);
+    }
+  }, [showOverlay, draw]);
 
   // Set up game end handler
   useEffect(() => {
