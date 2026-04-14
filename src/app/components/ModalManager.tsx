@@ -28,6 +28,7 @@ import { SyncConflictModal } from './SyncConflictModal';
 import { WellbeingIntroModal } from './WellbeingIntroModal';
 import { WellbeingCompleteModal } from './WellbeingCompleteModal';
 import { MenuTutorialOverlay } from './MenuTutorialOverlay';
+import { MenuTutorialPrompt } from './MenuTutorialPrompt';
 import { MenuTutorialCompleteModal } from './MenuTutorialCompleteModal';
 import { JuvenileUnlockModal } from './JuvenileUnlockModal';
 import { Level7UnlockModal } from './Level7UnlockModal';
@@ -89,6 +90,8 @@ export interface ModalManagerProps {
   shrimpTutorialShopPhase: 'info' | 'buy' | false;
   setShrimpTutorialShopPhase: (v: 'info' | 'buy' | false) => void;
   showMenuTutorial: boolean;
+  showMenuTutorialPrompt: boolean;
+  onStartMenuTutorial: () => void;
   showMenuTutorialComplete: boolean;
   setShowMenuTutorialComplete: (v: boolean) => void;
   showRebirthReady: boolean;
@@ -190,6 +193,8 @@ export function ModalManager({
   shrimpTutorialShopPhase,
   setShrimpTutorialShopPhase,
   showMenuTutorial,
+  showMenuTutorialPrompt,
+  onStartMenuTutorial,
   showMenuTutorialComplete,
   setShowMenuTutorialComplete,
   showRebirthReady,
@@ -438,6 +443,13 @@ export function ModalManager({
               )
             }
           />
+        )}
+      </AnimatePresence>
+
+      {/* Menu tutorial prompt — shown on aquarium whenever tour is pending */}
+      <AnimatePresence>
+        {showMenuTutorialPrompt && !showMenuTutorial && (
+          <MenuTutorialPrompt onStart={onStartMenuTutorial} />
         )}
       </AnimatePresence>
 

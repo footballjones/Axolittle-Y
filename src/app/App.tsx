@@ -205,6 +205,8 @@ export default function App() {
     shrimpTutorialShopPhase,
     setShrimpTutorialShopPhase,
     showMenuTutorial,
+    showMenuTutorialPrompt,
+    handleStartMenuTutorial,
     showMenuTutorialComplete,
     setShowMenuTutorialComplete,
     showRebirthReady,
@@ -663,6 +665,8 @@ export default function App() {
         shrimpTutorialShopPhase={shrimpTutorialShopPhase}
         setShrimpTutorialShopPhase={setShrimpTutorialShopPhase}
         showMenuTutorial={showMenuTutorial}
+        showMenuTutorialPrompt={showMenuTutorialPrompt}
+        onStartMenuTutorial={handleStartMenuTutorial}
         showMenuTutorialComplete={showMenuTutorialComplete}
         setShowMenuTutorialComplete={setShowMenuTutorialComplete}
         showRebirthReady={showRebirthReady}

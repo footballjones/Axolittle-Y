@@ -59,6 +59,10 @@ export interface UseOnboardingReturn {
   setShrimpTutorialShopPhase: (v: 'info' | 'buy' | false) => void;
   showMenuTutorial: boolean;
   setShowMenuTutorial: (v: boolean) => void;
+  /** True when conditions are met and we should prompt the player to start the menu tour. */
+  showMenuTutorialPrompt: boolean;
+  /** Call this when the player taps "Start Tour" on the prompt. */
+  handleStartMenuTutorial: () => void;
   showMenuTutorialComplete: boolean;
   setShowMenuTutorialComplete: (v: boolean) => void;
   showRebirthReady: boolean;
@@ -123,6 +127,7 @@ export function useOnboarding({
   const [showShrimpInfoModal, setShowShrimpInfoModal] = useState(false);
   const [shrimpTutorialShopPhase, setShrimpTutorialShopPhase] = useState<'info' | 'buy' | false>(false);
   const [showMenuTutorial, setShowMenuTutorial] = useState(false);
+  const [showMenuTutorialPrompt, setShowMenuTutorialPrompt] = useState(false);
   const [showMenuTutorialComplete, setShowMenuTutorialComplete] = useState(false);
   const [showRebirthReady, setShowRebirthReady] = useState(false);
   const shrimpTutorialTriggeredRef = useRef(false);
@@ -216,7 +221,9 @@ export function useOnboarding({
     }
   }, [showMenuTutorialComplete, showMenuTutorial]);
 
-  // Menu tutorial: auto-start after wellbeing complete
+  // Menu tutorial: show prompt every time the player is on the home screen
+  // until the tutorial is fully complete. This prevents a broken mid-tutorial
+  // state after app restart or navigating away.
   useEffect(() => {
     if (
       gameState?.wellbeingCompleteSeen === true &&
@@ -227,8 +234,12 @@ export function useOnboarding({
       tutorialAllowed &&
       currentScreen === 'home'
     ) {
-      const t = setTimeout(() => setShowMenuTutorial(true), 1500);
+      const t = setTimeout(() => setShowMenuTutorialPrompt(true), 800);
       return () => clearTimeout(t);
+    }
+    // Hide prompt when conditions are no longer met (e.g. navigated away)
+    if (currentScreen !== 'home') {
+      setShowMenuTutorialPrompt(false);
     }
   }, [
     gameState?.wellbeingCompleteSeen,
@@ -239,6 +250,14 @@ export function useOnboarding({
     showMenuTutorial,
     showMenuTutorialComplete,
   ]);
+
+  // Reset the active tutorial overlay if the player navigates away from home
+  // mid-tutorial. The prompt will re-appear when they return to home.
+  useEffect(() => {
+    if (showMenuTutorial && currentScreen !== 'home') {
+      setShowMenuTutorial(false);
+    }
+  }, [currentScreen, showMenuTutorial]);
 
   // ── Effects: mini-game tutorial phase ─────────────────────────────────────
 
@@ -294,6 +313,11 @@ export function useOnboarding({
     ['Feed', 'Playtime', 'Clean'].forEach(b => lockedActionButtons.add(b));
   }
 
+  const handleStartMenuTutorial = useCallback(() => {
+    setShowMenuTutorialPrompt(false);
+    setShowMenuTutorial(true);
+  }, []);
+
   return {
     showHatchingIntro,
     setShowHatchingIntro,
@@ -319,6 +343,8 @@ export function useOnboarding({
     setShrimpTutorialShopPhase,
     showMenuTutorial,
     setShowMenuTutorial,
+    showMenuTutorialPrompt,
+    handleStartMenuTutorial,
     showMenuTutorialComplete,
     setShowMenuTutorialComplete,
     showRebirthReady,
