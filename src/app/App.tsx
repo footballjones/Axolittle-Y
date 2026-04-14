@@ -666,7 +666,19 @@ export default function App() {
         setShrimpTutorialShopPhase={setShrimpTutorialShopPhase}
         showMenuTutorial={showMenuTutorial}
         showMenuTutorialPrompt={showMenuTutorialPrompt}
-        onStartMenuTutorial={handleStartMenuTutorial}
+        onStartMenuTutorial={() => {
+          // Close everything and return to the aquarium before starting the tour
+          // so the overlay always begins from a clean home-screen state.
+          setActiveModal(null);
+          setShowHamburgerMenu(false);
+          setCurrentScreen('home');
+          setShowNotifPanel(false);
+          setShowInventoryPanel(false);
+          setShowEggsPanel(false);
+          setShowAchievementsPanel(false);
+          setShowHowToPlayPanel(false);
+          handleStartMenuTutorial();
+        }}
         showMenuTutorialComplete={showMenuTutorialComplete}
         setShowMenuTutorialComplete={setShowMenuTutorialComplete}
         showRebirthReady={showRebirthReady}
