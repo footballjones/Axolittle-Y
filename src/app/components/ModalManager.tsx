@@ -304,6 +304,7 @@ export function ModalManager({
             setShowJimmyAquarium(true);
           }}
           lineage={lineage}
+          isUnder13={isUnder13}
         />
       )}
 

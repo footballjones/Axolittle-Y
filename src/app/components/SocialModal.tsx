@@ -179,13 +179,15 @@ interface SocialModalProps {
   onAddFriend: (code: string) => Promise<string | null>;
   onRemoveFriend: (friendId: string) => void;
   onBreed: (friendId: string) => void;
+  /** COPPA: under-13 users see Jimmy & Chubs but cannot add friends or share codes. */
+  isUnder13?: boolean;
   onGiftFriend: (friendId: string, coins: number, opals: number) => void;
   onPokeFriend: (friendId: string) => void;
   onVisitJimmy: () => void;
   lineage: Axolotl[];
 }
 
-export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend, onRemoveFriend, onBreed: _onBreed, onGiftFriend, onPokeFriend, onVisitJimmy, lineage }: SocialModalProps) {
+export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend, onRemoveFriend, onBreed: _onBreed, onGiftFriend, onPokeFriend, onVisitJimmy, lineage, isUnder13 = false }: SocialModalProps) {
   const [addFriendInput, setAddFriendInput] = useState('');
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<'friends' | 'lineage'>('friends');
@@ -400,17 +402,19 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
                       >
                         {friends.length}
                       </div>
-                      <motion.button
-                        onClick={() => setShowAddFriendModal(true)}
-                        className="rounded-full p-1.5 active:scale-90 flex-shrink-0"
-                        style={{
-                          background: 'linear-gradient(135deg, rgba(167,139,250,0.5), rgba(139,92,246,0.4))',
-                          border: '1px solid rgba(139,92,246,0.35)',
-                        }}
-                        whileTap={{ scale: 0.85 }}
-                      >
-                        <Plus className="w-3.5 h-3.5 text-violet-600" strokeWidth={2.5} />
-                      </motion.button>
+                      {!isUnder13 && (
+                        <motion.button
+                          onClick={() => setShowAddFriendModal(true)}
+                          className="rounded-full p-1.5 active:scale-90 flex-shrink-0"
+                          style={{
+                            background: 'linear-gradient(135deg, rgba(167,139,250,0.5), rgba(139,92,246,0.4))',
+                            border: '1px solid rgba(139,92,246,0.35)',
+                          }}
+                          whileTap={{ scale: 0.85 }}
+                        >
+                          <Plus className="w-3.5 h-3.5 text-violet-600" strokeWidth={2.5} />
+                        </motion.button>
+                      )}
                     </div>
 
                     {friends.length === 0 ? (
@@ -427,7 +431,9 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
                           <Users className="w-10 h-10 text-violet-300" strokeWidth={1.5} />
                         </motion.div>
                         <p className="text-violet-400/80 text-[12px] font-medium text-center px-4">
-                          No friends yet — share your code to connect!
+                          {isUnder13
+                            ? 'A parent account is needed to add friends.'
+                            : 'No friends yet — share your code to connect!'}
                         </p>
                       </motion.div>
                     ) : (
@@ -786,44 +792,46 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
                     )}
                   </div>
 
-                  {/* Your code card */}
-                  <div
-                    className="rounded-2xl p-3.5"
-                    style={{
-                      background: 'linear-gradient(135deg, rgba(255,255,255,0.85) 0%, rgba(245,240,255,0.9) 100%)',
-                      border: '1.5px solid rgba(216,180,254,0.5)',
-                      boxShadow: '0 4px 16px -4px rgba(139,92,246,0.1)',
-                    }}
-                  >
-                    <div className="flex items-center gap-1.5 mb-2">
-                      <Droplets className="w-4 h-4 text-violet-500" />
-                      <span className="text-violet-700 text-[11px] font-black tracking-wider uppercase">Your Code</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div
-                        className="flex-1 rounded-xl px-3 py-2 font-mono text-violet-800 text-xs tracking-widest"
-                        style={{ background: 'rgba(237,233,254,0.8)', border: '1px solid rgba(196,181,253,0.5)' }}
-                      >
-                        {myCode}
+                  {/* Your code card — hidden for under-13 (parent account required) */}
+                  {!isUnder13 && (
+                    <div
+                      className="rounded-2xl p-3.5"
+                      style={{
+                        background: 'linear-gradient(135deg, rgba(255,255,255,0.85) 0%, rgba(245,240,255,0.9) 100%)',
+                        border: '1.5px solid rgba(216,180,254,0.5)',
+                        boxShadow: '0 4px 16px -4px rgba(139,92,246,0.1)',
+                      }}
+                    >
+                      <div className="flex items-center gap-1.5 mb-2">
+                        <Droplets className="w-4 h-4 text-violet-500" />
+                        <span className="text-violet-700 text-[11px] font-black tracking-wider uppercase">Your Code</span>
                       </div>
-                      <motion.button
-                        onClick={copyCode}
-                        className="rounded-xl p-2 active:scale-90"
-                        style={{
-                          background: copied
-                            ? 'linear-gradient(135deg, rgba(134,239,172,0.6), rgba(74,222,128,0.5))'
-                            : 'linear-gradient(135deg, rgba(167,139,250,0.5), rgba(139,92,246,0.4))',
-                          border: copied ? '1px solid rgba(74,222,128,0.4)' : '1px solid rgba(139,92,246,0.35)',
-                        }}
-                        whileTap={{ scale: 0.88 }}
-                      >
-                        {copied
-                          ? <Check className="w-4 h-4 text-emerald-600" strokeWidth={2.5} />
-                          : <Copy className="w-4 h-4 text-violet-600" strokeWidth={2} />
-                        }
-                      </motion.button>
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="flex-1 rounded-xl px-3 py-2 font-mono text-violet-800 text-xs tracking-widest"
+                          style={{ background: 'rgba(237,233,254,0.8)', border: '1px solid rgba(196,181,253,0.5)' }}
+                        >
+                          {myCode}
+                        </div>
+                        <motion.button
+                          onClick={copyCode}
+                          className="rounded-xl p-2 active:scale-90"
+                          style={{
+                            background: copied
+                              ? 'linear-gradient(135deg, rgba(134,239,172,0.6), rgba(74,222,128,0.5))'
+                              : 'linear-gradient(135deg, rgba(167,139,250,0.5), rgba(139,92,246,0.4))',
+                            border: copied ? '1px solid rgba(74,222,128,0.4)' : '1px solid rgba(139,92,246,0.35)',
+                          }}
+                          whileTap={{ scale: 0.88 }}
+                        >
+                          {copied
+                            ? <Check className="w-4 h-4 text-emerald-600" strokeWidth={2.5} />
+                            : <Copy className="w-4 h-4 text-violet-600" strokeWidth={2} />
+                          }
+                        </motion.button>
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                 </motion.div>
               )}
