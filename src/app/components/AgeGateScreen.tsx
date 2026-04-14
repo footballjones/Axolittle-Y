@@ -38,6 +38,8 @@ interface Props {
   onComplete: (isUnder13: boolean) => void;
   /** Called when a parent wants to sign in during the age gate flow. */
   onParentSetup?: () => void;
+  /** Start the flow at a specific phase (default: 'age-picker'). */
+  initialPhase?: Phase;
 }
 
 const CURRENT_YEAR = new Date().getFullYear();
@@ -53,9 +55,9 @@ const GUEST_MISSING = [
   'Cloud save across devices',
 ];
 
-export function AgeGateScreen({ onComplete, onParentSetup }: Props) {
+export function AgeGateScreen({ onComplete, onParentSetup, initialPhase = 'age-picker' }: Props) {
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
-  const [phase, setPhase] = useState<Phase>('age-picker');
+  const [phase, setPhase] = useState<Phase>(initialPhase);
 
   const age = selectedYear ? CURRENT_YEAR - selectedYear : null;
   const isUnder13 = age !== null && age < 13;
@@ -268,7 +270,15 @@ export function AgeGateScreen({ onComplete, onParentSetup }: Props) {
 
               {/* Go back and set up — primary */}
               <motion.button
-                onClick={() => setPhase('parent-setup')}
+                onClick={() => {
+                  // If we entered from the parent login flow, go back to the
+                  // LoginScreen rather than the local parent-setup info screen.
+                  if (initialPhase === 'guest-confirm' && onParentSetup) {
+                    onParentSetup();
+                  } else {
+                    setPhase('parent-setup');
+                  }
+                }}
                 className="w-full py-3.5 rounded-2xl font-black text-base text-white mb-2"
                 style={{ background: 'linear-gradient(135deg, #22d3ee, #3b82f6)' }}
                 whileTap={{ scale: 0.97 }}

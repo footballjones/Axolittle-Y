@@ -73,6 +73,8 @@ export default function App() {
     return saved?.isUnder13 ?? false;
   });
   const [showParentAuthFromAgeGate, setShowParentAuthFromAgeGate] = useState(false);
+  /** True when the parent tapped "Back to game" from the LoginScreen — show the guest warning before proceeding. */
+  const [showGuestWarningFromParent, setShowGuestWarningFromParent] = useState(false);
 
   // Stable callback — must be memoized so useSocialState's effects don't re-fire on every render
   const handleApplyGiftReward = useCallback((coins: number, opals: number) => {
@@ -447,11 +449,30 @@ export default function App() {
   // Parent chose "Set Up Parent Account" from the age gate — show the login
   // screen immediately, before any game-state checks. Once the parent signs in
   // (user becomes non-null) this condition clears and the game loads normally.
-  // Closing without signing in drops the child into guest mode.
+  // Tapping "Back to game" shows the guest warning before allowing guest play.
   if (showParentAuthFromAgeGate && !user) {
+    // "Back to game" was tapped — show the guest confirmation warning first.
+    if (showGuestWarningFromParent) {
+      return (
+        <AgeGateScreen
+          initialPhase="guest-confirm"
+          onComplete={(under13) => {
+            // Player confirmed guest — enter the game.
+            setIsUnder13(under13);
+            setShowGuestWarningFromParent(false);
+            setShowParentAuthFromAgeGate(false);
+          }}
+          onParentSetup={() => {
+            // Player changed their mind — go back to the LoginScreen.
+            setShowGuestWarningFromParent(false);
+          }}
+        />
+      );
+    }
+
     return (
       <LoginScreen
-        onClose={() => setShowParentAuthFromAgeGate(false)}
+        onClose={() => setShowGuestWarningFromParent(true)}
       />
     );
   }
