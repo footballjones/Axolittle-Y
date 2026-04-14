@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, Volume2, VolumeX, Bell, BellOff, Trash2, LogOut, LogIn, User } from 'lucide-react';
+import { X, Volume2, VolumeX, Bell, BellOff, Trash2, LogOut, LogIn, User, Shield, Mail } from 'lucide-react';
 import { motion } from 'motion/react';
 
 interface SettingsModalProps {
@@ -248,6 +248,35 @@ export function SettingsModal({
                     </div>
                   </motion.div>
                 )}
+              </div>
+            </div>
+
+            {/* Legal Section */}
+            <div>
+              <h3 className="text-white/50 text-xs font-semibold uppercase tracking-wider mb-2">Legal</h3>
+              <div className="space-y-1">
+                <a
+                  href="https://www.uomalabs.com/axolittle/privacy"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-between bg-white/5 hover:bg-white/10 rounded-xl px-4 py-3 border border-white/5 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <Shield className="w-4 h-4 text-cyan-400" />
+                    <span className="text-white text-sm">Privacy Policy</span>
+                  </div>
+                  <span className="text-white/30 text-xs">↗</span>
+                </a>
+                <a
+                  href="mailto:support@uomalabs.com"
+                  className="flex items-center justify-between bg-white/5 hover:bg-white/10 rounded-xl px-4 py-3 border border-white/5 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <Mail className="w-4 h-4 text-cyan-400" />
+                    <span className="text-white text-sm">Contact Support</span>
+                  </div>
+                  <span className="text-white/30 text-xs">↗</span>
+                </a>
               </div>
             </div>
 

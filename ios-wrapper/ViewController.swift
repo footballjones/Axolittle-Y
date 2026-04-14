@@ -124,13 +124,18 @@ class ViewController: UIViewController, WKNavigationDelegate {
         }
     }
     
-    // Prevent external navigation
+    // Prevent external navigation — but open mailto: and https:// links in the
+    // appropriate system app (Mail / Safari) rather than blocking them silently.
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
         if navigationAction.navigationType == .linkActivated {
             if let url = navigationAction.request.url {
-                // Allow our custom scheme and file:// — block everything else (http/https external links)
                 if url.scheme == bundledContentScheme || url.scheme == "file" || url.host == nil {
+                    // Internal navigation — allow inside WebView
                     decisionHandler(.allow)
+                } else if url.scheme == "https" || url.scheme == "http" || url.scheme == "mailto" {
+                    // External link (privacy policy, support email, etc.) — hand off to system
+                    decisionHandler(.cancel)
+                    UIApplication.shared.open(url)
                 } else {
                     print("[ViewController] Blocked external navigation to: \(url)")
                     decisionHandler(.cancel)
