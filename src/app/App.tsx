@@ -420,12 +420,16 @@ export default function App() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Auto-save game state
+  // Auto-save game state — only once the player is actually in a session.
+  // Guarding on user/isGuest/hasLocalSave prevents the bootstrapped
+  // getInitialGameState() from being written to localStorage while the player
+  // is still on the LoginScreen, which would cause a refresh to skip the
+  // LoginScreen and drop them into guest mode.
   useEffect(() => {
-    if (gameState) {
+    if (gameState && (user || isGuest || hasLocalSave)) {
       saveGameState(gameState);
     }
-  }, [gameState]);
+  }, [gameState, user, isGuest, hasLocalSave]);
 
   // ── Early returns ─────────────────────────────────────────────────────────
 
