@@ -12,19 +12,18 @@ interface MenuTutorialPromptProps {
 
 export function MenuTutorialPrompt({ onStart }: MenuTutorialPromptProps) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 32 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: 16 }}
-      transition={{ type: 'spring', stiffness: 340, damping: 28 }}
-      className="fixed inset-0 z-[200] flex items-end justify-center pb-32 px-4 pointer-events-none"
-    >
-      <div
-        className="w-full max-w-sm rounded-3xl p-5 shadow-2xl pointer-events-auto"
+    /* Full-screen blocking backdrop — nothing behind is tappable */
+    <div className="fixed inset-0 z-[200] flex items-center justify-center px-4" style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }}>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.92, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 10 }}
+        transition={{ type: 'spring', stiffness: 340, damping: 28 }}
+        className="w-full max-w-sm rounded-3xl p-5 shadow-2xl"
         style={{
-          background: 'linear-gradient(135deg, rgba(15,23,42,0.97) 0%, rgba(30,41,59,0.97) 100%)',
+          background: 'linear-gradient(135deg, rgba(15,23,42,0.98) 0%, rgba(30,41,59,0.98) 100%)',
           border: '1px solid rgba(255,255,255,0.12)',
-          boxShadow: '0 8px 40px -8px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.05)',
+          boxShadow: '0 8px 40px -8px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.05)',
         }}
       >
         {/* Header row */}
@@ -57,7 +56,7 @@ export function MenuTutorialPrompt({ onStart }: MenuTutorialPromptProps) {
         >
           Start Tour
         </motion.button>
-      </div>
-    </motion.div>
+      </motion.div>
+    </div>
   );
 }
