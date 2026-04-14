@@ -65,6 +65,7 @@ export interface ModalManagerProps {
   // Auth
   user: User | null;
   isGuest: boolean;
+  isUnder13?: boolean;
   signOut: () => Promise<void>;
 
   // Aquarium scroll centering (used by WellbeingIntroModal)
@@ -169,6 +170,7 @@ export function ModalManager({
   showRebirthButton,
   user,
   isGuest,
+  isUnder13 = false,
   signOut,
   onCenterAquarium,
   activeModal,
@@ -372,6 +374,7 @@ export function ModalManager({
           }}
           username={user?.user_metadata?.username ?? user?.email?.split('@')[0] ?? null}
           isGuest={isGuest || !user}
+          isUnder13={isUnder13}
           onSignOut={async () => {
             await signOut();
             setActiveModal(null);

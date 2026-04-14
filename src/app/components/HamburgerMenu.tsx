@@ -95,6 +95,9 @@ export interface HamburgerMenuProps {
 
   /** When true (menu tutorial running), tile taps that open sub-panels are suppressed. */
   isTutorialActive?: boolean;
+
+  /** When true (under-13 COPPA guest), Social tile is hidden. */
+  isUnder13?: boolean;
 }
 
 // ── Component ────────────────────────────────────────────────────────────────
@@ -138,6 +141,7 @@ export function HamburgerMenu({
   onClaimAchievement,
   onAddFriend,
   isTutorialActive = false,
+  isUnder13 = false,
 }: HamburgerMenuProps) {
   const [highlightAchievementId, setHighlightAchievementId] = useState<string | null>(null);
 
@@ -333,25 +337,27 @@ export function HamburgerMenu({
               <span className="text-[11px] font-bold text-indigo-800 tracking-wider uppercase">Eggs</span>
             </motion.button>
 
-            {/* SOCIAL */}
-            <motion.button
-              data-menu-id="social"
-              onClick={() => { if (isTutorialActive) return; setActiveModal('social'); setShowHamburgerMenu(false); setShowNotifPanel(false); setHasPendingPokes(false); }}
-              className="group relative flex flex-col items-center justify-center gap-1 py-3 rounded-2xl overflow-hidden"
-              style={{ background: 'linear-gradient(135deg, rgba(236,72,153,0.75) 0%, rgba(219,39,119,0.6) 100%)', border: '1px solid rgba(219,39,119,0.45)' }}
-              whileTap={{ scale: 0.93 }}
-            >
-              <div className="absolute inset-0 opacity-0 group-active:opacity-100 transition-opacity rounded-2xl" style={{ background: 'rgba(255,255,255,0.35)' }} />
-              {hasPendingPokes && (
-                <motion.div
-                  className="absolute top-2.5 right-2.5 w-3 h-3 rounded-full bg-rose-500 border-2 border-white shadow-lg shadow-rose-400/60"
-                  animate={{ scale: [1, 1.3, 1] }}
-                  transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
-                />
-              )}
-              <Users className="w-8 h-8 text-pink-700" strokeWidth={1.5} />
-              <span className="text-[11px] font-bold text-pink-800 tracking-wider uppercase">Social</span>
-            </motion.button>
+            {/* SOCIAL — hidden for under-13 COPPA users */}
+            {!isUnder13 && (
+              <motion.button
+                data-menu-id="social"
+                onClick={() => { if (isTutorialActive) return; setActiveModal('social'); setShowHamburgerMenu(false); setShowNotifPanel(false); setHasPendingPokes(false); }}
+                className="group relative flex flex-col items-center justify-center gap-1 py-3 rounded-2xl overflow-hidden"
+                style={{ background: 'linear-gradient(135deg, rgba(236,72,153,0.75) 0%, rgba(219,39,119,0.6) 100%)', border: '1px solid rgba(219,39,119,0.45)' }}
+                whileTap={{ scale: 0.93 }}
+              >
+                <div className="absolute inset-0 opacity-0 group-active:opacity-100 transition-opacity rounded-2xl" style={{ background: 'rgba(255,255,255,0.35)' }} />
+                {hasPendingPokes && (
+                  <motion.div
+                    className="absolute top-2.5 right-2.5 w-3 h-3 rounded-full bg-rose-500 border-2 border-white shadow-lg shadow-rose-400/60"
+                    animate={{ scale: [1, 1.3, 1] }}
+                    transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
+                  />
+                )}
+                <Users className="w-8 h-8 text-pink-700" strokeWidth={1.5} />
+                <span className="text-[11px] font-bold text-pink-800 tracking-wider uppercase">Social</span>
+              </motion.button>
+            )}
 
             {/* INVENTORY */}
             <motion.button

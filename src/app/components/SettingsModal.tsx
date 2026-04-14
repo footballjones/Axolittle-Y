@@ -11,6 +11,7 @@ interface SettingsModalProps {
   onSoundToggle?: (enabled: boolean) => void;
   username?: string | null;
   isGuest?: boolean;
+  isUnder13?: boolean;
   onSignOut?: () => void;
   onSignIn?: () => void;
 }
@@ -40,6 +41,7 @@ export function SettingsModal({
   onSoundToggle,
   username,
   isGuest = true,
+  isUnder13 = false,
   onSignOut,
   onSignIn,
 }: SettingsModalProps) {
@@ -124,6 +126,36 @@ export function SettingsModal({
                         <LogOut className="w-3.5 h-3.5" />
                         Sign Out
                       </motion.button>
+                    )}
+                  </div>
+                ) : isUnder13 ? (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0">
+                        <User className="w-4 h-4 text-white/40" />
+                      </div>
+                      <div>
+                        <p className="text-white/70 text-sm font-medium">Playing as Guest</p>
+                        <p className="text-white/40 text-xs">Social features require a parent account</p>
+                      </div>
+                    </div>
+                    {onSignIn && (
+                      <div
+                        className="rounded-xl p-3"
+                        style={{ background: 'rgba(250,204,21,0.06)', border: '1px solid rgba(250,204,21,0.18)' }}
+                      >
+                        <p className="text-yellow-200/70 text-xs leading-relaxed mb-2">
+                          A parent or guardian can sign in to unlock friend features.
+                        </p>
+                        <motion.button
+                          onClick={onSignIn}
+                          className="flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-white/80 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all border border-white/15"
+                          whileTap={{ scale: 0.95 }}
+                        >
+                          <LogIn className="w-3.5 h-3.5" />
+                          Parent / Guardian Sign In
+                        </motion.button>
+                      </div>
                     )}
                   </div>
                 ) : (

@@ -26,6 +26,7 @@ import { useAuth } from './context/AuthContext';
 import { useCloudSync, SyncStatus } from './hooks/useCloudSync';
 import { sendFriendAction, isSupabaseConfigured, fetchPlayerAchievements, pushAchievements } from './services/supabase';
 import { LoginScreen } from './components/LoginScreen';
+import { AgeGateScreen, loadAgeGate } from './components/AgeGateScreen';
 import { JIMMY_CHUBS_FRIEND } from './utils/storage';
 
 // Jimmy & Chubs sends a gift every 3.5 days (twice a week)
@@ -61,6 +62,17 @@ export default function App() {
   /** True if a save already existed in localStorage when the app first launched.
    *  Used to skip LoginScreen for existing / returning players. */
   const [hasLocalSave] = useState(() => !!localStorage.getItem('axolotl-game-state'));
+
+  // ── COPPA age gate ────────────────────────────────────────────────────────
+  const [ageGateCompleted, setAgeGateCompleted] = useState(() => {
+    const saved = loadAgeGate();
+    return saved?.completed ?? false;
+  });
+  const [isUnder13, setIsUnder13] = useState(() => {
+    const saved = loadAgeGate();
+    return saved?.isUnder13 ?? false;
+  });
+  const [showParentAuthFromAgeGate, setShowParentAuthFromAgeGate] = useState(false);
 
   // Stable callback — must be memoized so useSocialState's effects don't re-fire on every render
   const handleApplyGiftReward = useCallback((coins: number, opals: number) => {
@@ -138,6 +150,15 @@ export default function App() {
       setShowAuthOverlay(false);
     }
   }, [user, isGuest, showAuthOverlay]);
+
+  // When a parent chose "Create / Sign In" from the age gate, open the auth overlay
+  // once the game has loaded enough to show it.
+  useEffect(() => {
+    if (showParentAuthFromAgeGate && gameState) {
+      setShowParentAuthFromAgeGate(false);
+      setShowAuthOverlay(true);
+    }
+  }, [showParentAuthFromAgeGate, gameState]);
 
   useWellbeingEngine({ axolotlId: gameState?.axolotl?.id, setGameState });
 
@@ -412,11 +433,29 @@ export default function App() {
 
   // ── Early returns ─────────────────────────────────────────────────────────
 
+  // COPPA age gate — must complete before anything else is shown
+  if (!ageGateCompleted) {
+    return (
+      <AgeGateScreen
+        onComplete={(under13) => {
+          setIsUnder13(under13);
+          setAgeGateCompleted(true);
+        }}
+        onParentSetup={() => {
+          setIsUnder13(true);
+          setAgeGateCompleted(true);
+          setShowParentAuthFromAgeGate(true);
+        }}
+      />
+    );
+  }
+
   // Wait for Supabase auth to resolve before rendering
   if (authLoading) return null;
 
   // Truly new player: no local save, not signed in, hasn't chosen guest
-  if (!user && !isGuest && !hasLocalSave) {
+  // Under-13 users are always in guest mode — never show LoginScreen
+  if (!user && !isGuest && !hasLocalSave && !isUnder13) {
     return <LoginScreen />;
   }
 
@@ -512,6 +551,7 @@ export default function App() {
         gameState={gameState}
         setGameState={setGameState}
         axolotl={axolotl}
+        isUnder13={isUnder13}
         coins={coins}
         opals={opals}
         customization={customization}
@@ -599,6 +639,7 @@ export default function App() {
         showRebirthButton={showRebirthButton}
         user={user ?? null}
         isGuest={isGuest}
+        isUnder13={isUnder13}
         signOut={signOut}
         onCenterAquarium={handleCenterAquarium}
         activeModal={activeModal}

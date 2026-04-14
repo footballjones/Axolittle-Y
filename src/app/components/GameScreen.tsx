@@ -129,6 +129,9 @@ export interface GameScreenProps {
   handleUnlockGames: () => void;
   handleRefillEnergy: () => void;
   handleAddFriend: (code: string) => Promise<string | null>;
+
+  /** COPPA: under-13 users are forced into guest mode; Social features hidden. */
+  isUnder13?: boolean;
 }
 
 // ── Component ────────────────────────────────────────────────────────────────
@@ -207,6 +210,7 @@ export function GameScreen({
   handleUnlockGames,
   handleRefillEnergy,
   handleAddFriend,
+  isUnder13 = false,
 }: GameScreenProps) {
   // ── Local UI state (owned by GameScreen) ─────────────────────────────────
   const [clickTarget, setClickTarget] = useState<{ x: number; y: number; timestamp: number } | null>(null);
@@ -701,6 +705,7 @@ export function GameScreen({
                   onClaimAchievement={handleClaimAchievement}
                   onAddFriend={handleAddFriend}
                   isTutorialActive={_showMenuTutorial}
+                  isUnder13={isUnder13}
                 />
               )}
             </AnimatePresence>
