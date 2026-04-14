@@ -151,14 +151,6 @@ export default function App() {
     }
   }, [user, isGuest, showAuthOverlay]);
 
-  // When a parent chose "Create / Sign In" from the age gate, open the auth overlay
-  // once the game has loaded enough to show it.
-  useEffect(() => {
-    if (showParentAuthFromAgeGate && gameState) {
-      setShowParentAuthFromAgeGate(false);
-      setShowAuthOverlay(true);
-    }
-  }, [showParentAuthFromAgeGate, gameState]);
 
   useWellbeingEngine({ axolotlId: gameState?.axolotl?.id, setGameState });
 
@@ -446,6 +438,18 @@ export default function App() {
           setAgeGateCompleted(true);
           setShowParentAuthFromAgeGate(true);
         }}
+      />
+    );
+  }
+
+  // Parent chose "Set Up Parent Account" from the age gate — show the login
+  // screen immediately, before any game-state checks. Once the parent signs in
+  // (user becomes non-null) this condition clears and the game loads normally.
+  // Closing without signing in drops the child into guest mode.
+  if (showParentAuthFromAgeGate && !user) {
+    return (
+      <LoginScreen
+        onClose={() => setShowParentAuthFromAgeGate(false)}
       />
     );
   }
