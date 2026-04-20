@@ -3,7 +3,7 @@ import { DecorationItem } from '../types/game';
 export const DECORATIONS: DecorationItem[] = [
   // ── Plants ──────────────────────────────────────────────────────────────────
   // Tall underwater flora that fills the upper-mid portion of the tank
-  { id: 'plant-1', name: 'Seaweed',      type: 'plant', cost: 0,   icon: 'Leaf',     size: 'xl', layer: 'tall'  },
+  { id: 'plant-1', name: 'Seaweed',      type: 'plant', cost: 0,   icon: 'Leaf',     size: 'xl', layer: 'tall',  svgPath: 'decorations/seaweed.svg' },
   { id: 'plant-2', name: 'Coral',        type: 'plant', cost: 50,  icon: 'Shell',    size: 'xl', layer: 'tall'  },
   { id: 'plant-3', name: 'Water Reeds',  type: 'plant', cost: 100, icon: 'Wheat',    size: 'lg', layer: 'mid'   },
   { id: 'plant-4', name: 'Water Lily',   type: 'plant', cost: 150, icon: 'Flower2',  size: 'md', layer: 'mid'   },

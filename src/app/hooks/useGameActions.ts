@@ -347,6 +347,22 @@ export function useGameActions({
     });
   }, []);
 
+  const handleUpdateDecorationPosition = useCallback((id: string, x: number, y: number) => {
+    setGameState(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        customization: {
+          ...prev.customization,
+          decorationPositions: {
+            ...(prev.customization.decorationPositions ?? {}),
+            [id]: { x, y },
+          },
+        },
+      };
+    });
+  }, [setGameState]);
+
   const handleAddFriend = useCallback(async (code: string): Promise<string | null> => {
     const normalizedCode = code.trim().toUpperCase();
 
@@ -1006,6 +1022,7 @@ export function useGameActions({
     handleWaterChange,
     handlePurchase,
     handleEquipDecoration,
+    handleUpdateDecorationPosition,
     handleAddFriend,
     handleRemoveFriend,
     handleBreed,

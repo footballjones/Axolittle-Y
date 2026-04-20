@@ -48,11 +48,13 @@ export interface DecorationItem {
   icon: string;
   size?: 'sm' | 'md' | 'lg' | 'xl';   // Rendered size in the aquarium
   layer?: 'floor' | 'mid' | 'tall';    // Vertical placement layer in the aquarium
+  svgPath?: string;                    // Path to animated SVG asset (relative to BASE_URL)
 }
 
 export interface AquariumCustomization {
   background: string;
   decorations: string[]; // decoration IDs
+  decorationPositions?: Record<string, { x: number; y: number }>; // % from top-left per decoration ID
 }
 
 export interface Egg {
