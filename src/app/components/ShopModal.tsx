@@ -776,9 +776,14 @@ export function ShopModal({
                         const canAffordFilter = usesOpals ? canAffordOpals(filter.opals) : canAfford(filter.coins);
                         const filterCost = usesOpals ? filter.opals : filter.coins;
 
-                        const isDisabled = isEquipped || (!isOwned && !canAffordFilter);
+                        const PREREQ: Record<string, string> = { 'filter-advanced': 'filter-basic', 'filter-premium': 'filter-advanced' };
+                        const PREREQ_NAME: Record<string, string> = { 'filter-basic': 'Basic', 'filter-advanced': 'Advanced' };
+                        const prereqId = PREREQ[filter.id];
+                        const isLocked = !!prereqId && !ownedFilters.includes(prereqId);
+
+                        const isDisabled = isEquipped || isLocked || (!isOwned && !canAffordFilter);
                         const handleClick = () => {
-                          if (isEquipped) return;
+                          if (isEquipped || isLocked) return;
                           if (isOwned) {
                             setConfirmFilter({ filter, mode: 'equip' });
                           } else if (canAffordFilter) {
@@ -816,6 +821,13 @@ export function ShopModal({
                                   style={{ background: 'linear-gradient(135deg, #4ade80, #16a34a)', color: '#fff', boxShadow: '0 3px 10px rgba(74,222,128,0.4)' }}
                                 >
                                   Equipped
+                                </div>
+                              ) : isLocked ? (
+                                <div
+                                  className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl"
+                                  style={{ background: 'rgba(148,163,184,0.18)', color: 'rgba(100,116,139,0.8)', border: '1px solid rgba(148,163,184,0.3)' }}
+                                >
+                                  🔒 Needs {PREREQ_NAME[prereqId]}
                                 </div>
                               ) : isOwned ? (
                                 <div

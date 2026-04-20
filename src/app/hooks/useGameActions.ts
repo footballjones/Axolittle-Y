@@ -868,11 +868,18 @@ export function useGameActions({
     });
   }, []);
 
+  const FILTER_PREREQUISITES: Record<string, string> = {
+    'filter-advanced': 'filter-basic',
+    'filter-premium': 'filter-advanced',
+  };
+
   const handleBuyFilter = useCallback((filter: { id: string; name: string; coins: number; opals: number }) => {
     setGameState(prev => {
       if (!prev) return prev;
       // Migrate legacy ownedFilters from filterTier if needed
       const currentOwned = prev.ownedFilters ?? (prev.filterTier ? [prev.filterTier] : []);
+      const prerequisite = FILTER_PREREQUISITES[filter.id];
+      if (prerequisite && !currentOwned.includes(prerequisite)) return prev;
       const newOwned = currentOwned.includes(filter.id) ? currentOwned : [...currentOwned, filter.id];
 
       if (filter.opals > 0) {

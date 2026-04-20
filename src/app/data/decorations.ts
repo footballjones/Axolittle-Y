@@ -18,7 +18,7 @@ export const DECORATIONS: DecorationItem[] = [
   // ── Ornaments ───────────────────────────────────────────────────────────────
   // Classic aquarium decorations — shells, sunken ruins, nautical items
   { id: 'ornament-1', name: 'Shell',        type: 'ornament', cost: 50,  icon: 'Shell',   size: 'sm', layer: 'floor' },
-  { id: 'ornament-2', name: 'Sunken Castle',type: 'ornament', cost: 150, icon: 'Castle',  size: 'xl', layer: 'tall'  },
+  { id: 'ornament-2', name: 'Sunken Castle',type: 'ornament', cost: 150, icon: 'Castle',  size: 'xl', layer: 'tall', svgPath: 'decorations/sunken-castle.svg' },
   { id: 'ornament-3', name: 'Treasure',     type: 'ornament', cost: 250, icon: 'Coins',   size: 'md', layer: 'floor' },
   { id: 'ornament-4', name: 'Starfish',     type: 'ornament', cost: 100, icon: 'Star',    size: 'sm', layer: 'floor' },
   { id: 'ornament-5', name: 'Anchor',       type: 'ornament', cost: 120, icon: 'Anchor',  size: 'lg', layer: 'mid'   },

@@ -782,18 +782,40 @@ export function GameScreen({
                           onClean={handleCleanPoopAndReset}
                         />
                       ))}
-                      {/* Ghost Shrimp — emoji placeholders, stable positions derived from index */}
+                      {/* Ghost Shrimp */}
                       {(gameState.shrimpCount || 0) > 0 && Array.from({ length: Math.min(6, gameState.shrimpCount || 0) }).map((_, i) => {
                         const x = 8 + (i * 15 + ((i * 7) % 11)) % 84;
-                        const bottom = 14 + (i % 3) * 5;
+                        const bottom = 12 + (i % 3) * 6;
+                        const flipX = i % 2 === 0;
+                        const swimDuration = 3 + (i * 0.7) % 2;
+                        const bobDuration = 2 + (i * 0.5) % 1.5;
                         return (
-                          <div
+                          <motion.div
                             key={`shrimp-${i}`}
                             className="absolute pointer-events-none select-none"
-                            style={{ left: `${x}%`, bottom: `${bottom}%`, fontSize: 14, zIndex: 18, opacity: 0.85 }}
+                            style={{ left: `${x}%`, bottom: `${bottom}%`, zIndex: 18 }}
+                            animate={{
+                              x: [0, flipX ? 12 : -12, 0],
+                              y: [0, -4, 0],
+                            }}
+                            transition={{
+                              x: { duration: swimDuration, repeat: Infinity, ease: 'easeInOut', delay: i * 0.4 },
+                              y: { duration: bobDuration, repeat: Infinity, ease: 'easeInOut', delay: i * 0.25 },
+                            }}
                           >
-                            ~
-                          </div>
+                            <img
+                              src={`${import.meta.env.BASE_URL}decorations/ghost-shrimp.svg`}
+                              alt="ghost shrimp"
+                              draggable={false}
+                              style={{
+                                width: 44,
+                                height: 'auto',
+                                transform: flipX ? 'scaleX(-1)' : undefined,
+                                opacity: 0.96,
+                                filter: 'drop-shadow(0 2px 5px rgba(0,0,0,0.30))',
+                              }}
+                            />
+                          </motion.div>
                         );
                       })}
 

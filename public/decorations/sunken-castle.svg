@@ -1,0 +1,135 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 230">
+  <defs>
+    <linearGradient id="ctr" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%"   stop-color="#7a8a78"/>
+      <stop offset="45%"  stop-color="#a0b09e"/>
+      <stop offset="100%" stop-color="#606e5e"/>
+    </linearGradient>
+    <linearGradient id="ltv" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%"   stop-color="#606e5e"/>
+      <stop offset="55%"  stop-color="#8a9a88"/>
+      <stop offset="100%" stop-color="#50605e"/>
+    </linearGradient>
+    <linearGradient id="rtv" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%"   stop-color="#505e50"/>
+      <stop offset="45%"  stop-color="#8a9a88"/>
+      <stop offset="100%" stop-color="#606e5e"/>
+    </linearGradient>
+    <linearGradient id="wall" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%"   stop-color="#7a8a78"/>
+      <stop offset="100%" stop-color="#586858"/>
+    </linearGradient>
+  </defs>
+
+  <!-- ══ LEFT TURRET ════════════════════════════════════════════════════════ -->
+  <rect x="3"  y="84" width="34" height="146" fill="url(#ltv)"/>
+  <!-- Crenellations -->
+  <rect x="3"  y="68" width="9"  height="16" fill="url(#ltv)"/>
+  <rect x="16" y="68" width="9"  height="16" fill="url(#ltv)"/>
+  <rect x="29" y="68" width="8"  height="16" fill="url(#ltv)"/>
+  <rect x="3"  y="84" width="34" height="4"  fill="#485848"/>
+  <!-- Windows -->
+  <rect x="15" y="118" width="7" height="16" rx="3.5" fill="#1a2818"/>
+  <rect x="15" y="166" width="7" height="12" rx="3.5" fill="#1a2818"/>
+  <!-- Stone joints -->
+  <line x1="3"  y1="100" x2="37" y2="100" stroke="#556555" stroke-width="0.9" opacity="0.65"/>
+  <line x1="3"  y1="118" x2="37" y2="118" stroke="#556555" stroke-width="0.9" opacity="0.65"/>
+  <line x1="3"  y1="136" x2="37" y2="136" stroke="#556555" stroke-width="0.9" opacity="0.65"/>
+  <line x1="3"  y1="154" x2="37" y2="154" stroke="#556555" stroke-width="0.9" opacity="0.65"/>
+  <line x1="3"  y1="172" x2="37" y2="172" stroke="#556555" stroke-width="0.9" opacity="0.65"/>
+  <line x1="3"  y1="190" x2="37" y2="190" stroke="#556555" stroke-width="0.9" opacity="0.65"/>
+  <line x1="3"  y1="208" x2="37" y2="208" stroke="#556555" stroke-width="0.9" opacity="0.65"/>
+
+  <!-- ══ RIGHT TURRET ═══════════════════════════════════════════════════════ -->
+  <rect x="103" y="84" width="34" height="146" fill="url(#rtv)"/>
+  <rect x="103" y="68" width="9"  height="16" fill="url(#rtv)"/>
+  <rect x="116" y="68" width="9"  height="16" fill="url(#rtv)"/>
+  <rect x="129" y="68" width="8"  height="16" fill="url(#rtv)"/>
+  <rect x="103" y="84" width="34" height="4"  fill="#485848"/>
+  <rect x="118" y="118" width="7" height="16" rx="3.5" fill="#1a2818"/>
+  <rect x="118" y="166" width="7" height="12" rx="3.5" fill="#1a2818"/>
+  <line x1="103" y1="100" x2="137" y2="100" stroke="#556555" stroke-width="0.9" opacity="0.65"/>
+  <line x1="103" y1="118" x2="137" y2="118" stroke="#556555" stroke-width="0.9" opacity="0.65"/>
+  <line x1="103" y1="136" x2="137" y2="136" stroke="#556555" stroke-width="0.9" opacity="0.65"/>
+  <line x1="103" y1="154" x2="137" y2="154" stroke="#556555" stroke-width="0.9" opacity="0.65"/>
+  <line x1="103" y1="172" x2="137" y2="172" stroke="#556555" stroke-width="0.9" opacity="0.65"/>
+  <line x1="103" y1="190" x2="137" y2="190" stroke="#556555" stroke-width="0.9" opacity="0.65"/>
+  <line x1="103" y1="208" x2="137" y2="208" stroke="#556555" stroke-width="0.9" opacity="0.65"/>
+
+  <!-- ══ CONNECTING WALLS ═══════════════════════════════════════════════════ -->
+  <polygon points="37,148 42,138 48,144 50,148 50,230 37,230" fill="url(#wall)"/>
+  <polygon points="90,148 92,140 97,147 103,148 103,230 90,230" fill="url(#wall)"/>
+  <line x1="37" y1="166" x2="50" y2="166" stroke="#556555" stroke-width="0.8" opacity="0.55"/>
+  <line x1="37" y1="185" x2="50" y2="185" stroke="#556555" stroke-width="0.8" opacity="0.55"/>
+  <line x1="37" y1="204" x2="50" y2="204" stroke="#556555" stroke-width="0.8" opacity="0.55"/>
+  <line x1="90" y1="166" x2="103" y2="166" stroke="#556555" stroke-width="0.8" opacity="0.55"/>
+  <line x1="90" y1="185" x2="103" y2="185" stroke="#556555" stroke-width="0.8" opacity="0.55"/>
+  <line x1="90" y1="204" x2="103" y2="204" stroke="#556555" stroke-width="0.8" opacity="0.55"/>
+
+  <!-- ══ CENTRAL TOWER ═══════════════════════════════════════════════════════ -->
+  <rect x="44" y="22" width="52" height="208" fill="url(#ctr)"/>
+  <!-- Crenellations -->
+  <rect x="44"  y="5"  width="9"  height="17" fill="url(#ctr)"/>
+  <rect x="57"  y="5"  width="9"  height="17" fill="url(#ctr)"/>
+  <rect x="70"  y="5"  width="9"  height="17" fill="url(#ctr)"/>
+  <rect x="83"  y="5"  width="9"  height="17" fill="url(#ctr)"/>
+  <rect x="44"  y="22" width="52" height="4"  fill="#5a6a58"/>
+  <!-- Upper arched window -->
+  <path d="M62,60 L62,84 Q70,92 78,84 L78,60 Q70,52 62,60 Z" fill="#1a2818"/>
+  <!-- Arrow slit -->
+  <rect x="67" y="108" width="6" height="20" rx="3" fill="#1a2818"/>
+  <!-- Lower arched window -->
+  <path d="M62,148 L62,170 Q70,178 78,170 L78,148 Q70,140 62,148 Z" fill="#1a2818"/>
+  <!-- Gate arch -->
+  <path d="M57,204 L57,230 L83,230 L83,204 Q70,190 57,204 Z" fill="#1a2818"/>
+  <!-- Stone joints -->
+  <line x1="44" y1="44"  x2="96" y2="44"  stroke="#6a7a68" stroke-width="1.0" opacity="0.60"/>
+  <line x1="44" y1="68"  x2="96" y2="68"  stroke="#6a7a68" stroke-width="1.0" opacity="0.60"/>
+  <line x1="44" y1="92"  x2="96" y2="92"  stroke="#6a7a68" stroke-width="1.0" opacity="0.60"/>
+  <line x1="44" y1="116" x2="96" y2="116" stroke="#6a7a68" stroke-width="1.0" opacity="0.60"/>
+  <line x1="44" y1="140" x2="96" y2="140" stroke="#6a7a68" stroke-width="1.0" opacity="0.60"/>
+  <line x1="44" y1="166" x2="96" y2="166" stroke="#6a7a68" stroke-width="1.0" opacity="0.60"/>
+  <line x1="44" y1="190" x2="96" y2="190" stroke="#6a7a68" stroke-width="1.0" opacity="0.60"/>
+  <!-- Ashlar vertical lines -->
+  <line x1="58" y1="22"  x2="58" y2="60"  stroke="#6a7a68" stroke-width="0.7" opacity="0.40"/>
+  <line x1="73" y1="44"  x2="73" y2="92"  stroke="#6a7a68" stroke-width="0.7" opacity="0.40"/>
+  <line x1="83" y1="22"  x2="83" y2="60"  stroke="#6a7a68" stroke-width="0.7" opacity="0.40"/>
+  <line x1="58" y1="92"  x2="58" y2="140" stroke="#6a7a68" stroke-width="0.7" opacity="0.40"/>
+  <line x1="80" y1="92"  x2="80" y2="140" stroke="#6a7a68" stroke-width="0.7" opacity="0.40"/>
+  <line x1="62" y1="166" x2="62" y2="204" stroke="#6a7a68" stroke-width="0.7" opacity="0.40"/>
+  <line x1="83" y1="166" x2="83" y2="204" stroke="#6a7a68" stroke-width="0.7" opacity="0.40"/>
+
+  <!-- ══ DAMAGE / CRACKS ════════════════════════════════════════════════════ -->
+  <polyline points="66,92 62,112 65,136"  stroke="#2c3c2a" stroke-width="1.5" fill="none" opacity="0.70"/>
+  <polyline points="22,136 19,150 23,166" stroke="#2c3c2a" stroke-width="1.2" fill="none" opacity="0.60"/>
+  <!-- Chipped merlon top-right -->
+  <polygon points="83,5 96,5 96,20 90,22" fill="#5a6a58"/>
+  <polygon points="83,5 88,5 88,12"       fill="#485848"/>
+
+  <!-- ══ ALGAE GROWTH ═══════════════════════════════════════════════════════ -->
+  <!-- Left turret -->
+  <path d="M7,155  Q4,145 4,136"   stroke="#4a7a38" stroke-width="3.0" fill="none" stroke-linecap="round" opacity="0.92"/>
+  <path d="M9,155  Q13,145 12,137" stroke="#5a8c48" stroke-width="2.4" fill="none" stroke-linecap="round" opacity="0.82"/>
+  <circle cx="4"  cy="136" r="4.5" fill="#3e6e2e" opacity="0.92"/>
+  <circle cx="12" cy="137" r="3.2" fill="#5a8c48" opacity="0.82"/>
+  <path d="M12,208 Q9,198 10,190"  stroke="#4a7a38" stroke-width="2.5" fill="none" stroke-linecap="round" opacity="0.88"/>
+  <circle cx="10" cy="190" r="3.8" fill="#3e6e2e" opacity="0.88"/>
+  <!-- Right turret -->
+  <path d="M133,155 Q136,145 136,136" stroke="#4a7a38" stroke-width="3.0" fill="none" stroke-linecap="round" opacity="0.92"/>
+  <path d="M131,156 Q127,147 128,139" stroke="#5a8c48" stroke-width="2.4" fill="none" stroke-linecap="round" opacity="0.82"/>
+  <circle cx="136" cy="136" r="4.5" fill="#3e6e2e" opacity="0.92"/>
+  <circle cx="128" cy="139" r="3.2" fill="#5a8c48" opacity="0.82"/>
+  <path d="M128,210 Q131,200 130,192" stroke="#4a7a38" stroke-width="2.5" fill="none" stroke-linecap="round" opacity="0.88"/>
+  <circle cx="130" cy="192" r="3.8" fill="#3e6e2e" opacity="0.88"/>
+  <!-- Central tower -->
+  <path d="M48,140 Q44,130 45,122"  stroke="#4a7a38" stroke-width="2.5" fill="none" stroke-linecap="round" opacity="0.88"/>
+  <circle cx="45" cy="122" r="3.8" fill="#3e6e2e" opacity="0.88"/>
+  <path d="M92,168 Q96,158 95,150"  stroke="#4a7a38" stroke-width="2.5" fill="none" stroke-linecap="round" opacity="0.88"/>
+  <circle cx="95" cy="150" r="3.8" fill="#3e6e2e" opacity="0.88"/>
+  <!-- Base bloom -->
+  <ellipse cx="20"  cy="230" rx="16" ry="5" fill="#3d6b30" opacity="0.80"/>
+  <ellipse cx="70"  cy="230" rx="22" ry="5" fill="#3d6b30" opacity="0.70"/>
+  <ellipse cx="120" cy="230" rx="16" ry="5" fill="#3d6b30" opacity="0.80"/>
+  <!-- Subtle gate glow -->
+  <ellipse cx="70" cy="222" rx="13" ry="6" fill="#50c878" opacity="0.09"/>
+</svg>
