@@ -52,6 +52,50 @@ interface DraggableDecorationProps {
   entryDelay: number;
 }
 
+// ── Light-ray definitions (only shown over aquarium-bg-starting.png) ─────────
+const RAY_DEFS = [
+  { left: '6%',  width: 52, skew: -4,  height: '72%', delay: 0,    duration: 9,  peak: 0.13 },
+  { left: '20%', width: 80, skew:  6,  height: '65%', delay: 4.2,  duration: 12, peak: 0.09 },
+  { left: '36%', width: 38, skew: -9,  height: '78%', delay: 7.8,  duration: 8,  peak: 0.15 },
+  { left: '54%', width: 60, skew:  4,  height: '68%', delay: 2.1,  duration: 11, peak: 0.11 },
+  { left: '70%', width: 44, skew: -6,  height: '74%', delay: 5.9,  duration: 10, peak: 0.12 },
+  { left: '84%', width: 34, skew:  8,  height: '60%', delay: 1.3,  duration: 14, peak: 0.08 },
+];
+
+function LightRays() {
+  return (
+    <div
+      className="absolute inset-0 pointer-events-none overflow-hidden"
+      style={{ zIndex: 1 }}
+    >
+      {RAY_DEFS.map((ray, i) => (
+        <motion.div
+          key={i}
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: ray.left,
+            width: ray.width,
+            height: ray.height,
+            transformOrigin: 'top center',
+            transform: `skewX(${ray.skew}deg)`,
+            background: 'linear-gradient(to bottom, rgba(255,248,210,0.9) 0%, rgba(200,230,255,0.2) 55%, transparent 100%)',
+            filter: 'blur(6px)',
+          }}
+          animate={{ opacity: [0, 0, ray.peak, ray.peak * 0.6, 0, 0] }}
+          transition={{
+            duration: ray.duration,
+            delay: ray.delay,
+            repeat: Infinity,
+            ease: 'easeInOut',
+            times: [0, 0.05, 0.3, 0.55, 0.75, 1],
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
 const SCALE_MIN = 0.4;
 const SCALE_MAX = 3.0;
 const SCALE_STEP = 0.15;
@@ -243,6 +287,8 @@ export function AquariumBackground({
         className="absolute inset-0 w-full h-full object-cover"
         style={{ zIndex: 0 }}
       />
+
+      {bgImagePath === 'aquarium-bg-starting.png' && <LightRays />}
 
       {background && (
         <div
