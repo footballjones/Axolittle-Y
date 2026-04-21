@@ -1,7 +1,7 @@
 import { X, Coins, Sparkles, Droplets, Filter, Bug, Gem, Info, ChevronDown, Leaf, Mountain, Shell, Waves, Settings, Wrench, Utensils, TrendingUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useState } from 'react';
-import { DECORATIONS } from '../data/decorations';
+import { DECORATIONS, getDecorationById } from '../data/decorations';
 import { GameIcon, CoinIcon } from './icons';
 
 const DECO_CATEGORIES = [
@@ -572,9 +572,18 @@ export function ShopModal({
                             >
                               <div className="grid grid-cols-3 gap-2 px-3 pb-3">
                                 {items.map((item, i) => {
-                                  const isOwned = ownedDecos.includes(item.id);
-                                  const isEquipped = equippedDecos.includes(item.id) || (item.type === 'background' && activeBackground === item.id);
+                                  const ownedCount = ownedDecos.filter(id => id === item.id).length;
+                                  const placedCount = equippedDecos.filter(id => id === item.id).length;
+                                  const isOwned = ownedCount > 0;
+                                  const isBackground = item.type === 'background';
+                                  const isBgActive = isBackground && activeBackground === item.id;
                                   const canBuy = coins >= item.cost;
+                                  const totalPlaced = equippedDecos.filter(id => {
+                                    const d = getDecorationById(id);
+                                    return d && d.type !== 'background';
+                                  }).length;
+                                  const canPlace = !isBackground && placedCount < ownedCount && totalPlaced < 5;
+                                  const hasAnyInTank = !isBackground && placedCount > 0;
                                   return (
                                     <motion.div
                                       key={item.id}
@@ -583,57 +592,71 @@ export function ShopModal({
                                       transition={{ delay: ci * 0.03 + i * 0.03 }}
                                       className="relative flex flex-col items-center gap-1.5 py-3 px-2 rounded-2xl overflow-hidden"
                                       style={{
-                                        background: isEquipped
+                                        background: hasAnyInTank || isBgActive
                                           ? 'linear-gradient(135deg, rgba(167,243,208,0.6), rgba(110,231,183,0.45))'
                                           : 'rgba(255,255,255,0.7)',
-                                        border: isEquipped
+                                        border: hasAnyInTank || isBgActive
                                           ? '1.5px solid rgba(52,211,153,0.5)'
                                           : `1.5px solid ${cat.border}`,
                                       }}
                                     >
-                                      {isEquipped && (
-                                        <div
-                                          className="absolute top-1.5 right-1.5 text-[6px] font-black text-white px-1 py-0.5 rounded-full"
-                                          style={{ background: 'linear-gradient(135deg,#34d399,#10b981)' }}
-                                        >ON</div>
+                                      {/* Count badges */}
+                                      {isOwned && !isBackground && (
+                                        <div className="absolute top-1.5 right-1.5 flex flex-col items-end gap-0.5">
+                                          {ownedCount > 1 && (
+                                            <div className="text-[6px] font-black text-white px-1 py-0.5 rounded-full" style={{ background: 'rgba(100,116,139,0.75)' }}>×{ownedCount}</div>
+                                          )}
+                                          {placedCount > 0 && (
+                                            <div className="text-[6px] font-black text-white px-1 py-0.5 rounded-full" style={{ background: 'linear-gradient(135deg,#34d399,#10b981)' }}>{placedCount} on</div>
+                                          )}
+                                        </div>
                                       )}
-                                      <div
-                                        className="w-11 h-11 rounded-xl flex items-center justify-center shadow-sm"
-                                        style={{ background: cat.color }}
-                                      >
+                                      {isBgActive && (
+                                        <div className="absolute top-1.5 right-1.5 text-[6px] font-black text-white px-1 py-0.5 rounded-full" style={{ background: 'linear-gradient(135deg,#34d399,#10b981)' }}>ON</div>
+                                      )}
+                                      <div className="w-11 h-11 rounded-xl flex items-center justify-center shadow-sm" style={{ background: cat.color }}>
                                         <GameIcon name={item.icon} size={22} />
                                       </div>
                                       <span className="text-[10px] font-bold text-slate-700 text-center leading-tight">{item.name}</span>
                                       {isOwned ? (
-                                        item.type === 'background' ? (
+                                        isBackground ? (
                                           <motion.button
                                             onClick={() => onEquipDecoration?.(item.id)}
                                             className="w-full py-1 rounded-xl text-[9px] font-black text-white"
-                                            style={{
-                                              background: isEquipped ? 'linear-gradient(135deg,#34d399,#10b981)' : 'linear-gradient(135deg,#38bdf8,#0ea5e9)',
-                                            }}
+                                            style={{ background: isBgActive ? 'linear-gradient(135deg,#34d399,#10b981)' : 'linear-gradient(135deg,#38bdf8,#0ea5e9)' }}
                                             whileTap={{ scale: 0.94 }}
                                           >
-                                            {isEquipped ? 'Active' : 'Use'}
-                                          </motion.button>
-                                        ) : isEquipped ? (
-                                          <motion.button
-                                            onClick={() => onEquipDecoration?.(item.id)}
-                                            className="w-full py-1 rounded-xl text-[9px] font-black"
-                                            style={{ background: 'rgba(239,246,255,0.8)', color: '#64748b', border: '1px solid rgba(203,213,225,0.5)' }}
-                                            whileTap={{ scale: 0.94 }}
-                                          >
-                                            Remove
+                                            {isBgActive ? 'Active' : 'Use'}
                                           </motion.button>
                                         ) : (
-                                          <motion.button
-                                            onClick={() => onEquipDecoration?.(item.id)}
-                                            className="w-full py-1 rounded-xl text-[9px] font-black text-white"
-                                            style={{ background: 'linear-gradient(135deg,#38bdf8,#0ea5e9)', boxShadow: '0 2px 6px rgba(14,165,233,0.3)' }}
-                                            whileTap={{ scale: 0.94 }}
-                                          >
-                                            Equip
-                                          </motion.button>
+                                          <div className="w-full flex flex-col gap-1">
+                                            <motion.button
+                                              onClick={() => canPlace && onEquipDecoration?.(item.id)}
+                                              className="w-full py-1 rounded-xl text-[9px] font-black text-white"
+                                              style={{
+                                                background: canPlace ? 'linear-gradient(135deg,#38bdf8,#0ea5e9)' : 'rgba(203,213,225,0.5)',
+                                                color: canPlace ? '#fff' : '#94a3b8',
+                                                cursor: canPlace ? 'pointer' : 'default',
+                                                boxShadow: canPlace ? '0 2px 6px rgba(14,165,233,0.3)' : 'none',
+                                              }}
+                                              whileTap={canPlace ? { scale: 0.94 } : {}}
+                                            >
+                                              {canPlace ? 'Place' : totalPlaced >= 5 ? 'Tank full' : 'All placed'}
+                                            </motion.button>
+                                            <motion.button
+                                              onClick={() => canBuy && onBuyDecoration?.(item.id)}
+                                              className="w-full py-0.5 rounded-lg text-[8px] font-bold flex items-center justify-center gap-0.5"
+                                              style={{
+                                                background: canBuy ? 'rgba(245,158,11,0.15)' : 'rgba(203,213,225,0.3)',
+                                                color: canBuy ? '#b45309' : '#94a3b8',
+                                                border: canBuy ? '1px solid rgba(245,158,11,0.3)' : '1px solid rgba(203,213,225,0.3)',
+                                                cursor: canBuy ? 'pointer' : 'not-allowed',
+                                              }}
+                                              whileTap={canBuy ? { scale: 0.94 } : {}}
+                                            >
+                                              <Coins className="w-2 h-2" />+{item.cost === 0 ? 'Free' : item.cost}
+                                            </motion.button>
+                                          </div>
                                         )
                                       ) : (
                                         <motion.button

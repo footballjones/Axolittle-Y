@@ -114,6 +114,8 @@ export interface GameScreenProps {
   handleCleanPoop: (poopId: string) => void;
   handleEquipDecoration: (decorationId: string) => void;
   handleUpdateDecorationPosition: (id: string, x: number, y: number) => void;
+  handleUpdateDecorationScale: (id: string, scale: number) => void;
+  handleRemoveDecorationInstance: (instanceId: string) => void;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   handleEquipFilter: (filterId: any) => void;
   handleUseTreatmentFromInventory: (treatmentId: string) => void;
@@ -198,6 +200,8 @@ export function GameScreen({
   handleCleanPoop,
   handleEquipDecoration,
   handleUpdateDecorationPosition,
+  handleUpdateDecorationScale,
+  handleRemoveDecorationInstance,
   handleEquipFilter,
   handleUseTreatmentFromInventory,
   handleDeployShrimpFromInventory,
@@ -760,10 +764,12 @@ export function GameScreen({
                     >
                       <AquariumBackground
                         background={customization.background}
+                        bgImagePath={customization.bgImagePath}
                         decorations={customization.decorations}
                         decorationPositions={customization.decorationPositions}
                         onUpdateDecorationPosition={handleUpdateDecorationPosition}
-                        onRemoveDecoration={handleEquipDecoration}
+                        onUpdateDecorationScale={handleUpdateDecorationScale}
+                        onRemoveDecoration={handleRemoveDecorationInstance}
                       />
                       {/* Food Items */}
                       {(gameState.foodItems || []).map(food => (

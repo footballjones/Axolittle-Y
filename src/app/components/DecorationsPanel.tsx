@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ChevronDown, Leaf, Mountain, Shell, Waves, Settings, Wrench, Sparkles, Droplets, FlaskConical } from 'lucide-react';
-import { DECORATIONS } from '../data/decorations';
+import { DECORATIONS, getDecorationById } from '../data/decorations';
 import { GameIcon, CoinIcon } from './icons';
 
 const DECO_CATEGORIES = [
@@ -226,7 +226,16 @@ export function DecorationsPanel({
                       >
                         <div className="grid grid-cols-3 gap-2 px-3 pb-3">
                           {group.items.map((item, i) => {
-                            const isEquipped = equippedDecos.includes(item.id) || (item.type === 'background' && activeBackground === item.id);
+                            const ownedCount = owned.filter(id => id === item.id).length;
+                            const placedCount = equippedDecos.filter(id => id === item.id).length;
+                            const isBackground = item.type === 'background';
+                            const isBgActive = isBackground && activeBackground === item.id;
+                            const totalPlaced = equippedDecos.filter(id => {
+                              const d = getDecorationById(id);
+                              return d && d.type !== 'background';
+                            }).length;
+                            const canPlace = !isBackground && placedCount < ownedCount && totalPlaced < 5;
+                            const hasAnyInTank = !isBackground && placedCount > 0;
                             return (
                               <motion.div
                                 key={item.id}
@@ -235,31 +244,45 @@ export function DecorationsPanel({
                                 transition={{ delay: gi * 0.04 + i * 0.04 }}
                                 className="relative flex flex-col items-center gap-1.5 py-3 px-2 rounded-2xl overflow-hidden"
                                 style={{
-                                  background: isEquipped ? 'linear-gradient(135deg, rgba(167,243,208,0.6), rgba(110,231,183,0.45))' : 'rgba(255,255,255,0.65)',
-                                  border: isEquipped ? '1.5px solid rgba(52,211,153,0.5)' : `1.5px solid ${group.border}`,
+                                  background: hasAnyInTank || isBgActive ? 'linear-gradient(135deg, rgba(167,243,208,0.6), rgba(110,231,183,0.45))' : 'rgba(255,255,255,0.65)',
+                                  border: hasAnyInTank || isBgActive ? '1.5px solid rgba(52,211,153,0.5)' : `1.5px solid ${group.border}`,
                                 }}
                               >
-                                {isEquipped && (
+                                {!isBackground && (
+                                  <div className="absolute top-1.5 right-1.5 flex flex-col items-end gap-0.5">
+                                    {ownedCount > 1 && (
+                                      <div className="text-[6px] font-black text-white px-1 py-0.5 rounded-full" style={{ background: 'rgba(100,116,139,0.75)' }}>×{ownedCount}</div>
+                                    )}
+                                    {placedCount > 0 && (
+                                      <div className="text-[6px] font-black text-white px-1 py-0.5 rounded-full" style={{ background: 'linear-gradient(135deg,#34d399,#10b981)' }}>{placedCount} on</div>
+                                    )}
+                                  </div>
+                                )}
+                                {isBgActive && (
                                   <div className="absolute top-1.5 right-1.5 text-[6px] font-black text-white px-1 py-0.5 rounded-full" style={{ background: 'linear-gradient(135deg,#34d399,#10b981)' }}>ON</div>
                                 )}
                                 <div className="w-11 h-11 rounded-xl flex items-center justify-center shadow-sm" style={{ background: group.color }}>
                                   <GameIcon name={item.icon} size={22} />
                                 </div>
                                 <span className="text-[10px] font-bold text-slate-700 text-center leading-tight">{item.name}</span>
-                                {item.type === 'background' ? (
+                                {isBackground ? (
                                   <motion.button onClick={() => onEquip(item.id)} className="w-full py-1 rounded-xl text-[9px] font-black text-white"
-                                    style={{ background: isEquipped ? 'linear-gradient(135deg,#34d399,#10b981)' : 'linear-gradient(135deg,#38bdf8,#0ea5e9)' }} whileTap={{ scale: 0.94 }}>
-                                    {isEquipped ? 'Active' : 'Use'}
-                                  </motion.button>
-                                ) : isEquipped ? (
-                                  <motion.button onClick={() => onEquip(item.id)} className="w-full py-1 rounded-xl text-[9px] font-black"
-                                    style={{ background: 'rgba(239,246,255,0.8)', color: '#64748b', border: '1px solid rgba(203,213,225,0.5)' }} whileTap={{ scale: 0.94 }}>
-                                    Remove
+                                    style={{ background: isBgActive ? 'linear-gradient(135deg,#34d399,#10b981)' : 'linear-gradient(135deg,#38bdf8,#0ea5e9)' }} whileTap={{ scale: 0.94 }}>
+                                    {isBgActive ? 'Active' : 'Use'}
                                   </motion.button>
                                 ) : (
-                                  <motion.button onClick={() => onEquip(item.id)} className="w-full py-1 rounded-xl text-[9px] font-black text-white"
-                                    style={{ background: 'linear-gradient(135deg,#38bdf8,#0ea5e9)', boxShadow: '0 2px 6px rgba(14,165,233,0.3)' }} whileTap={{ scale: 0.94 }}>
-                                    Equip
+                                  <motion.button
+                                    onClick={() => canPlace && onEquip(item.id)}
+                                    className="w-full py-1 rounded-xl text-[9px] font-black"
+                                    style={{
+                                      background: canPlace ? 'linear-gradient(135deg,#38bdf8,#0ea5e9)' : 'rgba(203,213,225,0.5)',
+                                      color: canPlace ? '#fff' : '#94a3b8',
+                                      cursor: canPlace ? 'pointer' : 'default',
+                                      boxShadow: canPlace ? '0 2px 6px rgba(14,165,233,0.3)' : 'none',
+                                    }}
+                                    whileTap={canPlace ? { scale: 0.94 } : {}}
+                                  >
+                                    {canPlace ? 'Place' : totalPlaced >= 5 ? 'Tank full' : 'All placed'}
                                   </motion.button>
                                 )}
                               </motion.div>

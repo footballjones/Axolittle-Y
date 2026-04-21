@@ -1,155 +1,165 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 230">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 150 240">
   <defs>
-    <!-- Warm sandy buff — classic aquarium ornament resin colour -->
     <linearGradient id="ctr" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0%"   stop-color="#c8aa78"/>
-      <stop offset="40%"  stop-color="#e8cfa0"/>
-      <stop offset="100%" stop-color="#a88e60"/>
+      <stop offset="0%"   stop-color="#c0a870"/>
+      <stop offset="38%"  stop-color="#e2c890"/>
+      <stop offset="100%" stop-color="#a08858"/>
     </linearGradient>
-    <linearGradient id="ltv" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0%"   stop-color="#a88e60"/>
-      <stop offset="55%"  stop-color="#d4b880"/>
-      <stop offset="100%" stop-color="#907858"/>
+    <linearGradient id="lt" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%"   stop-color="#a08858"/>
+      <stop offset="52%"  stop-color="#ccb07a"/>
+      <stop offset="100%" stop-color="#887048"/>
     </linearGradient>
-    <linearGradient id="rtv" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0%"   stop-color="#907858"/>
-      <stop offset="45%"  stop-color="#d4b880"/>
-      <stop offset="100%" stop-color="#a88e60"/>
+    <linearGradient id="rt" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%"   stop-color="#887048"/>
+      <stop offset="48%"  stop-color="#ccb07a"/>
+      <stop offset="100%" stop-color="#a08858"/>
     </linearGradient>
-    <linearGradient id="wall" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0%"   stop-color="#c0a070"/>
-      <stop offset="100%" stop-color="#a08058"/>
+    <linearGradient id="wl" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%"   stop-color="#b89868"/>
+      <stop offset="100%" stop-color="#988050"/>
     </linearGradient>
-    <!-- Subtle depth shading down the tower faces -->
-    <linearGradient id="shade" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%"   stop-color="#000000" stop-opacity="0.00"/>
-      <stop offset="100%" stop-color="#000000" stop-opacity="0.18"/>
+    <!-- Vertical shading so towers look rounded/3-D -->
+    <linearGradient id="sdl" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%"   stop-color="#000" stop-opacity="0.22"/>
+      <stop offset="60%"  stop-color="#000" stop-opacity="0.00"/>
+      <stop offset="100%" stop-color="#000" stop-opacity="0.12"/>
+    </linearGradient>
+    <linearGradient id="sdc" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%"   stop-color="#000" stop-opacity="0.18"/>
+      <stop offset="42%"  stop-color="#000" stop-opacity="0.00"/>
+      <stop offset="100%" stop-color="#000" stop-opacity="0.15"/>
+    </linearGradient>
+    <!-- Top-to-bottom depth fade -->
+    <linearGradient id="bot" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#000" stop-opacity="0.00"/>
+      <stop offset="100%" stop-color="#000" stop-opacity="0.20"/>
     </linearGradient>
   </defs>
 
   <!-- ══ LEFT TURRET ════════════════════════════════════════════════════════ -->
-  <rect x="3"  y="84" width="34" height="146" fill="url(#ltv)"/>
-  <rect x="3"  y="84" width="34" height="146" fill="url(#shade)"/>
-  <!-- Crenellations -->
-  <rect x="3"  y="68" width="9"  height="16" fill="url(#ltv)"/>
-  <rect x="16" y="68" width="9"  height="16" fill="url(#ltv)"/>
-  <rect x="29" y="68" width="8"  height="16" fill="url(#ltv)"/>
-  <!-- Parapet ledge -->
-  <rect x="3"  y="84" width="34" height="3"  fill="#806040"/>
-  <!-- Arrow slits — warm dark opening -->
-  <rect x="15" y="118" width="7" height="16" rx="3.5" fill="#3a2810"/>
-  <rect x="15" y="166" width="7" height="12" rx="3.5" fill="#3a2810"/>
-  <!-- Stone mortar lines -->
-  <line x1="3"  y1="100" x2="37" y2="100" stroke="#907050" stroke-width="1.0" opacity="0.55"/>
-  <line x1="3"  y1="118" x2="37" y2="118" stroke="#907050" stroke-width="1.0" opacity="0.55"/>
-  <line x1="3"  y1="136" x2="37" y2="136" stroke="#907050" stroke-width="1.0" opacity="0.55"/>
-  <line x1="3"  y1="154" x2="37" y2="154" stroke="#907050" stroke-width="1.0" opacity="0.55"/>
-  <line x1="3"  y1="172" x2="37" y2="172" stroke="#907050" stroke-width="1.0" opacity="0.55"/>
-  <line x1="3"  y1="190" x2="37" y2="190" stroke="#907050" stroke-width="1.0" opacity="0.55"/>
-  <line x1="3"  y1="208" x2="37" y2="208" stroke="#907050" stroke-width="1.0" opacity="0.55"/>
+  <!-- Body — slightly rounded corners for a masonry feel -->
+  <rect x="3"   y="82"  width="36" height="158" rx="2" fill="url(#lt)"/>
+  <rect x="3"   y="82"  width="36" height="158" rx="2" fill="url(#sdl)"/>
+  <rect x="3"   y="82"  width="36" height="158" rx="2" fill="url(#bot)"/>
+  <!-- Battlements: 3 merlons separated by crenels -->
+  <rect x="3"   y="64"  width="10" height="18"  rx="1" fill="url(#lt)"/>
+  <rect x="18"  y="64"  width="10" height="18"  rx="1" fill="url(#lt)"/>
+  <rect x="33"  y="64"  width="6"  height="18"  rx="1" fill="url(#lt)"/>
+  <!-- Walk ledge -->
+  <rect x="3"   y="82"  width="36" height="3.5" fill="#70582a"/>
+  <!-- Arrow loop upper -->
+  <rect x="15"  y="116" width="8"  height="18"  rx="4" fill="#2e1e08"/>
+  <!-- Arrow loop lower -->
+  <rect x="15"  y="164" width="8"  height="14"  rx="4" fill="#2e1e08"/>
+  <!-- Mortar courses -->
+  <line x1="3"  y1="100" x2="39" y2="100" stroke="#88682e" stroke-width="1.1" opacity="0.50"/>
+  <line x1="3"  y1="118" x2="39" y2="118" stroke="#88682e" stroke-width="1.1" opacity="0.50"/>
+  <line x1="3"  y1="136" x2="39" y2="136" stroke="#88682e" stroke-width="1.1" opacity="0.50"/>
+  <line x1="3"  y1="154" x2="39" y2="154" stroke="#88682e" stroke-width="1.1" opacity="0.50"/>
+  <line x1="3"  y1="172" x2="39" y2="172" stroke="#88682e" stroke-width="1.1" opacity="0.50"/>
+  <line x1="3"  y1="190" x2="39" y2="190" stroke="#88682e" stroke-width="1.1" opacity="0.50"/>
+  <line x1="3"  y1="208" x2="39" y2="208" stroke="#88682e" stroke-width="1.1" opacity="0.50"/>
+  <!-- Vertical block offsets -->
+  <line x1="14" y1="82"  x2="14" y2="100" stroke="#88682e" stroke-width="0.7" opacity="0.35"/>
+  <line x1="27" y1="100" x2="27" y2="118" stroke="#88682e" stroke-width="0.7" opacity="0.35"/>
+  <line x1="14" y1="118" x2="14" y2="136" stroke="#88682e" stroke-width="0.7" opacity="0.35"/>
+  <line x1="27" y1="136" x2="27" y2="154" stroke="#88682e" stroke-width="0.7" opacity="0.35"/>
 
   <!-- ══ RIGHT TURRET ═══════════════════════════════════════════════════════ -->
-  <rect x="103" y="84" width="34" height="146" fill="url(#rtv)"/>
-  <rect x="103" y="84" width="34" height="146" fill="url(#shade)"/>
-  <rect x="103" y="68" width="9"  height="16" fill="url(#rtv)"/>
-  <rect x="116" y="68" width="9"  height="16" fill="url(#rtv)"/>
-  <rect x="129" y="68" width="8"  height="16" fill="url(#rtv)"/>
-  <rect x="103" y="84" width="34" height="3"  fill="#806040"/>
-  <rect x="118" y="118" width="7" height="16" rx="3.5" fill="#3a2810"/>
-  <rect x="118" y="166" width="7" height="12" rx="3.5" fill="#3a2810"/>
-  <line x1="103" y1="100" x2="137" y2="100" stroke="#907050" stroke-width="1.0" opacity="0.55"/>
-  <line x1="103" y1="118" x2="137" y2="118" stroke="#907050" stroke-width="1.0" opacity="0.55"/>
-  <line x1="103" y1="136" x2="137" y2="136" stroke="#907050" stroke-width="1.0" opacity="0.55"/>
-  <line x1="103" y1="154" x2="137" y2="154" stroke="#907050" stroke-width="1.0" opacity="0.55"/>
-  <line x1="103" y1="172" x2="137" y2="172" stroke="#907050" stroke-width="1.0" opacity="0.55"/>
-  <line x1="103" y1="190" x2="137" y2="190" stroke="#907050" stroke-width="1.0" opacity="0.55"/>
-  <line x1="103" y1="208" x2="137" y2="208" stroke="#907050" stroke-width="1.0" opacity="0.55"/>
+  <rect x="111" y="82"  width="36" height="158" rx="2" fill="url(#rt)"/>
+  <rect x="111" y="82"  width="36" height="158" rx="2" fill="url(#sdl)"/>
+  <rect x="111" y="82"  width="36" height="158" rx="2" fill="url(#bot)"/>
+  <rect x="111" y="64"  width="10" height="18"  rx="1" fill="url(#rt)"/>
+  <rect x="126" y="64"  width="10" height="18"  rx="1" fill="url(#rt)"/>
+  <rect x="141" y="64"  width="6"  height="18"  rx="1" fill="url(#rt)"/>
+  <rect x="111" y="82"  width="36" height="3.5" fill="#70582a"/>
+  <rect x="127" y="116" width="8"  height="18"  rx="4" fill="#2e1e08"/>
+  <rect x="127" y="164" width="8"  height="14"  rx="4" fill="#2e1e08"/>
+  <line x1="111" y1="100" x2="147" y2="100" stroke="#88682e" stroke-width="1.1" opacity="0.50"/>
+  <line x1="111" y1="118" x2="147" y2="118" stroke="#88682e" stroke-width="1.1" opacity="0.50"/>
+  <line x1="111" y1="136" x2="147" y2="136" stroke="#88682e" stroke-width="1.1" opacity="0.50"/>
+  <line x1="111" y1="154" x2="147" y2="154" stroke="#88682e" stroke-width="1.1" opacity="0.50"/>
+  <line x1="111" y1="172" x2="147" y2="172" stroke="#88682e" stroke-width="1.1" opacity="0.50"/>
+  <line x1="111" y1="190" x2="147" y2="190" stroke="#88682e" stroke-width="1.1" opacity="0.50"/>
+  <line x1="111" y1="208" x2="147" y2="208" stroke="#88682e" stroke-width="1.1" opacity="0.50"/>
+  <line x1="122" y1="82"  x2="122" y2="100" stroke="#88682e" stroke-width="0.7" opacity="0.35"/>
+  <line x1="135" y1="100" x2="135" y2="118" stroke="#88682e" stroke-width="0.7" opacity="0.35"/>
+  <line x1="122" y1="118" x2="122" y2="136" stroke="#88682e" stroke-width="0.7" opacity="0.35"/>
+  <line x1="135" y1="136" x2="135" y2="154" stroke="#88682e" stroke-width="0.7" opacity="0.35"/>
 
-  <!-- ══ CONNECTING WALLS ═══════════════════════════════════════════════════ -->
-  <polygon points="37,148 42,138 48,144 50,148 50,230 37,230" fill="url(#wall)"/>
-  <polygon points="90,148 92,140 97,147 103,148 103,230 90,230" fill="url(#wall)"/>
-  <line x1="37" y1="166" x2="50" y2="166" stroke="#907050" stroke-width="0.8" opacity="0.50"/>
-  <line x1="37" y1="185" x2="50" y2="185" stroke="#907050" stroke-width="0.8" opacity="0.50"/>
-  <line x1="37" y1="204" x2="50" y2="204" stroke="#907050" stroke-width="0.8" opacity="0.50"/>
-  <line x1="90" y1="166" x2="103" y2="166" stroke="#907050" stroke-width="0.8" opacity="0.50"/>
-  <line x1="90" y1="185" x2="103" y2="185" stroke="#907050" stroke-width="0.8" opacity="0.50"/>
-  <line x1="90" y1="204" x2="103" y2="204" stroke="#907050" stroke-width="0.8" opacity="0.50"/>
+  <!-- ══ CURTAIN WALLS ══════════════════════════════════════════════════════ -->
+  <rect x="39"  y="148" width="12" height="92" fill="url(#wl)"/>
+  <rect x="39"  y="148" width="12" height="92" fill="url(#bot)"/>
+  <rect x="99"  y="148" width="12" height="92" fill="url(#wl)"/>
+  <rect x="99"  y="148" width="12" height="92" fill="url(#bot)"/>
+  <!-- Wall top crenels (simple notches) -->
+  <rect x="39"  y="138" width="5"  height="10" rx="1" fill="url(#wl)"/>
+  <rect x="99"  y="138" width="5"  height="10" rx="1" fill="url(#wl)"/>
+  <rect x="107" y="138" width="4"  height="10" rx="1" fill="url(#wl)"/>
+  <!-- Wall mortar lines -->
+  <line x1="39"  y1="164" x2="51" y2="164" stroke="#88682e" stroke-width="0.9" opacity="0.45"/>
+  <line x1="39"  y1="182" x2="51" y2="182" stroke="#88682e" stroke-width="0.9" opacity="0.45"/>
+  <line x1="39"  y1="200" x2="51" y2="200" stroke="#88682e" stroke-width="0.9" opacity="0.45"/>
+  <line x1="39"  y1="218" x2="51" y2="218" stroke="#88682e" stroke-width="0.9" opacity="0.45"/>
+  <line x1="99"  y1="164" x2="111" y2="164" stroke="#88682e" stroke-width="0.9" opacity="0.45"/>
+  <line x1="99"  y1="182" x2="111" y2="182" stroke="#88682e" stroke-width="0.9" opacity="0.45"/>
+  <line x1="99"  y1="200" x2="111" y2="200" stroke="#88682e" stroke-width="0.9" opacity="0.45"/>
+  <line x1="99"  y1="218" x2="111" y2="218" stroke="#88682e" stroke-width="0.9" opacity="0.45"/>
 
-  <!-- ══ CENTRAL TOWER ═══════════════════════════════════════════════════════ -->
-  <rect x="44" y="22" width="52" height="208" fill="url(#ctr)"/>
-  <rect x="44" y="22" width="52" height="208" fill="url(#shade)"/>
-  <!-- Crenellations -->
-  <rect x="44" y="5"  width="9"  height="17" fill="url(#ctr)"/>
-  <rect x="57" y="5"  width="9"  height="17" fill="url(#ctr)"/>
-  <rect x="70" y="5"  width="9"  height="17" fill="url(#ctr)"/>
-  <rect x="83" y="5"  width="9"  height="17" fill="url(#ctr)"/>
-  <rect x="44" y="22" width="52" height="3"  fill="#806040"/>
-  <!-- Upper arched window -->
-  <path d="M62,60 L62,84 Q70,92 78,84 L78,60 Q70,52 62,60 Z" fill="#3a2810"/>
-  <!-- Arrow slit -->
-  <rect x="67" y="108" width="6" height="20" rx="3" fill="#3a2810"/>
+  <!-- ══ CENTRAL KEEP ════════════════════════════════════════════════════════ -->
+  <rect x="47"  y="22"  width="56" height="218" rx="2" fill="url(#ctr)"/>
+  <rect x="47"  y="22"  width="56" height="218" rx="2" fill="url(#sdc)"/>
+  <rect x="47"  y="22"  width="56" height="218" rx="2" fill="url(#bot)"/>
+  <!-- Battlements: 5 merlons -->
+  <rect x="47"  y="4"   width="10" height="18"  rx="1" fill="url(#ctr)"/>
+  <rect x="61"  y="4"   width="10" height="18"  rx="1" fill="url(#ctr)"/>
+  <rect x="75"  y="4"   width="10" height="18"  rx="1" fill="url(#ctr)"/>
+  <rect x="89"  y="4"   width="10" height="18"  rx="1" fill="url(#ctr)"/>
+  <rect x="47"  y="22"  width="56" height="3.5" fill="#70582a"/>
+  <!-- Upper arched window — proper pointed arch -->
+  <path d="M63,58 L63,82 Q75,94 87,82 L87,58 Q75,46 63,58 Z" fill="#2e1e08"/>
+  <!-- Narrow arrow loop mid -->
+  <rect x="72"  y="110" width="6"  height="22"  rx="3" fill="#2e1e08"/>
   <!-- Lower arched window -->
-  <path d="M62,148 L62,170 Q70,178 78,170 L78,148 Q70,140 62,148 Z" fill="#3a2810"/>
-  <!-- Gate arch — fish can swim through -->
-  <path d="M57,204 L57,230 L83,230 L83,204 Q70,190 57,204 Z" fill="#3a2810"/>
-  <!-- Mortar lines -->
-  <line x1="44" y1="44"  x2="96" y2="44"  stroke="#a08050" stroke-width="1.1" opacity="0.55"/>
-  <line x1="44" y1="68"  x2="96" y2="68"  stroke="#a08050" stroke-width="1.1" opacity="0.55"/>
-  <line x1="44" y1="92"  x2="96" y2="92"  stroke="#a08050" stroke-width="1.1" opacity="0.55"/>
-  <line x1="44" y1="116" x2="96" y2="116" stroke="#a08050" stroke-width="1.1" opacity="0.55"/>
-  <line x1="44" y1="140" x2="96" y2="140" stroke="#a08050" stroke-width="1.1" opacity="0.55"/>
-  <line x1="44" y1="166" x2="96" y2="166" stroke="#a08050" stroke-width="1.1" opacity="0.55"/>
-  <line x1="44" y1="190" x2="96" y2="190" stroke="#a08050" stroke-width="1.1" opacity="0.55"/>
-  <!-- Ashlar vertical lines -->
-  <line x1="58" y1="22"  x2="58" y2="60"  stroke="#a08050" stroke-width="0.7" opacity="0.38"/>
-  <line x1="73" y1="44"  x2="73" y2="92"  stroke="#a08050" stroke-width="0.7" opacity="0.38"/>
-  <line x1="83" y1="22"  x2="83" y2="60"  stroke="#a08050" stroke-width="0.7" opacity="0.38"/>
-  <line x1="58" y1="92"  x2="58" y2="140" stroke="#a08050" stroke-width="0.7" opacity="0.38"/>
-  <line x1="80" y1="92"  x2="80" y2="140" stroke="#a08050" stroke-width="0.7" opacity="0.38"/>
-  <line x1="62" y1="166" x2="62" y2="204" stroke="#a08050" stroke-width="0.7" opacity="0.38"/>
-  <line x1="83" y1="166" x2="83" y2="204" stroke="#a08050" stroke-width="0.7" opacity="0.38"/>
+  <path d="M63,148 L63,170 Q75,182 87,170 L87,148 Q75,136 63,148 Z" fill="#2e1e08"/>
+  <!-- Gate — clean semicircular arch -->
+  <path d="M60,206 Q60,182 75,182 Q90,182 90,206 L90,240 L60,240 Z" fill="#2e1e08"/>
+  <!-- Mortar courses -->
+  <line x1="47"  y1="44"  x2="103" y2="44"  stroke="#98782e" stroke-width="1.2" opacity="0.50"/>
+  <line x1="47"  y1="68"  x2="103" y2="68"  stroke="#98782e" stroke-width="1.2" opacity="0.50"/>
+  <line x1="47"  y1="92"  x2="103" y2="92"  stroke="#98782e" stroke-width="1.2" opacity="0.50"/>
+  <line x1="47"  y1="116" x2="103" y2="116" stroke="#98782e" stroke-width="1.2" opacity="0.50"/>
+  <line x1="47"  y1="140" x2="103" y2="140" stroke="#98782e" stroke-width="1.2" opacity="0.50"/>
+  <line x1="47"  y1="164" x2="103" y2="164" stroke="#98782e" stroke-width="1.2" opacity="0.50"/>
+  <line x1="47"  y1="188" x2="103" y2="188" stroke="#98782e" stroke-width="1.2" opacity="0.50"/>
+  <!-- Ashlar vertical offsets -->
+  <line x1="62"  y1="22"  x2="62"  y2="44"  stroke="#98782e" stroke-width="0.7" opacity="0.36"/>
+  <line x1="78"  y1="44"  x2="78"  y2="68"  stroke="#98782e" stroke-width="0.7" opacity="0.36"/>
+  <line x1="90"  y1="22"  x2="90"  y2="44"  stroke="#98782e" stroke-width="0.7" opacity="0.36"/>
+  <line x1="60"  y1="92"  x2="60"  y2="116" stroke="#98782e" stroke-width="0.7" opacity="0.36"/>
+  <line x1="82"  y1="92"  x2="82"  y2="116" stroke="#98782e" stroke-width="0.7" opacity="0.36"/>
+  <line x1="60"  y1="188" x2="60"  y2="206" stroke="#98782e" stroke-width="0.7" opacity="0.36"/>
+  <line x1="90"  y1="188" x2="90"  y2="206" stroke="#98782e" stroke-width="0.7" opacity="0.36"/>
 
   <!-- ══ DAMAGE ═══════════════════════════════════════════════════════════════ -->
-  <polyline points="66,92 62,112 65,136"  stroke="#5a3818" stroke-width="1.5" fill="none" opacity="0.55"/>
-  <polyline points="22,136 19,150 23,166" stroke="#5a3818" stroke-width="1.2" fill="none" opacity="0.45"/>
-  <!-- Chipped merlon -->
-  <polygon points="83,5 96,5 96,20 90,22" fill="#b8985e"/>
-  <polygon points="83,5 88,5 88,12"       fill="#907040"/>
+  <!-- Crack in central keep -->
+  <polyline points="70,92 66,114 70,138" stroke="#4a3010" stroke-width="1.5" fill="none" opacity="0.55"/>
+  <!-- Crack in left turret -->
+  <polyline points="24,136 21,152 25,168" stroke="#4a3010" stroke-width="1.2" fill="none" opacity="0.45"/>
+  <!-- Chipped merlon (top-right of keep) -->
+  <polygon points="89,4 103,4 103,20 95,22" fill="#c0a070"/>
+  <polygon points="89,4 95,4 95,12"         fill="#987040"/>
 
-  <!-- ══ ALGAE & CORAL GROWTH ═══════════════════════════════════════════════ -->
-  <!-- Left turret algae tufts -->
-  <path d="M7,155  Q4,145 4,136"   stroke="#38a028" stroke-width="3.2" fill="none" stroke-linecap="round"/>
-  <path d="M9,155  Q13,145 12,137" stroke="#4aba38" stroke-width="2.5" fill="none" stroke-linecap="round"/>
-  <circle cx="4"  cy="136" r="4.8" fill="#30902a"/>
-  <circle cx="12" cy="137" r="3.4" fill="#4aba38"/>
-  <path d="M12,208 Q9,198 10,190"  stroke="#38a028" stroke-width="2.8" fill="none" stroke-linecap="round"/>
-  <circle cx="10" cy="190" r="4.0" fill="#30902a"/>
-  <!-- Right turret algae -->
-  <path d="M133,155 Q136,145 136,136" stroke="#38a028" stroke-width="3.2" fill="none" stroke-linecap="round"/>
-  <path d="M131,156 Q127,147 128,139" stroke="#4aba38" stroke-width="2.5" fill="none" stroke-linecap="round"/>
-  <circle cx="136" cy="136" r="4.8" fill="#30902a"/>
-  <circle cx="128" cy="139" r="3.4" fill="#4aba38"/>
-  <path d="M128,210 Q131,200 130,192" stroke="#38a028" stroke-width="2.8" fill="none" stroke-linecap="round"/>
-  <circle cx="130" cy="192" r="4.0" fill="#30902a"/>
-  <!-- Central tower algae -->
-  <path d="M48,140 Q44,130 45,122"  stroke="#38a028" stroke-width="2.8" fill="none" stroke-linecap="round"/>
-  <circle cx="45" cy="122" r="4.0" fill="#30902a"/>
-  <path d="M92,168 Q96,158 95,150"  stroke="#38a028" stroke-width="2.8" fill="none" stroke-linecap="round"/>
-  <circle cx="95" cy="150" r="4.0" fill="#30902a"/>
-
-  <!-- Small barnacle/coral dots on lower stones -->
-  <circle cx="10"  cy="220" r="2.5" fill="#e07040" opacity="0.80"/>
-  <circle cx="18"  cy="225" r="2.0" fill="#d86030" opacity="0.75"/>
-  <circle cx="125" cy="218" r="2.5" fill="#e07040" opacity="0.80"/>
-  <circle cx="118" cy="224" r="2.0" fill="#d86030" opacity="0.75"/>
-  <circle cx="60"  cy="225" r="2.2" fill="#e07040" opacity="0.75"/>
-  <circle cx="80"  cy="226" r="2.0" fill="#c05828" opacity="0.70"/>
-
-  <!-- Base algae bloom -->
-  <ellipse cx="20"  cy="230" rx="17" ry="5" fill="#30902a" opacity="0.82"/>
-  <ellipse cx="70"  cy="230" rx="24" ry="5" fill="#30902a" opacity="0.72"/>
-  <ellipse cx="120" cy="230" rx="17" ry="5" fill="#30902a" opacity="0.82"/>
-
-  <!-- Gate interior glow — warm torchlight or bioluminescence -->
-  <ellipse cx="70" cy="222" rx="12" ry="5" fill="#80d0a0" opacity="0.14"/>
+  <!-- ══ BARNACLES (small encrusting spots — no plants) ════════════════════ -->
+  <circle cx="8"   cy="218" r="2.8" fill="#cc6030" opacity="0.82"/>
+  <circle cx="16"  cy="226" r="2.2" fill="#e07040" opacity="0.75"/>
+  <circle cx="28"  cy="222" r="1.8" fill="#cc6030" opacity="0.70"/>
+  <circle cx="122" cy="218" r="2.8" fill="#cc6030" opacity="0.82"/>
+  <circle cx="134" cy="224" r="2.2" fill="#e07040" opacity="0.75"/>
+  <circle cx="119" cy="228" r="1.8" fill="#cc6030" opacity="0.70"/>
+  <circle cx="58"  cy="230" r="2.2" fill="#e07040" opacity="0.72"/>
+  <circle cx="92"  cy="232" r="2.0" fill="#cc6030" opacity="0.68"/>
+  <circle cx="42"  cy="228" r="1.8" fill="#e07040" opacity="0.65"/>
+  <circle cx="108" cy="226" r="1.8" fill="#cc6030" opacity="0.65"/>
 </svg>

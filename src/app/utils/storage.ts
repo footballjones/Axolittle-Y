@@ -168,6 +168,14 @@ export function loadGameState(): GameState | null {
 
       // Always ensure Jimmy & Chubs is present (non-deletable preset friend)
       const gs = gameState as GameState;
+
+      // Migrate old decorations format: string[] → PlacedDecoration[]
+      if (gs.customization?.decorations?.length > 0 && typeof gs.customization.decorations[0] === 'string') {
+        gs.customization.decorations = (gs.customization.decorations as unknown as string[]).map(id => ({
+          instanceId: id,
+          decorationId: id,
+        }));
+      }
       if (!gs.friends) gs.friends = [];
       if (!gs.friends.some(f => f.id === JIMMY_CHUBS_ID)) {
         gs.friends = [JIMMY_CHUBS_FRIEND, ...gs.friends];

@@ -51,10 +51,17 @@ export interface DecorationItem {
   svgPath?: string;                    // Path to animated SVG asset (relative to BASE_URL)
 }
 
+export interface PlacedDecoration {
+  instanceId: string;
+  decorationId: string;
+}
+
 export interface AquariumCustomization {
-  background: string;
-  decorations: string[]; // decoration IDs
-  decorationPositions?: Record<string, { x: number; y: number }>; // % from top-left per decoration ID
+  background: string;              // CSS color/gradient overlay (empty = no tint)
+  backgroundId?: string;           // Active background decoration ID (for shop "active" indicator)
+  bgImagePath?: string;            // Filename in public/ that replaces the default aquarium-bg.png
+  decorations: PlacedDecoration[]; // one entry per placed instance
+  decorationPositions?: Record<string, { x: number; y: number; scale?: number }>; // keyed by instanceId
 }
 
 export interface Egg {

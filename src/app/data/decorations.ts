@@ -25,18 +25,16 @@ export const DECORATIONS: DecorationItem[] = [
   { id: 'ornament-6', name: 'Ancient Vase', type: 'ornament', cost: 175, icon: 'Archive', size: 'md', layer: 'floor' },
 
   // ── Backgrounds ─────────────────────────────────────────────────────────────
-  { id: 'bg-1', name: 'Deep Blue', type: 'background', cost: 0,   icon: 'Waves'   },
-  { id: 'bg-2', name: 'Sunset',    type: 'background', cost: 100, icon: 'Sunrise' },
-  { id: 'bg-3', name: 'Night',     type: 'background', cost: 150, icon: 'Moon'    },
-  { id: 'bg-4', name: 'Tropical',  type: 'background', cost: 200, icon: 'Trees'   },
+  { id: 'bg-5', name: 'Starting Waters', type: 'background', cost: 0, icon: 'Waves' },
 ];
 
-export const BACKGROUND_COLORS: Record<string, string> = {
-  'bg-1': '#1e40af',
-  'bg-2': 'linear-gradient(to bottom, #ff7e5f, #feb47b)',
-  'bg-3': 'linear-gradient(to bottom, #0f172a, #1e293b)',
-  'bg-4': 'linear-gradient(to bottom, #06b6d4, #22d3ee)',
+// Image backgrounds: maps decoration ID → filename in public/
+export const BACKGROUND_IMAGES: Record<string, string> = {
+  'bg-5': 'aquarium-bg-starting.png',
 };
+
+// Color/gradient tint backgrounds (kept for future use / backward compat)
+export const BACKGROUND_COLORS: Record<string, string> = {};
 
 export function getDecorationById(id: string): DecorationItem | undefined {
   return DECORATIONS.find(d => d.id === id);

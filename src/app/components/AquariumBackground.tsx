@@ -1,16 +1,18 @@
 import { useRef, useState } from 'react';
 import { motion, useMotionValue } from 'motion/react';
-import { LayoutGrid, Check, X } from 'lucide-react';
+import { LayoutGrid, Check, X, Plus, Minus } from 'lucide-react';
 import { getDecorationById } from '../data/decorations';
-import { DecorationItem } from '../types/game';
+import { DecorationItem, PlacedDecoration } from '../types/game';
 import { GameIcon } from './icons';
 
 interface AquariumBackgroundProps {
   background: string;
-  decorations: string[];
-  decorationPositions?: Record<string, { x: number; y: number }>;
+  bgImagePath?: string;
+  decorations: PlacedDecoration[];
+  decorationPositions?: Record<string, { x: number; y: number; scale?: number }>;
   onUpdateDecorationPosition?: (id: string, x: number, y: number) => void;
-  onRemoveDecoration?: (id: string) => void;
+  onUpdateDecorationScale?: (id: string, scale: number) => void;
+  onRemoveDecoration?: (instanceId: string) => void;
 }
 
 // These are bottom-anchor positions: the decoration's BASE sits at this % from container top.
@@ -38,25 +40,39 @@ function getDefaultPosition(decoration: DecorationItem, index: number, total: nu
 
 interface DraggableDecorationProps {
   decoration: DecorationItem;
-  position: { x: number; y: number };
+  instanceId: string;
+  position: { x: number; y: number; scale?: number };
   arrangeMode: boolean;
+  selectedId: string | null;
+  onSelect: (id: string | null) => void;
   containerRef: React.RefObject<HTMLDivElement | null>;
   onCommitPosition: (x: number, y: number) => void;
+  onScaleChange: (scale: number) => void;
   onRemove: () => void;
   entryDelay: number;
 }
 
+const SCALE_MIN = 0.4;
+const SCALE_MAX = 3.0;
+const SCALE_STEP = 0.15;
+
 function DraggableDecoration({
   decoration,
+  instanceId,
   position,
   arrangeMode,
+  selectedId,
+  onSelect,
   containerRef,
   onCommitPosition,
+  onScaleChange,
   onRemove,
   entryDelay,
 }: DraggableDecorationProps) {
   const mx = useMotionValue(0);
   const my = useMotionValue(0);
+  const isSelected = arrangeMode && selectedId === instanceId;
+  const userScale = position.scale ?? 1;
 
   function handleDragEnd(_e: unknown, info: { offset: { x: number; y: number } }) {
     const container = containerRef.current;
@@ -75,8 +91,8 @@ function DraggableDecoration({
     onCommitPosition(newX, newY);
   }
 
-  const svgSize = SVG_SIZE[decoration.size ?? 'md'];
-  const iconSize = ICON_SIZE[decoration.size ?? 'md'];
+  const svgSize = SVG_SIZE[decoration.size ?? 'md'] * userScale;
+  const iconSize = ICON_SIZE[decoration.size ?? 'md'] * userScale;
 
   return (
     <div
@@ -85,8 +101,7 @@ function DraggableDecoration({
         left: `${position.x}%`,
         top: `${position.y}%`,
         transform: 'translate(-50%, -100%)',
-        zIndex: 2,
-        // Non-arrange: pass all pointer events through so tank taps work normally
+        zIndex: isSelected ? 10 : 2,
         pointerEvents: arrangeMode ? 'auto' : 'none',
       }}
     >
@@ -95,17 +110,20 @@ function DraggableDecoration({
         dragMomentum={false}
         dragElastic={0}
         onDragEnd={handleDragEnd}
+        onTap={() => { if (arrangeMode) onSelect(isSelected ? null : instanceId); }}
         initial={{ scale: 0.7, opacity: 0 }}
         animate={{
           scale: 1,
           opacity: 1,
-          filter: arrangeMode
-            ? 'drop-shadow(0 0 10px rgba(56,189,248,0.9))'
-            : 'drop-shadow(0 3px 6px rgba(0,0,0,0.35))',
+          filter: isSelected
+            ? 'drop-shadow(0 0 14px rgba(56,189,248,1.0))'
+            : arrangeMode
+              ? 'drop-shadow(0 0 8px rgba(56,189,248,0.6))'
+              : 'drop-shadow(0 3px 6px rgba(0,0,0,0.35))',
         }}
         transition={{ delay: entryDelay, type: 'spring', stiffness: 220, damping: 16 }}
-        whileHover={arrangeMode ? { scale: 1.1 } : undefined}
-        whileDrag={arrangeMode ? { scale: 1.15 } : undefined}
+        whileHover={arrangeMode ? { scale: 1.05 } : undefined}
+        whileDrag={arrangeMode ? { scale: 1.1 } : undefined}
         className="select-none relative"
         style={{ x: mx, y: my, touchAction: arrangeMode ? 'none' : 'auto', cursor: arrangeMode ? 'grab' : 'default' }}
       >
@@ -131,7 +149,7 @@ function DraggableDecoration({
           </div>
         )}
 
-        {/* Remove button — shown in arrange mode, stops propagation so it doesn't trigger drag */}
+        {/* Remove button */}
         {arrangeMode && (
           <motion.button
             initial={{ opacity: 0, scale: 0 }}
@@ -150,55 +168,104 @@ function DraggableDecoration({
           </motion.button>
         )}
       </motion.div>
+
+      {/* Size controls — appear below the decoration when selected */}
+      {isSelected && (
+        <motion.div
+          initial={{ opacity: 0, y: -4 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex items-center gap-1.5 mt-1.5"
+          style={{ justifyContent: 'center', touchAction: 'none', pointerEvents: 'auto' }}
+        >
+          <motion.button
+            onTap={(e) => { e.stopPropagation(); onScaleChange(Math.max(SCALE_MIN, +(userScale - SCALE_STEP).toFixed(2))); }}
+            whileTap={{ scale: 0.85 }}
+            className="w-7 h-7 rounded-full flex items-center justify-center"
+            style={{
+              background: 'rgba(0,0,0,0.55)',
+              border: '1.5px solid rgba(255,255,255,0.35)',
+              backdropFilter: 'blur(6px)',
+            }}
+          >
+            <Minus size={11} strokeWidth={3} className="text-white" />
+          </motion.button>
+          <span
+            className="text-white font-bold"
+            style={{ fontSize: 9, background: 'rgba(0,0,0,0.45)', borderRadius: 6, padding: '2px 5px' }}
+          >
+            {Math.round(userScale * 100)}%
+          </span>
+          <motion.button
+            onTap={(e) => { e.stopPropagation(); onScaleChange(Math.min(SCALE_MAX, +(userScale + SCALE_STEP).toFixed(2))); }}
+            whileTap={{ scale: 0.85 }}
+            className="w-7 h-7 rounded-full flex items-center justify-center"
+            style={{
+              background: 'rgba(0,0,0,0.55)',
+              border: '1.5px solid rgba(255,255,255,0.35)',
+              backdropFilter: 'blur(6px)',
+            }}
+          >
+            <Plus size={11} strokeWidth={3} className="text-white" />
+          </motion.button>
+        </motion.div>
+      )}
     </div>
   );
 }
 
 export function AquariumBackground({
   background,
+  bgImagePath,
   decorations,
   decorationPositions = {},
   onUpdateDecorationPosition,
+  onUpdateDecorationScale,
   onRemoveDecoration,
 }: AquariumBackgroundProps) {
   const [arrangeMode, setArrangeMode] = useState(false);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const tankDecos = decorations
-    .map(id => getDecorationById(id))
-    .filter((d): d is DecorationItem => !!d && d.type !== 'background');
+    .map(placed => {
+      const item = getDecorationById(placed.decorationId);
+      return item && item.type !== 'background' ? { ...item, instanceId: placed.instanceId } : null;
+    })
+    .filter((d): d is DecorationItem & { instanceId: string } => !!d);
 
   const total = tankDecos.length;
 
   return (
     <div ref={containerRef} className="absolute inset-0" style={{ overflow: arrangeMode ? 'visible' : 'hidden' }}>
       <img
-        src={`${import.meta.env.BASE_URL}aquarium-bg.png`}
+        src={`${import.meta.env.BASE_URL}${bgImagePath ?? 'aquarium-bg.png'}`}
         alt="Aquarium background"
         className="absolute inset-0 w-full h-full object-cover"
         style={{ zIndex: 0 }}
       />
 
-      <div
-        className="absolute inset-0 mix-blend-overlay opacity-40"
-        style={{ background, zIndex: 1 }}
-      />
+      {background && (
+        <div
+          className="absolute inset-0 mix-blend-overlay opacity-40"
+          style={{ background, zIndex: 1 }}
+        />
+      )}
 
       {tankDecos.map((decoration, index) => {
-        const pos = decorationPositions[decoration.id] ?? getDefaultPosition(decoration, index, total);
+        const pos = decorationPositions[decoration.instanceId] ?? getDefaultPosition(decoration, index, total);
         return (
           <DraggableDecoration
-            key={decoration.id}
+            key={decoration.instanceId}
             decoration={decoration}
+            instanceId={decoration.instanceId}
             position={pos}
             arrangeMode={arrangeMode}
+            selectedId={selectedId}
+            onSelect={setSelectedId}
             containerRef={containerRef}
-            onCommitPosition={(x, y) => onUpdateDecorationPosition?.(decoration.id, x, y)}
-            onRemove={() => {
-              onRemoveDecoration?.(decoration.id);
-              // If removed, also clear stored position so re-adding gives a fresh default
-              // (position removal is handled by the equip toggle in game state)
-            }}
+            onCommitPosition={(x, y) => onUpdateDecorationPosition?.(decoration.instanceId, x, y)}
+            onScaleChange={(scale) => onUpdateDecorationScale?.(decoration.instanceId, scale)}
+            onRemove={() => onRemoveDecoration?.(decoration.instanceId)}
             entryDelay={index * 0.12}
           />
         );
@@ -218,7 +285,7 @@ export function AquariumBackground({
             boxShadow: arrangeMode ? '0 0 12px rgba(56,189,248,0.5)' : 'none',
           }}
           whileTap={{ scale: 0.9 }}
-          onTap={() => setArrangeMode(m => !m)}
+          onTap={() => { setArrangeMode(m => { if (m) setSelectedId(null); return !m; }); }}
         >
           {arrangeMode
             ? <><Check size={11} strokeWidth={3} /> Done</>
@@ -226,19 +293,20 @@ export function AquariumBackground({
         </motion.button>
       )}
 
-      {/* Hint banner — fixed to viewport center */}
-      {arrangeMode && (
+      {/* Hint banner — sits below the nav button row */}
+      {arrangeMode && total > 0 && (
         <motion.div
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
-          className="fixed top-20 left-1/2 -translate-x-1/2 z-30 px-3 py-1 rounded-full text-[10px] font-bold text-white"
+          className="fixed left-1/2 -translate-x-1/2 z-30 px-3 py-1 rounded-full text-[10px] font-bold text-white"
           style={{
+            top: 'calc(env(safe-area-inset-top, 0px) + 136px)',
             background: 'rgba(14,165,233,0.85)',
             backdropFilter: 'blur(6px)',
             whiteSpace: 'nowrap',
           }}
         >
-          Drag to move · tap ✕ to remove
+          Drag to move · tap to resize · ✕ to remove
         </motion.div>
       )}
     </div>

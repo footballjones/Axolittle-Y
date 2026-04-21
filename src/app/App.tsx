@@ -268,6 +268,8 @@ export default function App() {
     handlePurchase,
     handleEquipDecoration,
     handleUpdateDecorationPosition,
+    handleUpdateDecorationScale,
+    handleRemoveDecorationInstance,
     handleAddFriend,
     handleRemoveFriend,
     handleBreed,
@@ -645,6 +647,8 @@ export default function App() {
         handleCleanPoop={handleCleanPoop}
         handleEquipDecoration={handleEquipDecoration}
         handleUpdateDecorationPosition={handleUpdateDecorationPosition}
+        handleUpdateDecorationScale={handleUpdateDecorationScale}
+        handleRemoveDecorationInstance={handleRemoveDecorationInstance}
         handleEquipFilter={handleEquipFilter}
         handleUseTreatmentFromInventory={handleUseTreatmentFromInventory}
         handleDeployShrimpFromInventory={handleDeployShrimpFromInventory}

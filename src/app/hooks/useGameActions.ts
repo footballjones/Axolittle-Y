@@ -11,7 +11,7 @@ import {
   calculateLevel,
 } from '../utils/gameLogic';
 import { createRebirthEgg, createBreedingEgg, hatchEgg, isEggReady } from '../utils/eggs';
-import { getDecorationById, BACKGROUND_COLORS } from '../data/decorations';
+import { getDecorationById, BACKGROUND_COLORS, BACKGROUND_IMAGES } from '../data/decorations';
 import { GAME_CONFIG } from '../config/game';
 import { GameNotification } from '../data/notifications';
 import { GameResult } from '../minigames/types';
@@ -313,50 +313,89 @@ export function useGameActions({
       if (!decoration) return prev;
 
       if (decoration.type === 'background') {
+        const imagePath = BACKGROUND_IMAGES[decorationId];
+        if (imagePath) {
+          // Image background — replace the tank background image, clear the color overlay
+          return {
+            ...prev,
+            customization: {
+              ...prev.customization,
+              background: '',
+              backgroundId: decorationId,
+              bgImagePath: imagePath,
+            },
+          };
+        }
+        // Color/gradient tint background
         return {
           ...prev,
           customization: {
             ...prev.customization,
             background: BACKGROUND_COLORS[decorationId] || prev.customization.background,
+            backgroundId: decorationId,
+            bgImagePath: undefined,
           },
         };
       }
 
-      const isEquipped = prev.customization.decorations.includes(decorationId);
       const maxDecorations = 5;
+      if (prev.customization.decorations.length >= maxDecorations) return prev;
 
-      if (isEquipped) {
-        return {
-          ...prev,
-          customization: {
-            ...prev.customization,
-            decorations: prev.customization.decorations.filter(id => id !== decorationId),
-          },
-        };
-      } else if (prev.customization.decorations.length < maxDecorations) {
-        return {
-          ...prev,
-          customization: {
-            ...prev.customization,
-            decorations: [...prev.customization.decorations, decorationId],
-          },
-        };
-      }
-
-      return prev;
+      const instanceId = `${decorationId}-${Date.now()}`;
+      return {
+        ...prev,
+        customization: {
+          ...prev.customization,
+          decorations: [...prev.customization.decorations, { instanceId, decorationId }],
+        },
+      };
     });
   }, []);
+
+  const handleRemoveDecorationInstance = useCallback((instanceId: string) => {
+    setGameState(prev => {
+      if (!prev) return prev;
+      const positions = { ...(prev.customization.decorationPositions ?? {}) };
+      delete positions[instanceId];
+      return {
+        ...prev,
+        customization: {
+          ...prev.customization,
+          decorations: prev.customization.decorations.filter(d => d.instanceId !== instanceId),
+          decorationPositions: positions,
+        },
+      };
+    });
+  }, [setGameState]);
 
   const handleUpdateDecorationPosition = useCallback((id: string, x: number, y: number) => {
     setGameState(prev => {
       if (!prev) return prev;
+      const existing = prev.customization.decorationPositions?.[id];
       return {
         ...prev,
         customization: {
           ...prev.customization,
           decorationPositions: {
             ...(prev.customization.decorationPositions ?? {}),
-            [id]: { x, y },
+            [id]: { scale: existing?.scale, x, y },
+          },
+        },
+      };
+    });
+  }, [setGameState]);
+
+  const handleUpdateDecorationScale = useCallback((id: string, scale: number) => {
+    setGameState(prev => {
+      if (!prev) return prev;
+      const existing = prev.customization.decorationPositions?.[id];
+      return {
+        ...prev,
+        customization: {
+          ...prev.customization,
+          decorationPositions: {
+            ...(prev.customization.decorationPositions ?? {}),
+            [id]: { x: existing?.x ?? 50, y: existing?.y ?? 90, scale },
           },
         },
       };
@@ -1029,7 +1068,9 @@ export function useGameActions({
     handleWaterChange,
     handlePurchase,
     handleEquipDecoration,
+    handleRemoveDecorationInstance,
     handleUpdateDecorationPosition,
+    handleUpdateDecorationScale,
     handleAddFriend,
     handleRemoveFriend,
     handleBreed,

@@ -516,13 +516,13 @@ export function HamburgerMenu({
         <AnimatePresence>
           {showInventoryPanel && (() => {
             const owned = gameState?.unlockedDecorations ?? [];
-            const equippedDecos = gameState?.customization?.decorations ?? [];
+            const equippedDecos = gameState?.customization?.decorations?.map(d => d.decorationId) ?? [];
             return (
               <DecorationsPanel
                 owned={owned}
                 equippedDecos={equippedDecos}
                 coins={coins}
-                activeBackground={gameState?.customization?.background ?? ''}
+                activeBackground={gameState?.customization?.backgroundId ?? ''}
                 ownedFilters={gameState?.ownedFilters ?? (gameState?.filterTier ? [gameState.filterTier] : [])}
                 equippedFilter={gameState?.equippedFilter ?? gameState?.filterTier}
                 storedTreatments={gameState?.storedTreatments ?? {}}

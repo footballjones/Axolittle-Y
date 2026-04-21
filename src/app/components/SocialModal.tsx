@@ -1122,7 +1122,7 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
                     {/* Background image + tint + decorations */}
                     <AquariumBackground
                       background={visitSnapshot?.bgColor ?? '#1e40af'}
-                      decorations={visitSnapshot?.decorations ?? []}
+                      decorations={(visitSnapshot?.decorations ?? []).map(id => ({ instanceId: id, decorationId: id }))}
                     />
 
                     {/* Floating bubbles */}

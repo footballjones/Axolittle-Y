@@ -277,8 +277,8 @@ export function ModalManager({
           ownedFilters={gameState?.ownedFilters ?? (gameState?.filterTier ? [gameState.filterTier] : [])}
           equippedFilter={gameState?.equippedFilter ?? gameState?.filterTier}
           ownedDecos={gameState?.unlockedDecorations ?? []}
-          equippedDecos={gameState?.customization?.decorations ?? []}
-          activeBackground={gameState?.customization?.background ?? ''}
+          equippedDecos={gameState?.customization?.decorations?.map(d => d.decorationId) ?? []}
+          activeBackground={gameState?.customization?.backgroundId ?? ''}
           onBuyDecoration={onBuyDecoration}
           onEquipDecoration={onEquipDecoration}
           onStoreTreatment={onStoreTreatment}
