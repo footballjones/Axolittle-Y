@@ -52,14 +52,19 @@ interface DraggableDecorationProps {
   entryDelay: number;
 }
 
-// ── Light-ray definitions (only shown over aquarium-bg-starting.png) ─────────
-const RAY_DEFS = [
-  { left: '6%',  width: 52, skew: -4,  height: '72%', delay: 0,    duration: 9,  peak: 0.13 },
-  { left: '20%', width: 80, skew:  6,  height: '65%', delay: 4.2,  duration: 12, peak: 0.09 },
-  { left: '36%', width: 38, skew: -9,  height: '78%', delay: 7.8,  duration: 8,  peak: 0.15 },
-  { left: '54%', width: 60, skew:  4,  height: '68%', delay: 2.1,  duration: 11, peak: 0.11 },
-  { left: '70%', width: 44, skew: -6,  height: '74%', delay: 5.9,  duration: 10, peak: 0.12 },
-  { left: '84%', width: 34, skew:  8,  height: '60%', delay: 1.3,  duration: 14, peak: 0.08 },
+// ── Sunbeam shafts (only shown over aquarium-bg-starting.png) ────────────────
+// Each shaft is a radial-gradient ellipse — bright at the top (entry point),
+// fading to transparent as depth increases. No clip-path, no hard geometry —
+// pure softness, like real underwater light columns. mix-blend-mode:screen
+// adds brightness without washing colours out.
+const SHAFTS = [
+  { cx: '12%', w: '10%', h: '78%', delay: 0.0,  dur: 12, peak: 0.28, swayDur: 19, swayPx:  8 },
+  { cx: '22%', w: '7%',  h: '68%', delay: 5.2,  dur: 15, peak: 0.22, swayDur: 24, swayPx: -6 },
+  { cx: '36%', w: '13%', h: '85%', delay: 9.1,  dur: 11, peak: 0.32, swayDur: 16, swayPx: 10 },
+  { cx: '48%', w: '9%',  h: '72%', delay: 2.4,  dur: 14, peak: 0.24, swayDur: 21, swayPx: -8 },
+  { cx: '61%', w: '11%', h: '82%', delay: 7.0,  dur: 13, peak: 0.30, swayDur: 18, swayPx:  7 },
+  { cx: '74%', w: '8%',  h: '65%', delay: 3.8,  dur: 10, peak: 0.20, swayDur: 22, swayPx: -5 },
+  { cx: '86%', w: '10%', h: '74%', delay: 6.5,  dur: 16, peak: 0.25, swayDur: 20, swayPx:  6 },
 ];
 
 function LightRays() {
@@ -68,27 +73,39 @@ function LightRays() {
       className="absolute inset-0 pointer-events-none overflow-hidden"
       style={{ zIndex: 1 }}
     >
-      {RAY_DEFS.map((ray, i) => (
+      {SHAFTS.map((s, i) => (
         <motion.div
           key={i}
           style={{
             position: 'absolute',
             top: 0,
-            left: ray.left,
-            width: ray.width,
-            height: ray.height,
-            transformOrigin: 'top center',
-            transform: `skewX(${ray.skew}deg)`,
-            background: 'linear-gradient(to bottom, rgba(255,248,210,0.9) 0%, rgba(200,230,255,0.2) 55%, transparent 100%)',
-            filter: 'blur(6px)',
+            left: s.cx,
+            width: s.w,
+            height: s.h,
+            transform: 'translateX(-50%)',
+            // Ellipse tallest at top, fades to nothing — no hard edges at all
+            background: 'radial-gradient(ellipse 100% 12% at 50% 0%, rgba(220,242,255,0.95) 0%, rgba(200,232,255,0.55) 18%, rgba(185,222,255,0.18) 50%, transparent 100%)',
+            mixBlendMode: 'screen',
           }}
-          animate={{ opacity: [0, 0, ray.peak, ray.peak * 0.6, 0, 0] }}
+          animate={{
+            opacity: [0, s.peak, s.peak * 0.75, s.peak * 0.9, s.peak * 0.5, 0],
+            x: [0, s.swayPx, -s.swayPx * 0.6, s.swayPx * 0.3, 0],
+          }}
           transition={{
-            duration: ray.duration,
-            delay: ray.delay,
-            repeat: Infinity,
-            ease: 'easeInOut',
-            times: [0, 0.05, 0.3, 0.55, 0.75, 1],
+            opacity: {
+              duration: s.dur,
+              delay: s.delay,
+              repeat: Infinity,
+              ease: 'easeInOut',
+              times: [0, 0.18, 0.42, 0.62, 0.82, 1],
+            },
+            x: {
+              duration: s.swayDur,
+              delay: s.delay * 0.3,
+              repeat: Infinity,
+              ease: 'easeInOut',
+              repeatType: 'mirror',
+            },
           }}
         />
       ))}
