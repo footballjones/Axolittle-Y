@@ -176,6 +176,21 @@ export function loadGameState(): GameState | null {
           decorationId: id,
         }));
       }
+
+      // Ensure bg-5 (Starting Waters) is always in the player's inventory
+      if (!gs.unlockedDecorations) gs.unlockedDecorations = [];
+      if (!gs.unlockedDecorations.includes('bg-5')) {
+        gs.unlockedDecorations = ['bg-5', ...gs.unlockedDecorations];
+      }
+
+      // Migrate existing saves to the new image-based background system
+      if (!gs.customization) gs.customization = { background: '', decorations: [] };
+      if (!gs.customization.bgImagePath) {
+        gs.customization.background = '';
+        gs.customization.backgroundId = 'bg-5';
+        gs.customization.bgImagePath = 'aquarium-bg-starting.png';
+      }
+
       if (!gs.friends) gs.friends = [];
       if (!gs.friends.some(f => f.id === JIMMY_CHUBS_ID)) {
         gs.friends = [JIMMY_CHUBS_FRIEND, ...gs.friends];
@@ -206,9 +221,11 @@ export function getInitialGameState(): GameState {
     opals: GAME_CONFIG.starterOpals,
     energy: GAME_CONFIG.energyMax,
     maxEnergy: GAME_CONFIG.energyMax,
-    unlockedDecorations: ['plant-1', 'rock-1'],
+    unlockedDecorations: ['plant-1', 'rock-1', 'bg-5'],
     customization: {
-      background: '#1e40af',
+      background: '',
+      backgroundId: 'bg-5',
+      bgImagePath: 'aquarium-bg-starting.png',
       decorations: [],
     },
     lineage: [],

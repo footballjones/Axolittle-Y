@@ -25,12 +25,16 @@ export const DECORATIONS: DecorationItem[] = [
   { id: 'ornament-6', name: 'Ancient Vase', type: 'ornament', cost: 175, icon: 'Archive', size: 'md', layer: 'floor' },
 
   // ── Backgrounds ─────────────────────────────────────────────────────────────
-  { id: 'bg-5', name: 'Starting Waters', type: 'background', cost: 0, icon: 'Waves' },
+  // bg-5 is the default starting background — given to all players for free
+  { id: 'bg-5', name: 'Starting Waters', type: 'background', cost: 0,   icon: 'Waves' },
+  // bg-6 is the classic deep-water scene, available to buy
+  { id: 'bg-6', name: 'Ocean Depths',    type: 'background', cost: 150, icon: 'Waves' },
 ];
 
 // Image backgrounds: maps decoration ID → filename in public/
 export const BACKGROUND_IMAGES: Record<string, string> = {
   'bg-5': 'aquarium-bg-starting.png',
+  'bg-6': 'aquarium-bg.png',
 };
 
 // Color/gradient tint backgrounds (kept for future use / backward compat)
