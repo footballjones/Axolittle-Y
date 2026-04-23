@@ -13,6 +13,7 @@ import { calculateRewards } from './config';
 import keepeyBg from '../../assets/keepey-bg.png';
 import { Zap, Target, Star, Trophy, Gamepad2, Rocket } from 'lucide-react';
 import { CoinIcon, OpalIcon } from '../components/icons';
+import { SpineAxolotl } from '../components/SpineAxolotl';
 
 const CANVAS_W = 360;
 const CANVAS_H = 640;
@@ -68,6 +69,7 @@ export function KeepeyUpey({ onEnd, onDeductEnergy, onApplyReward, energy, sound
   const isPlayingRef = useRef(false);
   const isPausedRef = useRef(false);
   const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
+  const axolotlDivRef = useRef<HTMLDivElement>(null);
 
   // Pre-load background image once
   useEffect(() => {
@@ -176,7 +178,7 @@ export function KeepeyUpey({ onEnd, onDeductEnergy, onApplyReward, energy, sound
   }, [hadEnergyAtStart]);
 
   const draw = useCallback((ctx: CanvasRenderingContext2D) => {
-    const { axo, obstacles, bubbles } = gameStateRef.current;
+    const { obstacles, bubbles } = gameStateRef.current;
     
     // Background — cover mode: scale so image fills entire canvas, then slow pan
     const bg = bgImageRef.current;
@@ -257,229 +259,6 @@ export function KeepeyUpey({ onEnd, onDeductEnergy, onApplyReward, energy, sound
       ctx.fill();
     }
 
-    // Axolotl — side-view swimming pose (facing right), tilts with velocity
-    {
-      const bx = axo.x, by = axo.y, bs = axo.size;
-      const tilt = Math.max(-0.3, Math.min(0.3, axo.vy * 0.045));
-      const t = (performance.now() - gameStateRef.current.startTime) / 1000;
-      const bob = Math.sin(t * 2.5) * bs * 0.03;
-
-      const pink      = '#F5B8D0';
-      const pinkMid   = '#F0A0C0';
-      const pinkDark  = '#E088AA';
-      const pinkLight = '#FDE8F2';
-      const belly     = '#FFF0F6';
-      const gillBase  = '#FF6BAC';
-      const gillLight = '#FF8EC4';
-      const cheek     = 'rgba(255,120,165,0.30)';
-
-      ctx.save();
-      ctx.translate(bx, by + bob);
-      ctx.rotate(tilt);
-
-      // ── Body + Tail as one continuous shape ──
-      // Draw tail first (behind body), starting wide where it meets the body
-      const tw = Math.sin(t * 3.5) * bs * 0.1;
-      ctx.fillStyle = pink;
-      ctx.beginPath();
-      // Start at the back of the body (top edge), where body ellipse would be
-      ctx.moveTo(-bs * 0.5, -bs * 0.38);
-      // Top edge of tail — curves out wide then tapers to a point
-      ctx.bezierCurveTo(
-        -bs * 0.9, -bs * 0.35 + tw * 0.3,
-        -bs * 1.3, -bs * 0.2 + tw * 0.7,
-        -bs * 1.75, tw
-      );
-      // Bottom edge — tapers back from point to body width
-      ctx.bezierCurveTo(
-        -bs * 1.3, bs * 0.2 + tw * 0.7,
-        -bs * 0.9, bs * 0.38 + tw * 0.3,
-        -bs * 0.5, bs * 0.38
-      );
-      ctx.closePath();
-      ctx.fill();
-
-      // Tail dorsal fin ridge
-      ctx.strokeStyle = pinkDark;
-      ctx.lineWidth = 0.8;
-      ctx.beginPath();
-      ctx.moveTo(-bs * 0.55, 0);
-      ctx.bezierCurveTo(-bs * 1.0, tw * 0.3, -bs * 1.4, tw * 0.6, -bs * 1.7, tw);
-      ctx.stroke();
-
-      // Body ellipse — drawn on top, overlaps the tail base seamlessly
-      ctx.fillStyle = pink;
-      ctx.beginPath();
-      ctx.ellipse(0, 0, bs * 0.85, bs * 0.42, 0, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Belly highlight
-      ctx.fillStyle = belly;
-      ctx.beginPath();
-      ctx.ellipse(bs * 0.05, bs * 0.1, bs * 0.55, bs * 0.22, 0, 0, Math.PI * 2);
-      ctx.fill();
-
-      // ── Far-side legs (behind body, darker) ──
-      const lw = Math.sin(t * 3) * 0.08;
-      ctx.fillStyle = pinkDark;
-      // Far back leg
-      ctx.beginPath();
-      ctx.ellipse(-bs * 0.35, bs * 0.32, bs * 0.08, bs * 0.18, 0.3 + lw, 0, Math.PI * 2);
-      ctx.fill();
-      // Far front leg
-      ctx.beginPath();
-      ctx.ellipse(bs * 0.35, bs * 0.3, bs * 0.08, bs * 0.18, -0.2 + lw, 0, Math.PI * 2);
-      ctx.fill();
-
-      // ── Near-side legs (in front of body) ──
-      ctx.fillStyle = pinkMid;
-      // Near back leg
-      ctx.beginPath();
-      ctx.ellipse(-bs * 0.4, bs * 0.34, bs * 0.1, bs * 0.2, 0.25 - lw, 0, Math.PI * 2);
-      ctx.fill();
-      // Near front leg
-      ctx.beginPath();
-      ctx.ellipse(bs * 0.4, bs * 0.32, bs * 0.1, bs * 0.2, -0.15 - lw, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Tiny toes on near-side legs
-      ctx.fillStyle = pinkDark;
-      // Back toes
-      for (let i = 0; i < 3; i++) {
-        const ang = 0.25 - lw + (i - 1) * 0.25;
-        ctx.beginPath();
-        ctx.arc(-bs * 0.4 + Math.cos(ang) * bs * 0.03, bs * 0.52 + Math.sin(ang) * bs * 0.02, bs * 0.025, 0, Math.PI * 2);
-        ctx.fill();
-      }
-      // Front toes
-      for (let i = 0; i < 3; i++) {
-        const ang = -0.15 - lw + (i - 1) * 0.25;
-        ctx.beginPath();
-        ctx.arc(bs * 0.4 + Math.cos(ang) * bs * 0.03, bs * 0.5 + Math.sin(ang) * bs * 0.02, bs * 0.025, 0, Math.PI * 2);
-        ctx.fill();
-      }
-
-      // ── Head ── rounded, slightly wider, positioned to the right of body
-      const hx = bs * 0.62;
-      const hy = -bs * 0.05;
-      const hr = bs * 0.48;
-      ctx.fillStyle = pink;
-      ctx.beginPath();
-      ctx.ellipse(hx, hy, hr * 1.05, hr * 0.92, 0, 0, Math.PI * 2);
-      ctx.fill();
-
-      // ── Gill stalks ── thick rounded branches with small nubs, like soft coral
-      // 3 stalks angled back from behind the head
-      const gillStalks = [
-        { angle: -2.9, len: bs * 0.52 },  // back-most
-        { angle: -2.5, len: bs * 0.58 },  // middle (longest)
-        { angle: -2.1, len: bs * 0.5  },  // forward
-      ];
-      const gillBaseX = hx - bs * 0.15;
-      const gillBaseY = hy - bs * 0.32;
-
-      for (let gi = 0; gi < gillStalks.length; gi++) {
-        const gs = gillStalks[gi];
-        const wave = Math.sin(t * 2.5 + gi * 1.1) * 0.1;
-        const a = gs.angle + wave;
-        const tipX = gillBaseX + Math.cos(a) * gs.len;
-        const tipY = gillBaseY + Math.sin(a) * gs.len;
-
-        // Thick main stalk with round caps
-        ctx.strokeStyle = gillBase;
-        ctx.lineWidth = bs * 0.08;
-        ctx.lineCap = 'round';
-        ctx.beginPath();
-        ctx.moveTo(gillBaseX, gillBaseY);
-        ctx.quadraticCurveTo(
-          gillBaseX + (tipX - gillBaseX) * 0.5 + Math.cos(a + Math.PI / 2) * bs * 0.04,
-          gillBaseY + (tipY - gillBaseY) * 0.5 + Math.sin(a + Math.PI / 2) * bs * 0.04,
-          tipX, tipY
-        );
-        ctx.stroke();
-
-        // Bulbous tip
-        ctx.fillStyle = gillLight;
-        ctx.beginPath();
-        ctx.arc(tipX, tipY, bs * 0.05, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Small nubs along each side of the stalk (like feathery filaments)
-        const perpA = a + Math.PI / 2;
-        const nubCount = 4;
-        for (let ni = 1; ni <= nubCount; ni++) {
-          const frac = ni / (nubCount + 1);
-          const nx = gillBaseX + (tipX - gillBaseX) * frac;
-          const ny = gillBaseY + (tipY - gillBaseY) * frac;
-          const nubLen = bs * (0.06 + (1 - frac) * 0.04); // longer near base
-          const nubWave = Math.sin(t * 3 + gi * 2 + ni) * 0.15;
-
-          // Nub on each side
-          for (const side of [-1, 1]) {
-            const na = perpA + side * 0.3 + nubWave;
-            const ntx = nx + Math.cos(na) * nubLen * side;
-            const nty = ny + Math.sin(na) * nubLen * side;
-            ctx.strokeStyle = gillLight;
-            ctx.lineWidth = bs * 0.03;
-            ctx.lineCap = 'round';
-            ctx.beginPath();
-            ctx.moveTo(nx, ny);
-            ctx.lineTo(ntx, nty);
-            ctx.stroke();
-            // Tiny dot at nub tip
-            ctx.fillStyle = gillLight;
-            ctx.beginPath();
-            ctx.arc(ntx, nty, bs * 0.018, 0, Math.PI * 2);
-            ctx.fill();
-          }
-        }
-      }
-
-      // ── Eye ── single eye on the side of the head (near side)
-      const eyeX = hx + bs * 0.14;
-      const eyeY = hy - bs * 0.1;
-      const eyeR = bs * 0.16;
-      ctx.fillStyle = '#fff';
-      ctx.shadowColor = 'rgba(0,0,0,0.1)';
-      ctx.shadowBlur = 2;
-      ctx.beginPath();
-      ctx.ellipse(eyeX, eyeY, eyeR, eyeR * 1.08, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.shadowBlur = 0;
-
-      // Iris
-      ctx.fillStyle = '#1a1a2e';
-      ctx.beginPath();
-      ctx.arc(eyeX + bs * 0.02, eyeY + bs * 0.01, eyeR * 0.6, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Highlight (big)
-      ctx.fillStyle = '#fff';
-      ctx.beginPath();
-      ctx.arc(eyeX + bs * 0.05, eyeY - bs * 0.03, eyeR * 0.28, 0, Math.PI * 2);
-      ctx.fill();
-      // Highlight (small)
-      ctx.beginPath();
-      ctx.arc(eyeX - bs * 0.01, eyeY + bs * 0.04, eyeR * 0.12, 0, Math.PI * 2);
-      ctx.fill();
-
-      // ── Cheek blush ──
-      ctx.fillStyle = cheek;
-      ctx.beginPath();
-      ctx.ellipse(hx + bs * 0.2, hy + bs * 0.12, bs * 0.1, bs * 0.06, 0, 0, Math.PI * 2);
-      ctx.fill();
-
-      // ── Smile ── small happy curve on the snout
-      ctx.strokeStyle = '#1a1a2e';
-      ctx.lineWidth = 1.5;
-      ctx.lineCap = 'round';
-      ctx.beginPath();
-      ctx.arc(hx + bs * 0.28, hy + bs * 0.18, bs * 0.1, 0.3, Math.PI - 0.6);
-      ctx.stroke();
-
-      ctx.restore();
-    }
-
     // Timer display
     ctx.fillStyle = 'rgba(255,255,255,0.6)';
     ctx.font = '16px sans-serif';
@@ -512,6 +291,14 @@ export function KeepeyUpey({ onEnd, onDeductEnergy, onApplyReward, energy, sound
 
     // Horizontal drift toward center
     axo.x += (CANVAS_W / 2 - axo.x) * 0.01;
+
+    // Update SpineAxolotl overlay position via direct DOM (no React re-render per frame)
+    if (axolotlDivRef.current) {
+      const tilt = Math.max(-0.3, Math.min(0.3, axo.vy * 0.045));
+      axolotlDivRef.current.style.left = `${(axo.x / CANVAS_W) * 100}%`;
+      axolotlDivRef.current.style.top = `${(axo.y / CANVAS_H) * 100}%`;
+      axolotlDivRef.current.style.transform = `translate(-50%, -50%) rotate(${tilt}rad)`;
+    }
 
     // Spawn obstacles — interval shrinks over time, lower floor
     const interval = Math.max(500, 2000 - scoreRef.current * 25);
@@ -811,6 +598,27 @@ export function KeepeyUpey({ onEnd, onDeductEnergy, onApplyReward, energy, sound
             bounce();
           }}
         />
+
+        {/* SpineAxolotl overlay — position updated each frame via direct DOM */}
+        {!showOverlay && (
+          <div
+            ref={axolotlDivRef}
+            style={{
+              position: 'absolute',
+              pointerEvents: 'none',
+              zIndex: 5,
+              left: `${(gameStateRef.current.axo.x / CANVAS_W) * 100}%`,
+              top: `${(gameStateRef.current.axo.y / CANVAS_H) * 100}%`,
+              transform: 'translate(-50%, -50%)',
+            }}
+          >
+            <SpineAxolotl
+              size={70}
+              animation={isPlaying && !isPaused ? 'Swim' : 'Idle'}
+              facingLeft={false}
+            />
+          </div>
+        )}
 
         {/* Tap instruction overlay (first 3 seconds) */}
         {isPlaying && score < 3 && (
