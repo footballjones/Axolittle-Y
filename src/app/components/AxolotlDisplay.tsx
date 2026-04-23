@@ -1,10 +1,7 @@
 import { motion } from 'motion/react';
 import { Axolotl, FoodItem } from '../types/game';
 import { useEffect, useState, useRef, useCallback } from 'react';
-import axolotlImg from '../../assets/axolotl.png';
-import axolotlRareImg from '../../assets/axolotl-rare-1.png';
-import axolotlEpicImg from '../../assets/axolotl-epic-1.png';
-import axolotlLegendaryImg from '../../assets/axolotl-legendary-1.png';
+import { SpineAxolotl } from './SpineAxolotl';
 
 interface AxolotlDisplayProps {
   axolotl: Axolotl;
@@ -19,6 +16,8 @@ export function AxolotlDisplay({ axolotl, foodItems, onEatFood, clickTarget, pla
   const [position, setPosition] = useState({ x: 50, y: 75 });
   const [facingLeft, setFacingLeft] = useState(false);
   const [wiggling, setWiggling] = useState(false);
+  const [isMoving, setIsMoving] = useState(false);
+  const movingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const foodFirstSeenRef = useRef<number | null>(null);
   // Ref to the wrapper div so we can read the parent container's pixel dimensions
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -40,6 +39,15 @@ export function AxolotlDisplay({ axolotl, foodItems, onEatFood, clickTarget, pla
   useEffect(() => {
     setPosition({ x: 50, y: 75 });
   }, []);
+
+  // Play Swim animation while the axolotl is travelling, Idle once it arrives
+  useEffect(() => {
+    setIsMoving(true);
+    if (movingTimerRef.current) clearTimeout(movingTimerRef.current);
+    movingTimerRef.current = setTimeout(() => setIsMoving(false), MOVE_DURATION);
+    return () => { if (movingTimerRef.current) clearTimeout(movingTimerRef.current); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [position.x, position.y]);
 
   // Handle click target - move axolotl to clicked position
   useEffect(() => {
@@ -197,15 +205,6 @@ export function AxolotlDisplay({ axolotl, foodItems, onEatFood, clickTarget, pla
 
   const size = getSize();
 
-  const getAxolotlImg = () => {
-    switch (axolotl.rarity) {
-      case 'Rare':      return axolotlRareImg;
-      case 'Epic':      return axolotlEpicImg;
-      case 'Legendary': return axolotlLegendaryImg;
-      case 'Mythic':    return axolotlLegendaryImg; // fallback until mythic art exists
-      default:          return axolotlImg; // Common
-    }
-  };
 
   return (
     <motion.div
@@ -309,25 +308,21 @@ export function AxolotlDisplay({ axolotl, foodItems, onEatFood, clickTarget, pla
           />
         </motion.div>
 
-        {/* Axolotl image — tappable in play mode */}
-        <img
-          src={getAxolotlImg()}
-          alt="Axolotl"
-          width={size}
-          height={size}
+        {/* Axolotl — Spine canvas, tappable in play mode */}
+        <SpineAxolotl
+          size={size}
+          animation={isMoving ? 'Swim' : 'Idle'}
+          facingLeft={facingLeft}
           onClick={playMode ? (e) => {
-            e.stopPropagation(); // prevent aquarium onClick from also firing
+            e.stopPropagation();
             if (!wiggling) {
               setWiggling(true);
               onAxolotlTap?.();
             }
           } : undefined}
           style={{
-            transform: facingLeft ? 'scaleX(-1)' : 'scaleX(1)',
             filter: 'drop-shadow(0 0 8px rgba(160,120,255,0.4)) drop-shadow(0 0 20px rgba(100,180,255,0.3)) drop-shadow(0 4px 12px rgba(0,0,0,0.25))',
-            objectFit: 'contain',
             pointerEvents: playMode ? 'auto' : 'none',
-            cursor: playMode ? 'pointer' : 'default',
           }}
         />
       </motion.div>
