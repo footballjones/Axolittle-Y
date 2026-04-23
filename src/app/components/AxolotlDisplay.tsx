@@ -44,7 +44,7 @@ export function AxolotlDisplay({ axolotl, foodItems, onEatFood, clickTarget, pla
   useEffect(() => {
     setIsMoving(true);
     if (movingTimerRef.current) clearTimeout(movingTimerRef.current);
-    movingTimerRef.current = setTimeout(() => setIsMoving(false), MOVE_DURATION - 500);
+    movingTimerRef.current = setTimeout(() => setIsMoving(false), MOVE_DURATION - 1500);
     return () => { if (movingTimerRef.current) clearTimeout(movingTimerRef.current); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [position.x, position.y]);
