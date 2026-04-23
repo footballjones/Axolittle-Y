@@ -6,7 +6,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { motion } from 'motion/react';
 import { ArrowLeft } from 'lucide-react';
-import axolotlImg from '../../assets/axolotl.png';
+import { SpineAxolotl } from './SpineAxolotl';
 import castleImg from '../../assets/jimmy-chubs/Jimmy and Chubs castle.png';
 
 interface Pos { x: number; y: number }
@@ -51,6 +51,12 @@ export function JimmyChubsAquarium({ onBack }: Props) {
 
   const [jimmyPos, setJimmyPos] = useState<Pos>({ x: 30, y: 50 });
   const [chubsPos, setChubsPos] = useState<Pos>({ x: 65, y: 40 });
+  const [jimmyFacing, setJimmyFacing] = useState(false);
+  const [chubsFacing, setChubsFacing] = useState(false);
+  const [jimmyMoving, setJimmyMoving] = useState(false);
+  const [chubsMoving, setChubsMoving] = useState(false);
+  const jimmyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const chubsMoveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [ripple, setRipple] = useState<(Pos & { id: number }) | null>(null);
   const rippleIdRef = useRef(0);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -67,6 +73,10 @@ export function JimmyChubsAquarium({ onBack }: Props) {
         if (Math.abs(next.x - prev.x) < 8 && Math.abs(next.y - prev.y) < 8) {
           next.x = next.x > 50 ? next.x - 15 : next.x + 15;
         }
+        setChubsFacing(next.x < prev.x);
+        setChubsMoving(true);
+        if (chubsMoveTimerRef.current) clearTimeout(chubsMoveTimerRef.current);
+        chubsMoveTimerRef.current = setTimeout(() => setChubsMoving(false), 2000);
         return next;
       });
       scheduleChubs(currentJimmyX);
@@ -103,12 +113,20 @@ export function JimmyChubsAquarium({ onBack }: Props) {
     const x = Math.max(8, Math.min(90, ((clientX - rect.left) / rect.width) * 100));
     const y = Math.max(15, Math.min(82, ((clientY - rect.top) / rect.height) * 100));
 
+    setJimmyFacing(x < jimmyPos.x);
     setJimmyPos({ x, y });
+    setJimmyMoving(true);
+    if (jimmyTimerRef.current) clearTimeout(jimmyTimerRef.current);
+    jimmyTimerRef.current = setTimeout(() => setJimmyMoving(false), 2000);
 
     // Chubs swims near the same spot with a small random offset
     const chubsX = Math.max(8, Math.min(90, x + (Math.random() * 16 - 8)));
     const chubsY = Math.max(15, Math.min(82, y + (Math.random() * 12 - 6)));
+    setChubsFacing(chubsX < chubsPos.x);
     setChubsPos({ x: chubsX, y: chubsY });
+    setChubsMoving(true);
+    if (chubsMoveTimerRef.current) clearTimeout(chubsMoveTimerRef.current);
+    chubsMoveTimerRef.current = setTimeout(() => setChubsMoving(false), 2000);
 
     // Ripple
     const id = ++rippleIdRef.current;
@@ -271,12 +289,11 @@ export function JimmyChubsAquarium({ onBack }: Props) {
               transform: 'translate(-50%,-50%)',
             }}
           />
-          <motion.img
-            src={axolotlImg}
-            alt="Jimmy"
-            animate={{ y: [0, -5, 0] }}
-            transition={{ duration: 2.8, repeat: Infinity, ease: 'easeInOut' }}
-            style={{ width: 104, height: 104, objectFit: 'contain', filter: 'drop-shadow(0 0 8px rgba(56,189,248,0.5))' }}
+          <SpineAxolotl
+            size={104}
+            animation={jimmyMoving ? 'Swim' : 'Idle'}
+            facingLeft={jimmyFacing}
+            style={{ filter: 'drop-shadow(0 0 8px rgba(56,189,248,0.5))' }}
           />
           <p
             className="text-center text-[8px] font-black text-cyan-200 mt-0.5 leading-none"
@@ -304,17 +321,11 @@ export function JimmyChubsAquarium({ onBack }: Props) {
               transform: 'translate(-50%,-50%)',
             }}
           />
-          <motion.img
-            src={axolotlImg}
-            alt="Chubs"
-            animate={{ y: [0, -4, 0], rotate: [0, 2, 0, -2, 0] }}
-            transition={{ duration: 3.4, repeat: Infinity, ease: 'easeInOut' }}
-            style={{
-              width: 96,
-              height: 96,
-              objectFit: 'contain',
-              filter: 'drop-shadow(0 0 8px rgba(139,92,246,0.5)) hue-rotate(40deg)',
-            }}
+          <SpineAxolotl
+            size={96}
+            animation={chubsMoving ? 'Swim' : 'Idle'}
+            facingLeft={chubsFacing}
+            style={{ filter: 'drop-shadow(0 0 8px rgba(139,92,246,0.5)) hue-rotate(40deg)' }}
           />
           <p
             className="text-center text-[8px] font-black text-violet-300 mt-0.5 leading-none"

@@ -7,6 +7,7 @@ import { ALL_ACHIEVEMENTS } from '../data/achievements';
 import { ACHIEVEMENT_CATEGORIES, type AchievementCategory } from '../types/achievements';
 import { fetchPlayerAchievements, fetchFriendSnapshot, FriendSnapshot, isSupabaseConfigured } from '../services/supabase';
 import { AquariumBackground } from './AquariumBackground';
+import { SpineAxolotl } from './SpineAxolotl';
 import axolotlImg from '../../assets/axolotl.png';
 import axolotlRareImg from '../../assets/axolotl-rare-1.png';
 import axolotlEpicImg from '../../assets/axolotl-epic-1.png';
@@ -81,16 +82,6 @@ const JIMMY_CHUBS_ID = 'jimmy-chubs';
 // ── Friend Aquarium Swimmer ───────────────────────────────────────────────────
 // Lightweight read-only swimmer: same images as AxolotlDisplay, no food/play logic.
 
-function getFriendAxolotlImg(rarity: string) {
-  switch (rarity) {
-    case 'Rare':      return axolotlRareImg;
-    case 'Epic':      return axolotlEpicImg;
-    case 'Legendary':
-    case 'Mythic':    return axolotlLegendaryImg;
-    default:          return axolotlImg;
-  }
-}
-
 function getFriendAxolotlSize(stage: string) {
   switch (stage) {
     case 'hatchling': return 96;
@@ -101,10 +92,12 @@ function getFriendAxolotlSize(stage: string) {
   }
 }
 
-function FriendAxolotlSwimmer({ stage, name, rarity }: { stage: string; name: string; rarity: string }) {
+function FriendAxolotlSwimmer({ stage, name }: { stage: string; name: string; rarity: string }) {
   const [pos, setPos] = useState({ x: 50, y: 60 });
   const [facingLeft, setFacingLeft] = useState(false);
+  const [isMoving, setIsMoving] = useState(false);
   const posRef = useRef({ x: 50, y: 60 });
+  const moveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Random swim every 10-18 seconds
   useEffect(() => {
@@ -114,13 +107,15 @@ function FriendAxolotlSwimmer({ stage, name, rarity }: { stage: string; name: st
       setFacingLeft(newX < posRef.current.x);
       posRef.current = { x: newX, y: newY };
       setPos({ x: newX, y: newY });
+      setIsMoving(true);
+      if (moveTimerRef.current) clearTimeout(moveTimerRef.current);
+      moveTimerRef.current = setTimeout(() => setIsMoving(false), 2500);
     };
     const id = setInterval(swim, 10000 + Math.random() * 8000);
-    return () => clearInterval(id);
+    return () => { clearInterval(id); if (moveTimerRef.current) clearTimeout(moveTimerRef.current); };
   }, []);
 
   const size = getFriendAxolotlSize(stage);
-  const img = getFriendAxolotlImg(rarity);
 
   return (
     <motion.div
@@ -129,12 +124,7 @@ function FriendAxolotlSwimmer({ stage, name, rarity }: { stage: string; name: st
       transition={{ duration: 4, ease: [0.2, 0.8, 0.4, 1] }}
       style={{ transform: 'translate(-50%, -50%)', zIndex: 10 }}
     >
-      {/* Bob animation */}
-      <motion.div
-        animate={{ y: [0, -6, 0, 4, 0], rotate: [0, -2, 0, 2, 0] }}
-        transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-        className="relative flex flex-col items-center gap-1"
-      >
+      <div className="relative flex flex-col items-center gap-1">
         {/* Glow */}
         <motion.div
           className="absolute inset-0 flex items-center justify-center pointer-events-none"
@@ -147,15 +137,12 @@ function FriendAxolotlSwimmer({ stage, name, rarity }: { stage: string; name: st
             borderRadius: '50%', filter: 'blur(25px)',
           }} />
         </motion.div>
-        <img
-          src={img}
-          alt={name}
-          width={size}
-          height={size}
+        <SpineAxolotl
+          size={size}
+          animation={isMoving ? 'Swim' : 'Idle'}
+          facingLeft={facingLeft}
           style={{
-            transform: facingLeft ? 'scaleX(-1)' : 'scaleX(1)',
             filter: 'drop-shadow(0 0 8px rgba(160,120,255,0.4)) drop-shadow(0 0 20px rgba(100,180,255,0.3)) drop-shadow(0 4px 12px rgba(0,0,0,0.25))',
-            objectFit: 'contain',
             pointerEvents: 'none',
           }}
         />
@@ -166,7 +153,7 @@ function FriendAxolotlSwimmer({ stage, name, rarity }: { stage: string; name: st
         >
           {name}
         </div>
-      </motion.div>
+      </div>
     </motion.div>
   );
 }
