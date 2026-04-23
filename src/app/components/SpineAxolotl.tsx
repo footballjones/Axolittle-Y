@@ -187,8 +187,10 @@ export function SpineAxolotl({ size, animation, facingLeft, onClick, style }: Sp
   }, [animation]);
 
   // Skeleton aspect ratio: 631.55 × 339.72 ≈ 1.86 : 1
-  // Canvas is made 35% wider than the base ratio to prevent tail/gill clipping
-  // during animation (the transparent extra space is invisible to the layout).
+  // Canvas is made 35% wider than the base ratio to prevent tail/gill clipping.
+  // Physical canvas is 2× the CSS size (supersampling) so the browser's bilinear
+  // downsampling blends away the hairline seams between mesh triangles.
+  const SUPER = 2;
   const ASPECT = 631.55 / 339.72;
   const canvasW = Math.round(size * ASPECT * 1.35);
   const canvasH = size;
@@ -196,8 +198,8 @@ export function SpineAxolotl({ size, animation, facingLeft, onClick, style }: Sp
   return (
     <canvas
       ref={canvasRef}
-      width={canvasW}
-      height={canvasH}
+      width={canvasW * SUPER}
+      height={canvasH * SUPER}
       onClick={onClick}
       style={{
         display: 'block',
