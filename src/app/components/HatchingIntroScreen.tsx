@@ -1,22 +1,9 @@
 import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import axolotlImg from '../../assets/axolotl.png';
-import axolotlRareImg from '../../assets/axolotl-rare-1.png';
-import axolotlEpicImg from '../../assets/axolotl-epic-1.png';
-import axolotlLegendaryImg from '../../assets/axolotl-legendary-1.png';
+import { SpineAxolotl } from './SpineAxolotl';
 import startingEggImg from '../../assets/eggs/Starting egg.png';
 
 type Rarity = 'Common' | 'Rare' | 'Epic' | 'Legendary' | 'Mythic';
-
-function getAxolotlImgForRarity(rarity?: Rarity) {
-  switch (rarity) {
-    case 'Rare':      return axolotlRareImg;
-    case 'Epic':      return axolotlEpicImg;
-    case 'Legendary': return axolotlLegendaryImg;
-    case 'Mythic':    return axolotlLegendaryImg;
-    default:          return axolotlImg;
-  }
-}
 
 interface RarityStyle {
   label: string;
@@ -96,7 +83,6 @@ const PARTICLES = Array.from({ length: 18 }, (_, i) => {
 });
 
 export function HatchingIntroScreen({ onComplete, rarity }: Props) {
-  const revealImg = getAxolotlImgForRarity(rarity);
   const rarityStyle = getRarityStyle(rarity);
   const [tapCount, setTapCount] = useState(0);
   const [phase, setPhase] = useState<Phase>('tapping');
@@ -356,17 +342,19 @@ export function HatchingIntroScreen({ onComplete, rarity }: Props) {
             </motion.div>
 
             {/* Axolotl pops in */}
-            <motion.img
-              src={revealImg}
-              alt="Your axolotl!"
-              style={{
-                width: 230, height: 'auto', position: 'absolute',
-                filter: 'drop-shadow(0 0 32px rgba(100,200,255,0.6))',
-              }}
+            <motion.div
+              style={{ position: 'absolute' }}
               initial={{ scale: 0, opacity: 0 }}
               animate={{ scale: [0, 1.35, 1], opacity: 1 }}
               transition={{ delay: 0.58, duration: 0.92, ease: [0.175, 0.885, 0.32, 1.275] }}
-            />
+            >
+              <SpineAxolotl
+                size={120}
+                animation="Idle"
+                facingLeft={false}
+                style={{ filter: 'drop-shadow(0 0 32px rgba(100,200,255,0.6))' }}
+              />
+            </motion.div>
 
             {/* Rarity reveal */}
             <motion.div
@@ -465,15 +453,11 @@ export function HatchingIntroScreen({ onComplete, rarity }: Props) {
           >
             {/* Floating axolotl */}
             <div className="flex-1 flex items-center justify-center">
-              <motion.img
-                src={revealImg}
-                alt="Your axolotl"
-                style={{
-                  width: 230, height: 'auto',
-                  filter: 'drop-shadow(0 0 30px rgba(100,200,255,0.45))',
-                }}
-                animate={{ y: [0, -14, 0] }}
-                transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+              <SpineAxolotl
+                size={120}
+                animation="Idle"
+                facingLeft={false}
+                style={{ filter: 'drop-shadow(0 0 30px rgba(100,200,255,0.45))' }}
               />
             </div>
 

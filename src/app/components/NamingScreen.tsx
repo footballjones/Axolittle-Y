@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'motion/react';
-import axolotlImg from '../../assets/axolotl.png';
+import { SpineAxolotl } from './SpineAxolotl';
 
 interface Props {
   onComplete: (name: string) => void;
@@ -51,21 +51,18 @@ export function NamingScreen({ onComplete }: Props) {
 
       {/* Floating axolotl */}
       <div className="flex-1 flex items-center justify-center relative z-10">
-        <motion.img
-          src={axolotlImg}
-          alt="Your axolotl"
-          style={{
-            width: 220, height: 'auto',
-            filter: 'drop-shadow(0 0 28px rgba(100,200,255,0.42))',
-          }}
+        <motion.div
           initial={{ scale: 0.7, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1, y: [0, -14, 0] }}
-          transition={{
-            scale: { duration: 0.5, ease: 'backOut' },
-            opacity: { duration: 0.4 },
-            y: { duration: 3, repeat: Infinity, ease: 'easeInOut', delay: 0.5 },
-          }}
-        />
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ scale: { duration: 0.5, ease: 'backOut' }, opacity: { duration: 0.4 } }}
+        >
+          <SpineAxolotl
+            size={120}
+            animation="Idle"
+            facingLeft={false}
+            style={{ filter: 'drop-shadow(0 0 28px rgba(100,200,255,0.42))' }}
+          />
+        </motion.div>
       </div>
 
       {/* Name card */}
