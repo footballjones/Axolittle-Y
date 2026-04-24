@@ -14,11 +14,11 @@ import {
 } from '@esotericsoftware/spine-canvas';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
-// Supersampling factor — physical canvas is SUPER× the CSS size so when the browser
-// downscales canvas→display pixels the mesh-triangle seams blend below perceptual
-// threshold.  We need to *exceed* device pixel ratio so we're always downscaling
-// (upscaling a canvas makes seams worse).  Capped at 4× for memory budget.
-const SUPER = Math.min(4, Math.ceil(((typeof window !== 'undefined' && window.devicePixelRatio) || 2) * 1.5));
+// Physical canvas is SUPER× the CSS size. A value of 2 gives enough resolution
+// for bilinear downsampling to soften mesh-triangle seams without the GPU cost
+// of matching device pixel ratio (DPR=3 × 1.5 = SUPER=4 was 16× the pixels of 1×
+// and caused severe frame-rate drops on device).
+const SUPER = 2;
 
 // Skeleton aspect ratio measured from the Spine project: 631.55 × 339.72 ≈ 1.86 : 1
 const ASPECT = 631.55 / 339.72;
@@ -203,6 +203,16 @@ export function SpineAxolotl({ size, animation, facingLeft, onClick, style }: Sp
   } | null>(null);
 
   // ── Bootstrap Spine (once per size change, i.e. life-stage change) ──────────
+  //
+  // Two-canvas strategy for seam-free rendering:
+  //   1. Spine draws into a hidden offscreen canvas at SUPER× resolution.
+  //   2. Each frame we blit that to the visible display canvas via drawImage().
+  //
+  // ctx.drawImage() with imageSmoothingEnabled=true is GUARANTEED by the
+  // Canvas 2D spec to use bilinear filtering when downscaling — unlike CSS
+  // scaling, which is at the browser's discretion.  The 2→1× downsample
+  // blends the triangle-edge seams below the perceptual threshold without
+  // the frame-rate hit of a 4× canvas.
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -212,36 +222,37 @@ export function SpineAxolotl({ size, animation, facingLeft, onClick, style }: Sp
     loadAssets().then((data) => {
       if (cancelled || !canvas) return;
 
-      const ctx = canvas.getContext('2d')!;
+      // Display canvas — 1× (physical = CSS, no CSS scaling).
+      const displayCtx = canvas.getContext('2d')!;
+
+      // Offscreen canvas — SUPER× for high-res Spine rendering.
+      const offscreen   = document.createElement('canvas');
+      offscreen.width   = canvas.width  * SUPER;
+      offscreen.height  = canvas.height * SUPER;
+      const offCtx      = offscreen.getContext('2d')!;
 
       // Build skeleton + animation state
       const skeleton      = new Skeleton(data);
       const animStateData = new AnimationStateData(data);
-      animStateData.defaultMix = 0.25; // smooth crossfade between Idle ↔ Swim
+      animStateData.defaultMix = 0.25;
       const animState = new AnimationState(animStateData);
       animState.setAnimation(0, animRef.current, true);
 
-      // One dummy update to resolve initial bone positions so getBounds works.
-      // Physics.update runs physics constraints; Physics.none skips them.
       animState.update(0);
       animState.apply(skeleton);
       skeleton.updateWorldTransform(Physics.update);
 
-      // Compute skeleton bounds and derive scale / centre offset
       const offset     = new Vector2();
       const boundsSize = new Vector2();
       skeleton.getBounds(offset, boundsSize, []);
 
-      // Scale so the skeleton's HEIGHT fills `size` pixels (with 10% breathing room).
-      // Anchored to `size * SUPER`, NOT canvas.height — canvas is taller than `size`
-      // due to vertical padding (PAD_V), so using canvas.height would over-scale.
+      // Scale anchored to `size * SUPER` so the axolotl appears `size` px tall
+      // after the 2→1× blit, regardless of the vertical canvas padding.
       const scale = (size * SUPER * 0.9) / boundsSize.y;
-      // Centre of the visual bounding box in Spine coords
-      const cx = offset.x + boundsSize.x / 2;
-      const cy = offset.y + boundsSize.y / 2;
+      const cx    = offset.x + boundsSize.x / 2;
+      const cy    = offset.y + boundsSize.y / 2;
 
-      const renderer = new SkeletonRenderer(ctx);
-      // All attachments in this skeleton are mesh type — triangle rendering is required.
+      const renderer = new SkeletonRenderer(offCtx);
       renderer.triangleRendering = true;
 
       renderRef.current = { animState, skeleton, renderer, scale, cx, cy };
@@ -249,32 +260,28 @@ export function SpineAxolotl({ size, animation, facingLeft, onClick, style }: Sp
       // ── Render loop ────────────────────────────────────────────────────────
       let last = performance.now();
       const loop = (now: number) => {
-        const delta = Math.min((now - last) / 1000, 0.064); // cap at ~1 frame
+        const delta = Math.min((now - last) / 1000, 0.064);
         last = now;
 
         const r = renderRef.current!;
-
         r.animState.update(delta);
         r.animState.apply(r.skeleton);
         r.skeleton.updateWorldTransform(Physics.update);
 
-        ctx.save();
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        // Smooth texture sampling inside each mesh triangle
-        ctx.imageSmoothingEnabled = true;
-        // @ts-ignore — imageSmoothingQuality is not in all TS lib defs but is supported in WebKit
-        ctx.imageSmoothingQuality = 'high';
-
-        // Canvas origin → canvas centre, then flip Y (Spine is Y-up, canvas is Y-down)
-        ctx.translate(canvas.width / 2, canvas.height / 2);
+        // 1. Render Spine → offscreen at SUPER×
+        offCtx.save();
+        offCtx.clearRect(0, 0, offscreen.width, offscreen.height);
+        offCtx.translate(offscreen.width / 2, offscreen.height / 2);
         const flip = facingRef.current ? -1 : 1;
-        ctx.scale(flip * r.scale, -r.scale);
-        // Shift so the visual centre of the skeleton lands on the canvas centre
-        ctx.translate(-r.cx, -r.cy);
-
+        offCtx.scale(flip * r.scale, -r.scale);
+        offCtx.translate(-r.cx, -r.cy);
         r.renderer.draw(r.skeleton);
-        ctx.restore();
+        offCtx.restore();
+
+        // 2. Blit offscreen → display with guaranteed bilinear downsampling
+        displayCtx.clearRect(0, 0, canvas.width, canvas.height);
+        displayCtx.imageSmoothingEnabled = true;
+        displayCtx.drawImage(offscreen, 0, 0, canvas.width, canvas.height);
 
         rafRef.current = requestAnimationFrame(loop);
       };
@@ -309,14 +316,13 @@ export function SpineAxolotl({ size, animation, facingLeft, onClick, style }: Sp
   return (
     <canvas
       ref={canvasRef}
-      width={canvasW * SUPER}
-      height={canvasH * SUPER}
+      width={canvasW}
+      height={canvasH}
       onClick={onClick}
       style={{
         display: 'block',
         width: canvasW,
         height: canvasH,
-        imageRendering: 'auto', // tell WebKit to use bilinear filtering when scaling
         cursor: onClick ? 'pointer' : 'default',
         ...style,
       }}
