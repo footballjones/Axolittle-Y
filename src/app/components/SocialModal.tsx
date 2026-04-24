@@ -8,10 +8,6 @@ import { ACHIEVEMENT_CATEGORIES, type AchievementCategory } from '../types/achie
 import { fetchPlayerAchievements, fetchFriendSnapshot, FriendSnapshot, isSupabaseConfigured } from '../services/supabase';
 import { AquariumBackground } from './AquariumBackground';
 import { SpineAxolotl } from './SpineAxolotl';
-import axolotlImg from '../../assets/axolotl.png';
-import axolotlRareImg from '../../assets/axolotl-rare-1.png';
-import axolotlEpicImg from '../../assets/axolotl-epic-1.png';
-import axolotlLegendaryImg from '../../assets/axolotl-legendary-1.png';
 
 interface GiftResult {
   coins: number;
@@ -905,7 +901,6 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
                       };
                       const rarity = axolotl.rarity ?? 'Common';
                       const rc = rarityColors[rarity] ?? rarityColors.Common;
-                      const img = rarity === 'Rare' ? axolotlRareImg : rarity === 'Epic' ? axolotlEpicImg : (rarity === 'Legendary' || rarity === 'Mythic') ? axolotlLegendaryImg : axolotlImg;
                       return (
                         <motion.div
                           key="current"
@@ -931,8 +926,13 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
                             NOW
                           </span>
                           {/* Image */}
-                          <div className="mt-3 w-12 h-12 flex items-center justify-center">
-                            <img src={img} alt={axolotl.name} className="w-full h-full object-contain drop-shadow-sm" style={{ filter: `drop-shadow(0 2px 6px ${axolotl.color}55)` }} />
+                          <div className="mt-3 w-12 h-12 flex items-center justify-center overflow-hidden">
+                            <SpineAxolotl
+                              size={28}
+                              animation="Idle"
+                              facingLeft={false}
+                              style={{ filter: `drop-shadow(0 2px 6px ${axolotl.color}55)` }}
+                            />
                           </div>
                           {/* Color swatch */}
                           <div className="w-5 h-1.5 rounded-full" style={{ background: axolotl.color }} />
@@ -960,7 +960,6 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
                       };
                       const rarity = ancestor.rarity ?? 'Common';
                       const rc = rarityColors[rarity] ?? rarityColors.Common;
-                      const img = rarity === 'Rare' ? axolotlRareImg : rarity === 'Epic' ? axolotlEpicImg : (rarity === 'Legendary' || rarity === 'Mythic') ? axolotlLegendaryImg : axolotlImg;
                       const entryNum = lineage.length - index;
                       return (
                         <motion.div
@@ -987,8 +986,13 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
                             G{ancestor.generation}
                           </span>
                           {/* Image */}
-                          <div className="mt-3 w-12 h-12 flex items-center justify-center opacity-85">
-                            <img src={img} alt={ancestor.name} className="w-full h-full object-contain drop-shadow-sm" style={{ filter: `drop-shadow(0 2px 6px ${ancestor.color}55) grayscale(0.15)` }} />
+                          <div className="mt-3 w-12 h-12 flex items-center justify-center overflow-hidden opacity-85">
+                            <SpineAxolotl
+                              size={28}
+                              animation="Idle"
+                              facingLeft={false}
+                              style={{ filter: `drop-shadow(0 2px 6px ${ancestor.color}55) grayscale(0.15)` }}
+                            />
                           </div>
                           {/* Color swatch */}
                           <div className="w-5 h-1.5 rounded-full" style={{ background: ancestor.color }} />
