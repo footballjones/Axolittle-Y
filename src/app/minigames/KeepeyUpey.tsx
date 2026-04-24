@@ -13,7 +13,7 @@ import { calculateRewards } from './config';
 import keepeyBg from '../../assets/keepey-bg.png';
 import { Zap, Target, Star, Trophy, Gamepad2, Rocket } from 'lucide-react';
 import { CoinIcon, OpalIcon } from '../components/icons';
-import { SpineAxolotl } from '../components/SpineAxolotl';
+import { useSpineRenderer } from '../components/SpineAxolotl';
 
 const CANVAS_W = 360;
 const CANVAS_H = 640;
@@ -69,7 +69,13 @@ export function KeepeyUpey({ onEnd, onDeductEnergy, onApplyReward, energy, sound
   const isPlayingRef = useRef(false);
   const isPausedRef = useRef(false);
   const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
-  const axolotlDivRef = useRef<HTMLDivElement>(null);
+  const lastFrameTimeRef = useRef<number>(0);
+
+  // Spine renderer — driven entirely by the game loop, no second RAF
+  const { update: spineUpdate, drawOn: spineDrawOn } = useSpineRenderer();
+  // Stable ref so the draw() useCallback can read it without a dep
+  const spineDrawOnRef = useRef(spineDrawOn);
+  spineDrawOnRef.current = spineDrawOn;
 
   // Pre-load background image once
   useEffect(() => {
@@ -178,7 +184,7 @@ export function KeepeyUpey({ onEnd, onDeductEnergy, onApplyReward, energy, sound
   }, [hadEnergyAtStart]);
 
   const draw = useCallback((ctx: CanvasRenderingContext2D) => {
-    const { obstacles, bubbles } = gameStateRef.current;
+    const { axo, obstacles, bubbles } = gameStateRef.current;
     
     // Background — cover mode: scale so image fills entire canvas, then slow pan
     const bg = bgImageRef.current;
@@ -259,6 +265,12 @@ export function KeepeyUpey({ onEnd, onDeductEnergy, onApplyReward, energy, sound
       ctx.fill();
     }
 
+    // Spine axolotl — drawn directly onto game canvas (no separate RAF)
+    {
+      const tilt = Math.max(-0.3, Math.min(0.3, axo.vy * 0.045));
+      spineDrawOnRef.current(ctx, axo.x, axo.y, 70, false, tilt);
+    }
+
     // Timer display
     ctx.fillStyle = 'rgba(255,255,255,0.6)';
     ctx.font = '16px sans-serif';
@@ -274,6 +286,12 @@ export function KeepeyUpey({ onEnd, onDeductEnergy, onApplyReward, energy, sound
     if (!ctx) return;
 
     const now = performance.now();
+    const delta = Math.min((now - (lastFrameTimeRef.current || now)) / 1000, 0.064);
+    lastFrameTimeRef.current = now;
+
+    // Step Spine animation state (no rendering here — draw() handles that)
+    spineUpdate(delta, 'Swim');
+
     const elapsed = (now - gameStateRef.current.startTime) / 1000;
     const currentScore = Math.floor(elapsed);
     // Only trigger a React re-render when the displayed integer changes
@@ -291,14 +309,6 @@ export function KeepeyUpey({ onEnd, onDeductEnergy, onApplyReward, energy, sound
 
     // Horizontal drift toward center
     axo.x += (CANVAS_W / 2 - axo.x) * 0.01;
-
-    // Update SpineAxolotl overlay position via direct DOM (no React re-render per frame)
-    if (axolotlDivRef.current) {
-      const tilt = Math.max(-0.3, Math.min(0.3, axo.vy * 0.045));
-      axolotlDivRef.current.style.left = `${(axo.x / CANVAS_W) * 100}%`;
-      axolotlDivRef.current.style.top = `${(axo.y / CANVAS_H) * 100}%`;
-      axolotlDivRef.current.style.transform = `translate(-50%, -50%) rotate(${tilt}rad)`;
-    }
 
     // Spawn obstacles — interval shrinks over time, lower floor
     const interval = Math.max(500, 2000 - scoreRef.current * 25);
@@ -598,27 +608,6 @@ export function KeepeyUpey({ onEnd, onDeductEnergy, onApplyReward, energy, sound
             bounce();
           }}
         />
-
-        {/* SpineAxolotl overlay — position updated each frame via direct DOM */}
-        {!showOverlay && (
-          <div
-            ref={axolotlDivRef}
-            style={{
-              position: 'absolute',
-              pointerEvents: 'none',
-              zIndex: 5,
-              left: `${(gameStateRef.current.axo.x / CANVAS_W) * 100}%`,
-              top: `${(gameStateRef.current.axo.y / CANVAS_H) * 100}%`,
-              transform: 'translate(-50%, -50%)',
-            }}
-          >
-            <SpineAxolotl
-              size={70}
-              animation={isPlaying && !isPaused ? 'Swim' : 'Idle'}
-              facingLeft={false}
-            />
-          </div>
-        )}
 
         {/* Tap instruction overlay (first 3 seconds) */}
         {isPlaying && score < 3 && (

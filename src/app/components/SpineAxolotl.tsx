@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import {
   CanvasTexture,
   TextureAtlas,
@@ -68,6 +68,97 @@ interface SpineAxolotlProps {
   facingLeft: boolean;
   onClick?: React.MouseEventHandler<HTMLCanvasElement>;
   style?: React.CSSProperties;
+}
+
+// ── useSpineRenderer — game-loop-driven hook (no internal RAF) ────────────────
+//
+// Designed for use inside a canvas game loop where ONE requestAnimationFrame
+// already drives everything. Exposes `update(delta, animation)` to step the
+// Spine state and `drawOn(ctx, x, y, h, facingLeft, tilt)` to render the
+// skeleton directly onto any canvas context — zero double-loop overhead.
+
+export function useSpineRenderer() {
+  const stateRef = useRef<{
+    animState:  AnimationState;
+    skeleton:   Skeleton;
+    renderer:   SkeletonRenderer | null;
+    unitScale:  number; // scale that makes skeleton exactly 1 px tall
+    cx:         number; // visual-centre X in Spine coords
+    cy:         number; // visual-centre Y in Spine coords
+  } | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    loadAssets().then((data) => {
+      if (cancelled) return;
+      const skeleton      = new Skeleton(data);
+      const animStateData = new AnimationStateData(data);
+      animStateData.defaultMix = 0.25;
+      const animState = new AnimationState(animStateData);
+      animState.setAnimation(0, 'Idle', true);
+      animState.update(0);
+      animState.apply(skeleton);
+      skeleton.updateWorldTransform(Physics.update);
+
+      const offset     = new Vector2();
+      const boundsSize = new Vector2();
+      skeleton.getBounds(offset, boundsSize, []);
+
+      stateRef.current = {
+        animState, skeleton, renderer: null,
+        unitScale: 1 / boundsSize.y,
+        cx: offset.x + boundsSize.x / 2,
+        cy: offset.y + boundsSize.y / 2,
+      };
+    }).catch(err => console.error('[useSpineRenderer] asset load failed:', err));
+
+    return () => {
+      cancelled = true;
+      stateRef.current = null;
+    };
+  }, []);
+
+  /** Call once per game-loop tick BEFORE drawOn. */
+  const update = useCallback((delta: number, animation: SpineAnimation) => {
+    const r = stateRef.current;
+    if (!r) return;
+    const cur = r.animState.getCurrent(0);
+    if (cur?.animation?.name !== animation) {
+      r.animState.setAnimation(0, animation, true);
+    }
+    r.animState.update(delta);
+    r.animState.apply(r.skeleton);
+    r.skeleton.updateWorldTransform(Physics.update);
+  }, []);
+
+  /** Render the skeleton centred on (x, y) in canvas-pixel space. */
+  const drawOn = useCallback((
+    ctx:          CanvasRenderingContext2D,
+    x:            number,
+    y:            number,
+    targetHeight: number,
+    facingLeft:   boolean,
+    tilt:         number,
+  ) => {
+    const r = stateRef.current;
+    if (!r) return;
+    // Renderer is tied to one ctx — create it lazily on first draw call.
+    if (!r.renderer) {
+      r.renderer = new SkeletonRenderer(ctx);
+      r.renderer.triangleRendering = true;
+    }
+    const scale = targetHeight * 0.9 * r.unitScale;
+    const flip  = facingLeft ? -1 : 1;
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(tilt);
+    ctx.scale(flip * scale, -scale);
+    ctx.translate(-r.cx, -r.cy);
+    r.renderer.draw(r.skeleton);
+    ctx.restore();
+  }, []);
+
+  return { update, drawOn };
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
