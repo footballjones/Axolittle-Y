@@ -13,6 +13,21 @@ import {
   Vector2,
 } from '@esotericsoftware/spine-canvas';
 
+// ── Constants ─────────────────────────────────────────────────────────────────
+// Supersampling factor — physical canvas is SUPER× the CSS size so the browser's
+// bilinear downsampling blends away hairline seams between mesh triangles.
+const SUPER = 2;
+
+// Skeleton aspect ratio measured from the Spine project: 631.55 × 339.72 ≈ 1.86 : 1
+const ASPECT = 631.55 / 339.72;
+
+// Extra canvas space beyond the skeleton's measured bounds (fraction of `size`).
+// Horizontal: 35% wider on each side so the tail tip and far gills don't clip.
+// Vertical:   20% taller on each side so gills (top) and feet (bottom) never
+//             hit the canvas edge during the full Idle/Swim animation range.
+const PAD_H = 0.35; // fraction of size added left + right (total 70% extra)
+const PAD_V = 0.20; // fraction of size added top + bottom (total 40% extra)
+
 // ── Asset cache — loaded once, shared across all instances ───────────────────
 let cachedData: SkeletonData | null = null;
 let loadPromise: Promise<SkeletonData> | null = null;
@@ -215,8 +230,10 @@ export function SpineAxolotl({ size, animation, facingLeft, onClick, style }: Sp
       const boundsSize = new Vector2();
       skeleton.getBounds(offset, boundsSize, []);
 
-      // Scale so the skeleton's HEIGHT fills `size` pixels (with 10% breathing room)
-      const scale = (canvas.height * 0.9) / boundsSize.y;
+      // Scale so the skeleton's HEIGHT fills `size` pixels (with 10% breathing room).
+      // Anchored to `size * SUPER`, NOT canvas.height — canvas is taller than `size`
+      // due to vertical padding (PAD_V), so using canvas.height would over-scale.
+      const scale = (size * SUPER * 0.9) / boundsSize.y;
       // Centre of the visual bounding box in Spine coords
       const cx = offset.x + boundsSize.x / 2;
       const cy = offset.y + boundsSize.y / 2;
@@ -277,14 +294,10 @@ export function SpineAxolotl({ size, animation, facingLeft, onClick, style }: Sp
     }
   }, [animation]);
 
-  // Skeleton aspect ratio: 631.55 × 339.72 ≈ 1.86 : 1
-  // Canvas is made 35% wider than the base ratio to prevent tail/gill clipping.
-  // Physical canvas is 2× the CSS size (supersampling) so the browser's bilinear
-  // downsampling blends away the hairline seams between mesh triangles.
-  const SUPER = 2;
-  const ASPECT = 631.55 / 339.72;
-  const canvasW = Math.round(size * ASPECT * 1.35);
-  const canvasH = size;
+  // Canvas CSS dimensions include padding on all sides so no part of the
+  // Idle/Swim animation range clips against the canvas edge.
+  const canvasW = Math.round(size * ASPECT * (1 + PAD_H * 2));
+  const canvasH = Math.round(size * (1 + PAD_V * 2));
 
   return (
     <canvas
