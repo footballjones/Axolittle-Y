@@ -82,7 +82,7 @@ export function generateAxolotl(
   return {
     id: `axo-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
     name,
-    stage: 'hatchling' as LifeStage,
+    stage: 'elder' as LifeStage, // DEV: force elder for size preview — restore to 'hatchling' when done
     stats: {
       hunger: 50,
       happiness: 50,
@@ -91,7 +91,7 @@ export function generateAxolotl(
     },
     secondaryStats: baseStats,
     age: 0,
-    experience: 0,
+    experience: 245, // DEV: level 30 (elder) — restore to 0 when done
     color: inheritedColor || COLORS[Math.floor(Math.random() * COLORS.length)],
     pattern: inheritedPattern || PATTERNS[Math.floor(Math.random() * PATTERNS.length)],
     generation,
@@ -100,7 +100,7 @@ export function generateAxolotl(
     lastUpdated: Date.now(),
     recessiveGenes: genes,
     rarity, // Store the rarity this axolotl came from
-    lastLevel: 1, // Start at level 1
+    lastLevel: 30, // DEV: matches elder XP — restore to 1 when done
     birthStats: { ...baseStats }, // Snapshot of stats at birth — used as inheritance floor for children
     rebirthStreak: rebirthStreak ?? 0,
   };
