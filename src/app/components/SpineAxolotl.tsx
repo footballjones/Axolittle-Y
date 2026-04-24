@@ -14,9 +14,11 @@ import {
 } from '@esotericsoftware/spine-canvas';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
-// Supersampling factor — physical canvas is SUPER× the CSS size so the browser's
-// bilinear downsampling blends away hairline seams between mesh triangles.
-const SUPER = 2;
+// Supersampling factor — physical canvas is SUPER× the CSS size so when the browser
+// downscales canvas→display pixels the mesh-triangle seams blend below perceptual
+// threshold.  We need to *exceed* device pixel ratio so we're always downscaling
+// (upscaling a canvas makes seams worse).  Capped at 4× for memory budget.
+const SUPER = Math.min(4, Math.ceil(((typeof window !== 'undefined' && window.devicePixelRatio) || 2) * 1.5));
 
 // Skeleton aspect ratio measured from the Spine project: 631.55 × 339.72 ≈ 1.86 : 1
 const ASPECT = 631.55 / 339.72;
@@ -259,6 +261,11 @@ export function SpineAxolotl({ size, animation, facingLeft, onClick, style }: Sp
         ctx.save();
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+        // Smooth texture sampling inside each mesh triangle
+        ctx.imageSmoothingEnabled = true;
+        // @ts-ignore — imageSmoothingQuality is not in all TS lib defs but is supported in WebKit
+        ctx.imageSmoothingQuality = 'high';
+
         // Canvas origin → canvas centre, then flip Y (Spine is Y-up, canvas is Y-down)
         ctx.translate(canvas.width / 2, canvas.height / 2);
         const flip = facingRef.current ? -1 : 1;
@@ -309,6 +316,7 @@ export function SpineAxolotl({ size, animation, facingLeft, onClick, style }: Sp
         display: 'block',
         width: canvasW,
         height: canvasH,
+        imageRendering: 'auto', // tell WebKit to use bilinear filtering when scaling
         cursor: onClick ? 'pointer' : 'default',
         ...style,
       }}

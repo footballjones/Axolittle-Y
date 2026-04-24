@@ -12,7 +12,7 @@ interface AxolotlDisplayProps {
   onAxolotlTap?: () => void;
 }
 
-export function AxolotlDisplay({ axolotl, foodItems, onEatFood, clickTarget, playMode, onAxolotlTap }: AxolotlDisplayProps) {
+export function AxolotlDisplay({ axolotl, foodItems, onEatFood, clickTarget, onAxolotlTap }: AxolotlDisplayProps) {
   const [position, setPosition] = useState({ x: 50, y: 75 });
   const [facingLeft, setFacingLeft] = useState(false);
   const [wiggling, setWiggling] = useState(false);
@@ -308,21 +308,23 @@ export function AxolotlDisplay({ axolotl, foodItems, onEatFood, clickTarget, pla
           />
         </motion.div>
 
-        {/* Axolotl — Spine canvas, tappable in play mode */}
+        {/* Axolotl — Spine canvas, always tappable so clicks on the axolotl
+            trigger a shake instead of falling through to the aquarium background
+            (which would create a clickTarget and move the axolotl to itself). */}
         <SpineAxolotl
           size={size}
           animation={isMoving ? 'Swim' : 'Idle'}
           facingLeft={facingLeft}
-          onClick={playMode ? (e) => {
-            e.stopPropagation();
+          onClick={(e) => {
+            e.stopPropagation(); // prevent aquarium tap-to-move from firing
             if (!wiggling) {
               setWiggling(true);
               onAxolotlTap?.();
             }
-          } : undefined}
+          }}
           style={{
             filter: 'drop-shadow(0 0 8px rgba(160,120,255,0.4)) drop-shadow(0 0 20px rgba(100,180,255,0.3)) drop-shadow(0 4px 12px rgba(0,0,0,0.25))',
-            pointerEvents: playMode ? 'auto' : 'none',
+            pointerEvents: 'auto', // always capture taps so nothing falls through
           }}
         />
       </motion.div>
