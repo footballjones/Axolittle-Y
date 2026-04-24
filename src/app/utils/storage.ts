@@ -196,13 +196,6 @@ export function loadGameState(): GameState | null {
         gs.friends = [JIMMY_CHUBS_FRIEND, ...gs.friends];
       }
 
-      // DEV: force elder stage (level 30) for size preview — remove when done
-      if (gs.axolotl) {
-        gs.axolotl.stage = 'elder';
-        gs.axolotl.experience = 245;
-        gs.axolotl.lastLevel = 30;
-      }
-
       return gs;
     }
   } catch (error) {

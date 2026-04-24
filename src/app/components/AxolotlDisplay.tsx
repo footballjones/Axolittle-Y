@@ -112,11 +112,11 @@ export function AxolotlDisplay({ axolotl, foodItems, onEatFood, clickTarget, onA
       // We capture it fresh each tick via the closure over axolotl.stage.
       const currentSize = (() => {
         switch (axolotl.stage) {
-          case 'hatchling': return 96;
-          case 'sprout':    return 132;
-          case 'guardian':  return 168;
-          case 'elder':     return 186;
-          default:          return 96;
+          case 'hatchling': return 48;
+          case 'sprout':    return 64;
+          case 'guardian':  return 80;
+          case 'elder':     return 96;
+          default:          return 48;
         }
       })();
       // ~22% of image size — axolotl PNG has large transparent padding, body is small relative to image
@@ -189,17 +189,14 @@ export function AxolotlDisplay({ axolotl, foodItems, onEatFood, clickTarget, onA
   }, [foodItems.length, position.x]);
 
   const getSize = () => {
+    // Elder matches the old Hatchling size — the Spine axolotl renders
+    // larger than the previous PNG, so all stages are shifted down by ~50%.
     switch (axolotl.stage) {
-      case 'hatchling':
-        return 96;
-      case 'sprout':
-        return 132;
-      case 'guardian':
-        return 168;
-      case 'elder':
-        return 186;
-      default:
-        return 96;
+      case 'hatchling': return 48;
+      case 'sprout':    return 64;
+      case 'guardian':  return 80;
+      case 'elder':     return 96;
+      default:          return 48;
     }
   };
 
