@@ -32,18 +32,28 @@ final class BundleURLSchemeHandler: NSObject, WKURLSchemeHandler {
         }
 
         let mime = mimeType(for: fileURL)
-        let isText = mime.hasPrefix("text/")
-            || mime.contains("javascript")
-            || mime.contains("json")
-            || mime.contains("xml")
-            || mime.contains("svg")
 
-        let response = URLResponse(
+        // Use HTTPURLResponse so the Fetch API and image loader receive a proper
+        // HTTP status code (200) and headers.  Without this, iOS WebKit can treat
+        // the response as opaque/failed.  Access-Control-Allow-Origin is required
+        // when any JS code sets crossOrigin on an image or makes a fetch() that
+        // triggers CORS mode; without it iOS WebKit (stricter than macOS WebKit)
+        // refuses to hand the response body to the canvas / Fetch consumer.
+        let headers: [String: String] = [
+            "Content-Type":                mime,
+            "Access-Control-Allow-Origin": "*",
+            "Cache-Control":               "max-age=86400",
+        ]
+
+        guard let response = HTTPURLResponse(
             url: requestURL,
-            mimeType: mime,
-            expectedContentLength: data.count,
-            textEncodingName: isText ? "utf-8" : nil
-        )
+            statusCode: 200,
+            httpVersion: "HTTP/1.1",
+            headerFields: headers
+        ) else {
+            urlSchemeTask.didFailWithError(BundleError.fileNotFound(relativePath))
+            return
+        }
 
         urlSchemeTask.didReceive(response)
         urlSchemeTask.didReceive(data)

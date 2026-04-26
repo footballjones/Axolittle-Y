@@ -54,7 +54,10 @@ function loadAssets(): Promise<SkeletonData> {
         page =>
           new Promise<void>((resolve, reject) => {
             const img = new Image();
-            img.crossOrigin = 'anonymous';
+            // No crossOrigin — assets are same-origin (bundled via axolittle://).
+            // Setting crossOrigin='anonymous' triggers CORS enforcement in iOS
+            // WebKit, which rejects the response because the custom scheme handler
+            // returns no Access-Control-Allow-Origin header, causing a blank canvas.
             img.onload = () => {
               page.setTexture(new CanvasTexture(img));
               resolve();
