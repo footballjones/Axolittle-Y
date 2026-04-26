@@ -95,22 +95,25 @@ export function AxolotlDisplay({ axolotl, foodItems, onEatFood, clickTarget, onA
   }, []);
 
   // Continuous proximity check (every 100ms) — axolotl eats food when it overlaps it.
-  // Hit zone is an ellipse matching the full axolotl image size in % coordinates.
+  // Uses getBoundingClientRect so the check always reflects the actual rendered
+  // positions, regardless of animation easing curves or duration randomness.
   useEffect(() => {
     const interval = setInterval(() => {
       const items = foodItemsRef.current;
       if (items.length === 0) return;
 
-      const axPos = getAxolotlVisualPos();
+      const axEl = wrapperRef.current;
+      if (!axEl) return;
 
-      // Derive hit radius from the axolotl's pixel size vs the container size.
-      // Fall back to sensible defaults if the DOM isn't ready yet.
-      const container = wrapperRef.current?.parentElement;
-      const containerW = container?.clientWidth ?? 400;
-      const containerH = container?.clientHeight ?? 600;
-      // Use the current rendered size (kept in sync via getSize below).
-      // We capture it fresh each tick via the closure over axolotl.stage.
-      const currentSize = (() => {
+      // Axolotl: the Spine canvas is centred inside a padded wrapper div.
+      // The wrapper's geometric centre IS the visual centre of the skeleton.
+      const axRect = axEl.getBoundingClientRect();
+      const axCenterX = axRect.left + axRect.width / 2;
+      const axCenterY = axRect.top  + axRect.height / 2;
+
+      // Hit radius in viewport pixels — based on the skeleton's target height
+      // (axolotl.stage drives the `size` prop; read it fresh each tick).
+      const stageSize = (() => {
         switch (axolotl.stage) {
           case 'hatchling': return 48;
           case 'sprout':    return 64;
@@ -119,19 +122,23 @@ export function AxolotlDisplay({ axolotl, foodItems, onEatFood, clickTarget, onA
           default:          return 48;
         }
       })();
-      // ~22% of image size — axolotl PNG has large transparent padding, body is small relative to image
-      const hitX = (currentSize * 0.22 / containerW) * 100;
-      const hitY = (currentSize * 0.22 / containerH) * 100;
-      // The visible axolotl body sits below the image center (gills/head above).
-      // Shift the hit zone center downward so it lands on the actual body.
-      const hitOffsetY = (currentSize * 0.15 / containerH) * 100;
+      const hitRadius = stageSize * 0.7; // generous — worm is 50 px wide
 
       for (const food of items) {
-        const distX = food.x - axPos.x;
-        // Offset Y center downward toward the actual body (axPos.y + hitOffsetY is body center)
-        const distY = getFoodVisualY(food) - (axPos.y + hitOffsetY);
-        // Ellipse check: (dx/rx)² + (dy/ry)² < 1
-        if ((distX / hitX) ** 2 + (distY / hitY) ** 2 < 1) {
+        const foodEl = document.querySelector(`[data-food-id="${food.id}"]`) as HTMLElement | null;
+        if (!foodEl) continue;
+
+        const foodRect = foodEl.getBoundingClientRect();
+        // The food outer div has `left: food.x%` and the inner worm div is
+        // `translateX(-50%)`, so the worm's visual centre X = foodRect.left
+        // (the outer div's left edge) rather than its geometric centre.
+        const foodCenterX = foodRect.left;
+        const foodCenterY = foodRect.top + foodRect.height / 2;
+
+        const dx = foodCenterX - axCenterX;
+        const dy = foodCenterY - axCenterY;
+
+        if (dx * dx + dy * dy < hitRadius * hitRadius) {
           onEatFoodRef.current(food.id);
           return;
         }
@@ -139,7 +146,9 @@ export function AxolotlDisplay({ axolotl, foodItems, onEatFood, clickTarget, onA
     }, 100);
 
     return () => clearInterval(interval);
-  }, [getFoodVisualY, getAxolotlVisualPos, axolotl.stage]);
+  // axolotl.stage is read fresh inside the interval each tick
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [axolotl.stage]);
 
   // Auto-seek: after 7s swim toward closest food
   useEffect(() => {

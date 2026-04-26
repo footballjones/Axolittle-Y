@@ -297,7 +297,12 @@ export function AquariumBackground({
   const total = tankDecos.length;
 
   return (
-    <div ref={containerRef} className="absolute inset-0" style={{ overflow: arrangeMode ? 'visible' : 'hidden' }}>
+    <div
+      ref={containerRef}
+      className="absolute inset-0"
+      style={{ overflow: arrangeMode ? 'visible' : 'hidden' }}
+      onClick={arrangeMode ? (e) => e.stopPropagation() : undefined}
+    >
       <img
         src={`${import.meta.env.BASE_URL}${bgImagePath ?? 'aquarium-bg.png'}`}
         alt="Aquarium background"

@@ -1,19 +1,28 @@
 import { motion } from 'motion/react';
-import { PoopItem } from '../types/game';
+import { PoopItem, LifeStage } from '../types/game';
 import { useMemo } from 'react';
 import { Brush } from 'lucide-react';
 
+const STAGE_SCALE: Record<LifeStage, number> = {
+  hatchling: 0.40,
+  sprout:    0.76,
+  guardian:  1.00,
+  elder:     1.00,
+};
+
 interface PoopDisplayProps {
   poop: PoopItem;
+  stage?: LifeStage;
   cleaningMode?: boolean;
   onClean?: (id: string) => void;
 }
 
-export function PoopDisplay({ poop, cleaningMode, onClean }: PoopDisplayProps) {
+export function PoopDisplay({ poop, stage, cleaningMode, onClean }: PoopDisplayProps) {
   // Slight random tilt per poop instance, stable across renders
   const tilt = useMemo(() => (((parseInt(poop.id.slice(-4), 16) % 40) - 20)), [poop.id]);
   // Slightly randomise scale so poops don't all look identical
   const scale = useMemo(() => 0.85 + (parseInt(poop.id.slice(-2), 16) % 30) / 100, [poop.id]);
+  const stageScale = stage ? STAGE_SCALE[stage] : 1.00;
 
   const handleClick = (e: React.MouseEvent) => {
     if (!cleaningMode || !onClean) return;
@@ -77,7 +86,7 @@ export function PoopDisplay({ poop, cleaningMode, onClean }: PoopDisplayProps) {
         width="62"
         height="42"
         viewBox="0 0 120 50"
-        style={{ overflow: 'visible' }}
+        style={{ overflow: 'visible', transform: `scale(${stageScale})`, transformOrigin: 'center bottom' }}
       >
         <defs>
           <linearGradient id={`poop-grad-${poop.id}`} x1="0%" y1="0%" x2="0%" y2="100%">

@@ -18,6 +18,7 @@ export function FoodDisplay({ food, tutorialActive }: FoodDisplayProps) {
   return (
     <motion.div
       className="absolute"
+      data-food-id={food.id}
       initial={{
         left: `${food.x}%`,
         top: '10%',

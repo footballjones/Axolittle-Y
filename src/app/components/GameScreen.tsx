@@ -784,6 +784,7 @@ export function GameScreen({
                         <PoopDisplay
                           key={poop.id}
                           poop={poop}
+                          stage={axolotl.stage}
                           cleaningMode={cleaningMode}
                           onClean={handleCleanPoopAndReset}
                         />

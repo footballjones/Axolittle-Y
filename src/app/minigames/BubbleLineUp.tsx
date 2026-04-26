@@ -622,7 +622,7 @@ export function BubbleLineUp({ onEnd, onDeductEnergy, onApplyReward, energy }: M
           {/* Grid — hidden once game ends to prevent z-index bleed-through */}
           {!gameEnded && <div
             className="bg-slate-900/75 border border-white/10 rounded-2xl p-2 touch-none select-none"
-            style={{ width: gridSize, height: gridSize, display: 'grid', gridTemplateColumns: `repeat(${puzzle.size}, 1fr)`, gap: '4px' }}
+            style={{ width: gridSize, height: gridSize, display: 'grid', gridTemplateColumns: `repeat(${puzzle.size}, 1fr)`, gridTemplateRows: `repeat(${puzzle.size}, 1fr)`, gap: '4px' }}
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}

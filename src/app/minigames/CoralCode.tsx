@@ -182,6 +182,7 @@ export function CoralCode({ onEnd, onDeductEnergy, onApplyReward, energy }: Mini
   const [winFlash, setWinFlash] = useState(false);
   const cumulativeRef = useRef({ xp: 0, hadAnyEnergy: false });
   const guessIdRef = useRef<number>(0);
+  const guessCountRef = useRef<number>(0);
   const guessesContainerRef = useRef<HTMLDivElement>(null);
 
   const startGame = useCallback((selectedDifficulty: Difficulty) => {
@@ -203,6 +204,7 @@ export function CoralCode({ onEnd, onDeductEnergy, onApplyReward, energy }: Mini
     setShowOverlay(false);
     setWinFlash(false);
     guessIdRef.current = 0;
+    guessCountRef.current = 0;
   }, [energy, onDeductEnergy]);
 
   useEffect(() => {
@@ -225,37 +227,37 @@ export function CoralCode({ onEnd, onDeductEnergy, onApplyReward, energy }: Mini
 
     const feedback = checkGuess(secretCode, currentGuess, codeLength);
     const newGuess: Guess = { id: guessIdRef.current++, colors: [...currentGuess], feedback };
+    const newCount = guessCountRef.current + 1;
+    guessCountRef.current = newCount;
 
-    setGuesses(prev => {
-      const newGuesses = [...prev, newGuess];
-      const won = feedback.correct === codeLength;
-      const lost = newGuesses.length >= MAX_GUESSES && !won;
+    const won = feedback.correct === codeLength;
+    const lost = newCount >= MAX_GUESSES && !won;
 
-      if (won || lost) {
-        const score = won ? MAX_GUESSES - newGuesses.length : 0;
-        setIsPlaying(false);
-        setHasEnded(true);
-        setGameEnded(true);
-        setFinalScore(score);
-        if (won) setWinFlash(true);
-        const rawRewards = hadEnergyAtStart
-          ? calculateRewards('coral-code', score)
-          : { tier: 'normal', xp: 0, coins: 0, opals: undefined };
-        const rewards = selectedDifficulty === 'easy'
-          ? { ...rawRewards, xp: Math.min(rawRewards.xp, 2) }
-          : rawRewards;
-        if (hadEnergyAtStart) {
-          cumulativeRef.current.xp += rewards.xp;
-          cumulativeRef.current.hadAnyEnergy = true;
-          onApplyReward?.(rewards.coins, rewards.opals);
-        }
-        setFinalRewards({ tier: rewards.tier, xp: rewards.xp, coins: rewards.coins, opals: rewards.opals });
-        setTimeout(() => setShowOverlay(true), won ? 800 : 300);
-      }
-      return newGuesses;
-    });
+    setGuesses(prev => [...prev, newGuess]);
     setCurrentGuess([]);
-  }, [currentGuess, secretCode, codeLength, isPlaying, isPaused, hasEnded, hadEnergyAtStart, onApplyReward]);
+
+    if (won || lost) {
+      const score = won ? MAX_GUESSES - newCount : 0;
+      setIsPlaying(false);
+      setHasEnded(true);
+      setGameEnded(true);
+      setFinalScore(score);
+      if (won) setWinFlash(true);
+      const rawRewards = hadEnergyAtStart
+        ? calculateRewards('coral-code', score)
+        : { tier: 'normal', xp: 0, coins: 0, opals: undefined };
+      const rewards = difficulty === 'easy'
+        ? { ...rawRewards, xp: Math.min(rawRewards.xp, 2) }
+        : rawRewards;
+      if (hadEnergyAtStart) {
+        cumulativeRef.current.xp += rewards.xp;
+        cumulativeRef.current.hadAnyEnergy = true;
+        onApplyReward?.(rewards.coins, rewards.opals);
+      }
+      setFinalRewards({ tier: rewards.tier, xp: rewards.xp, coins: rewards.coins, opals: rewards.opals });
+      setTimeout(() => setShowOverlay(true), won ? 800 : 300);
+    }
+  }, [currentGuess, secretCode, codeLength, isPlaying, isPaused, hasEnded, hadEnergyAtStart, onApplyReward, difficulty]);
 
   return (
     <GameWrapper
