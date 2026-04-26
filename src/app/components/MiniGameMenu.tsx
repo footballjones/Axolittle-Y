@@ -66,16 +66,7 @@ function GameTile({ game, index, delayOffset = 0, onSelectGame, energy: _energy 
       >
         <div className="flex flex-col items-center text-center gap-1.5">
           <div className={`bg-gradient-to-br ${game.color} rounded-xl w-11 h-11 flex items-center justify-center transition-transform shadow-lg ring-1 ring-white/30`}>
-            {game.id === 'fish-hooks' ? (
-              <motion.span
-                className="inline-flex"
-                style={{ transformOrigin: 'top center' }}
-                animate={{ rotate: [-20, 20, -20] }}
-                transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
-              >
-                {game.iconNode}
-              </motion.span>
-            ) : game.id === 'keepey-upey' ? (
+            {game.id === 'keepey-upey' ? (
               <motion.span
                 className="inline-flex"
                 animate={{ x: [-5, 4, -3, 6, -5], y: [-4, 5, -6, 2, -4] }}
@@ -99,14 +90,6 @@ function GameTile({ game, index, delayOffset = 0, onSelectGame, energy: _energy 
                 className="inline-flex"
                 animate={{ rotate: [-6, 6, -6] }}
                 transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
-              >
-                {game.iconNode}
-              </motion.span>
-            ) : game.id === 'treasure-hunt' ? (
-              <motion.span
-                className="inline-flex"
-                animate={{ scale: [1, 1.25, 1], filter: ['brightness(1)', 'brightness(1.5)', 'brightness(1)'] }}
-                transition={{ duration: 1.6, repeat: Infinity, repeatDelay: 0.8, ease: 'easeInOut' }}
               >
                 {game.iconNode}
               </motion.span>
@@ -271,7 +254,6 @@ export function MiniGameMenu({ onClose: _onClose, onSelectGame, energy = 10, max
   }, [energy, maxEnergy, lastEnergyUpdate]);
 
   const soloGames = [
-    // { id: 'fish-hooks' } — hidden for now, code lives in FlappyFishHooks.tsx
     {
       id: 'keepey-upey',
       name: 'Keepey Upey',
@@ -296,7 +278,6 @@ export function MiniGameMenu({ onClose: _onClose, onSelectGame, energy = 10, max
       description: 'Stack them high!',
       coins: '15-30',
     },
-    // { id: 'treasure-hunt' } — hidden for now, code lives in TreasureHuntCave.tsx
     {
       id: 'coral-code',
       name: 'Coral Code',

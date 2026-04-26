@@ -65,7 +65,7 @@ export function GameWrapper({
       {score !== undefined && (
         <div className="px-4 pb-2 flex-shrink-0">
           <div className="bg-white/10 backdrop-blur-sm rounded-lg px-3 py-1.5 inline-block border border-white/20">
-            <span className="text-white text-sm font-bold" data-fish-hooks-score>Score: {score}</span>
+            <span className="text-white text-sm font-bold">Score: {score}</span>
           </div>
         </div>
       )}

@@ -357,7 +357,7 @@ export function BubbleLineUp({ onEnd, onDeductEnergy, onApplyReward, energy }: M
   const [gameEnded, setGameEnded]           = useState(false);
   const [hadEnergyAtStart, setHadEnergy]    = useState(false);
   const [finalRewards, setFinalRewards]     = useState<{ tier: string; xp: number; coins: number; opals?: number } | null>(null);
-  const [gridSize, setGridSize]             = useState(300);
+  const [gridSize, setGridSize]             = useState(0);
 
   const scoreRef        = useRef(0);
   const drawingRef      = useRef<{ color: Color; cells: Pos[] } | null>(null);
@@ -485,12 +485,12 @@ export function BubbleLineUp({ onEnd, onDeductEnergy, onApplyReward, energy }: M
     timeLeftRef.current = puzzle.timeLimit;
     setTimeLeft(puzzle.timeLimit);
     const id = window.setInterval(() => {
-      setTimeLeft(prev => {
-        const next = prev - 1;
-        timeLeftRef.current = next;
-        if (next <= 0) { window.clearInterval(id); finishGame(); return 0; }
-        return next;
-      });
+      timeLeftRef.current -= 1;
+      setTimeLeft(timeLeftRef.current);
+      if (timeLeftRef.current <= 0) {
+        window.clearInterval(id);
+        finishGame();
+      }
     }, 1000);
     return () => window.clearInterval(id);
   }, [playing, finishGame, puzzleIdx]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -544,13 +544,12 @@ export function BubbleLineUp({ onEnd, onDeductEnergy, onApplyReward, energy }: M
     const pos = getCellAt(e.clientX, e.clientY);
     if (!pos) return;
     const [r, c] = pos;
-    const cells = d.cells;
+
+    let cells = d.cells;
     const last = cells[cells.length - 1];
     if (last[0] === r && last[1] === c) return;
-    // Must be directly adjacent
-    if (Math.abs(r - last[0]) + Math.abs(c - last[1]) !== 1) return;
 
-    // Backtrack if entering second-to-last cell
+    // Backtrack if re-entering the second-to-last cell
     if (cells.length >= 2) {
       const prev2 = cells[cells.length - 2];
       if (prev2[0] === r && prev2[1] === c) {
@@ -561,19 +560,40 @@ export function BubbleLineUp({ onEnd, onDeductEnergy, onApplyReward, energy }: M
       }
     }
 
-    const key = posKey(r, c);
-    // Block: occupied by another color's completed path
-    const occ = occupiedRef.current.get(key);
-    if (occ && occ !== d.color) return;
-    // Block: endpoint dot of another color
-    const dot = dotMap.get(key);
-    if (dot && dot !== d.color) return;
-    // Block: already in this drawing path (no loops)
-    if (cells.some(([pr, pc]) => pr === r && pc === c)) return;
+    // Walk one step at a time from last toward (r, c) to handle coalesced touch
+    // events on iOS where a fast swipe can jump multiple cells between events.
+    const dr = Math.sign(r - last[0]);
+    const dc = Math.sign(c - last[1]);
+    const diagonal = dr !== 0 && dc !== 0;
+    let newCells = cells;
+    let cur: Pos = last;
 
-    const nd = { ...d, cells: [...cells, pos] };
-    drawingRef.current = nd;
-    setDrawing(nd);
+    while (cur[0] !== r || cur[1] !== c) {
+      let nr = cur[0];
+      let nc = cur[1];
+      if (diagonal) {
+        // For diagonal jumps step the larger axis first, then the smaller
+        if (Math.abs(r - cur[0]) >= Math.abs(c - cur[1])) nr += dr;
+        else nc += dc;
+      } else {
+        if (nr !== r) nr += dr;
+        else nc += dc;
+      }
+      const key = posKey(nr, nc);
+      const occ = occupiedRef.current.get(key);
+      if (occ && occ !== d.color) break;
+      const dot = dotMap.get(key);
+      if (dot && dot !== d.color) break;
+      if (newCells.some(([pr, pc]) => pr === nr && pc === nc)) break;
+      newCells = [...newCells, [nr, nc] as Pos];
+      cur = [nr, nc];
+    }
+
+    if (newCells !== cells) {
+      const nd = { ...d, cells: newCells };
+      drawingRef.current = nd;
+      setDrawing(nd);
+    }
   }, [playing, getCellAt, dotMap]);
 
   const handlePointerUp = useCallback(() => {
@@ -619,8 +639,8 @@ export function BubbleLineUp({ onEnd, onDeductEnergy, onApplyReward, energy }: M
 
         {/* Flex area that measures available space for the grid */}
         <div ref={gridAreaRef} className="flex-1 min-h-0 w-full flex items-center justify-center mt-3">
-          {/* Grid — hidden once game ends to prevent z-index bleed-through */}
-          {!gameEnded && <div
+          {/* Grid — hidden once game ends or before ResizeObserver fires */}
+          {!gameEnded && gridSize > 0 && <div
             className="bg-slate-900/75 border border-white/10 rounded-2xl p-2 touch-none select-none"
             style={{ width: gridSize, height: gridSize, display: 'grid', gridTemplateColumns: `repeat(${puzzle.size}, 1fr)`, gridTemplateRows: `repeat(${puzzle.size}, 1fr)`, gap: '4px' }}
             onPointerDown={handlePointerDown}

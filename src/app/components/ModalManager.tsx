@@ -40,11 +40,9 @@ import { DailyLoginBonus } from './DailyLoginBonus';
 
 // Mini-games
 import { KeepeyUpey } from '../minigames/KeepeyUpey';
-import { FlappyFishHooks } from '../minigames/FlappyFishHooks';
 import { MathRush } from '../minigames/MathRush';
 import { AxolotlStacker } from '../minigames/AxolotlStacker';
 import { CoralCode } from '../minigames/CoralCode';
-import { TreasureHuntCave } from '../minigames/TreasureHuntCave';
 import { Fishing } from '../minigames/Fishing';
 import { BiteTag } from '../minigames/BiteTag';
 import { TideTiles } from '../minigames/TideTiles';
@@ -557,14 +555,6 @@ export function ModalManager({
             soundEnabled={gameState.soundEnabled !== false}
           />
         )}
-        {activeGame === 'fish-hooks' && (
-          <FlappyFishHooks
-            onEnd={onMiniGameEnd}
-            onDeductEnergy={onDeductEnergy}
-            onApplyReward={onMiniGameApplyReward}
-            energy={gameState.energy}
-          />
-        )}
         {activeGame === 'math-rush' && (
           <MathRush
             onEnd={onMiniGameEnd}
@@ -583,14 +573,6 @@ export function ModalManager({
         )}
         {activeGame === 'coral-code' && (
           <CoralCode
-            onEnd={onMiniGameEnd}
-            onDeductEnergy={onDeductEnergy}
-            onApplyReward={onMiniGameApplyReward}
-            energy={gameState.energy}
-          />
-        )}
-        {activeGame === 'treasure-hunt' && (
-          <TreasureHuntCave
             onEnd={onMiniGameEnd}
             onDeductEnergy={onDeductEnergy}
             onApplyReward={onMiniGameApplyReward}

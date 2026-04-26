@@ -11,20 +11,10 @@ export const GAME_REWARDS: Record<string, GameRewards> = {
     good: { xp: 2, coins: 25 },
     exceptional: { xp: 4, coins: 35, opalChance: 0.1 }, // 10% chance
   },
-  'fish-hooks': {
-    normal: { xp: 1, coins: 10 },
-    good: { xp: 2, coins: 20 },
-    exceptional: { xp: 4, coins: 30, opalChance: 0.1 },
-  },
   'axolotl-stacker': {
     normal: { xp: 1, coins: 15 },
     good: { xp: 2, coins: 25 },
     exceptional: { xp: 4, coins: 30, opalChance: 0.1 },
-  },
-  'treasure-hunt': {
-    normal: { xp: 1, coins: 25 },
-    good: { xp: 2, coins: 40 },
-    exceptional: { xp: 4, coins: 50, opalChance: 0.1 },
   },
   'math-rush': {
     normal: { xp: 1, coins: 20 },
@@ -64,9 +54,7 @@ export const GAME_REWARDS: Record<string, GameRewards> = {
  */
 export const SCORE_THRESHOLDS: Record<string, { good: number; exceptional: number }> = {
   'keepey-upey': { good: 15, exceptional: 60 }, // seconds survived
-  'fish-hooks': { good: 7, exceptional: 25 }, // hooks passed
   'axolotl-stacker': { good: 6, exceptional: 20 }, // stack height
-  'treasure-hunt': { good: 15, exceptional: 30 }, // gems + distance
   'math-rush': { good: 7, exceptional: 25 }, // correct answers
   'coral-code': { good: 5, exceptional: 7 }, // guesses remaining (10 - guesses used)
   'tide-tiles': { good: 350, exceptional: 900 }, // merged-value score

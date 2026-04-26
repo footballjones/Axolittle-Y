@@ -2,14 +2,14 @@ import type { Achievement } from '../types/achievements';
 import type { GameState } from '../types/game';
 import { calculateLevel } from '../utils/gameLogic';
 
-// The 6 solo game IDs used in MiniGameMenu
+// Solo game IDs used in MiniGameMenu
 const SOLO_GAME_IDS = [
-  'fish-hooks',
   'keepey-upey',
   'math-rush',
   'axolotl-stacker',
-  'treasure-hunt',
   'coral-code',
+  'tide-tiles',
+  'bubble-line-up',
 ];
 
 // Helper: check if any axolotl (current or lineage) ever had a given rarity
