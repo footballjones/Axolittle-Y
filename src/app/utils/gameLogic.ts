@@ -2,12 +2,12 @@ import { Axolotl, LifeStage, GameState, SecondaryStats } from '../types/game';
 import { GAME_CONFIG } from '../config/game';
 import { updateWellbeingStats } from '../axolotl/needsSystem';
 
-// Life stages are now based on level only (Hatchling L1-9, Sprout L10-19, Guardian L20-29, Elder L30-40)
+// Life stages are based on level only (Hatchling L1-6, Sprout L7-16, Guardian L17-29, Elder L30-60)
 export const STAGE_REQUIREMENTS = {
-  hatchling: { minLevel: 1, maxLevel: 9 },
-  sprout: { minLevel: 10, maxLevel: 19 },
-  guardian: { minLevel: 20, maxLevel: 29 },
-  elder: { minLevel: 30, maxLevel: 60 },
+  hatchling: { minLevel: 1,  maxLevel: 6  },
+  sprout:    { minLevel: 7,  maxLevel: 16 },
+  guardian:  { minLevel: 17, maxLevel: 29 },
+  elder:     { minLevel: 30, maxLevel: 60 },
 };
 
 // STAT_DECAY_RATE moved to axolotl/needsSystem.ts

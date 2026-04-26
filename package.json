@@ -17,6 +17,7 @@
     "@emotion/react": "11.14.0",
     "@emotion/styled": "11.14.1",
     "@esotericsoftware/spine-canvas": "4.2",
+    "@esotericsoftware/spine-webgl": "4.2",
     "@mui/icons-material": "7.3.5",
     "@mui/material": "7.3.5",
     "@popperjs/core": "2.11.8",

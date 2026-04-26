@@ -17,6 +17,26 @@ final class BundleURLSchemeHandler: NSObject, WKURLSchemeHandler {
             return
         }
 
+        // Reflect the request's Origin header so null origins (opaque custom-scheme
+        // origins on iOS WebKit) are allowed. Access-Control-Allow-Origin: * explicitly
+        // excludes null, which breaks fetch() and crossOrigin image loads from the page.
+        let allowOrigin = urlSchemeTask.request.value(forHTTPHeaderField: "Origin") ?? "*"
+
+        // Handle CORS preflight
+        if urlSchemeTask.request.httpMethod == "OPTIONS" {
+            let preflightHeaders: [String: String] = [
+                "Access-Control-Allow-Origin":  allowOrigin,
+                "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS",
+                "Access-Control-Allow-Headers": "*",
+                "Access-Control-Max-Age":       "86400",
+            ]
+            if let response = HTTPURLResponse(url: requestURL, statusCode: 204, httpVersion: "HTTP/1.1", headerFields: preflightHeaders) {
+                urlSchemeTask.didReceive(response)
+                urlSchemeTask.didFinish()
+            }
+            return
+        }
+
         let relativePath = normalizedPath(for: requestURL)
 
         guard let fileURL = resolveFileURL(for: relativePath) else {
@@ -32,18 +52,37 @@ final class BundleURLSchemeHandler: NSObject, WKURLSchemeHandler {
         }
 
         let mime = mimeType(for: fileURL)
+        let totalBytes = data.count
 
-        // Use HTTPURLResponse so the Fetch API and image loader receive a proper
-        // HTTP status code (200) and headers.  Without this, iOS WebKit can treat
-        // the response as opaque/failed.  Access-Control-Allow-Origin is required
-        // when any JS code sets crossOrigin on an image or makes a fetch() that
-        // triggers CORS mode; without it iOS WebKit (stricter than macOS WebKit)
-        // refuses to hand the response body to the canvas / Fetch consumer.
-        let headers: [String: String] = [
-            "Content-Type":                mime,
-            "Access-Control-Allow-Origin": "*",
-            "Cache-Control":               "max-age=86400",
+        // Shared CORS + cache headers used in every response
+        let corsHeaders: [String: String] = [
+            "Access-Control-Allow-Origin":  allowOrigin,
+            "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS",
+            "Access-Control-Allow-Headers": "*",
+            "Cross-Origin-Resource-Policy": "cross-origin",
+            "Accept-Ranges":                "bytes",
+            "Cache-Control":                "max-age=86400",
         ]
+
+        // Handle Range requests so audio streams correctly (browsers probe with
+        // Range: bytes=0-1 before streaming; without a 206 response audio stalls).
+        if let rangeHeader = urlSchemeTask.request.value(forHTTPHeaderField: "Range") {
+            let (rangeData, start, end) = slice(data: data, range: rangeHeader)
+            var headers = corsHeaders
+            headers["Content-Type"]   = mime
+            headers["Content-Length"] = "\(rangeData.count)"
+            headers["Content-Range"]  = "bytes \(start)-\(end)/\(totalBytes)"
+            if let response = HTTPURLResponse(url: requestURL, statusCode: 206, httpVersion: "HTTP/1.1", headerFields: headers) {
+                urlSchemeTask.didReceive(response)
+                urlSchemeTask.didReceive(rangeData)
+                urlSchemeTask.didFinish()
+            }
+            return
+        }
+
+        var headers = corsHeaders
+        headers["Content-Type"]   = mime
+        headers["Content-Length"] = "\(totalBytes)"
 
         guard let response = HTTPURLResponse(
             url: requestURL,
@@ -62,11 +101,23 @@ final class BundleURLSchemeHandler: NSObject, WKURLSchemeHandler {
 
     func webView(_ webView: WKWebView, stop urlSchemeTask: any WKURLSchemeTask) {}
 
+    // MARK: - Range parsing
+
+    /// Parses a "bytes=X-Y" or "bytes=X-" Range header and returns the slice plus the byte positions.
+    private func slice(data: Data, range rangeHeader: String) -> (Data, Int, Int) {
+        let total = data.count
+        guard rangeHeader.hasPrefix("bytes=") else { return (data, 0, total - 1) }
+        let spec  = rangeHeader.dropFirst(6)
+        let parts = spec.split(separator: "-", maxSplits: 1, omittingEmptySubsequences: false)
+        let start = Int(parts[0]) ?? 0
+        let end   = parts.count > 1 && !parts[1].isEmpty ? min(Int(parts[1]) ?? (total - 1), total - 1) : (total - 1)
+        return (data.subdata(in: start ..< (end + 1)), start, end)
+    }
+
     // MARK: - Path resolution
 
     /// Strips the leading slash and returns "index.html" for bare root requests.
     private func normalizedPath(for url: URL) -> String {
-        // url.path decodes percent-encoding automatically (e.g. %20 → space)
         let path = url.path.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
         return path.isEmpty ? "index.html" : path
     }
@@ -78,34 +129,22 @@ final class BundleURLSchemeHandler: NSObject, WKURLSchemeHandler {
         let filename = URL(fileURLWithPath: relativePath).lastPathComponent
 
         let candidates: [URL] = [
-            // 1. Normal layout: dist/ folder reference preserved in bundle
             base.appendingPathComponent("dist").appendingPathComponent(relativePath),
-            // 2. Flattened top-level: Xcode copied files without preserving folder
             base.appendingPathComponent(relativePath),
-            // 3. dist/ present but top directory stripped from path
             base.appendingPathComponent("dist").appendingPathComponent(filename),
-            // 4. Fully flattened: only the filename survives
             base.appendingPathComponent(filename),
         ]
 
-        for url in candidates {
-            if FileManager.default.fileExists(atPath: url.path) {
-                return url
-            }
-        }
-
-        return nil
+        return candidates.first { FileManager.default.fileExists(atPath: $0.path) }
     }
 
     // MARK: - MIME type
 
     private func mimeType(for fileURL: URL) -> String {
         let ext = fileURL.pathExtension.lowercased()
-
-        // Explicit map for types that UTType may not resolve correctly on all iOS versions
         switch ext {
         case "html":            return "text/html"
-        case "js", "mjs":       return "text/javascript"
+        case "js", "mjs":      return "text/javascript"
         case "css":             return "text/css"
         case "json":            return "application/json"
         case "svg":             return "image/svg+xml"
@@ -121,15 +160,12 @@ final class BundleURLSchemeHandler: NSObject, WKURLSchemeHandler {
         case "woff2":           return "font/woff2"
         case "ttf":             return "font/ttf"
         case "ico":             return "image/x-icon"
+        case "atlas":           return "text/plain"
         default:                break
         }
-
-        // Fall back to UTType for anything not in the explicit map
-        if let type = UTType(filenameExtension: ext),
-           let mime = type.preferredMIMEType {
+        if let type = UTType(filenameExtension: ext), let mime = type.preferredMIMEType {
             return mime
         }
-
         return "application/octet-stream"
     }
 }
@@ -142,10 +178,8 @@ enum BundleError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .invalidURL:
-            return "Invalid bundled asset URL."
-        case .fileNotFound(let path):
-            return "Bundled asset not found: \(path)"
+        case .invalidURL:               return "Invalid bundled asset URL."
+        case .fileNotFound(let path):   return "Bundled asset not found: \(path)"
         }
     }
 }

@@ -1,5 +1,5 @@
 import { motion } from 'motion/react';
-import { Sparkles, Fish, Zap, Dumbbell } from 'lucide-react';
+import { Sparkles, Dumbbell, Grid3X3, Link2, Lock, Layers, Puzzle } from 'lucide-react';
 
 interface JuvenileUnlockModalProps {
   axolotlName: string;
@@ -131,34 +131,60 @@ export function JuvenileUnlockModal({ axolotlName, onClose }: JuvenileUnlockModa
 
         {/* Body */}
         <div className="bg-white px-5 py-5 space-y-4">
-          {/* Multiplayer unlock card */}
+          {/* Solo games unlock card */}
           <motion.div
-            className="rounded-2xl overflow-hidden border-2 border-rose-200 shadow-md"
+            className="rounded-2xl overflow-hidden border-2 border-violet-200 shadow-md"
             initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.65 }}
           >
-            <div className="bg-gradient-to-r from-rose-500 to-orange-500 px-4 py-2.5 flex items-center gap-2">
+            <div className="bg-gradient-to-r from-violet-500 to-indigo-500 px-4 py-2.5 flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-white flex-shrink-0" />
-              <p className="text-white font-black text-sm">Multiplayer Games Unlocked!</p>
+              <p className="text-white font-black text-sm">New Solo Games Unlocked!</p>
             </div>
-            <div className="bg-rose-50 px-4 py-3 flex items-center gap-4">
+            <div className="bg-violet-50 px-4 py-3 grid grid-cols-2 gap-x-3 gap-y-2.5">
               <div className="flex items-center gap-2">
-                <Fish className="w-6 h-6 text-sky-500 flex-shrink-0" strokeWidth={1.5} />
+                <Layers className="w-5 h-5 text-blue-500 flex-shrink-0" strokeWidth={1.5} />
                 <div>
-                  <p className="text-slate-800 font-bold text-xs">Fishing</p>
-                  <p className="text-slate-500 text-[10px]">Catch the most!</p>
+                  <p className="text-slate-800 font-bold text-xs">Axolotl Stacker</p>
+                  <p className="text-slate-500 text-[10px]">Stack them high!</p>
                 </div>
               </div>
-              <div className="w-px h-8 bg-rose-200" />
               <div className="flex items-center gap-2">
-                <Zap className="w-6 h-6 text-amber-500 flex-shrink-0" strokeWidth={1.5} />
+                <Puzzle className="w-5 h-5 text-slate-600 flex-shrink-0" strokeWidth={1.5} />
                 <div>
-                  <p className="text-slate-800 font-bold text-xs">Bite Tag</p>
-                  <p className="text-slate-500 text-[10px]">Tag other axolotls!</p>
+                  <p className="text-slate-800 font-bold text-xs">Coral Code</p>
+                  <p className="text-slate-500 text-[10px]">Crack the code!</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Grid3X3 className="w-5 h-5 text-cyan-500 flex-shrink-0" strokeWidth={1.5} />
+                <div>
+                  <p className="text-slate-800 font-bold text-xs">Tide Tiles</p>
+                  <p className="text-slate-500 text-[10px]">Merge the tiles!</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Link2 className="w-5 h-5 text-sky-500 flex-shrink-0" strokeWidth={1.5} />
+                <div>
+                  <p className="text-slate-800 font-bold text-xs">Bubble Line Up</p>
+                  <p className="text-slate-500 text-[10px]">Connect bubbles!</p>
                 </div>
               </div>
             </div>
+          </motion.div>
+
+          {/* Multiplayer teaser */}
+          <motion.div
+            className="rounded-2xl bg-slate-50 border border-slate-200 px-4 py-3 flex items-center gap-2.5"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.75 }}
+          >
+            <Lock className="w-5 h-5 text-slate-400 flex-shrink-0" strokeWidth={2} />
+            <p className="text-slate-600 text-[11.5px] leading-snug">
+              <span className="font-bold">Multiplayer games</span> (Fishing & Bite Tag) unlock at <span className="font-bold">Level 10</span> — keep levelling up!
+            </p>
           </motion.div>
 
           {/* Stat reminder */}
@@ -166,11 +192,11 @@ export function JuvenileUnlockModal({ axolotlName, onClose }: JuvenileUnlockModa
             className="rounded-2xl bg-violet-50 border border-violet-100 px-4 py-3 flex items-start gap-2.5"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.75 }}
+            transition={{ delay: 0.82 }}
           >
             <Dumbbell className="w-5 h-5 text-violet-500 flex-shrink-0" strokeWidth={2} />
             <p className="text-violet-800 text-[11.5px] leading-snug">
-              <span className="font-bold">Tip:</span> Fishing uses Strength & Speed, Bite-Tag uses Speed & Stamina. Assign your stat points wisely!
+              <span className="font-bold">Tip:</span> Play games to earn coins and boost your axolotl's stats. Assign stat points to level up faster!
             </p>
           </motion.div>
 

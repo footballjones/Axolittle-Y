@@ -115,11 +115,11 @@ export function AxolotlDisplay({ axolotl, foodItems, onEatFood, clickTarget, onA
       // (axolotl.stage drives the `size` prop; read it fresh each tick).
       const stageSize = (() => {
         switch (axolotl.stage) {
-          case 'hatchling': return 48;
+          case 'hatchling': return 52;
           case 'sprout':    return 64;
-          case 'guardian':  return 80;
-          case 'elder':     return 96;
-          default:          return 48;
+          case 'guardian':  return 88;
+          case 'elder':     return 86;
+          default:          return 52;
         }
       })();
       const hitRadius = stageSize * 0.7; // generous — worm is 50 px wide
@@ -201,11 +201,11 @@ export function AxolotlDisplay({ axolotl, foodItems, onEatFood, clickTarget, onA
     // Elder matches the old Hatchling size — the Spine axolotl renders
     // larger than the previous PNG, so all stages are shifted down by ~50%.
     switch (axolotl.stage) {
-      case 'hatchling': return 48;
+      case 'hatchling': return 52;
       case 'sprout':    return 64;
-      case 'guardian':  return 80;
-      case 'elder':     return 96;
-      default:          return 48;
+      case 'guardian':  return 88;
+      case 'elder':     return 86;
+      default:          return 52;
     }
   };
 

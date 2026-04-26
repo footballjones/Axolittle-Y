@@ -71,11 +71,9 @@ export function KeepeyUpey({ onEnd, onDeductEnergy, onApplyReward, energy, sound
   const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
   const lastFrameTimeRef = useRef<number>(0);
 
-  // Spine renderer — driven entirely by the game loop, no second RAF
-  const { update: spineUpdate, drawOn: spineDrawOn } = useSpineRenderer();
-  // Stable ref so the draw() useCallback can read it without a dep
-  const spineDrawOnRef = useRef(spineDrawOn);
-  spineDrawOnRef.current = spineDrawOn;
+  // Spine WebGL renderer — driven entirely by the game loop, no second RAF.
+  // canvasRef mounts the transparent WebGL overlay canvas.
+  const { canvasRef: spineCanvasRef, update: spineUpdate, render: spineRender } = useSpineRenderer();
 
   // Pre-load background image once
   useEffect(() => {
@@ -265,12 +263,6 @@ export function KeepeyUpey({ onEnd, onDeductEnergy, onApplyReward, energy, sound
       ctx.fill();
     }
 
-    // Spine axolotl — drawn directly onto game canvas (no separate RAF)
-    {
-      const tilt = Math.max(-0.3, Math.min(0.3, axo.vy * 0.045));
-      spineDrawOnRef.current(ctx, axo.x, axo.y, 70, false, tilt);
-    }
-
     // Timer display
     ctx.fillStyle = 'rgba(255,255,255,0.6)';
     ctx.font = '16px sans-serif';
@@ -289,9 +281,6 @@ export function KeepeyUpey({ onEnd, onDeductEnergy, onApplyReward, energy, sound
     const delta = Math.min((now - (lastFrameTimeRef.current || now)) / 1000, 0.064);
     lastFrameTimeRef.current = now;
 
-    // Step Spine animation state (no rendering here — draw() handles that)
-    spineUpdate(delta, 'Swim');
-
     const elapsed = (now - gameStateRef.current.startTime) / 1000;
     const currentScore = Math.floor(elapsed);
     // Only trigger a React re-render when the displayed integer changes
@@ -301,6 +290,8 @@ export function KeepeyUpey({ onEnd, onDeductEnergy, onApplyReward, energy, sound
     }
 
     const { axo, obstacles, bubbles } = gameStateRef.current;
+
+    spineUpdate(delta, 'Swim');
 
     // Axo physics — gravity increases over time
     const gravity = GRAVITY_BASE + scoreRef.current * GRAVITY_RAMP;
@@ -349,8 +340,10 @@ export function KeepeyUpey({ onEnd, onDeductEnergy, onApplyReward, energy, sound
     }
     gameStateRef.current.bubbles = bubbles.filter(b => b.life > 0);
 
-    // Draw everything
+    // Draw 2D game layer then WebGL skeleton overlay with velocity-driven tilt
     draw(ctx);
+    const tilt = Math.max(-0.3, Math.min(0.3, axo.vy * 0.045));
+    spineRender(axo.x, axo.y, 70, false, CANVAS_W, CANVAS_H, tilt);
 
     animationFrameRef.current = requestAnimationFrame(gameLoop);
   }, [spawnObstacle, endGame, draw]);
@@ -579,13 +572,13 @@ export function KeepeyUpey({ onEnd, onDeductEnergy, onApplyReward, energy, sound
           </motion.div>
         )}
 
-        {/* Canvas */}
+        {/* 2D game canvas — background, obstacles, timer */}
         <canvas
           ref={canvasRef}
           width={CANVAS_W}
           height={CANVAS_H}
-          style={{ 
-            touchAction: 'none', 
+          style={{
+            touchAction: 'none',
             display: 'block',
             position: 'absolute',
             top: 0,
@@ -606,6 +599,19 @@ export function KeepeyUpey({ onEnd, onDeductEnergy, onApplyReward, energy, sound
             e.preventDefault();
             lastTouchTimeRef.current = performance.now();
             bounce();
+          }}
+        />
+
+        {/* WebGL overlay canvas — Spine axolotl rendered without triangle seams */}
+        <canvas
+          ref={spineCanvasRef}
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            pointerEvents: 'none',
           }}
         />
 
