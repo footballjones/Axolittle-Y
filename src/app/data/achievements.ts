@@ -19,6 +19,13 @@ function maxLevelEver(state: GameState): number {
   return Math.max(cur, lineageMax);
 }
 
+// Helper: highest generation ever raised
+function maxGenerationEver(state: GameState): number {
+  const cur = state.axolotl?.generation ?? 0;
+  const lineageMax = state.lineage.reduce((m, a) => Math.max(m, a.generation), 0);
+  return Math.max(cur, lineageMax);
+}
+
 // Helper: check if any axolotl (current or lineage) ever had a given rarity
 function everHadRarity(state: GameState, rarities: string[]): boolean {
   const current = state.axolotl;
@@ -34,43 +41,146 @@ function everBredWithFriend(state: GameState): boolean {
 }
 
 export const ALL_ACHIEVEMENTS: Achievement[] = [
+
   // ─── NURTURE ────────────────────────────────────────────────────────────────
+
+  // Series: Fed With Love — feeding milestones (5 steps, 1 tile)
   {
     id: 'first-meal',
-    name: 'First Meal',
-    description: 'Feed your axolotl for the very first time.',
-    icon: 'Bone',
+    name: 'Fed With Love',
+    description: 'Feed your axolotl for the first time.',
+    icon: 'Utensils',
     category: 'nurture',
     coinReward: 5,
+    seriesId: 'feeding',
     check: s => (s.totalFeedsEver ?? 0) >= 1,
   },
   {
+    id: 'feeding-25',
+    name: 'Fed With Love',
+    description: 'Feed your axolotl 25 times.',
+    icon: 'Utensils',
+    category: 'nurture',
+    coinReward: 15,
+    seriesId: 'feeding',
+    check: s => (s.totalFeedsEver ?? 0) >= 25,
+  },
+  {
     id: 'devoted-feeder',
-    name: 'Devoted Feeder',
+    name: 'Fed With Love',
     description: 'Feed your axolotl 100 times.',
     icon: 'Utensils',
     category: 'nurture',
     coinReward: 30,
+    seriesId: 'feeding',
     check: s => (s.totalFeedsEver ?? 0) >= 100,
   },
   {
+    id: 'feeding-500',
+    name: 'Fed With Love',
+    description: 'Feed your axolotl 500 times.',
+    icon: 'Utensils',
+    category: 'nurture',
+    coinReward: 75,
+    seriesId: 'feeding',
+    check: s => (s.totalFeedsEver ?? 0) >= 500,
+  },
+  {
+    id: 'feeding-1000',
+    name: 'Fed With Love',
+    description: 'Feed your axolotl 1,000 times.',
+    icon: 'Utensils',
+    category: 'nurture',
+    opalReward: 10,
+    seriesId: 'feeding',
+    check: s => (s.totalFeedsEver ?? 0) >= 1000,
+  },
+
+  // Series: Squeaky Clean — cleaning milestones (4 steps, 1 tile)
+  {
+    id: 'first-clean',
+    name: 'Squeaky Clean',
+    description: 'Clean up your first poop item.',
+    icon: 'Sparkles',
+    category: 'nurture',
+    coinReward: 5,
+    seriesId: 'cleaning',
+    check: s => (s.totalCleansEver ?? 0) >= 1,
+  },
+  {
     id: 'spotless-tank',
-    name: 'Spotless Tank',
-    description: 'Clean up 50 poop items from the tank.',
+    name: 'Squeaky Clean',
+    description: 'Clean up 50 poop items.',
     icon: 'Sparkles',
     category: 'nurture',
     coinReward: 15,
+    seriesId: 'cleaning',
     check: s => (s.totalCleansEver ?? 0) >= 50,
   },
   {
+    id: 'cleaning-200',
+    name: 'Squeaky Clean',
+    description: 'Clean up 200 poop items.',
+    icon: 'Sparkles',
+    category: 'nurture',
+    coinReward: 35,
+    seriesId: 'cleaning',
+    check: s => (s.totalCleansEver ?? 0) >= 200,
+  },
+  {
+    id: 'cleaning-500',
+    name: 'Squeaky Clean',
+    description: 'Clean up 500 poop items.',
+    icon: 'Sparkles',
+    category: 'nurture',
+    opalReward: 5,
+    seriesId: 'cleaning',
+    check: s => (s.totalCleansEver ?? 0) >= 500,
+  },
+
+  // Series: Water Master — water change milestones (4 steps, 1 tile)
+  {
+    id: 'water-first',
+    name: 'Water Master',
+    description: 'Change the aquarium water for the first time.',
+    icon: 'Droplets',
+    category: 'nurture',
+    coinReward: 10,
+    seriesId: 'water-changes',
+    check: s => (s.totalWaterChanges ?? 0) >= 1,
+  },
+  {
     id: 'water-whisperer',
-    name: 'Water Whisperer',
-    description: 'Change the aquarium water 20 times.',
+    name: 'Water Master',
+    description: 'Change the water 20 times.',
     icon: 'Droplets',
     category: 'nurture',
     coinReward: 20,
+    seriesId: 'water-changes',
     check: s => (s.totalWaterChanges ?? 0) >= 20,
   },
+  {
+    id: 'water-75',
+    name: 'Water Master',
+    description: 'Change the water 75 times.',
+    icon: 'Droplets',
+    category: 'nurture',
+    coinReward: 50,
+    seriesId: 'water-changes',
+    check: s => (s.totalWaterChanges ?? 0) >= 75,
+  },
+  {
+    id: 'water-200',
+    name: 'Water Master',
+    description: 'Change the water 200 times.',
+    icon: 'Droplets',
+    category: 'nurture',
+    opalReward: 5,
+    seriesId: 'water-changes',
+    check: s => (s.totalWaterChanges ?? 0) >= 200,
+  },
+
+  // Standalone: Premium Care
   {
     id: 'premium-care',
     name: 'Premium Care',
@@ -83,44 +193,114 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
   },
 
   // ─── MINI GAMES ─────────────────────────────────────────────────────────────
+
+  // Series: Game Time — games played milestones (6 steps, 1 tile)
   {
     id: 'game-on',
-    name: 'Game On!',
+    name: 'Game Time',
     description: 'Play your first mini game.',
     icon: 'Gamepad2',
     category: 'minigames',
     coinReward: 10,
+    seriesId: 'games-played',
     check: s => (s.totalMinigamesPlayed ?? 0) >= 1,
   },
   {
+    id: 'games-25',
+    name: 'Game Time',
+    description: 'Play 25 mini games.',
+    icon: 'Gamepad2',
+    category: 'minigames',
+    coinReward: 20,
+    seriesId: 'games-played',
+    check: s => (s.totalMinigamesPlayed ?? 0) >= 25,
+  },
+  {
     id: 'dedicated-gamer',
-    name: 'Dedicated Gamer',
+    name: 'Game Time',
     description: 'Play 50 mini games.',
-    icon: 'Target',
+    icon: 'Gamepad2',
     category: 'minigames',
     coinReward: 25,
+    seriesId: 'games-played',
     check: s => (s.totalMinigamesPlayed ?? 0) >= 50,
   },
   {
     id: 'veteran-gamer',
-    name: 'Veteran Gamer',
+    name: 'Game Time',
     description: 'Play 100 mini games.',
-    icon: 'Medal',
+    icon: 'Gamepad2',
     category: 'minigames',
     coinReward: 40,
     opalReward: 2,
+    seriesId: 'games-played',
     check: s => (s.totalMinigamesPlayed ?? 0) >= 100,
   },
   {
+    id: 'games-250',
+    name: 'Game Time',
+    description: 'Play 250 mini games.',
+    icon: 'Gamepad2',
+    category: 'minigames',
+    opalReward: 5,
+    seriesId: 'games-played',
+    check: s => (s.totalMinigamesPlayed ?? 0) >= 250,
+  },
+  {
+    id: 'games-500',
+    name: 'Game Time',
+    description: 'Play 500 mini games.',
+    icon: 'Gamepad2',
+    category: 'minigames',
+    opalReward: 15,
+    seriesId: 'games-played',
+    check: s => (s.totalMinigamesPlayed ?? 0) >= 500,
+  },
+
+  // Series: Exceptional — high score milestones (4 steps, 1 tile)
+  {
+    id: 'exceptional-5',
+    name: 'Exceptional',
+    description: 'Achieve 5 exceptional scores.',
+    icon: 'Star',
+    category: 'minigames',
+    coinReward: 15,
+    seriesId: 'exceptional-scores',
+    check: s => (s.totalExceptionalScores ?? 0) >= 5,
+  },
+  {
     id: 'exceptional-player',
-    name: 'Exceptional Player',
-    description: 'Achieve 10 exceptional scores across any mini games.',
+    name: 'Exceptional',
+    description: 'Achieve 10 exceptional scores.',
     icon: 'Star',
     category: 'minigames',
     coinReward: 30,
     opalReward: 3,
+    seriesId: 'exceptional-scores',
     check: s => (s.totalExceptionalScores ?? 0) >= 10,
   },
+  {
+    id: 'exceptional-25',
+    name: 'Exceptional',
+    description: 'Achieve 25 exceptional scores.',
+    icon: 'Star',
+    category: 'minigames',
+    opalReward: 5,
+    seriesId: 'exceptional-scores',
+    check: s => (s.totalExceptionalScores ?? 0) >= 25,
+  },
+  {
+    id: 'exceptional-50',
+    name: 'Exceptional',
+    description: 'Achieve 50 exceptional scores.',
+    icon: 'Star',
+    category: 'minigames',
+    opalReward: 15,
+    seriesId: 'exceptional-scores',
+    check: s => (s.totalExceptionalScores ?? 0) >= 50,
+  },
+
+  // Standalone: All-Rounder
   {
     id: 'all-rounder',
     name: 'All-Rounder',
@@ -136,7 +316,8 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
   },
 
   // ─── PROGRESSION ────────────────────────────────────────────────────────────
-  // Level milestone series — collapses to a single tile; each step unlocks after the previous is claimed
+
+  // Series: Level Up! — level milestones (6 steps, 1 tile) — claim-gated
   {
     id: 'level-milestone-5',
     name: 'Level Up!',
@@ -197,151 +378,315 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
     seriesId: 'level-milestones',
     check: s => (s.achievements ?? []).includes('level-milestone-40') && maxLevelEver(s) >= 60,
   },
+
+  // Series: Growing Up — life stage milestones (3 steps, 1 tile)
   {
     id: 'first-steps',
-    name: 'First Steps',
+    name: 'Growing Up',
     description: 'Your axolotl reaches the Sprout stage.',
     icon: 'Sprout',
     category: 'progression',
     coinReward: 10,
+    seriesId: 'life-stages',
     check: s => {
-      const cur = s.axolotl;
-      if (cur && ['sprout', 'guardian', 'elder'].includes(cur.stage)) return true;
+      if (s.axolotl && ['sprout', 'guardian', 'elder'].includes(s.axolotl.stage)) return true;
       return s.lineage.some(a => ['sprout', 'guardian', 'elder'].includes(a.stage));
     },
   },
   {
     id: 'all-grown-up',
-    name: 'All Grown Up',
+    name: 'Growing Up',
     description: 'Your axolotl reaches the Guardian stage.',
-    icon: 'Leaf',
+    icon: 'Sprout',
     category: 'progression',
-    coinReward: 15,
+    coinReward: 20,
+    seriesId: 'life-stages',
     check: s => {
-      const cur = s.axolotl;
-      if (cur && ['guardian', 'elder'].includes(cur.stage)) return true;
+      if (s.axolotl && ['guardian', 'elder'].includes(s.axolotl.stage)) return true;
       return s.lineage.some(a => ['guardian', 'elder'].includes(a.stage));
     },
   },
   {
     id: 'elder-wisdom',
-    name: 'Elder Wisdom',
+    name: 'Growing Up',
     description: 'Your axolotl reaches the Elder stage.',
-    icon: 'Wand2',
+    icon: 'Sprout',
     category: 'progression',
-    coinReward: 25,
+    coinReward: 30,
     opalReward: 2,
+    seriesId: 'life-stages',
     check: s => {
-      const cur = s.axolotl;
-      if (cur?.stage === 'elder') return true;
+      if (s.axolotl?.stage === 'elder') return true;
       return s.lineage.some(a => a.stage === 'elder');
     },
   },
+
+  // Series: Reborn — rebirth milestones (4 steps, 1 tile)
   {
     id: 'circle-of-life',
-    name: 'Circle of Life',
+    name: 'Reborn',
     description: 'Complete your first Rebirth.',
     icon: 'RefreshCw',
     category: 'progression',
     coinReward: 20,
     opalReward: 1,
+    seriesId: 'rebirths',
     check: s => s.lineage.length >= 1,
+  },
+  {
+    id: 'rebirths-3',
+    name: 'Reborn',
+    description: 'Complete 3 Rebirths.',
+    icon: 'RefreshCw',
+    category: 'progression',
+    coinReward: 40,
+    opalReward: 2,
+    seriesId: 'rebirths',
+    check: s => s.lineage.length >= 3,
+  },
+  {
+    id: 'rebirths-7',
+    name: 'Reborn',
+    description: 'Complete 7 Rebirths.',
+    icon: 'RefreshCw',
+    category: 'progression',
+    opalReward: 5,
+    seriesId: 'rebirths',
+    check: s => s.lineage.length >= 7,
+  },
+  {
+    id: 'rebirths-15',
+    name: 'Reborn',
+    description: 'Complete 15 Rebirths.',
+    icon: 'RefreshCw',
+    category: 'progression',
+    opalReward: 15,
+    seriesId: 'rebirths',
+    check: s => s.lineage.length >= 15,
+  },
+
+  // Series: Dynasty — generation milestones (4 steps, 1 tile)
+  {
+    id: 'gen-2',
+    name: 'Dynasty',
+    description: 'Raise a Generation 2 axolotl.',
+    icon: 'Crown',
+    category: 'progression',
+    coinReward: 15,
+    seriesId: 'generations',
+    check: s => maxGenerationEver(s) >= 2,
   },
   {
     id: 'dynasty',
     name: 'Dynasty',
-    description: 'Raise an axolotl of Generation 5 or higher.',
+    description: 'Raise a Generation 5 axolotl.',
     icon: 'Crown',
     category: 'progression',
     coinReward: 35,
     opalReward: 3,
-    check: s => {
-      const cur = s.axolotl;
-      if (cur && cur.generation >= 5) return true;
-      return s.lineage.some(a => a.generation >= 5);
-    },
+    seriesId: 'generations',
+    check: s => maxGenerationEver(s) >= 5,
+  },
+  {
+    id: 'gen-10',
+    name: 'Dynasty',
+    description: 'Raise a Generation 10 axolotl.',
+    icon: 'Crown',
+    category: 'progression',
+    opalReward: 5,
+    seriesId: 'generations',
+    check: s => maxGenerationEver(s) >= 10,
+  },
+  {
+    id: 'gen-20',
+    name: 'Dynasty',
+    description: 'Raise a Generation 20 axolotl.',
+    icon: 'Crown',
+    category: 'progression',
+    opalReward: 20,
+    seriesId: 'generations',
+    check: s => maxGenerationEver(s) >= 20,
   },
 
   // ─── GENETICS ───────────────────────────────────────────────────────────────
+
+  // Series: Egg Collector — eggs hatched milestones (4 steps, 1 tile)
   {
     id: 'hatchling',
-    name: 'Hatchling',
+    name: 'Egg Collector',
     description: 'Hatch your first egg.',
     icon: 'Egg',
     category: 'genetics',
     coinReward: 10,
+    seriesId: 'egg-hatching',
     check: s => (s.totalEggsHatched ?? 0) >= 1,
   },
   {
+    id: 'eggs-5',
+    name: 'Egg Collector',
+    description: 'Hatch 5 eggs.',
+    icon: 'Egg',
+    category: 'genetics',
+    coinReward: 25,
+    seriesId: 'egg-hatching',
+    check: s => (s.totalEggsHatched ?? 0) >= 5,
+  },
+  {
+    id: 'eggs-25',
+    name: 'Egg Collector',
+    description: 'Hatch 25 eggs.',
+    icon: 'Egg',
+    category: 'genetics',
+    opalReward: 3,
+    seriesId: 'egg-hatching',
+    check: s => (s.totalEggsHatched ?? 0) >= 25,
+  },
+  {
+    id: 'eggs-100',
+    name: 'Egg Collector',
+    description: 'Hatch 100 eggs.',
+    icon: 'Egg',
+    category: 'genetics',
+    opalReward: 15,
+    seriesId: 'egg-hatching',
+    check: s => (s.totalEggsHatched ?? 0) >= 100,
+  },
+
+  // Series: Rarity Hunter — rarity milestones (4 steps, 1 tile)
+  {
     id: 'rare-find',
-    name: 'Rare Find',
-    description: 'Hatch a Rare (or higher) egg.',
+    name: 'Rarity Hunter',
+    description: 'Hatch a Rare or higher egg.',
     icon: 'Gem',
     category: 'genetics',
     coinReward: 20,
     opalReward: 2,
+    seriesId: 'rarity-hunter',
     check: s => everHadRarity(s, ['Rare', 'Epic', 'Legendary', 'Mythic']),
   },
   {
     id: 'epic-specimen',
-    name: 'Epic Specimen',
-    description: 'Hatch an Epic (or higher) egg.',
-    icon: 'Diamond',
+    name: 'Rarity Hunter',
+    description: 'Hatch an Epic or higher egg.',
+    icon: 'Gem',
     category: 'genetics',
     coinReward: 25,
     opalReward: 3,
+    seriesId: 'rarity-hunter',
     check: s => everHadRarity(s, ['Epic', 'Legendary', 'Mythic']),
   },
   {
     id: 'legendary-being',
-    name: 'Legendary Being',
-    description: 'Hatch a Legendary (or higher) egg.',
-    icon: 'Trophy',
+    name: 'Rarity Hunter',
+    description: 'Hatch a Legendary or higher egg.',
+    icon: 'Gem',
     category: 'genetics',
     coinReward: 35,
     opalReward: 4,
+    seriesId: 'rarity-hunter',
     check: s => everHadRarity(s, ['Legendary', 'Mythic']),
   },
   {
     id: 'mythic-creature',
-    name: 'Mythic Creature',
+    name: 'Rarity Hunter',
     description: 'Hatch a Mythic egg — the rarest of all.',
-    icon: 'Flame',
+    icon: 'Gem',
     category: 'genetics',
-    coinReward: 40,
-    opalReward: 5,
+    coinReward: 50,
+    opalReward: 10,
+    seriesId: 'rarity-hunter',
     check: s => everHadRarity(s, ['Mythic']),
   },
 
   // ─── SOCIAL ─────────────────────────────────────────────────────────────────
+
+  // Series: Making Friends — friend count milestones (4 steps, 1 tile)
   {
     id: 'first-friend',
-    name: 'First Friend',
+    name: 'Making Friends',
     description: 'Add your first friend.',
     icon: 'Heart',
     category: 'social',
     coinReward: 10,
-    check: s => s.friends.length >= 1,
+    seriesId: 'friendships',
+    check: s => s.friends.filter(f => f.id !== 'jimmy-chubs').length >= 1,
+  },
+  {
+    id: 'friends-3',
+    name: 'Making Friends',
+    description: 'Add 3 friends.',
+    icon: 'Heart',
+    category: 'social',
+    coinReward: 20,
+    seriesId: 'friendships',
+    check: s => s.friends.filter(f => f.id !== 'jimmy-chubs').length >= 3,
   },
   {
     id: 'social-butterfly',
-    name: 'Social Butterfly',
+    name: 'Making Friends',
     description: 'Add 5 friends.',
-    icon: 'Users',
+    icon: 'Heart',
     category: 'social',
     coinReward: 20,
     opalReward: 1,
-    check: s => s.friends.length >= 5,
+    seriesId: 'friendships',
+    check: s => s.friends.filter(f => f.id !== 'jimmy-chubs').length >= 5,
+  },
+  {
+    id: 'friends-10',
+    name: 'Making Friends',
+    description: 'Add 10 friends.',
+    icon: 'Heart',
+    category: 'social',
+    opalReward: 5,
+    seriesId: 'friendships',
+    check: s => s.friends.filter(f => f.id !== 'jimmy-chubs').length >= 10,
+  },
+
+  // Series: Generous — gifts sent milestones (4 steps, 1 tile)
+  {
+    id: 'gift-first',
+    name: 'Generous',
+    description: 'Send your first gift to a friend.',
+    icon: 'Gift',
+    category: 'social',
+    coinReward: 5,
+    seriesId: 'gifting',
+    check: s => (s.totalGiftsSent ?? 0) >= 1,
   },
   {
     id: 'gift-giver',
-    name: 'Gift Giver',
+    name: 'Generous',
     description: 'Send 10 gifts to friends.',
     icon: 'Gift',
     category: 'social',
     coinReward: 15,
+    seriesId: 'gifting',
     check: s => (s.totalGiftsSent ?? 0) >= 10,
   },
+  {
+    id: 'gifts-50',
+    name: 'Generous',
+    description: 'Send 50 gifts to friends.',
+    icon: 'Gift',
+    category: 'social',
+    coinReward: 30,
+    opalReward: 2,
+    seriesId: 'gifting',
+    check: s => (s.totalGiftsSent ?? 0) >= 50,
+  },
+  {
+    id: 'gifts-200',
+    name: 'Generous',
+    description: 'Send 200 gifts to friends.',
+    icon: 'Gift',
+    category: 'social',
+    opalReward: 10,
+    seriesId: 'gifting',
+    check: s => (s.totalGiftsSent ?? 0) >= 200,
+  },
+
+  // Standalone: Family Matters
   {
     id: 'family-matters',
     name: 'Family Matters',
@@ -354,6 +699,8 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
   },
 
   // ─── DAILY HABITS ───────────────────────────────────────────────────────────
+
+  // Standalone: Lucky Spin
   {
     id: 'lucky-spin',
     name: 'Lucky Spin',
@@ -363,35 +710,60 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
     coinReward: 5,
     check: s => !!s.lastSpinDate,
   },
+
+  // Series: Daily Streak — login streak milestones (5 steps, 1 tile)
+  {
+    id: 'streak-3',
+    name: 'Daily Streak',
+    description: 'Log in 3 days in a row.',
+    icon: 'CalendarDays',
+    category: 'daily',
+    coinReward: 10,
+    seriesId: 'login-streak',
+    check: s => (s.loginStreak ?? 0) >= 3,
+  },
   {
     id: 'week-warrior',
-    name: 'Week Warrior',
-    description: 'Maintain a 7-day login streak.',
+    name: 'Daily Streak',
+    description: 'Log in 7 days in a row.',
     icon: 'CalendarDays',
     category: 'daily',
     coinReward: 15,
     opalReward: 1,
+    seriesId: 'login-streak',
     check: s => (s.loginStreak ?? 0) >= 7,
   },
   {
     id: 'monthly-devotee',
-    name: 'Monthly Devotee',
-    description: 'Maintain a 30-day login streak.',
-    icon: 'Calendar',
+    name: 'Daily Streak',
+    description: 'Log in 30 days in a row.',
+    icon: 'CalendarDays',
     category: 'daily',
     coinReward: 30,
     opalReward: 2,
+    seriesId: 'login-streak',
     check: s => (s.loginStreak ?? 0) >= 30,
   },
   {
     id: 'legend-of-devotion',
-    name: 'Legend of Devotion',
-    description: 'Maintain a 100-day login streak.',
-    icon: 'Star',
+    name: 'Daily Streak',
+    description: 'Log in 100 days in a row.',
+    icon: 'CalendarDays',
     category: 'daily',
     coinReward: 40,
     opalReward: 5,
+    seriesId: 'login-streak',
     check: s => (s.loginStreak ?? 0) >= 100,
+  },
+  {
+    id: 'streak-365',
+    name: 'Daily Streak',
+    description: 'Log in 365 days in a row.',
+    icon: 'CalendarDays',
+    category: 'daily',
+    opalReward: 50,
+    seriesId: 'login-streak',
+    check: s => (s.loginStreak ?? 0) >= 365,
   },
 ];
 

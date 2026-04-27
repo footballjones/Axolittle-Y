@@ -115,7 +115,12 @@ export function AchievementCenter({ gameState, onClaim, highlightId }: Achieveme
       {ACHIEVEMENT_CATEGORIES.map((cat, catIndex) => {
         const catAchievements = ALL_ACHIEVEMENTS.filter(a => a.category === cat.id);
         const displayList = buildDisplayList(catAchievements, unlockedSet, pendingSet);
-        const catUnlocked = displayList.filter(a => unlockedSet.has(a.id)).length;
+        // A series tile counts as complete only when its final step is claimed
+        const catUnlocked = displayList.filter(a => {
+          if (!a.seriesId) return unlockedSet.has(a.id);
+          const series = catAchievements.filter(x => x.seriesId === a.seriesId);
+          return unlockedSet.has(series[series.length - 1].id);
+        }).length;
         const colors = CATEGORY_COLORS[cat.id];
 
         return (
