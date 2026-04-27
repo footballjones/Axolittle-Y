@@ -238,20 +238,6 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
     },
   },
   {
-    id: 'peak-potential',
-    name: 'Peak Potential',
-    description: 'Reach the maximum level of 40.',
-    icon: 'Zap',
-    category: 'progression',
-    coinReward: 40,
-    opalReward: 5,
-    check: s => {
-      const cur = s.axolotl;
-      if (cur && calculateLevel(cur.experience) >= 40) return true;
-      return s.lineage.some(a => calculateLevel(a.experience) >= 40);
-    },
-  },
-  {
     id: 'circle-of-life',
     name: 'Circle of Life',
     description: 'Complete your first Rebirth.',
