@@ -110,6 +110,18 @@ export function useCloudSync({
     latestStateRef.current = gameState;
   }, [gameState]);
 
+  // ── Flush stale refs on user-switch ──────────────────────────────────────
+  // When userId changes (sign-out or account switch), cancel any queued debounce
+  // and discard the offline-pending state so they can never fire under the
+  // incoming user's session.
+  useEffect(() => {
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+      debounceRef.current = null;
+    }
+    pendingStateRef.current = null;
+  }, [userId]);
+
   // ── Online / Offline tracking & flush-on-reconnect ────────────────────────
   useEffect(() => {
     const handleOnline = async () => {
