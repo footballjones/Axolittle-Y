@@ -22,6 +22,31 @@ const CATEGORY_COLORS: Record<string, { bg: string; text: string; border: string
   daily:      { bg: 'from-amber-400 to-orange-500',    text: 'text-amber-700',   border: 'border-amber-200/60',   icon: 'bg-amber-100'   },
 };
 
+/** Collapses achievements sharing a seriesId into a single active tile. */
+function buildDisplayList(achievements: ReturnType<typeof ALL_ACHIEVEMENTS.filter>, unlockedSet: Set<string>, pendingSet: Set<string>) {
+  const seriesMap = new Map<string, typeof achievements>();
+  for (const a of achievements) {
+    if (a.seriesId) {
+      if (!seriesMap.has(a.seriesId)) seriesMap.set(a.seriesId, []);
+      seriesMap.get(a.seriesId)!.push(a);
+    }
+  }
+  const seenSeries = new Set<string>();
+  const result: typeof achievements = [];
+  for (const a of achievements) {
+    if (!a.seriesId) { result.push(a); continue; }
+    if (seenSeries.has(a.seriesId)) continue;
+    seenSeries.add(a.seriesId);
+    const series = seriesMap.get(a.seriesId)!;
+    const active =
+      series.find(x => pendingSet.has(x.id)) ??
+      series.find(x => !unlockedSet.has(x.id)) ??
+      series[series.length - 1];
+    result.push(active);
+  }
+  return result;
+}
+
 export function AchievementCenter({ gameState, onClaim, highlightId }: AchievementCenterProps) {
   const unlockedSet = new Set(gameState.achievements ?? []);
   const pendingSet = new Set(gameState.pendingAchievements ?? []);
@@ -89,7 +114,8 @@ export function AchievementCenter({ gameState, onClaim, highlightId }: Achieveme
       {/* Per-category sections */}
       {ACHIEVEMENT_CATEGORIES.map((cat, catIndex) => {
         const catAchievements = ALL_ACHIEVEMENTS.filter(a => a.category === cat.id);
-        const catUnlocked = catAchievements.filter(a => unlockedSet.has(a.id)).length;
+        const displayList = buildDisplayList(catAchievements, unlockedSet, pendingSet);
+        const catUnlocked = displayList.filter(a => unlockedSet.has(a.id)).length;
         const colors = CATEGORY_COLORS[cat.id];
 
         return (
@@ -106,14 +132,14 @@ export function AchievementCenter({ gameState, onClaim, highlightId }: Achieveme
               </div>
               <h3 className="text-sm font-bold text-white/90 drop-shadow-sm">{cat.label}</h3>
               <span className="ml-auto text-[10px] font-semibold text-white/50">
-                {catUnlocked}/{catAchievements.length}
+                {catUnlocked}/{displayList.length}
               </span>
             </div>
 
             {/* Achievement cards */}
             <div className="space-y-2">
               <AnimatePresence>
-                {catAchievements.map((achievement, idx) => {
+                {displayList.map((achievement, idx) => {
                   const isUnlocked = unlockedSet.has(achievement.id);
                   const isPending = pendingSet.has(achievement.id);
                   const hasReward = (achievement.coinReward ?? 0) > 0 || (achievement.opalReward ?? 0) > 0;

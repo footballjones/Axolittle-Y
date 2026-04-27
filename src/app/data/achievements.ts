@@ -12,6 +12,13 @@ const SOLO_GAME_IDS = [
   'bubble-line-up',
 ];
 
+// Helper: highest level ever reached across current axolotl and all lineage
+function maxLevelEver(state: GameState): number {
+  const cur = state.axolotl ? calculateLevel(state.axolotl.experience) : 0;
+  const lineageMax = state.lineage.reduce((m, a) => Math.max(m, calculateLevel(a.experience)), 0);
+  return Math.max(cur, lineageMax);
+}
+
 // Helper: check if any axolotl (current or lineage) ever had a given rarity
 function everHadRarity(state: GameState, rarities: string[]): boolean {
   const current = state.axolotl;
@@ -129,6 +136,67 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
   },
 
   // ─── PROGRESSION ────────────────────────────────────────────────────────────
+  // Level milestone series — collapses to a single tile; each step unlocks after the previous is claimed
+  {
+    id: 'level-milestone-5',
+    name: 'Level 5',
+    description: 'Reach Level 5.',
+    icon: 'TrendingUp',
+    category: 'progression',
+    coinReward: 20,
+    seriesId: 'level-milestones',
+    check: s => maxLevelEver(s) >= 5,
+  },
+  {
+    id: 'level-milestone-10',
+    name: 'Level 10',
+    description: 'Reach Level 10.',
+    icon: 'TrendingUp',
+    category: 'progression',
+    coinReward: 50,
+    seriesId: 'level-milestones',
+    check: s => (s.achievements ?? []).includes('level-milestone-5') && maxLevelEver(s) >= 10,
+  },
+  {
+    id: 'level-milestone-20',
+    name: 'Level 20',
+    description: 'Reach Level 20.',
+    icon: 'TrendingUp',
+    category: 'progression',
+    opalReward: 5,
+    seriesId: 'level-milestones',
+    check: s => (s.achievements ?? []).includes('level-milestone-10') && maxLevelEver(s) >= 20,
+  },
+  {
+    id: 'level-milestone-30',
+    name: 'Level 30',
+    description: 'Reach Level 30.',
+    icon: 'TrendingUp',
+    category: 'progression',
+    opalReward: 10,
+    seriesId: 'level-milestones',
+    check: s => (s.achievements ?? []).includes('level-milestone-20') && maxLevelEver(s) >= 30,
+  },
+  {
+    id: 'level-milestone-40',
+    name: 'Level 40',
+    description: 'Reach Level 40.',
+    icon: 'TrendingUp',
+    category: 'progression',
+    coinReward: 100,
+    seriesId: 'level-milestones',
+    check: s => (s.achievements ?? []).includes('level-milestone-30') && maxLevelEver(s) >= 40,
+  },
+  {
+    id: 'level-milestone-60',
+    name: 'Level 60',
+    description: 'Reach the maximum level — Level 60!',
+    icon: 'TrendingUp',
+    category: 'progression',
+    opalReward: 15,
+    seriesId: 'level-milestones',
+    check: s => (s.achievements ?? []).includes('level-milestone-40') && maxLevelEver(s) >= 60,
+  },
   {
     id: 'first-steps',
     name: 'First Steps',

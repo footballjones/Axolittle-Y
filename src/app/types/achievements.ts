@@ -18,6 +18,12 @@ export interface Achievement {
   coinReward?: number;
   /** Opals awarded when this achievement is first unlocked (default 0) */
   opalReward?: number;
+  /**
+   * When set, achievements sharing the same seriesId are collapsed into a single
+   * tile in the UI. Only the active milestone (first pending, then first locked,
+   * then the final completed one) is shown at any time.
+   */
+  seriesId?: string;
   /** Returns true if the achievement condition is met */
   check: (state: GameState) => boolean;
 }
