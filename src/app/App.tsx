@@ -305,16 +305,20 @@ export default function App() {
   } = gameActions;
 
   // ── Friend gift / poke — real Supabase writes ─────────────────────────────
+  // The sender identity that travels through the social graph is the axolotl's
+  // name, NOT the auth username. Usernames are sign-in identifiers and may
+  // include personal info; the axolotl name is the user's chosen public-facing
+  // social identity, matching the friend_add notification path.
   const handleGiftFriend = useCallback(async (friendId: string, coins: number, opals: number) => {
     if (!user?.id || !isSupabaseConfigured) return;
     setGameState(prev => prev ? { ...prev, totalGiftsSent: (prev.totalGiftsSent ?? 0) + 1 } : prev);
-    const senderName = (user.user_metadata?.username as string | undefined) ?? gameState?.axolotl?.name ?? 'A friend';
+    const senderName = gameState?.axolotl?.name ?? 'A friend';
     await sendFriendAction(user.id, friendId, senderName, 'gift', coins, opals);
   }, [user, gameState?.axolotl?.name]);
 
   const handlePokeFriend = useCallback(async (friendId: string) => {
     if (!user?.id || !isSupabaseConfigured) return;
-    const senderName = (user.user_metadata?.username as string | undefined) ?? gameState?.axolotl?.name ?? 'A friend';
+    const senderName = gameState?.axolotl?.name ?? 'A friend';
     await sendFriendAction(user.id, friendId, senderName, 'poke', 0, 0);
   }, [user, gameState?.axolotl?.name]);
 
