@@ -46,6 +46,12 @@ interface AuthContextValue {
   /** True when the user has explicitly chosen to play without an account. */
   isGuest: boolean;
   /**
+   * True when the current session originated from a password-recovery link.
+   * The app renders the reset-password surface in this state — the user is
+   * authenticated for the purpose of changing their password and nothing else.
+   */
+  isRecovering: boolean;
+  /**
    * Creates a new account with a username + password.
    * recoveryEmail is optional but strongly encouraged (used if password is forgotten).
    */
@@ -72,6 +78,18 @@ interface AuthContextValue {
   signInWithGoogle: () => Promise<{ error: string | null }>;
   /** Signs in / up via Apple OAuth (opens system browser on mobile). */
   signInWithApple: () => Promise<{ error: string | null }>;
+  /**
+   * Sends a password-reset link to the recoveryEmail on file for `username`.
+   * Returns the (intentionally generic) message that should be surfaced to
+   * the caller — never reveals whether the username exists or has an email.
+   */
+  requestPasswordReset: (username: string) => Promise<{ error: string | null; message?: string }>;
+  /**
+   * Sets a new password for the currently-authenticated session. Only meaningful
+   * while `isRecovering` is true (or while a normal session is active). On success,
+   * clears the recovery flag.
+   */
+  updatePassword: (newPassword: string) => Promise<{ error: string | null }>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -83,6 +101,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isGuest, setIsGuest] = useState(
     () => localStorage.getItem(GUEST_KEY) === 'true',
   );
+  const [isRecovering, setIsRecovering] = useState(false);
 
   useEffect(() => {
     if (!isSupabaseConfigured) {
@@ -98,10 +117,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
       setIsLoading(false);
+      // Supabase fires this event when the user lands on the app via a
+      // password-recovery link. The session is valid only for changing the
+      // password — we route to ResetPasswordScreen until they do.
+      if (event === 'PASSWORD_RECOVERY') setIsRecovering(true);
+      // Sign-out clears any leftover recovery flag.
+      if (event === 'SIGNED_OUT') setIsRecovering(false);
     });
 
     return () => subscription.unsubscribe();
@@ -247,6 +272,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [signInWithOAuth],
   );
 
+  const requestPasswordReset = useCallback(async (username: string) => {
+    if (!isSupabaseConfigured) return { error: 'Supabase is not configured.' };
+
+    const { data, error } = await supabase.functions.invoke('request-recovery-link', {
+      body: { username: username.trim() },
+    });
+    if (error) return { error: friendlyError(error.message) };
+    return {
+      error: null,
+      message:
+        (data as { message?: string } | null)?.message ??
+        "If an account with that username has a recovery email on file, we've sent a reset link.",
+    };
+  }, []);
+
+  const updatePassword = useCallback(async (newPassword: string) => {
+    if (!isSupabaseConfigured) return { error: 'Supabase is not configured.' };
+
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    if (error) return { error: friendlyError(error.message) };
+    setIsRecovering(false);
+    return { error: null };
+  }, []);
+
   return (
     <AuthContext.Provider
       value={{
@@ -254,6 +303,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         session,
         isLoading,
         isGuest,
+        isRecovering,
         signUp,
         signIn,
         signOut,
@@ -261,6 +311,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         continueAsGuest,
         signInWithGoogle,
         signInWithApple,
+        requestPasswordReset,
+        updatePassword,
       }}
     >
       {children}

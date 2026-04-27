@@ -28,6 +28,7 @@ import { sendFriendAction, isSupabaseConfigured, fetchPlayerAchievements, pushAc
 import { LoginScreen } from './components/LoginScreen';
 import { AgeGateScreen, loadAgeGate } from './components/AgeGateScreen';
 import { ParentGate } from './components/ParentGate';
+import { ResetPasswordScreen } from './components/ResetPasswordScreen';
 import { JIMMY_CHUBS_FRIEND } from './utils/storage';
 
 // Jimmy & Chubs sends a gift every 3.5 days (twice a week)
@@ -57,7 +58,7 @@ export default function App() {
   const [conflictSaves, setConflictSaves] = useState<{ local: GameState; cloud: GameState } | null>(null);
 
   // ── Auth ──────────────────────────────────────────────────────────────────
-  const { user, isLoading: authLoading, isGuest, signOut, deleteAccount } = useAuth();
+  const { user, isLoading: authLoading, isGuest, isRecovering, signOut, deleteAccount } = useAuth();
   const [showAuthOverlay, setShowAuthOverlay] = useState(false);
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
   /** True if a save already existed in localStorage when the app first launched.
@@ -443,6 +444,12 @@ export default function App() {
   }, [gameState, user, isGuest, hasLocalSave]);
 
   // ── Early returns ─────────────────────────────────────────────────────────
+
+  // Password recovery — supersedes everything else. The session is valid
+  // only for changing the password, so render only the reset surface.
+  if (isRecovering) {
+    return <ResetPasswordScreen />;
+  }
 
   // COPPA age gate — must complete before anything else is shown
   if (!ageGateCompleted) {

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from '../context/AuthContext';
+import { ForgotPasswordModal } from './ForgotPasswordModal';
 import axolotlImg from '../../assets/axolotlnamescreen.png';
 
 type View = 'signin' | 'signup';
@@ -50,6 +51,7 @@ export function LoginScreen({ onClose }: LoginScreenProps = {}) {
   const [loading, setLoading] = useState(false);
   const [oauthLoading, setOauthLoading] = useState<'google' | 'apple' | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showForgot, setShowForgot] = useState(false);
 
   const resetForm = (nextView: View) => {
     setUsername('');
@@ -269,6 +271,15 @@ export function LoginScreen({ onClose }: LoginScreenProps = {}) {
                 >
                   {loading ? 'Signing in…' : 'Sign In'}
                 </motion.button>
+
+                <div className="text-center mt-3">
+                  <button
+                    onClick={() => setShowForgot(true)}
+                    className="text-cyan-300/45 hover:text-cyan-300/80 text-xs underline underline-offset-2 transition-colors"
+                  >
+                    Forgot password?
+                  </button>
+                </div>
               </motion.div>
             ) : (
               <motion.div
@@ -320,11 +331,11 @@ export function LoginScreen({ onClose }: LoginScreenProps = {}) {
                   {PASSWORD_HINT}
                 </p>
 
-                {/* Optional contact email — stored but not yet verified.
-                    Copy must stay honest until a real reset flow ships. */}
+                {/* Recovery email — used by the password-reset flow if this
+                    account ever forgets its password. */}
                 <div className="mt-4">
                   <label className="block text-xs text-cyan-200/50 mb-1 font-semibold">
-                    Contact email <span className="text-cyan-200/30 font-normal">(optional)</span>
+                    Recovery email <span className="text-cyan-200/30 font-normal">(optional but recommended)</span>
                   </label>
                   <input
                     type="email"
@@ -337,8 +348,7 @@ export function LoginScreen({ onClose }: LoginScreenProps = {}) {
                     onBlur={e => (e.currentTarget.style.borderColor = 'rgba(56,189,248,0.2)')}
                   />
                   <p className="text-[10px] text-cyan-200/30 mt-1 leading-relaxed">
-                    Stored for future password recovery — not yet verified or active.
-                    Please write your password down for now.
+                    If you forget your password, we'll send a reset link here.
                   </p>
                 </div>
 
@@ -443,6 +453,13 @@ export function LoginScreen({ onClose }: LoginScreenProps = {}) {
           )}
         </div>
       </motion.div>
+
+      {showForgot && (
+        <ForgotPasswordModal
+          onClose={() => setShowForgot(false)}
+          initialUsername={username}
+        />
+      )}
     </div>
   );
 }
