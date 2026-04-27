@@ -6,7 +6,7 @@
  * in as props. No game logic lives here.
  */
 
-import React from 'react';
+import React, { memo } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { AnimatePresence, motion } from 'motion/react';
 
@@ -160,7 +160,7 @@ export interface ModalManagerProps {
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
-export function ModalManager({
+function ModalManagerInner({
   gameState,
   setGameState,
   axolotl,
@@ -661,3 +661,93 @@ export function ModalManager({
     </>
   );
 }
+
+// ── Custom equality — eliminates 5-second wellbeing-tick re-renders ───────────
+//
+// The tick updates axolotl.stats, energy, and lastEnergyUpdate every 5 s.
+// None of those values are rendered by ModalManager (modals show name/stage/
+// economy/settings, not live stat bars or energy counters). By comparing only
+// the fields this component actually renders we skip every tick-only re-render
+// while still re-rendering when a modal opens, economy changes, etc.
+function modalManagerPropsAreEqual(
+  prev: ModalManagerProps,
+  next: ModalManagerProps,
+): boolean {
+  // ── Primitive / boolean props (all stable between ticks) ──────────────────
+  if (prev.coins          !== next.coins)          return false;
+  if (prev.opals          !== next.opals)          return false;
+  if (prev.showRebirthButton !== next.showRebirthButton) return false;
+  if (prev.activeModal    !== next.activeModal)    return false;
+  if (prev.activeGame     !== next.activeGame)     return false;
+  if (prev.levelUpInfo    !== next.levelUpInfo)    return false;
+  if (prev.conflictSaves  !== next.conflictSaves)  return false;
+  if (prev.user           !== next.user)           return false;
+  if (prev.isGuest        !== next.isGuest)        return false;
+  if (prev.isUnder13      !== next.isUnder13)      return false;
+  if (prev.showWaterChangeModal     !== next.showWaterChangeModal)     return false;
+  if (prev.showJimmyAquarium        !== next.showJimmyAquarium)        return false;
+  if (prev.showJuvenileUnlock       !== next.showJuvenileUnlock)       return false;
+  if (prev.showLevel7Unlock         !== next.showLevel7Unlock)         return false;
+  if (prev.showShrimpTutorialIntro  !== next.showShrimpTutorialIntro)  return false;
+  if (prev.showShrimpInfoModal      !== next.showShrimpInfoModal)      return false;
+  if (prev.shrimpTutorialShopPhase  !== next.shrimpTutorialShopPhase)  return false;
+  if (prev.showMenuTutorial         !== next.showMenuTutorial)         return false;
+  if (prev.showMenuTutorialPrompt   !== next.showMenuTutorialPrompt)   return false;
+  if (prev.showMenuTutorialComplete !== next.showMenuTutorialComplete) return false;
+  if (prev.showRebirthReady  !== next.showRebirthReady)  return false;
+  if (prev.showAuthOverlay   !== next.showAuthOverlay)   return false;
+  if (prev.showSpinWheel     !== next.showSpinWheel)     return false;
+  if (prev.showDailyLogin    !== next.showDailyLogin)    return false;
+  if (prev.showHamburgerMenu !== next.showHamburgerMenu) return false;
+  if (prev.shopSection       !== next.shopSection)       return false;
+  if (prev.friends           !== next.friends)           return false;
+  if (prev.lineage           !== next.lineage)           return false;
+
+  // ── axolotl: compare only fields rendered by modals (not stats) ───────────
+  if (prev.axolotl !== next.axolotl) {
+    if (prev.axolotl.name            !== next.axolotl.name)            return false;
+    if (prev.axolotl.stage           !== next.axolotl.stage)           return false;
+    if (prev.axolotl.generation      !== next.axolotl.generation)      return false;
+    if (prev.axolotl.secondaryStats  !== next.axolotl.secondaryStats)  return false;
+  }
+
+  // ── gameState: only fields rendered by modals ─────────────────────────────
+  // Deliberately excludes axolotl.stats / energy / lastEnergyUpdate so the
+  // 5-second wellbeing tick does not trigger a re-render of this subtree.
+  if (prev.gameState !== next.gameState) {
+    const pg = prev.gameState;
+    const ng = next.gameState;
+    // Economy — SpinWheel + DailyLoginBonus are always in the tree
+    if (pg.coins                !== ng.coins)                return false;
+    if (pg.opals                !== ng.opals)                return false;
+    if (pg.lastSpinDate         !== ng.lastSpinDate)         return false;
+    if (pg.lastLoginDate        !== ng.lastLoginDate)        return false;
+    if (pg.loginStreak          !== ng.loginStreak)          return false;
+    if (pg.lastMissForgivenDate !== ng.lastMissForgivenDate) return false;
+    // Shop inventory
+    if (pg.ownedFilters         !== ng.ownedFilters)         return false;
+    if (pg.filterTier           !== ng.filterTier)           return false;
+    if (pg.equippedFilter       !== ng.equippedFilter)       return false;
+    if (pg.unlockedDecorations  !== ng.unlockedDecorations)  return false;
+    if (pg.customization        !== ng.customization)        return false;
+    // Social
+    if (pg.friendCode           !== ng.friendCode)           return false;
+    // Settings
+    if (pg.musicEnabled         !== ng.musicEnabled)         return false;
+    if (pg.soundEnabled         !== ng.soundEnabled)         return false;
+    // Stats modal
+    if (pg.pendingStatPoints    !== ng.pendingStatPoints)    return false;
+    // Eggs (Hamburger sub-panels)
+    if (pg.nurseryEggs          !== ng.nurseryEggs)          return false;
+    // Wellbeing tutorial modals
+    if (pg.wellbeingIntroSeen   !== ng.wellbeingIntroSeen)   return false;
+    if (pg.waterTutorialSeen    !== ng.waterTutorialSeen)    return false;
+    if (pg.wellbeingCompleteSeen !== ng.wellbeingCompleteSeen) return false;
+    // Mini-game energy — only relevant when a game is actually running
+    if (prev.activeGame !== null && pg.energy !== ng.energy) return false;
+  }
+
+  return true;
+}
+
+export const ModalManager = memo(ModalManagerInner, modalManagerPropsAreEqual);

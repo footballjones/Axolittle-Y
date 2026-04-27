@@ -7,7 +7,7 @@
  * action handlers are owned by App.tsx and passed in as props.
  */
 
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, memo } from 'react';
 import { Axolotl, AquariumCustomization, GameState } from '../types/game';
 import { GameNotification } from '../data/notifications';
 import { SyncStatus } from '../hooks/useCloudSync';
@@ -139,7 +139,7 @@ export interface GameScreenProps {
 
 // ── Component ────────────────────────────────────────────────────────────────
 
-export function GameScreen({
+function GameScreenInner({
   gameState,
   setGameState,
   axolotl,
@@ -1354,3 +1354,8 @@ export function GameScreen({
     </div>
   );
 }
+
+// Shallow memo — prevents re-renders from unrelated App state changes.
+// Tick-induced re-renders (axolotl.stats → ActionButtons bars) are intentional
+// and will still fire, but non-tick renders (menu/auth state) are skipped.
+export const GameScreen = memo(GameScreenInner);
