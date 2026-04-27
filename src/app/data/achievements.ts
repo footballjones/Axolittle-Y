@@ -139,7 +139,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
   // Level milestone series — collapses to a single tile; each step unlocks after the previous is claimed
   {
     id: 'level-milestone-5',
-    name: 'Level 5',
+    name: 'Level Up!',
     description: 'Reach Level 5.',
     icon: 'TrendingUp',
     category: 'progression',
@@ -149,7 +149,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
   },
   {
     id: 'level-milestone-10',
-    name: 'Level 10',
+    name: 'Level Up!',
     description: 'Reach Level 10.',
     icon: 'TrendingUp',
     category: 'progression',
@@ -159,7 +159,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
   },
   {
     id: 'level-milestone-20',
-    name: 'Level 20',
+    name: 'Level Up!',
     description: 'Reach Level 20.',
     icon: 'TrendingUp',
     category: 'progression',
@@ -169,7 +169,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
   },
   {
     id: 'level-milestone-30',
-    name: 'Level 30',
+    name: 'Level Up!',
     description: 'Reach Level 30.',
     icon: 'TrendingUp',
     category: 'progression',
@@ -179,7 +179,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
   },
   {
     id: 'level-milestone-40',
-    name: 'Level 40',
+    name: 'Level Up!',
     description: 'Reach Level 40.',
     icon: 'TrendingUp',
     category: 'progression',
@@ -189,7 +189,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
   },
   {
     id: 'level-milestone-60',
-    name: 'Level 60',
+    name: 'Level Up!',
     description: 'Reach the maximum level — Level 60!',
     icon: 'TrendingUp',
     category: 'progression',

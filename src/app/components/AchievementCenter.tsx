@@ -144,6 +144,14 @@ export function AchievementCenter({ gameState, onClaim, highlightId }: Achieveme
                   const isPending = pendingSet.has(achievement.id);
                   const hasReward = (achievement.coinReward ?? 0) > 0 || (achievement.opalReward ?? 0) > 0;
 
+                  // Series pip tracker
+                  const seriesAchs = achievement.seriesId
+                    ? catAchievements.filter(a => a.seriesId === achievement.seriesId)
+                    : null;
+                  const activeSeriesIdx = seriesAchs
+                    ? seriesAchs.findIndex(a => a.id === achievement.id)
+                    : -1;
+
                   const isHighlighted = achievement.id === highlightId;
                   return (
                     <motion.div
@@ -184,6 +192,33 @@ export function AchievementCenter({ gameState, onClaim, highlightId }: Achieveme
                             {achievement.coinReward ? <><span>{achievement.coinReward}</span><CoinIcon size={10} /></> : null}
                             {achievement.opalReward ? <><span>{achievement.opalReward}</span><OpalIcon size={10} /></> : null}
                           </p>
+                        )}
+                        {seriesAchs && (
+                          <div className="flex items-center gap-1 mt-1.5">
+                            {seriesAchs.map((s, i) => {
+                              const isClaimed = unlockedSet.has(s.id);
+                              const isCurrent = i === activeSeriesIdx;
+                              return (
+                                <div
+                                  key={s.id}
+                                  className="rounded-full transition-all"
+                                  style={{
+                                    width: isCurrent ? 8 : 6,
+                                    height: isCurrent ? 8 : 6,
+                                    background: isClaimed
+                                      ? 'rgba(251,191,36,0.9)'
+                                      : isCurrent
+                                      ? 'rgba(255,255,255,0.55)'
+                                      : 'rgba(255,255,255,0.15)',
+                                    boxShadow: isCurrent ? '0 0 4px rgba(251,191,36,0.5)' : undefined,
+                                  }}
+                                />
+                              );
+                            })}
+                            <span className="text-[9px] text-white/30 font-medium ml-0.5">
+                              {seriesAchs.filter(s => unlockedSet.has(s.id)).length}/{seriesAchs.length}
+                            </span>
+                          </div>
                         )}
                       </div>
 
