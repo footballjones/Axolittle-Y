@@ -28,7 +28,9 @@ interface UseCloudSyncOptions {
  *  - On mount (when userId is first available): pull from Supabase and use
  *    whichever version is newer (cloud vs localStorage). When both sides have
  *    meaningful data, calls onConflict so the user can choose.
- *  - On every gameState change: debounced push to Supabase (1 500 ms delay).
+ *  - On every gameState change: debounced push to Supabase (30 s delay).
+ *    Flushed immediately on pagehide / visibilitychange / axo-app-pause so
+ *    saves are not lost when the user backgrounds or closes the app.
  *  - Offline resilience: queues failed writes and flushes them on reconnect.
  */
 export function useCloudSync({
@@ -41,6 +43,8 @@ export function useCloudSync({
   onFriendCodeCollision,
 }: UseCloudSyncOptions) {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** Always holds the latest gameState so flush listeners don't need to re-subscribe on every change. */
+  const latestStateRef = useRef<GameState | null>(gameState);
   /** Tracks which userId has already had its initial pull, so a different account triggers a fresh pull. */
   const pulledForUserRef = useRef<string | null>(null);
   /** True when the browser reports we have network access. */
@@ -100,6 +104,11 @@ export function useCloudSync({
     },
     [userId, authUsername, onFriendCodeCollision],
   );
+
+  // Keep latestStateRef current without re-running other effects on every change.
+  useEffect(() => {
+    latestStateRef.current = gameState;
+  }, [gameState]);
 
   // ── Online / Offline tracking & flush-on-reconnect ────────────────────────
   useEffect(() => {
@@ -223,8 +232,39 @@ export function useCloudSync({
     };
   }, [gameState, userId, pushToCloud]);
 
+  // ── Flush immediately on app suspend / tab hide ───────────────────────────
+  useEffect(() => {
+    if (!userId || !isSupabaseConfigured) return;
+
+    const flush = () => {
+      // Cancel any queued debounce — we're pushing right now.
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+        debounceRef.current = null;
+      }
+      if (latestStateRef.current) pushToCloud(latestStateRef.current);
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') flush();
+    };
+
+    // pagehide: WKWebView fires this when the page is unloaded.
+    window.addEventListener('pagehide', flush);
+    // visibilitychange: reliable cross-platform fallback (tab/window hidden).
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    // axo-app-pause: iOS wrapper fires this on UIApplication.didEnterBackground.
+    document.addEventListener('axo-app-pause', flush);
+
+    return () => {
+      window.removeEventListener('pagehide', flush);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      document.removeEventListener('axo-app-pause', flush);
+    };
+  }, [userId, pushToCloud]);
+
   /**
-   * Immediately push the given state to cloud, bypassing the 1500 ms debounce.
+   * Immediately push the given state to cloud, bypassing the debounce.
    * Use this after conflict resolution so the user's chosen save is persisted
    * without waiting for the next state-change cycle.
    */
