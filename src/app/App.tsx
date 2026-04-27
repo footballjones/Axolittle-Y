@@ -655,7 +655,6 @@ export default function App() {
         mgTutPhase={mgTutPhase}
         setMgTutPhase={setMgTutPhase}
         showMenuTutorial={showMenuTutorial}
-        delayNextTutorial={delayNextTutorial}
         setHatchingNurseryEggId={setHatchingNurseryEggId}
         notifications={notifications}
         setNotifications={setNotifications}

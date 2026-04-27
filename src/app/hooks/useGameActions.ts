@@ -199,8 +199,8 @@ export function useGameActions({
         feedXpDate,
         firstFeedXpGranted,
         pendingStatPoints: (prev.pendingStatPoints ?? 0) + levelsGained,
-        // Advance tutorial: 'eat' → 'xp-tip' when first food is eaten (shows feeding XP info)
-        tutorialStep: prev.tutorialStep === 'eat' ? 'xp-tip' : prev.tutorialStep,
+        // Advance tutorial: 'eat' → 'done' when first food is eaten
+        tutorialStep: prev.tutorialStep === 'eat' ? 'done' : prev.tutorialStep,
       };
     });
   }, []);

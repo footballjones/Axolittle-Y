@@ -291,7 +291,7 @@ export function useOnboarding({
     const step = gameState?.tutorialStep;
     if (step === 'swipe') return 'swipe';
     if (step === 'feed') return 'feed';
-    if (step === 'eat' || step === 'xp-tip') return 'watch';
+    if (step === 'eat') return 'watch';
     if (step !== 'done') return null;
     if ((gameState?.pendingStatPoints ?? 0) > 0 && !gameState?.statTutorialSeen && !activeModal) return 'stat';
     if (gameState?.statTutorialSeen && !gameState?.playTutorialSeen && (gameState?.pendingStatPoints ?? 0) === 0 && !activeModal && !playMode) return 'play';

@@ -80,7 +80,6 @@ export interface GameScreenProps {
   mgTutPhase: 'unlock' | 'keepey' | null;
   setMgTutPhase: (v: 'unlock' | 'keepey' | null) => void;
   showMenuTutorial: boolean;
-  delayNextTutorial: (ms: number) => void;
   setHatchingNurseryEggId: (v: string | null) => void;
 
   // ── Social ─────────────────────────────────────────────────────────────
@@ -178,7 +177,6 @@ function GameScreenInner({
   mgTutPhase,
   setMgTutPhase,
   showMenuTutorial: _showMenuTutorial,
-  delayNextTutorial,
   setHatchingNurseryEggId,
   notifications,
   setNotifications,
@@ -961,14 +959,10 @@ function GameScreenInner({
                   )}
 
                   {/* Tutorial overlay — rendered inside the aquarium relative container */}
-                  {gameState.wellbeingIntroSeen === true && (gameState.tutorialStep === 'feed' || gameState.tutorialStep === 'eat' || gameState.tutorialStep === 'xp-tip') && (
+                  {gameState.wellbeingIntroSeen === true && (gameState.tutorialStep === 'feed' || gameState.tutorialStep === 'eat') && (
                     <FeedingTutorial
                       step={gameState.tutorialStep}
                       axolotlName={axolotl.name}
-                      onXpTipDismiss={() => {
-                        setGameState(s => s ? { ...s, tutorialStep: 'done' } : s);
-                        delayNextTutorial(1200);
-                      }}
                     />
                   )}
 

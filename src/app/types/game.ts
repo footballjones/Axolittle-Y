@@ -125,8 +125,8 @@ export interface GameState {
   uniqueGamesPlayed?: string[];    // Game IDs ever played (for all-rounder achievement)
   recessiveExpressed?: boolean;    // Ephemeral: set true in handleHatchEgg when recessive genes expressed
   // ── Tutorial ────────────────────────────────────────────────────────────────
-  // undefined = existing save (skip tutorial). 'feed'→'eat'→'xp-tip'→'done' on new games.
-  tutorialStep?: 'swipe' | 'feed' | 'eat' | 'xp-tip' | 'done';
+  // undefined = existing save (skip tutorial). 'feed'→'eat'→'done' on new games.
+  tutorialStep?: 'swipe' | 'feed' | 'eat' | 'done';
   // undefined = existing save (skip). false = new game, not yet seen. true = completed.
   cleanTutorialSeen?: boolean;
   juvenileUnlockSeen?: boolean; // True once the Sprout stage unlock modal has been shown

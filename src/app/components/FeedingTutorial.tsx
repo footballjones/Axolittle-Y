@@ -1,22 +1,11 @@
-import { useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Star } from 'lucide-react';
 
 interface FeedingTutorialProps {
-  step: 'feed' | 'eat' | 'xp-tip';
+  step: 'feed' | 'eat';
   axolotlName: string;
-  onXpTipDismiss?: () => void;
 }
 
-export function FeedingTutorial({ step, axolotlName, onXpTipDismiss }: FeedingTutorialProps) {
-  // Auto-dismiss the XP tip after 5 seconds
-  useEffect(() => {
-    if (step === 'xp-tip' && onXpTipDismiss) {
-      const timer = setTimeout(onXpTipDismiss, 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [step, onXpTipDismiss]);
-
+export function FeedingTutorial({ step, axolotlName }: FeedingTutorialProps) {
   return (
     <AnimatePresence mode="wait">
       {step === 'feed' && (
@@ -161,58 +150,6 @@ export function FeedingTutorial({ step, axolotlName, onXpTipDismiss }: FeedingTu
         </motion.div>
       )}
 
-      {step === 'xp-tip' && (
-        <motion.div
-          key="tutorial-xp-tip"
-          className="absolute inset-0 pointer-events-auto"
-          style={{ zIndex: 45 }}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.35 }}
-          onClick={onXpTipDismiss}
-        >
-          {/* Dim overlay */}
-          <div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.5)' }} />
-
-          {/* Centered tip card */}
-          <div className="absolute inset-0 flex items-center justify-center px-6">
-            <motion.div
-              initial={{ scale: 0.85, opacity: 0, y: 16 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              transition={{ delay: 0.1, duration: 0.4, type: 'spring', bounce: 0.3 }}
-              className="w-full rounded-3xl px-6 py-5 shadow-2xl"
-              style={{
-                background: 'rgba(255,255,255,0.97)',
-                border: '2.5px solid rgba(234,179,8,0.7)',
-                boxShadow: '0 12px 48px rgba(234,179,8,0.35)',
-                maxWidth: 300,
-              }}
-            >
-              {/* Icon + header */}
-              <div className="flex items-center gap-2.5 mb-3">
-                <Star className="w-6 h-6 text-amber-400 fill-amber-400" />
-                <div>
-                  <p className="text-slate-800 text-[14px] font-black leading-tight">
-                    Feeding earns XP!
-                  </p>
-                  <p className="text-yellow-600 text-[11px] font-bold">Daily tip</p>
-                </div>
-              </div>
-
-              {/* Tip body */}
-              <p className="text-slate-600 text-[12.5px] leading-snug">
-                Each feed = <span className="text-slate-800 font-bold">+0.1 XP</span>.{' '}
-                Max <span className="text-yellow-600 font-bold">2 XP/day</span> (20 feeds).
-              </p>
-
-              {/* Dismiss hint */}
-              <p className="text-center text-slate-300 text-[10px] mt-3">Tap to continue</p>
-            </motion.div>
-          </div>
-        </motion.div>
-      )}
     </AnimatePresence>
   );
 }
