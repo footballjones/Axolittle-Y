@@ -864,7 +864,8 @@ function GameScreenInner({
                   <AnimatePresence>
                     {showScrollHint && (
                       <motion.div
-                        className="absolute bottom-20 left-1/2 -translate-x-1/2 z-20 pointer-events-none"
+                        className="absolute left-1/2 -translate-x-1/2 z-20 pointer-events-none"
+                        style={{ bottom: showRebirthButton ? '10rem' : '5rem' }}
                         initial={{ opacity: 0, y: 12, scale: 0.95 }}
                         animate={{ opacity: 1, y: [0, -3, 0], scale: 1 }}
                         exit={{ opacity: 0, y: 8, scale: 0.95 }}
