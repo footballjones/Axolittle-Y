@@ -1,4 +1,5 @@
 import { motion } from 'motion/react';
+import { SpineAxolotl } from './SpineAxolotl';
 
 export function LoadingScreen() {
   return (
@@ -10,17 +11,17 @@ export function LoadingScreen() {
       className="fixed inset-0 z-[99999] flex flex-col items-center justify-center"
       style={{ background: '#041428' }}
     >
-      {/* Axolotl image with pulse */}
-      <motion.img
-        src={`${import.meta.env.BASE_URL}axolotl.png`}
-        alt=""
-        className="w-28 h-28 object-contain mb-6"
-        animate={{ scale: [1, 1.07, 1], opacity: [0.85, 1, 0.85] }}
-        transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+      {/* Live Spine axolotl — same component used in the aquarium */}
+      <motion.div
+        className="mb-4"
+        animate={{ y: [0, -8, 0] }}
+        transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
         style={{
           filter: 'drop-shadow(0 0 20px rgba(100,180,255,0.5)) drop-shadow(0 0 40px rgba(120,80,255,0.3))',
         }}
-      />
+      >
+        <SpineAxolotl size={120} animation="Idle" facingLeft={false} />
+      </motion.div>
 
       {/* Title */}
       <motion.h1
