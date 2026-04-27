@@ -865,15 +865,6 @@ export function useGameActions({
           time: 'now',
           read: false,
         }]);
-      } else if (result.xp === 0 && result.coins === 0) {
-        setNotifications(prevNotifs => [...prevNotifs, {
-          id: `notif-${Date.now()}`,
-          type: 'milestone',
-          icon: 'Zap',
-          message: 'No energy! Played for fun but no rewards earned. Energy regenerates over time.',
-          time: 'now',
-          read: false,
-        }]);
       }
 
       const prevLevelInner = calculateLevel(prev.axolotl.experience);

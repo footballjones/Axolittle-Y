@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
-import { X, Users, Copy, Check, ChevronDown, Heart, Waves, Plus, Leaf, Sparkles, ChevronRight, Gift, Trash2, BarChart2, Egg, Crown, Sprout, Dumbbell, Droplets, Clock, Fish, Trophy, Lock, ArrowLeft, Loader2 } from 'lucide-react';
+import { X, Users, Copy, Check, ChevronDown, Heart, Waves, Plus, Leaf, Sparkles, ChevronRight, Gift, Trash2, BarChart2, Egg, Crown, Sprout, Dumbbell, Droplets, Clock, Fish, Trophy, Lock, ArrowLeft, Loader2, Zap, Brain, Wind, Shield } from 'lucide-react';
 import { Axolotl, Friend } from '../types/game';
+import { calculateLevel } from '../utils/gameLogic';
 import { motion, AnimatePresence } from 'motion/react';
 import { GameIcon } from './icons';
 import { ALL_ACHIEVEMENTS } from '../data/achievements';
@@ -183,6 +184,7 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
   const [visitSnapshotLoading, setVisitSnapshotLoading] = useState(false);
   const [viewingStatsFriend, setViewingStatsFriend] = useState<Friend | null>(null);
   const [viewingAchievementsFriend, setViewingAchievementsFriend] = useState<Friend | null>(null);
+  const [selectedAxolotl, setSelectedAxolotl] = useState<Axolotl | null>(null);
   const [friendAchievementIds, setFriendAchievementIds] = useState<string[] | null>(null); // null = loading
   const fetchedFriendIdRef = useRef<string | null>(null);
   // Short-lived visual feedback states (2–2.5s after action)
@@ -904,7 +906,7 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
                       return (
                         <motion.div
                           key="current"
-                          className="relative rounded-2xl p-2.5 flex flex-col items-center gap-1.5 overflow-hidden"
+                          className="relative rounded-2xl p-2.5 flex flex-col items-center gap-1.5 overflow-hidden cursor-pointer"
                           initial={{ opacity: 0, scale: 0.85 }}
                           animate={{ opacity: 1, scale: 1 }}
                           transition={{ delay: 0 }}
@@ -913,6 +915,8 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
                             border: `1.5px solid ${rc.border}`,
                             boxShadow: `0 4px 16px -4px ${rc.glow}`,
                           }}
+                          onClick={() => setSelectedAxolotl(axolotl)}
+                          whileTap={{ scale: 0.95 }}
                         >
                           {/* Entry number */}
                           <span className="absolute top-1.5 left-2 text-[8px] font-black opacity-40" style={{ color: rc.text }}>
@@ -964,7 +968,7 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
                       return (
                         <motion.div
                           key={ancestor.id}
-                          className="relative rounded-2xl p-2.5 flex flex-col items-center gap-1.5 overflow-hidden"
+                          className="relative rounded-2xl p-2.5 flex flex-col items-center gap-1.5 overflow-hidden cursor-pointer"
                           initial={{ opacity: 0, scale: 0.85 }}
                           animate={{ opacity: 1, scale: 1 }}
                           transition={{ delay: (index + 1) * 0.05 }}
@@ -973,6 +977,8 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
                             border: `1.5px solid ${rc.border}`,
                             boxShadow: `0 4px 16px -4px ${rc.glow}`,
                           }}
+                          onClick={() => setSelectedAxolotl(ancestor)}
+                          whileTap={{ scale: 0.95 }}
                         >
                           {/* Entry number */}
                           <span className="absolute top-1.5 left-2 text-[8px] font-black opacity-40" style={{ color: rc.text }}>
@@ -1452,6 +1458,186 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
                     })}
                   </div>
                 )}
+              </motion.div>
+            </motion.div>
+          );
+        })()}
+      </AnimatePresence>
+
+      {/* ── Axolodex Detail Popup ─────────────────────────────────────── */}
+      <AnimatePresence>
+        {selectedAxolotl && (() => {
+          const ax = selectedAxolotl;
+          const level = calculateLevel(ax.experience);
+          const rarity = ax.rarity ?? 'Common';
+          const rarityColors: Record<string, { bg: string; border: string; text: string; glow: string; header: string }> = {
+            Mythic:    { bg: 'linear-gradient(160deg, #fffbeb 0%, #fef3c7 100%)', border: 'rgba(253,224,71,0.55)',  text: '#92400e', glow: 'rgba(253,224,71,0.35)', header: 'linear-gradient(135deg, #d97706 0%, #b45309 100%)' },
+            Legendary: { bg: 'linear-gradient(160deg, #fff7ed 0%, #ffedd5 100%)', border: 'rgba(251,146,60,0.55)',  text: '#9a3412', glow: 'rgba(251,146,60,0.3)',  header: 'linear-gradient(135deg, #ea580c 0%, #c2410c 100%)' },
+            Epic:      { bg: 'linear-gradient(160deg, #faf5ff 0%, #ede9fe 100%)', border: 'rgba(192,132,252,0.55)', text: '#6b21a8', glow: 'rgba(192,132,252,0.3)',  header: 'linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%)' },
+            Rare:      { bg: 'linear-gradient(160deg, #eff6ff 0%, #dbeafe 100%)', border: 'rgba(96,165,250,0.55)',  text: '#1e40af', glow: 'rgba(96,165,250,0.25)',  header: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)' },
+            Common:    { bg: 'linear-gradient(160deg, #faf5ff 0%, #ede9fe 100%)', border: 'rgba(196,181,253,0.5)',  text: '#6d28d9', glow: 'rgba(167,139,250,0.2)',  header: 'linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)' },
+          };
+          const rc = rarityColors[rarity] ?? rarityColors.Common;
+          const isCurrentAxolotl = ax.id === axolotl.id;
+          const stats = ax.secondaryStats ?? { strength: 0, intellect: 0, stamina: 0, speed: 0 };
+          const ageDays = Math.floor(ax.age / (60 * 24));
+          const ageHours = Math.floor((ax.age % (60 * 24)) / 60);
+
+          const StatBar = ({ label, value, icon }: { label: string; value: number; icon: React.ReactNode }) => (
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 w-20 shrink-0">
+                <span style={{ color: rc.text }} className="opacity-70">{icon}</span>
+                <span className="text-[10px] font-bold" style={{ color: rc.text }}>{label}</span>
+              </div>
+              <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ background: 'rgba(0,0,0,0.08)' }}>
+                <motion.div
+                  className="h-full rounded-full"
+                  initial={{ width: 0 }}
+                  animate={{ width: `${value}%` }}
+                  transition={{ duration: 0.6, ease: 'easeOut' }}
+                  style={{ background: rc.header }}
+                />
+              </div>
+              <span className="text-[10px] font-black w-6 text-right" style={{ color: rc.text }}>{value}</span>
+            </div>
+          );
+
+          return (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[60] flex items-center justify-center p-4"
+              style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(10px)' }}
+              onClick={() => setSelectedAxolotl(null)}
+            >
+              <motion.div
+                initial={{ scale: 0.88, opacity: 0, y: 24 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.88, opacity: 0, y: 24 }}
+                transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+                className="relative w-full max-w-sm overflow-hidden rounded-3xl"
+                style={{
+                  background: rc.bg,
+                  border: `1.5px solid ${rc.border}`,
+                  boxShadow: `0 24px 64px -12px ${rc.glow}`,
+                }}
+                onClick={e => e.stopPropagation()}
+              >
+                {/* Header */}
+                <div className="relative px-5 py-4" style={{ background: rc.header }}>
+                  <div className="absolute inset-0 opacity-10" style={{
+                    backgroundImage: 'radial-gradient(circle at 1px 1px, white 1px, transparent 1px)',
+                    backgroundSize: '28px 28px',
+                  }} />
+                  <div className="relative flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      {/* Mini axolotl preview */}
+                      <div
+                        className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0"
+                        style={{ background: 'rgba(255,255,255,0.18)', border: '1.5px solid rgba(255,255,255,0.3)' }}
+                      >
+                        <SpineAxolotl size={36} animation="Idle" facingLeft={false} style={{ pointerEvents: 'none' }} />
+                      </div>
+                      <div>
+                        <div className="text-white/60 text-[10px] font-bold tracking-widest uppercase mb-0.5">
+                          {isCurrentAxolotl ? 'Current · ' : ''}{rarity}
+                        </div>
+                        <h3 className="text-white font-black text-lg leading-tight">{ax.name}</h3>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <span className="text-white/70 text-[10px] font-bold capitalize">{ax.stage}</span>
+                          <span className="text-white/40 text-[10px]">·</span>
+                          <span className="text-white/70 text-[10px] font-bold">Gen {ax.generation}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <motion.button
+                      onClick={() => setSelectedAxolotl(null)}
+                      className="rounded-full p-1.5 shrink-0 self-start"
+                      style={{ background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.25)' }}
+                      whileTap={{ scale: 0.85 }}
+                    >
+                      <X className="w-4 h-4 text-white/80" strokeWidth={2.5} />
+                    </motion.button>
+                  </div>
+                </div>
+
+                {/* Body */}
+                <div className="px-5 py-4 space-y-3">
+                  {/* Level + color row */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <div
+                      className="rounded-2xl px-3 py-2.5 flex flex-col gap-0.5"
+                      style={{ background: 'rgba(255,255,255,0.65)', border: `1px solid ${rc.border}` }}
+                    >
+                      <span className="text-[9px] font-black tracking-widest uppercase opacity-60" style={{ color: rc.text }}>Max Level Reached</span>
+                      <span className="text-2xl font-black leading-tight" style={{ color: rc.text }}>{level}</span>
+                      <span className="text-[9px] font-semibold opacity-50" style={{ color: rc.text }}>of 60</span>
+                    </div>
+                    <div
+                      className="rounded-2xl px-3 py-2.5 flex flex-col gap-1"
+                      style={{ background: 'rgba(255,255,255,0.65)', border: `1px solid ${rc.border}` }}
+                    >
+                      <span className="text-[9px] font-black tracking-widest uppercase opacity-60" style={{ color: rc.text }}>Colour</span>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <div className="w-6 h-6 rounded-lg border-2 border-white/60 shadow-sm" style={{ background: ax.color }} />
+                        <span className="text-[10px] font-bold capitalize opacity-70" style={{ color: rc.text }}>{ax.pattern}</span>
+                      </div>
+                      <span className="text-[9px] font-semibold opacity-50" style={{ color: rc.text }}>
+                        {ageDays > 0 ? `${ageDays}d` : ''} {ageHours}h old
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Secondary stats */}
+                  <div
+                    className="rounded-2xl px-3 py-3 space-y-2"
+                    style={{ background: 'rgba(255,255,255,0.65)', border: `1px solid ${rc.border}` }}
+                  >
+                    <span className="text-[9px] font-black tracking-widest uppercase opacity-60 block mb-1" style={{ color: rc.text }}>Stats</span>
+                    <StatBar label="Strength" value={stats.strength} icon={<Zap className="w-3 h-3" />} />
+                    <StatBar label="Intellect" value={stats.intellect} icon={<Brain className="w-3 h-3" />} />
+                    <StatBar label="Stamina"   value={stats.stamina}   icon={<Shield className="w-3 h-3" />} />
+                    <StatBar label="Speed"     value={stats.speed}     icon={<Wind className="w-3 h-3" />} />
+                  </div>
+
+                  {/* Stage progress */}
+                  {(() => {
+                    const stages: Axolotl['stage'][] = ['hatchling', 'sprout', 'guardian', 'elder'];
+                    const currentIdx = stages.indexOf(ax.stage);
+                    const stageIcons = [
+                      <Egg key="egg" className="w-3.5 h-3.5" strokeWidth={2} />,
+                      <Sprout key="sprout" className="w-3.5 h-3.5" strokeWidth={2} />,
+                      <Droplets key="guardian" className="w-3.5 h-3.5" strokeWidth={2} />,
+                      <Crown key="elder" className="w-3.5 h-3.5" strokeWidth={2} />,
+                    ];
+                    return (
+                      <div
+                        className="rounded-2xl p-3"
+                        style={{ background: 'rgba(255,255,255,0.65)', border: `1px solid ${rc.border}` }}
+                      >
+                        <div className="text-[9px] font-black tracking-widest uppercase opacity-60 mb-2.5" style={{ color: rc.text }}>Life Stage</div>
+                        <div className="flex items-center justify-between gap-1">
+                          {stages.map((s, i) => {
+                            const isActive = i === currentIdx;
+                            const isPast = i < currentIdx;
+                            return (
+                              <div key={s} className="flex-1 flex flex-col items-center gap-1">
+                                <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(0,0,0,0.08)' }}>
+                                  {(isPast || isActive) && (
+                                    <div className="h-full rounded-full w-full" style={{ background: rc.header }} />
+                                  )}
+                                </div>
+                                <span style={{ color: isActive || isPast ? rc.text : `${rc.text}44` }}>{stageIcons[i]}</span>
+                                <span className="text-[8px] font-bold capitalize" style={{ color: isActive || isPast ? rc.text : `${rc.text}44` }}>{s}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
               </motion.div>
             </motion.div>
           );
