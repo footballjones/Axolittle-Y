@@ -70,8 +70,12 @@ export function GameWrapper({
         </div>
       )}
 
-      {/* Game content */}
-      <div className="flex-1 min-h-0 relative overflow-hidden">
+      {/* Game content — pad for the iPhone home indicator so children
+          (canvas, grid, etc.) don't extend behind it and get clipped. */}
+      <div
+        className="flex-1 min-h-0 relative overflow-hidden"
+        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+      >
         {isPaused && (
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm z-10 flex items-center justify-center">
             <div className="bg-white/20 backdrop-blur-md rounded-2xl p-6 border border-white/30">

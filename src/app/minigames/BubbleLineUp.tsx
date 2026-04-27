@@ -366,15 +366,33 @@ export function BubbleLineUp({ onEnd, onDeductEnergy, onApplyReward, energy }: M
   const gridAreaRef     = useRef<HTMLDivElement>(null);
 
   // Measure available space for the grid so it never overflows on any device/WKWebView.
+  // We also cap by the visualViewport height as a defensive backstop: on iOS WKWebView
+  // the flex container has occasionally been observed to report a larger height than
+  // the safe visible area, which clipped the bottom of the grid.
   useEffect(() => {
     const el = gridAreaRef.current;
     if (!el) return;
+    const measure = (width: number, height: number) => {
+      const vh = window.visualViewport?.height ?? window.innerHeight;
+      const vw = window.visualViewport?.width ?? window.innerWidth;
+      setGridSize(Math.floor(Math.min(width, height, vh, vw)));
+    };
     const obs = new ResizeObserver(entries => {
       const { width, height } = entries[0].contentRect;
-      setGridSize(Math.floor(Math.min(width, height)));
+      measure(width, height);
     });
     obs.observe(el);
-    return () => obs.disconnect();
+    const onViewport = () => {
+      const r = el.getBoundingClientRect();
+      measure(r.width, r.height);
+    };
+    window.visualViewport?.addEventListener('resize', onViewport);
+    window.addEventListener('orientationchange', onViewport);
+    return () => {
+      obs.disconnect();
+      window.visualViewport?.removeEventListener('resize', onViewport);
+      window.removeEventListener('orientationchange', onViewport);
+    };
   }, []);
 
   const puzzle = PUZZLES[puzzleIdx % PUZZLES.length];
@@ -623,7 +641,7 @@ export function BubbleLineUp({ onEnd, onDeductEnergy, onApplyReward, energy }: M
         <div className="w-full flex-shrink-0 rounded-xl bg-white/10 border border-white/15 px-3 py-2 space-y-1.5 text-white text-sm">
           <div className="flex items-center justify-between">
             <span className="flex items-center gap-1 font-mono tabular-nums"><Timer size={14} /> {timeLeft}s</span>
-            <span className="text-white/45 text-xs">Lvl {puzzleIdx + 1}</span>
+            <span className="text-white/45 text-xs">Lvl {puzzleIdx + 1} · g{gridSize}</span>
             <span className="font-bold">{score} pts</span>
           </div>
           <div className="w-full h-1.5 rounded-full bg-white/10">
