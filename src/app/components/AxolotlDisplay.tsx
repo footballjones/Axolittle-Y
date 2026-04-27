@@ -1,7 +1,8 @@
 import { motion } from 'motion/react';
 import { Axolotl, FoodItem } from '../types/game';
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useMemo, useState, useRef, useCallback } from 'react';
 import { SpineAxolotl } from './SpineAxolotl';
+import { useBackgroundAwareInterval } from '../hooks/useBackgroundAwareInterval';
 
 interface AxolotlDisplayProps {
   axolotl: Axolotl;
@@ -97,58 +98,52 @@ export function AxolotlDisplay({ axolotl, foodItems, onEatFood, clickTarget, onA
   // Continuous proximity check (every 100ms) — axolotl eats food when it overlaps it.
   // Uses getBoundingClientRect so the check always reflects the actual rendered
   // positions, regardless of animation easing curves or duration randomness.
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const items = foodItemsRef.current;
-      if (items.length === 0) return;
+  useBackgroundAwareInterval(() => {
+    const items = foodItemsRef.current;
+    if (items.length === 0) return;
 
-      const axEl = wrapperRef.current;
-      if (!axEl) return;
+    const axEl = wrapperRef.current;
+    if (!axEl) return;
 
-      // Axolotl: the Spine canvas is centred inside a padded wrapper div.
-      // The wrapper's geometric centre IS the visual centre of the skeleton.
-      const axRect = axEl.getBoundingClientRect();
-      const axCenterX = axRect.left + axRect.width / 2;
-      const axCenterY = axRect.top  + axRect.height / 2;
+    // Axolotl: the Spine canvas is centred inside a padded wrapper div.
+    // The wrapper's geometric centre IS the visual centre of the skeleton.
+    const axRect = axEl.getBoundingClientRect();
+    const axCenterX = axRect.left + axRect.width / 2;
+    const axCenterY = axRect.top  + axRect.height / 2;
 
-      // Hit radius in viewport pixels — based on the skeleton's target height
-      // (axolotl.stage drives the `size` prop; read it fresh each tick).
-      const stageSize = (() => {
-        switch (axolotl.stage) {
-          case 'hatchling': return 52;
-          case 'sprout':    return 64;
-          case 'guardian':  return 88;
-          case 'elder':     return 86;
-          default:          return 52;
-        }
-      })();
-      const hitRadius = stageSize * 0.7; // generous — worm is 50 px wide
-
-      for (const food of items) {
-        const foodEl = document.querySelector(`[data-food-id="${food.id}"]`) as HTMLElement | null;
-        if (!foodEl) continue;
-
-        const foodRect = foodEl.getBoundingClientRect();
-        // The food outer div has `left: food.x%` and the inner worm div is
-        // `translateX(-50%)`, so the worm's visual centre X = foodRect.left
-        // (the outer div's left edge) rather than its geometric centre.
-        const foodCenterX = foodRect.left;
-        const foodCenterY = foodRect.top + foodRect.height / 2;
-
-        const dx = foodCenterX - axCenterX;
-        const dy = foodCenterY - axCenterY;
-
-        if (dx * dx + dy * dy < hitRadius * hitRadius) {
-          onEatFoodRef.current(food.id);
-          return;
-        }
+    // Hit radius in viewport pixels — based on the skeleton's target height
+    // (axolotl.stage drives the `size` prop; read it fresh each tick).
+    const stageSize = (() => {
+      switch (axolotl.stage) {
+        case 'hatchling': return 52;
+        case 'sprout':    return 64;
+        case 'guardian':  return 88;
+        case 'elder':     return 86;
+        default:          return 52;
       }
-    }, 100);
+    })();
+    const hitRadius = stageSize * 0.7; // generous — worm is 50 px wide
 
-    return () => clearInterval(interval);
-  // axolotl.stage is read fresh inside the interval each tick
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [axolotl.stage]);
+    for (const food of items) {
+      const foodEl = document.querySelector(`[data-food-id="${food.id}"]`) as HTMLElement | null;
+      if (!foodEl) continue;
+
+      const foodRect = foodEl.getBoundingClientRect();
+      // The food outer div has `left: food.x%` and the inner worm div is
+      // `translateX(-50%)`, so the worm's visual centre X = foodRect.left
+      // (the outer div's left edge) rather than its geometric centre.
+      const foodCenterX = foodRect.left;
+      const foodCenterY = foodRect.top + foodRect.height / 2;
+
+      const dx = foodCenterX - axCenterX;
+      const dy = foodCenterY - axCenterY;
+
+      if (dx * dx + dy * dy < hitRadius * hitRadius) {
+        onEatFoodRef.current(food.id);
+        return;
+      }
+    }
+  }, 100);
 
   // Auto-seek: after 7s swim toward closest food
   useEffect(() => {
@@ -182,20 +177,18 @@ export function AxolotlDisplay({ axolotl, foodItems, onEatFood, clickTarget, onA
     }
   }, [foodItems, position.x, position.y, getFoodVisualY]);
 
-  // Random swimming
-  useEffect(() => {
-    if (foodItems.length > 0) return;
-
-    const swimInterval = setInterval(() => {
-      // Center third: 33-66% of aquarium (columns split into thirds)
-      const newX = Math.random() * 33 + 33;
-      const newY = Math.random() * 33 + 33;
-      setFacingLeft(newX < position.x);
-      setPosition({ x: newX, y: newY });
-    }, 12000 + Math.random() * 6000); // 12-18 seconds (less often)
-
-    return () => clearInterval(swimInterval);
-  }, [foodItems.length, position.x]);
+  // Random swimming. Delay is randomized once per mount (12-18s); previously
+  // this re-randomized after every swim because position.x was in the deps,
+  // accidentally re-creating the interval. The fixed delay is simpler and
+  // imperceptibly different.
+  const swimDelay = useMemo(() => 12000 + Math.random() * 6000, []);
+  useBackgroundAwareInterval(() => {
+    // Center third: 33-66% of aquarium (columns split into thirds)
+    const newX = Math.random() * 33 + 33;
+    const newY = Math.random() * 33 + 33;
+    setFacingLeft(newX < positionRef.current.x);
+    setPosition({ x: newX, y: newY });
+  }, swimDelay, { enabled: foodItems.length === 0 });
 
   const getSize = () => {
     // Elder matches the old Hatchling size — the Spine axolotl renders

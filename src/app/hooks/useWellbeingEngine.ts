@@ -1,22 +1,23 @@
-import { useEffect } from 'react';
 import { GameState } from '../types/game';
 import { updateStats, checkEvolution, updateShrimp } from '../utils/gameLogic';
 import { GAME_CONFIG } from '../config/game';
+import { useBackgroundAwareInterval } from './useBackgroundAwareInterval';
 
 interface UseWellbeingEngineProps {
   axolotlId: string | null | undefined;
   setGameState: React.Dispatch<React.SetStateAction<GameState | null>>;
 }
 
+const TICK_MS = 5000;
+
 /**
  * Runs the wellbeing tick: stat decay, evolution checks, and energy regen.
- * Fires every 5 seconds while an axolotl is alive.
+ * Pauses while the app is backgrounded; the catch-up tick on resume covers
+ * the gap (all decay math is elapsed-time-based).
  */
 export function useWellbeingEngine({ axolotlId, setGameState }: UseWellbeingEngineProps): void {
-  useEffect(() => {
-    if (!axolotlId) return;
-
-    const interval = setInterval(() => {
+  useBackgroundAwareInterval(
+    () => {
       setGameState(prev => {
         if (!prev?.axolotl) return prev;
 
@@ -35,6 +36,21 @@ export function useWellbeingEngine({ axolotlId, setGameState }: UseWellbeingEngi
         const energyGained = energyRegenRate * elapsedSeconds;
         const newEnergy = Math.min(maxEnergy, currentEnergy + energyGained);
 
+        // Bail when nothing observable changed — skips a free React rerender on
+        // alternating ticks where updateStats no-ops on its 6s floor and on any
+        // tick where the player is idle at max energy. handleDeductEnergy is
+        // robust to a stale lastEnergyUpdate via the maxEnergy cap, so skipping
+        // the timestamp refresh at cap is safe.
+        const shrimpUnchanged = stateWithUpdatedShrimp === prev;
+        const statsUnchanged = statsResult.axolotl === prev.axolotl && !statsResult.gameState;
+        const evolutionUnchanged =
+          evolved.lastLevel === statsResult.axolotl.lastLevel &&
+          evolved.stage === statsResult.axolotl.stage;
+        const energyUnchanged = newEnergy === currentEnergy;
+        if (shrimpUnchanged && statsUnchanged && evolutionUnchanged && energyUnchanged) {
+          return prev;
+        }
+
         // NOTE: pendingStatPoints is intentionally NOT granted here.
         // Stat points are the sole responsibility of the action handlers
         // (handleEatFood, handleMiniGameEnd) which already update axolotl.lastLevel
@@ -51,9 +67,8 @@ export function useWellbeingEngine({ axolotlId, setGameState }: UseWellbeingEngi
           lastEnergyUpdate: now,
         };
       });
-    }, 5000);
-
-    return () => clearInterval(interval);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [axolotlId]);
+    },
+    TICK_MS,
+    { enabled: !!axolotlId, immediate: true },
+  );
 }

@@ -1,8 +1,9 @@
-import { useState, useEffect, useLayoutEffect, useRef } from 'react';
+import { useState, useLayoutEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { User, Users, Zap, Lock, Circle, Hash, Layers, Fish, Puzzle, Grid3X3, Link2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { GAME_CONFIG } from '../config/game';
+import { useBackgroundAwareInterval } from '../hooks/useBackgroundAwareInterval';
 
 const UNLOCK_GAMES_COST = 5; // opals
 
@@ -179,31 +180,24 @@ export function MiniGameMenu({ onClose: _onClose, onSelectGame, energy = 10, max
   const multiplayerLevelLocked = (currentLevel ?? 0) < 10;
 
   // Live countdown for the mini-game lock
-  useEffect(() => {
+  useBackgroundAwareInterval(() => {
     if (!miniGamesLockedUntil) return;
-
-    const updateLockTimer = () => {
-      const remaining = Math.max(0, Math.ceil((miniGamesLockedUntil - Date.now()) / 1000));
-      if (remaining <= 0) {
-        setLockTimeText('');
-        return;
-      }
-      const h = Math.floor(remaining / 3600);
-      const m = Math.floor((remaining % 3600) / 60);
-      const s = remaining % 60;
-      if (h > 0) {
-        setLockTimeText(`${h}h ${m}m ${s}s remaining`);
-      } else if (m > 0) {
-        setLockTimeText(`${m}m ${s}s remaining`);
-      } else {
-        setLockTimeText(`${s}s remaining`);
-      }
-    };
-
-    updateLockTimer();
-    const interval = setInterval(updateLockTimer, 1000);
-    return () => clearInterval(interval);
-  }, [miniGamesLockedUntil]);
+    const remaining = Math.max(0, Math.ceil((miniGamesLockedUntil - Date.now()) / 1000));
+    if (remaining <= 0) {
+      setLockTimeText('');
+      return;
+    }
+    const h = Math.floor(remaining / 3600);
+    const m = Math.floor((remaining % 3600) / 60);
+    const s = remaining % 60;
+    if (h > 0) {
+      setLockTimeText(`${h}h ${m}m ${s}s remaining`);
+    } else if (m > 0) {
+      setLockTimeText(`${m}m ${s}s remaining`);
+    } else {
+      setLockTimeText(`${s}s remaining`);
+    }
+  }, 1000, { enabled: !!miniGamesLockedUntil, immediate: true });
 
   // energy is stored as a float in game state, floor it for display
   const displayEnergy = Math.floor(energy);
@@ -212,46 +206,40 @@ export function MiniGameMenu({ onClose: _onClose, onSelectGame, energy = 10, max
   // Calculate time until next energy — derives directly from float energy + elapsed time.
   // Because energy is stored as a float (fractional progress is preserved), this is always
   // accurate even after the component remounts or the wellbeing engine ticks.
-  useEffect(() => {
+  useBackgroundAwareInterval(() => {
     const energyRegenRate = GAME_CONFIG.energyRegenRate / 3600; // per second
 
-    const updateTimer = () => {
-      if (energy >= maxEnergy) {
-        setEnergyTimeText('Energy is full!');
-        return;
-      }
+    if (energy >= maxEnergy) {
+      setEnergyTimeText('Energy is full!');
+      return;
+    }
 
-      if (!lastEnergyUpdate) {
-        setEnergyTimeText('Calculating...');
-        return;
-      }
+    if (!lastEnergyUpdate) {
+      setEnergyTimeText('Calculating...');
+      return;
+    }
 
-      // Compute exact fractional energy right now
-      const elapsedSinceLastUpdate = Math.max(0, (Date.now() - lastEnergyUpdate) / 1000);
-      const fractionalEnergy = Math.min(maxEnergy, energy + energyRegenRate * elapsedSinceLastUpdate);
+    // Compute exact fractional energy right now
+    const elapsedSinceLastUpdate = Math.max(0, (Date.now() - lastEnergyUpdate) / 1000);
+    const fractionalEnergy = Math.min(maxEnergy, energy + energyRegenRate * elapsedSinceLastUpdate);
 
-      if (fractionalEnergy >= maxEnergy) {
-        setEnergyTimeText('Energy is full!');
-        return;
-      }
+    if (fractionalEnergy >= maxEnergy) {
+      setEnergyTimeText('Energy is full!');
+      return;
+    }
 
-      const nextFullPoint = Math.floor(fractionalEnergy) + 1;
-      const secondsUntilNext = Math.floor((nextFullPoint - fractionalEnergy) / energyRegenRate);
+    const nextFullPoint = Math.floor(fractionalEnergy) + 1;
+    const secondsUntilNext = Math.floor((nextFullPoint - fractionalEnergy) / energyRegenRate);
 
-      if (secondsUntilNext <= 0) {
-        setEnergyTimeText('0s until next energy');
-        return;
-      }
+    if (secondsUntilNext <= 0) {
+      setEnergyTimeText('0s until next energy');
+      return;
+    }
 
-      const minutes = Math.floor(secondsUntilNext / 60);
-      const seconds = secondsUntilNext % 60;
-      setEnergyTimeText(minutes > 0 ? `${minutes}m ${seconds}s until next energy` : `${seconds}s until next energy`);
-    };
-
-    updateTimer();
-    const interval = setInterval(updateTimer, 1000);
-    return () => clearInterval(interval);
-  }, [energy, maxEnergy, lastEnergyUpdate]);
+    const minutes = Math.floor(secondsUntilNext / 60);
+    const seconds = secondsUntilNext % 60;
+    setEnergyTimeText(minutes > 0 ? `${minutes}m ${seconds}s until next energy` : `${seconds}s until next energy`);
+  }, 1000, { immediate: true });
 
   const soloGames = [
     {
