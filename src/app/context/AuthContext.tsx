@@ -59,6 +59,13 @@ interface AuthContextValue {
    */
   signIn: (username: string, password: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
+  /**
+   * Deletes the user's account and all associated data from Supabase
+   * via the `delete_my_account` RPC, then signs them out locally and
+   * clears the on-device save. Apple Guideline 5.1.1(v) requires
+   * in-app account deletion for any app that allows account creation.
+   */
+  deleteAccount: () => Promise<{ error: string | null }>;
   /** Opts the user into anonymous / local-only play. */
   continueAsGuest: () => void;
   /** Signs in / up via Google OAuth (opens system browser on mobile). */
@@ -137,6 +144,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (isSupabaseConfigured) await supabase.auth.signOut();
     localStorage.removeItem(GUEST_KEY);
     setIsGuest(false);
+  }, []);
+
+  const deleteAccount = useCallback(async () => {
+    if (!isSupabaseConfigured) return { error: 'Supabase is not configured.' };
+
+    const { error } = await supabase.rpc('delete_my_account');
+    if (error) return { error: friendlyError(error.message) };
+
+    // The server-side RPC removed auth.users; sign out locally and wipe the
+    // device save so re-launch starts clean.
+    await supabase.auth.signOut();
+    localStorage.removeItem(GUEST_KEY);
+    localStorage.removeItem('axolotl-game-state');
+    setIsGuest(false);
+    return { error: null };
   }, []);
 
   const continueAsGuest = useCallback(() => {
@@ -235,6 +257,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signUp,
         signIn,
         signOut,
+        deleteAccount,
         continueAsGuest,
         signInWithGoogle,
         signInWithApple,

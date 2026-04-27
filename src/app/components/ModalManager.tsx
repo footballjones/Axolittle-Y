@@ -6,7 +6,7 @@
  * in as props. No game logic lives here.
  */
 
-import React, { memo } from 'react';
+import React, { memo, useEffect, useState } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { AnimatePresence, motion } from 'motion/react';
 
@@ -24,6 +24,7 @@ import { RebirthModal } from './RebirthModal';
 import { StatsModal } from './StatsModal';
 import { SettingsModal } from './SettingsModal';
 import { LoginScreen } from './LoginScreen';
+import { ParentGate } from './ParentGate';
 import { SyncConflictModal } from './SyncConflictModal';
 import { WellbeingIntroModal } from './WellbeingIntroModal';
 import { WellbeingCompleteModal } from './WellbeingCompleteModal';
@@ -66,6 +67,7 @@ export interface ModalManagerProps {
   isGuest: boolean;
   isUnder13?: boolean;
   signOut: () => Promise<void>;
+  deleteAccount: () => Promise<{ error: string | null }>;
 
   // Aquarium scroll centering (used by WellbeingIntroModal)
   onCenterAquarium: () => void;
@@ -173,6 +175,7 @@ function ModalManagerInner({
   isGuest,
   isUnder13 = false,
   signOut,
+  deleteAccount,
   onCenterAquarium,
   activeModal,
   setActiveModal,
@@ -239,6 +242,14 @@ function ModalManagerInner({
   onSpinWheel,
   onDailyLoginClaim,
 }: ModalManagerProps) {
+  // ParentGate state for the in-game auth overlay path. The gate only fires
+  // for under-13 devices; over-13 users go straight to LoginScreen as before.
+  // Reset whenever the overlay closes so the next open re-prompts.
+  const [parentGatePassed, setParentGatePassed] = useState(false);
+  useEffect(() => {
+    if (!showAuthOverlay) setParentGatePassed(false);
+  }, [showAuthOverlay]);
+
   return (
     <>
       {/* Water Change Confirmation Modal */}
@@ -387,12 +398,21 @@ function ModalManagerInner({
             setActiveModal(null);
             setShowAuthOverlay(true);
           }}
+          onDeleteAccount={deleteAccount}
         />
       )}
 
-      {/* In-game sign-in overlay */}
+      {/* In-game sign-in overlay. Under-13 devices must pass the ParentGate
+          (Apple 1.3 / 5.1.4) before reaching the account-creation surface. */}
       {showAuthOverlay && (
-        <LoginScreen onClose={() => setShowAuthOverlay(false)} />
+        isUnder13 && !parentGatePassed
+          ? (
+            <ParentGate
+              onPass={() => setParentGatePassed(true)}
+              onCancel={() => setShowAuthOverlay(false)}
+            />
+          )
+          : <LoginScreen onClose={() => setShowAuthOverlay(false)} />
       )}
 
       {/* Cloud save conflict resolution */}

@@ -47,7 +47,6 @@ export function LoginScreen({ onClose }: LoginScreenProps = {}) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [recoveryEmail, setRecoveryEmail] = useState('');
-  const [ageConfirmed, setAgeConfirmed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [oauthLoading, setOauthLoading] = useState<'google' | 'apple' | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -56,7 +55,6 @@ export function LoginScreen({ onClose }: LoginScreenProps = {}) {
     setUsername('');
     setPassword('');
     setRecoveryEmail('');
-    setAgeConfirmed(false);
     setError(null);
     setView(nextView);
   };
@@ -86,10 +84,6 @@ export function LoginScreen({ onClose }: LoginScreenProps = {}) {
     }
     if (!isValidPassword(password)) {
       setError('Password must be at least 8 characters and include a letter and a number.');
-      return;
-    }
-    if (!ageConfirmed) {
-      setError('Please confirm a parent or guardian has helped set this up.');
       return;
     }
     setLoading(true);
@@ -326,38 +320,27 @@ export function LoginScreen({ onClose }: LoginScreenProps = {}) {
                   {PASSWORD_HINT}
                 </p>
 
-                {/* Optional parent/guardian email */}
+                {/* Optional contact email — stored but not yet verified.
+                    Copy must stay honest until a real reset flow ships. */}
                 <div className="mt-4">
                   <label className="block text-xs text-cyan-200/50 mb-1 font-semibold">
-                    Parent/guardian email <span className="text-cyan-200/30 font-normal">(optional)</span>
+                    Contact email <span className="text-cyan-200/30 font-normal">(optional)</span>
                   </label>
                   <input
                     type="email"
                     value={recoveryEmail}
                     onChange={e => setRecoveryEmail(e.target.value)}
-                    placeholder="parent@email.com"
+                    placeholder="you@email.com"
                     className="w-full px-3 py-2.5 rounded-xl text-sm focus:outline-none text-cyan-100 placeholder:text-cyan-300/25"
                     style={{ background: 'rgba(6,13,26,0.8)', border: '1px solid rgba(56,189,248,0.2)' }}
                     onFocus={e => (e.currentTarget.style.borderColor = 'rgba(56,189,248,0.5)')}
                     onBlur={e => (e.currentTarget.style.borderColor = 'rgba(56,189,248,0.2)')}
                   />
-                  <p className="text-[10px] text-cyan-200/30 mt-1">
-                    Only used if you forget your password
+                  <p className="text-[10px] text-cyan-200/30 mt-1 leading-relaxed">
+                    Stored for future password recovery — not yet verified or active.
+                    Please write your password down for now.
                   </p>
                 </div>
-
-                {/* Age / parent confirmation */}
-                <label className="flex items-start gap-2 mt-4 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={ageConfirmed}
-                    onChange={e => { setAgeConfirmed(e.target.checked); setError(null); }}
-                    className="mt-0.5 accent-cyan-400 flex-shrink-0"
-                  />
-                  <span className="text-[10px] text-cyan-200/40 leading-relaxed">
-                    A parent or guardian has helped me set up this account
-                  </span>
-                </label>
 
                 {error && (
                   <p className="text-xs text-red-400 font-medium text-center mt-3">{error}</p>
@@ -365,7 +348,7 @@ export function LoginScreen({ onClose }: LoginScreenProps = {}) {
 
                 <motion.button
                   onClick={handleSignUp}
-                  disabled={loading || !isValidPassword(password) || !username.trim() || !ageConfirmed}
+                  disabled={loading || !isValidPassword(password) || !username.trim()}
                   whileTap={{ scale: 0.97 }}
                   className="w-full py-2.5 rounded-xl font-black text-white text-sm disabled:opacity-40 transition-opacity mt-4"
                   style={{ background: 'linear-gradient(135deg, #2563eb 0%, #7c3aed 50%, #2563eb 100%)' }}

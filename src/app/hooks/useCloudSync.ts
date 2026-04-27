@@ -11,6 +11,12 @@ interface UseCloudSyncOptions {
   /** The player's login username (from auth metadata). Null for OAuth-only users. */
   authUsername: string | null;
   gameState: GameState | null;
+  /**
+   * COPPA compliance hard-stop. When true, no game state is pushed or pulled
+   * from Supabase even if a user is signed in. Prevents collecting gameplay
+   * data from a device whose age gate identified the player as under 13.
+   */
+  isUnder13: boolean;
   onCloudStateLoaded: (state: GameState) => void;
   /**
    * Called when both local and cloud saves exist with meaningful data and the cloud
@@ -37,11 +43,15 @@ export function useCloudSync({
   userId,
   authUsername,
   gameState,
+  isUnder13,
   onCloudStateLoaded,
   onConflict,
   onStatusChange,
   onFriendCodeCollision,
 }: UseCloudSyncOptions) {
+  // Treat under-13 devices as not-signed-in for sync purposes. A signed-in
+  // parent on a child's device can still play, but their gameplay stays local.
+  const syncUserId = isUnder13 ? null : userId;
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   /** Always holds the latest gameState so flush listeners don't need to re-subscribe on every change. */
   const latestStateRef = useRef<GameState | null>(gameState);
@@ -58,11 +68,11 @@ export function useCloudSync({
   // ── Bare Supabase upsert (no debounce, no status side-effects) ────────────
   const doPush = useCallback(
     async (state: GameState): Promise<boolean> => {
-      if (!userId || !isSupabaseConfigured) return false;
+      if (!syncUserId || !isSupabaseConfigured) return false;
 
       const { error } = await supabase.from('game_states').upsert(
         {
-          player_id: userId,
+          player_id: syncUserId,
           state,
           schema_version: 2,
           updated_at: new Date().toISOString(),
@@ -74,7 +84,7 @@ export function useCloudSync({
       if (!error && state.axolotl && state.friendCode) {
         const { error: profileError } = await supabase.from('profiles').upsert(
           {
-            id: userId,
+            id: syncUserId,
             username: authUsername ?? state.axolotl.name,
             friend_code: state.friendCode,
             axolotl_name: state.axolotl.name,
@@ -102,7 +112,7 @@ export function useCloudSync({
 
       return !error;
     },
-    [userId, authUsername, onFriendCodeCollision],
+    [syncUserId, authUsername, onFriendCodeCollision],
   );
 
   // Keep latestStateRef current without re-running other effects on every change.
@@ -111,16 +121,16 @@ export function useCloudSync({
   }, [gameState]);
 
   // ── Flush stale refs on user-switch ──────────────────────────────────────
-  // When userId changes (sign-out or account switch), cancel any queued debounce
-  // and discard the offline-pending state so they can never fire under the
-  // incoming user's session.
+  // When the effective sync user changes (sign-out, account switch, or under-13
+  // gate flipping), cancel any queued debounce and discard the offline-pending
+  // state so they can never fire under a different session.
   useEffect(() => {
     if (debounceRef.current) {
       clearTimeout(debounceRef.current);
       debounceRef.current = null;
     }
     pendingStateRef.current = null;
-  }, [userId]);
+  }, [syncUserId]);
 
   // ── Online / Offline tracking & flush-on-reconnect ────────────────────────
   useEffect(() => {
@@ -160,8 +170,8 @@ export function useCloudSync({
 
   // ── Pull on first sign-in (or when account switches) ─────────────────────
   useEffect(() => {
-    if (!userId || !isSupabaseConfigured || pulledForUserRef.current === userId) return;
-    pulledForUserRef.current = userId;
+    if (!syncUserId || !isSupabaseConfigured || pulledForUserRef.current === syncUserId) return;
+    pulledForUserRef.current = syncUserId;
 
     const pull = async () => {
       onStatusChange('syncing');
@@ -170,7 +180,7 @@ export function useCloudSync({
         const { data, error } = await supabase
           .from('game_states')
           .select('state, updated_at')
-          .eq('player_id', userId)
+          .eq('player_id', syncUserId)
           .single();
 
         if (error || !data) {
@@ -202,14 +212,14 @@ export function useCloudSync({
 
     pull();
   // gameState intentionally excluded: we only want the snapshot from when
-  // userId first becomes available, not re-run on every state change.
+  // syncUserId first becomes available, not re-run on every state change.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userId, onCloudStateLoaded, onConflict, onStatusChange]);
+  }, [syncUserId, onCloudStateLoaded, onConflict, onStatusChange]);
 
   // ── Debounced push on state change ────────────────────────────────────────
   const pushToCloud = useCallback(
     async (state: GameState) => {
-      if (!userId || !isSupabaseConfigured) return;
+      if (!syncUserId || !isSupabaseConfigured) return;
 
       if (!isOnlineRef.current) {
         // Device is offline — remember the latest state to push on reconnect.
@@ -228,11 +238,11 @@ export function useCloudSync({
 
       onStatusChange(success ? 'synced' : 'error');
     },
-    [userId, doPush, onStatusChange],
+    [syncUserId, doPush, onStatusChange],
   );
 
   useEffect(() => {
-    if (!userId || !gameState || !isSupabaseConfigured) return;
+    if (!syncUserId || !gameState || !isSupabaseConfigured) return;
 
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
@@ -242,11 +252,11 @@ export function useCloudSync({
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [gameState, userId, pushToCloud]);
+  }, [gameState, syncUserId, pushToCloud]);
 
   // ── Flush immediately on app suspend / tab hide ───────────────────────────
   useEffect(() => {
-    if (!userId || !isSupabaseConfigured) return;
+    if (!syncUserId || !isSupabaseConfigured) return;
 
     const flush = () => {
       // Cancel any queued debounce — we're pushing right now.
@@ -273,7 +283,7 @@ export function useCloudSync({
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       document.removeEventListener('axo-app-pause', flush);
     };
-  }, [userId, pushToCloud]);
+  }, [syncUserId, pushToCloud]);
 
   /**
    * Immediately push the given state to cloud, bypassing the debounce.

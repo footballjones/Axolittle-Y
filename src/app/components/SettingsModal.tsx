@@ -14,6 +14,12 @@ interface SettingsModalProps {
   isUnder13?: boolean;
   onSignOut?: () => void;
   onSignIn?: () => void;
+  /**
+   * Deletes the user's account and all associated cloud data, then signs
+   * them out and resets the on-device save. Required by Apple Guideline
+   * 5.1.1(v) for any app that allows account creation.
+   */
+  onDeleteAccount?: () => Promise<{ error: string | null }>;
 }
 
 // Move ToggleSwitch outside component to prevent recreation on every render
@@ -44,11 +50,16 @@ export function SettingsModal({
   isUnder13 = false,
   onSignOut,
   onSignIn,
+  onDeleteAccount,
 }: SettingsModalProps) {
   const [soundEnabled, setSoundEnabled] = useState(initialSoundEnabled);
   const [musicEnabled, setMusicEnabled] = useState(initialMusicEnabled);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [showDeleteAcctConfirm, setShowDeleteAcctConfirm] = useState(false);
+  const [deletingAcct, setDeletingAcct] = useState(false);
+  const [deleteAcctError, setDeleteAcctError] = useState<string | null>(null);
+  const isSignedIn = !isGuest && !!username;
 
   const handleMusicToggle = () => {
     const newValue = !musicEnabled;
@@ -279,6 +290,64 @@ export function SettingsModal({
                       </motion.button>
                     </div>
                   </motion.div>
+                )}
+
+                {/* Delete account — only when signed in. Required by Apple
+                    Guideline 5.1.1(v) for any app that allows account creation. */}
+                {isSignedIn && onDeleteAccount && (
+                  !showDeleteAcctConfirm ? (
+                    <motion.button
+                      onClick={() => { setShowDeleteAcctConfirm(true); setDeleteAcctError(null); }}
+                      className="flex items-center gap-3 w-full bg-red-500/10 hover:bg-red-500/20 rounded-xl px-4 py-3 border border-red-500/30 transition-colors text-left"
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      <Trash2 className="w-4 h-4 text-red-400" />
+                      <span className="text-red-400 text-sm">Delete Account</span>
+                    </motion.button>
+                  ) : (
+                    <motion.div
+                      initial={{ opacity: 0, y: -5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="bg-red-500/10 rounded-xl p-4 border border-red-500/30"
+                    >
+                      <p className="text-red-300 text-sm font-semibold mb-1">Delete your account?</p>
+                      <p className="text-red-300/80 text-xs leading-relaxed mb-3">
+                        This permanently removes your account, cloud save, friend graph, and
+                        achievements. It cannot be undone.
+                      </p>
+                      {deleteAcctError && (
+                        <p className="text-xs text-red-200 font-medium mb-2">{deleteAcctError}</p>
+                      )}
+                      <div className="flex gap-2">
+                        <motion.button
+                          onClick={async () => {
+                            setDeletingAcct(true);
+                            setDeleteAcctError(null);
+                            const { error } = await onDeleteAccount();
+                            setDeletingAcct(false);
+                            if (error) {
+                              setDeleteAcctError(error);
+                              return;
+                            }
+                            onClose();
+                          }}
+                          disabled={deletingAcct}
+                          className="flex-1 bg-red-500 hover:bg-red-600 disabled:opacity-50 text-white text-sm font-bold py-2 rounded-lg transition-colors"
+                          whileTap={{ scale: 0.95 }}
+                        >
+                          {deletingAcct ? 'Deleting…' : 'Delete Forever'}
+                        </motion.button>
+                        <motion.button
+                          onClick={() => setShowDeleteAcctConfirm(false)}
+                          disabled={deletingAcct}
+                          className="flex-1 bg-white/10 hover:bg-white/20 text-white text-sm font-bold py-2 rounded-lg transition-colors disabled:opacity-50"
+                          whileTap={{ scale: 0.95 }}
+                        >
+                          Cancel
+                        </motion.button>
+                      </div>
+                    </motion.div>
+                  )
                 )}
               </div>
             </div>

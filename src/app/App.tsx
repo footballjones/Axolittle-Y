@@ -27,6 +27,7 @@ import { useCloudSync, SyncStatus } from './hooks/useCloudSync';
 import { sendFriendAction, isSupabaseConfigured, fetchPlayerAchievements, pushAchievements } from './services/supabase';
 import { LoginScreen } from './components/LoginScreen';
 import { AgeGateScreen, loadAgeGate } from './components/AgeGateScreen';
+import { ParentGate } from './components/ParentGate';
 import { JIMMY_CHUBS_FRIEND } from './utils/storage';
 
 // Jimmy & Chubs sends a gift every 3.5 days (twice a week)
@@ -56,7 +57,7 @@ export default function App() {
   const [conflictSaves, setConflictSaves] = useState<{ local: GameState; cloud: GameState } | null>(null);
 
   // ── Auth ──────────────────────────────────────────────────────────────────
-  const { user, isLoading: authLoading, isGuest, signOut } = useAuth();
+  const { user, isLoading: authLoading, isGuest, signOut, deleteAccount } = useAuth();
   const [showAuthOverlay, setShowAuthOverlay] = useState(false);
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
   /** True if a save already existed in localStorage when the app first launched.
@@ -75,6 +76,8 @@ export default function App() {
   const [showParentAuthFromAgeGate, setShowParentAuthFromAgeGate] = useState(false);
   /** True when the parent tapped "Back to game" from the LoginScreen — show the guest warning before proceeding. */
   const [showGuestWarningFromParent, setShowGuestWarningFromParent] = useState(false);
+  /** True once the ParentGate has been passed in this session — gate is one-time per session. */
+  const [parentGatePassed, setParentGatePassed] = useState(false);
 
   // Stable callback — must be memoized so useSocialState's effects don't re-fire on every render
   const handleApplyGiftReward = useCallback((coins: number, opals: number) => {
@@ -110,6 +113,7 @@ export default function App() {
     userId: user?.id ?? null,
     authUsername: (user?.user_metadata?.username as string | undefined) ?? null,
     gameState,
+    isUnder13,
     onCloudStateLoaded: (state: GameState) => {
       if (!state.friendCode) state = { ...state, friendCode: generatePermanentFriendCode() };
       setGameState(state);
@@ -126,8 +130,10 @@ export default function App() {
   });
 
   // ── Startup achievement sync ───────────────────────────────────────────────
+  // Skipped on under-13 devices: COPPA hard-stop on collecting child gameplay
+  // even when a parent is signed in.
   useEffect(() => {
-    if (!user?.id || !isSupabaseConfigured) return;
+    if (!user?.id || !isSupabaseConfigured || isUnder13) return;
 
     const syncAchievements = async () => {
       const remoteIds = await fetchPlayerAchievements(user.id);
@@ -144,7 +150,7 @@ export default function App() {
 
     syncAchievements();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id]);
+  }, [user?.id, isUnder13]);
 
   // Auto-close the in-game auth overlay once the user successfully signs in
   useEffect(() => {
@@ -479,6 +485,17 @@ export default function App() {
       );
     }
 
+    // ParentGate (Apple 1.3 / 5.1.4): challenge before account creation
+    // is reachable from the under-13 path.
+    if (!parentGatePassed) {
+      return (
+        <ParentGate
+          onPass={() => setParentGatePassed(true)}
+          onCancel={() => setShowGuestWarningFromParent(true)}
+        />
+      );
+    }
+
     return (
       <LoginScreen
         onClose={() => setShowGuestWarningFromParent(true)}
@@ -680,6 +697,7 @@ export default function App() {
         isGuest={isGuest}
         isUnder13={isUnder13}
         signOut={signOut}
+        deleteAccount={deleteAccount}
         onCenterAquarium={handleCenterAquarium}
         activeModal={activeModal}
         setActiveModal={setActiveModal}

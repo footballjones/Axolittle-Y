@@ -48,6 +48,11 @@ const YEARS = Array.from({ length: 98 }, (_, i) => CURRENT_YEAR - 3 - i);
 
 type Phase = 'age-picker' | 'under13-notice' | 'guest-confirm' | 'parent-setup';
 
+// Features only available on devices age-gated as 13+ — listed for the
+// parent's information so they can decide whether to sign in their own
+// account on this device or continue with guest play. We never unlock
+// these on an under-13 device, even with a parent signed in, until
+// verifiable parental consent (COPPA §312.5) is implemented.
 const GUEST_MISSING = [
   'Add and visit friends',
   'Breed axolotls with other players',
@@ -175,53 +180,32 @@ export function AgeGateScreen({ onComplete, onParentSetup, initialPhase = 'age-p
             >
               <div className="text-center mb-5">
                 <h2 className="text-xl font-black text-white mb-2">
-                  Ask a parent before you play!
+                  Got it — let's play!
                 </h2>
                 <p className="text-white/65 text-sm leading-relaxed">
-                  To get the full Axolittle experience, a parent or guardian needs to create a free account.
+                  Players under 13 play as a guest. Your progress is saved
+                  right here on this device — we don't collect any personal
+                  information.
                 </p>
               </div>
 
-              {/* What they unlock */}
-              <div
-                className="rounded-2xl p-4 mb-5"
-                style={{ background: 'rgba(34,211,238,0.07)', border: '1px solid rgba(34,211,238,0.18)' }}
-              >
-                <p className="text-cyan-200/80 text-xs font-semibold uppercase tracking-wider mb-3">
-                  With a parent account you unlock
-                </p>
-                {[
-                  'Breed axolotls with friends',
-                  'Send and receive egg gifts',
-                  'Visit friends\' tanks',
-                  'Cloud save across devices',
-                ].map(item => (
-                  <div key={item} className="flex items-center gap-2.5 mb-2 last:mb-0">
-                    <div className="w-4 h-4 rounded-full bg-cyan-400/20 border border-cyan-400/40 flex items-center justify-center flex-shrink-0">
-                      <div className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
-                    </div>
-                    <p className="text-white/75 text-sm">{item}</p>
-                  </div>
-                ))}
-              </div>
-
-              {/* Primary CTA */}
+              {/* Primary CTA — guest play */}
               <motion.button
-                onClick={() => setPhase('parent-setup')}
-                className="w-full py-3.5 rounded-2xl font-black text-base text-white mb-4"
+                onClick={handleGuestConfirmed}
+                className="w-full py-3.5 rounded-2xl font-black text-base text-white mb-3"
                 style={{ background: 'linear-gradient(135deg, #22d3ee, #3b82f6)' }}
                 whileTap={{ scale: 0.97 }}
               >
-                Set Up Parent Account
+                Continue as Guest
               </motion.button>
 
-              {/* Secondary — small underlined text */}
+              {/* Secondary — parent path, small underlined text */}
               <div className="text-center">
                 <button
-                  onClick={() => setPhase('guest-confirm')}
+                  onClick={() => setPhase('parent-setup')}
                   className="text-white/35 text-xs underline underline-offset-2 hover:text-white/55 transition-colors"
                 >
-                  Continue as Guest
+                  I'm a parent — sign me in
                 </button>
               </div>
             </div>
@@ -319,7 +303,8 @@ export function AgeGateScreen({ onComplete, onParentSetup, initialPhase = 'age-p
               <div className="text-center mb-5">
                 <h2 className="text-xl font-black text-white mb-2">Parent / Guardian</h2>
                 <p className="text-white/65 text-sm leading-relaxed">
-                  Create a free account to unlock friend features for your child.
+                  This account is for the parent or guardian, not for the
+                  player under 13.
                 </p>
               </div>
 
@@ -328,9 +313,9 @@ export function AgeGateScreen({ onComplete, onParentSetup, initialPhase = 'age-p
                 style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}
               >
                 {[
-                  ['Your account, your control', 'You decide if social features are on.'],
-                  ['No data from your child', 'We never collect personal information from players under 13.'],
-                  ['Friend features unlocked', 'Your child can add friends, visit tanks, and breed axolotls.'],
+                  ['No data from your child', 'We never collect personal information from players under 13, even with you signed in.'],
+                  ['On this device', 'Social features and cloud save stay off. Your child keeps playing as a guest.'],
+                  ['On your own device', 'Sign into the same account to unlock friends, breeding, and cloud save for your own play.'],
                 ].map(([title, desc]) => (
                   <div key={title} className="flex items-start gap-3">
                     <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 mt-1.5 flex-shrink-0" />
