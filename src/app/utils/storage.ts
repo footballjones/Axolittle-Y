@@ -207,9 +207,12 @@ export function loadGameState(): GameState | null {
 export function generatePermanentFriendCode(): string {
   // Generates a random permanent code — set once at account creation, never changes.
   // Uses unambiguous chars (no 0/O, 1/I/L) for readability.
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  const rand = (n: number) =>
-    Array.from({ length: n }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // 32 chars — 256 % 32 === 0, no modulo bias
+  const rand = (n: number) => {
+    const bytes = new Uint8Array(n);
+    crypto.getRandomValues(bytes);
+    return Array.from(bytes, b => chars[b % chars.length]).join('');
+  };
   return `${rand(3)}-${rand(5)}`;
 }
 

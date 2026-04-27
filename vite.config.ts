@@ -19,7 +19,7 @@ function removeCrossorigin(): Plugin {
   }
 }
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [
     // The React and Tailwind plugins are both required for Make, even if
     // Tailwind is not being actively used – do not remove them
@@ -45,4 +45,9 @@ export default defineConfig({
     outDir: 'dist',
     assetsDir: 'assets',
   },
-})
+
+  // Drop console/debugger calls from production bundles only.
+  esbuild: {
+    drop: mode === 'production' ? ['console', 'debugger'] : [],
+  },
+}))

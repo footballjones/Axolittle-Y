@@ -341,6 +341,7 @@ export default function App() {
 
   // Load game state on mount
   useEffect(() => {
+    const timers: ReturnType<typeof setTimeout>[] = [];
     const loaded = loadGameState();
     if (loaded) {
       if (loaded.energy === undefined) {
@@ -395,7 +396,7 @@ export default function App() {
         const giftMsg = gift.opals > 0
           ? `Jimmy & Chubs sent you ${gift.opals} opals!`
           : `Jimmy & Chubs sent you ${gift.coins} coins!`;
-        setTimeout(() => {
+        timers.push(setTimeout(() => {
           setNotifications(prev => [{
             id: `jimmy-gift-${now}`,
             type: 'gift',
@@ -404,7 +405,7 @@ export default function App() {
             time: 'Just now',
             read: false,
           }, ...prev]);
-        }, 800);
+        }, 800));
       }
 
       if (!loaded.friendCode) loaded.friendCode = generatePermanentFriendCode();
@@ -413,13 +414,14 @@ export default function App() {
       // Check for daily login bonus on app open.
       const today = getTodayDateString();
       if (loaded.lastLoginDate !== today && loaded.menuTutorialSeen !== false) {
-        setTimeout(() => {
+        timers.push(setTimeout(() => {
           setShowDailyLogin(true);
-        }, 1000);
+        }, 1000));
       }
     } else {
       setGameState(getInitialGameState());
     }
+    return () => timers.forEach(clearTimeout);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

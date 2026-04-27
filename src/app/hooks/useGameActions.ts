@@ -3,7 +3,7 @@
  * Extracted from App.tsx for better code organization
  */
 
-import { useCallback } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { GameState, Axolotl, Friend, FoodItem, PendingPoop, PoopItem, SecondaryStats } from '../types/game';
 import {
   feedAxolotl,
@@ -78,44 +78,46 @@ export function useGameActions({
     };
   }
 
+  const feedTimersRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
+
+  useEffect(() => {
+    return () => {
+      feedTimersRef.current.forEach(clearTimeout);
+      feedTimersRef.current.clear();
+    };
+  }, []);
+
   const handleFeed = useCallback(() => {
+    // Pre-generate all non-deterministic values outside the updater so the
+    // updater is pure — React StrictMode invokes updaters twice and would
+    // otherwise schedule two separate 7-second timers per feed.
+    const now = Date.now();
+    const foodId = `food-${now}-${Math.random().toString(36).slice(2, 11)}`;
+    const randomFoodX = Math.random() * 80 + 10;
+    const poopId = `poop-${now}-${Math.random().toString(36).slice(2, 7)}`;
+    const poopX = Math.random() * 70 + 15;
+
     setGameState(prev => {
       if (!prev?.axolotl) return prev;
-      if (prev.coins < 10) return prev; // can't afford to feed
+      if (prev.coins < 10) return prev;
 
-      // Drop food at the center during the tutorial, random otherwise
       const newFood: FoodItem = {
-        id: `food-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`, // More unique ID
-        x: prev.tutorialStep === 'feed' ? 50 : Math.random() * 80 + 10, // center on first tutorial feed, 10-90% otherwise
-        y: 0, // Start at top (will animate down)
-        createdAt: Date.now(),
+        id: foodId,
+        x: prev.tutorialStep === 'feed' ? 50 : randomFoodX,
+        y: 0,
+        createdAt: now,
       };
 
       const foodItems = [...(prev.foodItems || []), newFood];
-
-      // After animation time (5 seconds), update food position to settled
-      // Fix race condition: update by foodId instead of predicate y === 0
-      const foodId = newFood.id;
-      setTimeout(() => {
-        setGameState(prev => {
-          if (!prev) return prev;
-          return {
-            ...prev,
-            foodItems: (prev.foodItems || []).map(f => 
-              f.id === foodId ? { ...f, y: 75 } : f
-            ),
-          };
-        });
-      }, 7000); // Match the maximum animation duration (4-6.67s sink + buffer)
 
       // Track feed count; every 6th feed schedules a poop to appear 5 min later
       const newFeedCount = ((prev.feedCount || 0) + 1) % 6;
       let pendingPoops = prev.pendingPoops || [];
       if (newFeedCount === 0) {
         const newPending: PendingPoop = {
-          id: `poop-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
-          x: Math.random() * 70 + 15,
-          showAt: Date.now() + 5 * 60 * 1000, // 5 minutes from now
+          id: poopId,
+          x: poopX,
+          showAt: now + 5 * 60 * 1000,
         };
         pendingPoops = [...pendingPoops, newPending];
       }
@@ -127,11 +129,25 @@ export function useGameActions({
         feedCount: newFeedCount,
         pendingPoops,
         totalFeedsEver: (prev.totalFeedsEver ?? 0) + 1,
-        // Advance tutorial: 'feed' → 'eat' on first feed
         tutorialStep: prev.tutorialStep === 'feed' ? 'eat' : prev.tutorialStep,
       };
       return withAchievements(next);
     });
+
+    // Schedule outside the updater — pure-updater rule + StrictMode safety.
+    const timerId = setTimeout(() => {
+      setGameState(prev => {
+        if (!prev) return prev;
+        // Bail out without a re-render if the item was already eaten.
+        if (!prev.foodItems?.some(f => f.id === foodId && f.y === 0)) return prev;
+        return {
+          ...prev,
+          foodItems: prev.foodItems.map(f => f.id === foodId ? { ...f, y: 75 } : f),
+        };
+      });
+      feedTimersRef.current.delete(timerId);
+    }, 7000);
+    feedTimersRef.current.add(timerId);
   }, []);
 
   const handleEatFood = useCallback((foodId: string) => {
