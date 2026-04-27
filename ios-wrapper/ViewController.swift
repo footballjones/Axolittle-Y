@@ -226,28 +226,27 @@ class ViewController: UIViewController, WKNavigationDelegate, WKScriptMessageHan
     }
 
     func loadWebApp() {
-        guard let distURL = Bundle.main.url(forResource: "dist", withExtension: nil),
-              let indexURL = Bundle.main.url(forResource: "index", withExtension: "html", subdirectory: "dist"),
-              var html = try? String(contentsOf: indexURL, encoding: .utf8) else {
-            showMissingAssetsMessage(details: "Could not find dist/index.html in the app bundle.")
+        // Confirm the bundled web build is actually present before asking the
+        // scheme handler to serve it. Supports both layouts the handler accepts:
+        // folder reference (dist/index.html) or flattened (index.html at root).
+        let bundle = Bundle.main
+        let indexInDist = bundle.url(forResource: "index", withExtension: "html", subdirectory: "dist")
+        let indexAtRoot = bundle.url(forResource: "index", withExtension: "html")
+        guard indexInDist != nil || indexAtRoot != nil else {
+            showMissingAssetsMessage(details: "Could not find index.html in the app bundle. In Xcode, add the dist folder as a folder reference (blue) under Build Phases → Copy Bundle Resources.")
             return
         }
 
-        // Strip type="module" so the script loads as a classic script.
-        // Module scripts enforce CORS on file:// which fails (null origin).
-        // The Vite bundle is self-contained — no external imports — so it
-        // runs correctly as a classic script.
-        html = html.replacingOccurrences(of: " type=\"module\"", with: "")
-
-        // loadFileURL + allowingReadAccessTo makes all dist/ resources
-        // same-origin, so WebGL textures and audio load without CORS issues.
-        let tempURL = FileManager.default.temporaryDirectory
-            .appendingPathComponent("axolittle-index.html")
-        guard (try? html.write(to: tempURL, atomically: true, encoding: .utf8)) != nil else {
-            showMissingAssetsMessage(details: "Could not write patched index.html.")
+        // Load via the registered custom scheme. BundleURLSchemeHandler serves
+        // index.html and every relative asset (./assets/…, /music/…, /sounds/…,
+        // /spine/…) directly from the app bundle with correct MIME types and
+        // Range support. Going through the scheme avoids the file:// + temp
+        // directory pattern, which WebKit blocks as "outside the sandbox".
+        guard let startURL = URL(string: "\(bundledContentScheme):///index.html") else {
+            showMissingAssetsMessage(details: "Failed to construct start URL for scheme \(bundledContentScheme).")
             return
         }
-        webView.loadFileURL(tempURL, allowingReadAccessTo: distURL)
+        webView.load(URLRequest(url: startURL))
     }
 
     private func showMissingAssetsMessage(details: String) {
