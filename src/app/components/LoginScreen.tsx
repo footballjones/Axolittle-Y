@@ -11,6 +11,13 @@ function isValidUsername(u: string) {
   return USERNAME_REGEX.test(u);
 }
 
+/** Minimum 8 chars with at least one letter and one number. */
+function isValidPassword(p: string): boolean {
+  return p.length >= 8 && /[a-zA-Z]/.test(p) && /[0-9]/.test(p);
+}
+
+const PASSWORD_HINT = 'At least 8 characters with a letter and a number';
+
 /** Background bubbles — shared between views */
 function Bubbles() {
   return (
@@ -59,8 +66,8 @@ export function LoginScreen({ onClose }: LoginScreenProps = {}) {
       setError('Username must be 3–20 characters: letters, numbers or underscores only.');
       return;
     }
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters.');
+    if (!isValidPassword(password)) {
+      setError('Password must be at least 8 characters and include a letter and a number.');
       return;
     }
     setLoading(true);
@@ -77,8 +84,8 @@ export function LoginScreen({ onClose }: LoginScreenProps = {}) {
       setError('Username must be 3–20 characters: letters, numbers or underscores only.');
       return;
     }
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters.');
+    if (!isValidPassword(password)) {
+      setError('Password must be at least 8 characters and include a letter and a number.');
       return;
     }
     if (!ageConfirmed) {
@@ -261,7 +268,7 @@ export function LoginScreen({ onClose }: LoginScreenProps = {}) {
 
                 <motion.button
                   onClick={handleSignIn}
-                  disabled={loading || !username.trim() || password.length < 6}
+                  disabled={loading || !username.trim() || !isValidPassword(password)}
                   whileTap={{ scale: 0.97 }}
                   className="w-full py-2.5 rounded-xl font-black text-white text-sm disabled:opacity-40 transition-opacity"
                   style={{ background: 'linear-gradient(135deg, #2563eb 0%, #7c3aed 50%, #2563eb 100%)' }}
@@ -316,7 +323,7 @@ export function LoginScreen({ onClose }: LoginScreenProps = {}) {
                   onBlur={e => (e.currentTarget.style.borderColor = 'rgba(56,189,248,0.2)')}
                 />
                 <p className="text-[10px] text-cyan-200/30 mb-3">
-                  At least 6 characters
+                  {PASSWORD_HINT}
                 </p>
 
                 {/* Optional parent/guardian email */}
@@ -335,7 +342,7 @@ export function LoginScreen({ onClose }: LoginScreenProps = {}) {
                     onBlur={e => (e.currentTarget.style.borderColor = 'rgba(56,189,248,0.2)')}
                   />
                   <p className="text-[10px] text-cyan-200/30 mt-1">
-                    Only used if you forget your PIN
+                    Only used if you forget your password
                   </p>
                 </div>
 
@@ -358,7 +365,7 @@ export function LoginScreen({ onClose }: LoginScreenProps = {}) {
 
                 <motion.button
                   onClick={handleSignUp}
-                  disabled={loading || password.length < 6 || !username.trim() || !ageConfirmed}
+                  disabled={loading || !isValidPassword(password) || !username.trim() || !ageConfirmed}
                   whileTap={{ scale: 0.97 }}
                   className="w-full py-2.5 rounded-xl font-black text-white text-sm disabled:opacity-40 transition-opacity mt-4"
                   style={{ background: 'linear-gradient(135deg, #2563eb 0%, #7c3aed 50%, #2563eb 100%)' }}
