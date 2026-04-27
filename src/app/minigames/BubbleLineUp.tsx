@@ -657,15 +657,32 @@ export function BubbleLineUp({ onEnd, onDeductEnergy, onApplyReward, energy }: M
 
         {/* Flex area that measures available space for the grid */}
         <div ref={gridAreaRef} className="flex-1 min-h-0 w-full flex items-center justify-center mt-3">
-          {/* Grid — hidden once game ends or before ResizeObserver fires */}
-          {!gameEnded && gridSize > 0 && <div
-            className="bg-slate-900/75 border border-white/10 rounded-2xl p-2 touch-none select-none"
-            style={{ width: gridSize, height: gridSize, display: 'grid', gridTemplateColumns: `repeat(${puzzle.size}, 1fr)`, gridTemplateRows: `repeat(${puzzle.size}, 1fr)`, gap: '4px' }}
-            onPointerDown={handlePointerDown}
-            onPointerMove={handlePointerMove}
-            onPointerUp={handlePointerUp}
-            onPointerCancel={handlePointerUp}
-          >
+          {/* Grid — hidden once game ends or before ResizeObserver fires.
+              Uses explicit pixel cell sizing instead of 1fr / aspect-ratio
+              because iOS WKWebView has been observed to overflow the container
+              vertically when CSS Grid mixes 1fr tracks with aspect-ratio: 1
+              children. */}
+          {!gameEnded && gridSize > 0 && (() => {
+            const PAD = 8;       // p-2
+            const GAP_PX = 4;
+            const inner = gridSize - PAD * 2 - GAP_PX * (puzzle.size - 1);
+            const cellSize = Math.floor(inner / puzzle.size);
+            return <div
+              className="bg-slate-900/75 border border-white/10 rounded-2xl p-2 touch-none select-none"
+              style={{
+                width: gridSize,
+                height: gridSize,
+                boxSizing: 'border-box',
+                display: 'grid',
+                gridTemplateColumns: `repeat(${puzzle.size}, ${cellSize}px)`,
+                gridTemplateRows: `repeat(${puzzle.size}, ${cellSize}px)`,
+                gap: `${GAP_PX}px`,
+              }}
+              onPointerDown={handlePointerDown}
+              onPointerMove={handlePointerMove}
+              onPointerUp={handlePointerUp}
+              onPointerCancel={handlePointerUp}
+            >
             {Array.from({ length: puzzle.size }, (_, r) =>
               Array.from({ length: puzzle.size }, (_, c) => {
                 const key    = posKey(r, c);
@@ -678,7 +695,7 @@ export function BubbleLineUp({ onEnd, onDeductEnergy, onApplyReward, energy }: M
                     data-r={r}
                     data-c={c}
                     className="relative"
-                    style={{ aspectRatio: '1' }}
+                    style={{ width: cellSize, height: cellSize }}
                   >
                     {info ? (
                       // ── Path / pipe cell ────────────────────────────────────
@@ -734,7 +751,8 @@ export function BubbleLineUp({ onEnd, onDeductEnergy, onApplyReward, energy }: M
                 );
               })
             )}
-          </div>}
+            </div>;
+          })()}
         </div>
 
         {/* Fill-all hint */}
