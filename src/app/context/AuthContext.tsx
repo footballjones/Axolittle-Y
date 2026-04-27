@@ -8,6 +8,7 @@ import {
 } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase, isSupabaseConfigured } from '../services/supabase';
+import { isNativeIOS, nativeOAuthSignIn } from '../services/nativeAuth';
 
 const GUEST_KEY = 'axolotl-guest-mode';
 
@@ -144,18 +145,69 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   /**
-   * Shared OAuth helper. On web this performs a full-page redirect.
-   * On iOS/Android the native layer should intercept the OAuth URL and open
-   * it in ASWebAuthenticationSession / Chrome Custom Tab instead of the WebView.
+   * Shared OAuth helper.
+   *
+   * iOS path: uses the ASWebAuthenticationSession bridge in ViewController.swift.
+   *   1. Obtain the provider OAuth URL from Supabase without redirecting
+   *      (skipBrowserRedirect: true).
+   *   2. Hand the URL to the native layer via window.webkit.messageHandlers.axoAuth.
+   *   3. Native opens ASWebAuthenticationSession; result comes back as
+   *      axolittle-auth://auth/callback?code=...
+   *   4. Exchange the PKCE code for a Supabase session.
+   *
+   * Web path: standard full-page redirect to window.location.origin.
    */
   const signInWithOAuth = useCallback(
     async (provider: 'google' | 'apple') => {
       if (!isSupabaseConfigured) return { error: 'Supabase is not configured.' };
+
+      if (isNativeIOS()) {
+        const { data, error } = await supabase.auth.signInWithOAuth({
+          provider,
+          options: {
+            redirectTo: 'axolittle-auth://auth/callback',
+            skipBrowserRedirect: true,
+          },
+        });
+        if (error || !data.url) {
+          return { error: friendlyError(error?.message ?? 'Could not get OAuth URL') };
+        }
+
+        try {
+          const callbackUrl = await nativeOAuthSignIn(data.url);
+          const url = new URL(callbackUrl);
+
+          // PKCE flow (default): exchange authorization code for session
+          const code = url.searchParams.get('code');
+          if (code) {
+            const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+            if (exchangeError) return { error: friendlyError(exchangeError.message) };
+            return { error: null };
+          }
+
+          // Implicit flow fallback: tokens arrive in the hash fragment
+          const hash = new URLSearchParams(url.hash.replace('#', ''));
+          const access_token  = hash.get('access_token');
+          const refresh_token = hash.get('refresh_token');
+          if (access_token && refresh_token) {
+            const { error: sessionError } = await supabase.auth.setSession({ access_token, refresh_token });
+            if (sessionError) return { error: friendlyError(sessionError.message) };
+            return { error: null };
+          }
+
+          return { error: 'OAuth callback did not include a session.' };
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          // User dismissed the sheet — not a failure
+          if (msg === 'cancelled' || msg.toLowerCase().includes('cancel')) return { error: null };
+          return { error: friendlyError(msg) };
+        }
+      }
+
+      // Web: standard redirect
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
-        options: {
-          redirectTo: window.location.origin,
-        },
+        options: { redirectTo: window.location.origin },
       });
       if (error) return { error: friendlyError(error.message) };
       return { error: null };

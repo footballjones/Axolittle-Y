@@ -7,11 +7,15 @@
 
 import UIKit
 import WebKit
+import AuthenticationServices
 
-class ViewController: UIViewController, WKNavigationDelegate {
+class ViewController: UIViewController, WKNavigationDelegate, WKScriptMessageHandler {
     private let bundledContentScheme = "axolittle"
+    private let oauthCallbackScheme  = "axolittle-auth"
     var webView: WKWebView!
-    
+    /// Retained so ASWebAuthenticationSession isn't immediately deallocated.
+    private var authSession: ASWebAuthenticationSession?
+
     override func viewDidLoad() {
         super.viewDidLoad()
         // Deep-ocean base so no white flash shows through the transparent WebView
@@ -20,17 +24,22 @@ class ViewController: UIViewController, WKNavigationDelegate {
         // Pause/resume music when the app moves to background/foreground
         NotificationCenter.default.addObserver(self, selector: #selector(appDidEnterBackground), name: UIApplication.didEnterBackgroundNotification, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(appWillEnterForeground), name: UIApplication.willEnterForegroundNotification, object: nil)
-        
+
         // Configure WKWebView
         let config = WKWebViewConfiguration()
         config.allowsInlineMediaPlayback = true
         config.mediaTypesRequiringUserActionForPlayback = []
         config.setURLSchemeHandler(BundleURLSchemeHandler(), forURLScheme: bundledContentScheme)
-        
+
+        // Native OAuth bridge — JS posts { url: "https://..." } to trigger
+        // ASWebAuthenticationSession; result is delivered via _axoOAuthCallback.
+        // WeakScriptMessageDelegate breaks the WKUserContentController retain cycle.
+        config.userContentController.add(WeakScriptMessageDelegate(self), name: "axoAuth")
+
         // Enable data storage for localStorage
         let websiteDataStore = WKWebsiteDataStore.default()
         config.websiteDataStore = websiteDataStore
-        
+
         // Create web view
         webView = WKWebView(frame: .zero, configuration: config)
         webView.navigationDelegate = self
@@ -43,14 +52,14 @@ class ViewController: UIViewController, WKNavigationDelegate {
         webView.scrollView.bounces = false
         webView.isOpaque = false
         webView.backgroundColor = .clear
-        
+
         // Disable zoom
         webView.scrollView.minimumZoomScale = 1.0
         webView.scrollView.maximumZoomScale = 1.0
         webView.scrollView.isScrollEnabled = false
-        
+
         view.addSubview(webView)
-        
+
         // Set up constraints
         webView.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
@@ -59,7 +68,7 @@ class ViewController: UIViewController, WKNavigationDelegate {
             webView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             webView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
-        
+
         // Keep the screen on while the game is running — the axolotl is always
         // animating and there are no idle states that should let the display sleep.
         UIApplication.shared.isIdleTimerDisabled = true
@@ -163,7 +172,59 @@ class ViewController: UIViewController, WKNavigationDelegate {
         // Load the web app
         loadWebApp()
     }
-    
+
+    // ── ASWebAuthenticationSession bridge ─────────────────────────────────────
+    // JS posts: window.webkit.messageHandlers.axoAuth.postMessage({ url: "..." })
+    // Swift opens ASWebAuthenticationSession, then calls window._axoOAuthCallback.
+
+    func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+        guard message.name == "axoAuth",
+              let body     = message.body as? [String: String],
+              let urlStr   = body["url"],
+              let oauthURL = URL(string: urlStr) else { return }
+
+        let session = ASWebAuthenticationSession(
+            url: oauthURL,
+            callbackURLScheme: oauthCallbackScheme
+        ) { [weak self] callbackURL, error in
+            guard let self else { return }
+            DispatchQueue.main.async {
+                self.authSession = nil
+
+                if let error {
+                    let cancelled = (error as? ASWebAuthenticationSessionError)?.code == .canceledLogin
+                    let msg = cancelled ? "cancelled" : error.localizedDescription
+                    let safe = msg.replacingOccurrences(of: "\\", with: "\\\\")
+                                  .replacingOccurrences(of: "'", with: "\\'")
+                    self.webView.evaluateJavaScript(
+                        "window._axoOAuthCallback(null,'\(safe)')"
+                    ) { _, _ in }
+                    return
+                }
+
+                guard let callbackURL else {
+                    self.webView.evaluateJavaScript(
+                        "window._axoOAuthCallback(null,'No callback URL')"
+                    ) { _, _ in }
+                    return
+                }
+
+                let encoded = callbackURL.absoluteString
+                    .replacingOccurrences(of: "\\", with: "\\\\")
+                    .replacingOccurrences(of: "'", with: "\\'")
+                self.webView.evaluateJavaScript(
+                    "window._axoOAuthCallback('\(encoded)',null)"
+                ) { _, _ in }
+            }
+        }
+
+        session.presentationContextProvider = self
+        // false = reuse existing browser session (saved passwords / cookies)
+        session.prefersEphemeralWebBrowserSession = false
+        authSession = session
+        session.start()
+    }
+
     func loadWebApp() {
         guard let distURL = Bundle.main.url(forResource: "dist", withExtension: nil),
               let indexURL = Bundle.main.url(forResource: "index", withExtension: "html", subdirectory: "dist"),
@@ -208,13 +269,13 @@ class ViewController: UIViewController, WKNavigationDelegate {
             label.trailingAnchor.constraint(lessThanOrEqualTo: view.trailingAnchor, constant: -24)
         ])
     }
-    
+
     // Handle navigation errors
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
         showMissingAssetsMessage(details: "Navigation error: \(error.localizedDescription)")
         print("Navigation error: \(error.localizedDescription)")
     }
-    
+
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
         showMissingAssetsMessage(details: "Navigation failed: \(error.localizedDescription)")
         print("Navigation failed: \(error.localizedDescription)")
@@ -232,7 +293,7 @@ class ViewController: UIViewController, WKNavigationDelegate {
             }
         }
     }
-    
+
     // Prevent external navigation — but open mailto: and https:// links in the
     // appropriate system app (Mail / Safari) rather than blocking them silently.
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
@@ -256,16 +317,16 @@ class ViewController: UIViewController, WKNavigationDelegate {
             decisionHandler(.allow)
         }
     }
-    
+
     // Lock to portrait orientation
     override var supportedInterfaceOrientations: UIInterfaceOrientationMask {
         return .portrait
     }
-    
+
     override var prefersStatusBarHidden: Bool {
         return false
     }
-    
+
     override var preferredStatusBarStyle: UIStatusBarStyle {
         // Game background is dark blue — use light (white) status bar icons.
         return .lightContent
@@ -293,5 +354,25 @@ class ViewController: UIViewController, WKNavigationDelegate {
     deinit {
         UIApplication.shared.isIdleTimerDisabled = false
         NotificationCenter.default.removeObserver(self)
+        webView?.configuration.userContentController.removeScriptMessageHandler(forName: "axoAuth")
+    }
+}
+
+// ── ASWebAuthenticationSession presentation context ───────────────────────────
+extension ViewController: ASWebAuthenticationPresentationContextProviding {
+    func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
+        view.window ?? UIWindow()
+    }
+}
+
+// ── Weak proxy — breaks the WKUserContentController → handler retain cycle ────
+// WKUserContentController retains its message handlers strongly, which would
+// create a cycle if ViewController were registered directly. The proxy holds a
+// weak reference so ViewController can be deallocated normally.
+private class WeakScriptMessageDelegate: NSObject, WKScriptMessageHandler {
+    weak var delegate: WKScriptMessageHandler?
+    init(_ delegate: WKScriptMessageHandler) { self.delegate = delegate }
+    func userContentController(_ controller: WKUserContentController, didReceive message: WKScriptMessage) {
+        delegate?.userContentController(controller, didReceive: message)
     }
 }
