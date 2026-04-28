@@ -346,11 +346,20 @@ export default function App() {
   // name, NOT the auth username. Usernames are sign-in identifiers and may
   // include personal info; the axolotl name is the user's chosen public-facing
   // social identity, matching the friend_add notification path.
-  const handleGiftFriend = useCallback(async (friendId: string, coins: number, opals: number) => {
-    if (!user?.id || !isSupabaseConfigured) return;
-    setGameState(prev => prev ? { ...prev, totalGiftsSent: (prev.totalGiftsSent ?? 0) + 1 } : prev);
+  // Returns null on success, 'cooldown' if server-side 18h cooldown blocked
+  // the insert, or an error message otherwise. Caller (SocialModal) uses the
+  // return value to roll back the optimistic UI state and show the right
+  // copy.
+  const handleGiftFriend = useCallback(async (friendId: string, coins: number, opals: number): Promise<string | null> => {
+    if (!user?.id || !isSupabaseConfigured) return 'Not signed in';
     const senderName = gameState?.axolotl?.name ?? 'A friend';
-    await sendFriendAction(user.id, friendId, senderName, 'gift', coins, opals);
+    const result = await sendFriendAction(user.id, friendId, senderName, 'gift', coins, opals);
+    if (result === null) {
+      // Insert succeeded — only NOW increment the daily counter. Doing this
+      // before the await would inflate the counter on cooldown rejections.
+      setGameState(prev => prev ? { ...prev, totalGiftsSent: (prev.totalGiftsSent ?? 0) + 1 } : prev);
+    }
+    return result;
   }, [user, gameState?.axolotl?.name]);
 
   const handlePokeFriend = useCallback(async (friendId: string) => {

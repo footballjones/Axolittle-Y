@@ -138,7 +138,7 @@ export interface ModalManagerProps {
   onAddFriend: (code: string) => Promise<string | null>;
   onRemoveFriend: (friendId: string) => void;
   onBreed: (friendId: string) => void;
-  onGiftFriend: (friendId: string, coins: number, opals: number) => void;
+  onGiftFriend: (friendId: string, coins: number, opals: number) => Promise<string | null>;
   onPokeFriend: (friendId: string) => void;
   onSendSticker?: (friendId: string, stickerId: string) => Promise<string | null>;
   onRebirth: () => void;
@@ -591,6 +591,7 @@ function ModalManagerInner({
             onDeductEnergy={onDeductEnergy}
             onApplyReward={onMiniGameApplyReward}
             energy={gameState.energy}
+            soundEnabled={gameState.soundEnabled !== false}
           />
         )}
         {activeGame === 'axolotl-stacker' && (
@@ -599,6 +600,7 @@ function ModalManagerInner({
             onDeductEnergy={onDeductEnergy}
             onApplyReward={onMiniGameApplyReward}
             energy={gameState.energy}
+            soundEnabled={gameState.soundEnabled !== false}
           />
         )}
         {activeGame === 'coral-code' && (
@@ -607,6 +609,7 @@ function ModalManagerInner({
             onDeductEnergy={onDeductEnergy}
             onApplyReward={onMiniGameApplyReward}
             energy={gameState.energy}
+            soundEnabled={gameState.soundEnabled !== false}
           />
         )}
         {activeGame === 'fishing' && (
@@ -617,6 +620,7 @@ function ModalManagerInner({
             energy={gameState.energy}
             strength={gameState.axolotl?.secondaryStats?.strength || 0}
             speed={gameState.axolotl?.secondaryStats?.speed || 0}
+            soundEnabled={gameState.soundEnabled !== false}
           />
         )}
         {activeGame === 'bite-tag' && (
@@ -627,6 +631,7 @@ function ModalManagerInner({
             energy={gameState.energy}
             speed={gameState.axolotl?.secondaryStats?.speed || 0}
             stamina={gameState.axolotl?.secondaryStats?.stamina || 0}
+            soundEnabled={gameState.soundEnabled !== false}
           />
         )}
         {activeGame === 'tide-tiles' && (
@@ -635,6 +640,7 @@ function ModalManagerInner({
             onDeductEnergy={onDeductEnergy}
             onApplyReward={onMiniGameApplyReward}
             energy={gameState.energy}
+            soundEnabled={gameState.soundEnabled !== false}
           />
         )}
         {activeGame === 'bubble-line-up' && (
@@ -643,6 +649,7 @@ function ModalManagerInner({
             onDeductEnergy={onDeductEnergy}
             onApplyReward={onMiniGameApplyReward}
             energy={gameState.energy}
+            soundEnabled={gameState.soundEnabled !== false}
           />
         )}
       </AnimatePresence>

@@ -186,7 +186,7 @@ interface SocialModalProps {
   onBreed: (friendId: string) => void;
   /** COPPA: under-13 users see Jimmy & Chubs but cannot add friends or share codes. */
   isUnder13?: boolean;
-  onGiftFriend: (friendId: string, coins: number, opals: number) => void;
+  onGiftFriend: (friendId: string, coins: number, opals: number) => Promise<string | null>;
   onPokeFriend: (friendId: string) => void;
   onSendSticker?: (friendId: string, stickerId: string) => Promise<string | null>;
   onVisitJimmy: () => void;
@@ -862,30 +862,60 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
                                         </div>
                                       </div>
 
-                                      {/* Send Gift - full width, 10 gifts/day limit */}
+                                      {/* Send Gift - full width.
+                                          Two limits stack: a 10-per-day GLOBAL cap (across all friends)
+                                          and an 18-hour PER-FRIEND cooldown. The per-friend cooldown
+                                          mirrors the server-side RLS check on friend_notifications so
+                                          the UI accurately represents what the server will accept.
+                                          Prior bug: only the daily cap was enforced client-side, so
+                                          tapping a 2nd gift to the same friend within 18h showed
+                                          "Sent" but the server silently rejected via RLS (errcode
+                                          42501). */}
                                       {(() => {
                                         const giftsLeft = getGiftsRemaining();
                                         const isGiftLimitReached = giftsLeft === 0;
                                         const justGiftedThis = justGifted[friend.id];
+                                        const giftRemaining = getCooldownRemaining(`gift_${friend.id}`);
+                                        const isGiftOnCooldown = giftRemaining > 0;
                                         const giftLabel = justGiftedThis
                                           ? justGiftedThis.opals > 0
                                             ? `Sent ${justGiftedThis.opals} opals!`
                                             : `Sent ${justGiftedThis.coins} coins!`
                                           : isGiftLimitReached
                                             ? 'Limit reached today'
-                                            : null;
+                                            : isGiftOnCooldown
+                                              ? `Already gifted · ${formatCooldown(giftRemaining)}`
+                                              : null;
+                                        const blocked = isGiftLimitReached || isGiftOnCooldown || !!justGiftedThis;
                                         return (
                                           <motion.button
-                                            onClick={(e) => {
+                                            onClick={async (e) => {
                                               e.stopPropagation();
-                                              if (isGiftLimitReached || justGiftedThis) return;
+                                              if (blocked) return;
                                               const gift = rollGift();
-                                              onGiftFriend(friend.id, gift.coins, gift.opals);
+                                              // Optimistic UI: show "Sent" immediately. Roll back if the server
+                                              // rejects (e.g., RLS cooldown that we somehow missed locally).
+                                              setJustGifted(prev => ({ ...prev, [friend.id]: gift }));
+                                              recordCooldown(`gift_${friend.id}`);
                                               incrementGiftCount();
                                               recordFriendGift(friend.id);
                                               refreshFriendStats();
                                               track(SocialEvents.GIFT_SENT, { coins: gift.coins, opals: gift.opals });
-                                              setJustGifted(prev => ({ ...prev, [friend.id]: gift }));
+                                              const result = await onGiftFriend(friend.id, gift.coins, gift.opals);
+                                              if (result !== null) {
+                                                // Server rejected. Roll back the optimistic feedback and the
+                                                // local cooldown so the user sees an honest state. The daily
+                                                // counter rollback is handled by handleGiftFriend (it never
+                                                // increments on rejection).
+                                                setJustGifted(prev => {
+                                                  const next = { ...prev };
+                                                  delete next[friend.id];
+                                                  return next;
+                                                });
+                                                localStorage.removeItem(`gift_${friend.id}`);
+                                                setTick(t => t + 1);
+                                                return;
+                                              }
                                               setTimeout(() => {
                                                 setJustGifted(prev => {
                                                   const next = { ...prev };
@@ -899,18 +929,22 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
                                             style={{
                                               background: justGiftedThis || isGiftLimitReached
                                                 ? 'linear-gradient(135deg, rgba(134,239,172,0.45), rgba(74,222,128,0.35))'
-                                                : 'linear-gradient(135deg, rgba(99,102,241,0.18), rgba(139,92,246,0.14))',
+                                                : isGiftOnCooldown
+                                                  ? 'linear-gradient(135deg, rgba(254,240,138,0.5), rgba(253,224,71,0.35))'
+                                                  : 'linear-gradient(135deg, rgba(99,102,241,0.18), rgba(139,92,246,0.14))',
                                               border: justGiftedThis || isGiftLimitReached
                                                 ? '1px solid rgba(74,222,128,0.45)'
-                                                : '1px solid rgba(139,92,246,0.35)',
-                                              opacity: isGiftLimitReached && !justGiftedThis ? 0.6 : 1,
+                                                : isGiftOnCooldown
+                                                  ? '1px solid rgba(250,204,21,0.4)'
+                                                  : '1px solid rgba(139,92,246,0.35)',
+                                              opacity: (isGiftLimitReached || isGiftOnCooldown) && !justGiftedThis ? 0.7 : 1,
                                             }}
-                                            whileTap={justGiftedThis || isGiftLimitReached ? {} : { scale: 0.95 }}
+                                            whileTap={blocked ? {} : { scale: 0.95 }}
                                           >
-                                            {justGiftedThis || isGiftLimitReached ? <Check className="w-4 h-4 text-green-600" strokeWidth={2.5} /> : <Gift className="w-4 h-4 text-violet-600" strokeWidth={2} />}
+                                            {justGiftedThis || isGiftLimitReached ? <Check className="w-4 h-4 text-green-600" strokeWidth={2.5} /> : isGiftOnCooldown ? <Clock className="w-4 h-4 text-amber-600" strokeWidth={2.5} /> : <Gift className="w-4 h-4 text-violet-600" strokeWidth={2} />}
                                             <span
                                               className="text-[10px] font-black tracking-wide uppercase"
-                                              style={{ color: justGiftedThis || isGiftLimitReached ? '#16a34a' : '#6d28d9' }}
+                                              style={{ color: justGiftedThis || isGiftLimitReached ? '#16a34a' : isGiftOnCooldown ? '#a16207' : '#6d28d9' }}
                                             >
                                               {giftLabel ?? `Send Gift (${giftsLeft} left)`}
                                             </span>
