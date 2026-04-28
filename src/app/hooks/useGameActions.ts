@@ -800,10 +800,11 @@ export function useGameActions({
   }, []);
 
   const handleDiscardEgg = useCallback((eggId: string) => {
-    if (!window.confirm('Are you sure you want to discard this egg? This cannot be undone.')) {
-      return;
-    }
-    
+    // window.confirm() is silently ignored by iOS WKWebView (no WKUIDelegate)
+    // and Android WebView (no WebChromeClient with onJsConfirm) — taps would
+    // be no-ops. Trusting the caller to gate this with an inline confirmation
+    // step (see SocialModal.confirmingRemoveId for the established pattern).
+    // TODO: add inline confirm in EggsPanel before re-enabling a guard here.
     setGameState(prev => {
       if (!prev) return prev;
       

@@ -225,6 +225,9 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
   // Friendship-level UI state (Phase 2.1).
   const [detailPanelFriend, setDetailPanelFriend] = useState<Friend | null>(null);
   const [levelUpInfo, setLevelUpInfo] = useState<{ friend: Friend; newLevel: number } | null>(null);
+  // Inline remove-friend confirmation. window.confirm() is silently ignored
+  // by iOS WKWebView (no WKUIDelegate), so we use an in-app two-step pattern.
+  const [confirmingRemoveId, setConfirmingRemoveId] = useState<string | null>(null);
 
   // Friendship data + realtime subscription. Level-up callback fires the
   // celebration; the hook itself handles fetch + subscribe + apply-result.
@@ -915,25 +918,61 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
                                         );
                                       })()}
 
-                                      {/* Delete friend button - full width */}
-                                      <motion.button
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          if (confirm(`Remove ${friend.name} from your friends list?`)) {
-                                            onRemoveFriend(friend.id);
-                                            setExpandedFriend(null);
-                                          }
-                                        }}
-                                        className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl"
-                                        style={{
-                                          background: 'linear-gradient(135deg, rgba(254,226,226,0.6), rgba(252,165,165,0.4))',
-                                          border: '1px solid rgba(239,68,68,0.4)',
-                                        }}
-                                        whileTap={{ scale: 0.95 }}
-                                      >
-                                        <Trash2 className="w-4 h-4 text-red-500" strokeWidth={2} />
-                                        <span className="text-[10px] font-black tracking-wide uppercase text-red-600">Remove Friend</span>
-                                      </motion.button>
+                                      {/* Delete friend button — inline two-step confirm (works in
+                                          WKWebView/Android WebView where window.confirm() is silently
+                                          ignored without a host-app dialog handler). */}
+                                      {confirmingRemoveId === friend.id ? (
+                                        <div className="flex items-center gap-2">
+                                          <motion.button
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              setConfirmingRemoveId(null);
+                                            }}
+                                            className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl"
+                                            style={{
+                                              background: 'rgba(241,245,249,0.7)',
+                                              border: '1px solid rgba(148,163,184,0.45)',
+                                            }}
+                                            whileTap={{ scale: 0.95 }}
+                                          >
+                                            <span className="text-[10px] font-black tracking-wide uppercase text-slate-600">Cancel</span>
+                                          </motion.button>
+                                          <motion.button
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              onRemoveFriend(friend.id);
+                                              setConfirmingRemoveId(null);
+                                              setExpandedFriend(null);
+                                            }}
+                                            className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl"
+                                            style={{
+                                              background: 'linear-gradient(135deg, #ef4444, #dc2626)',
+                                              border: '1px solid rgba(239,68,68,0.6)',
+                                              boxShadow: '0 4px 12px -3px rgba(239,68,68,0.4)',
+                                            }}
+                                            whileTap={{ scale: 0.95 }}
+                                          >
+                                            <Trash2 className="w-3.5 h-3.5 text-white" strokeWidth={2.5} />
+                                            <span className="text-[10px] font-black tracking-wide uppercase text-white">Remove {friend.name}</span>
+                                          </motion.button>
+                                        </div>
+                                      ) : (
+                                        <motion.button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setConfirmingRemoveId(friend.id);
+                                          }}
+                                          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl"
+                                          style={{
+                                            background: 'linear-gradient(135deg, rgba(254,226,226,0.6), rgba(252,165,165,0.4))',
+                                            border: '1px solid rgba(239,68,68,0.4)',
+                                          }}
+                                          whileTap={{ scale: 0.95 }}
+                                        >
+                                          <Trash2 className="w-4 h-4 text-red-500" strokeWidth={2} />
+                                          <span className="text-[10px] font-black tracking-wide uppercase text-red-600">Remove Friend</span>
+                                        </motion.button>
+                                      )}
                                     </div>
                                   </motion.div>
                                 )}
