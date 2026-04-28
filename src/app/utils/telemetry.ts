@@ -52,6 +52,20 @@ export const SocialEvents = {
 } as const;
 
 /**
+ * Friendship-level events (Phase 2.1). Track XP grants, level-ups, and which
+ * actions actually drive the curve so we can tune pacing post-launch.
+ */
+export const FriendshipEvents = {
+  XP_AWARDED: 'friendship_xp_awarded',
+  LEVELED_UP: 'friendship_leveled_up',
+  CAP_REACHED: 'friendship_cap_reached',
+  RING_TAPPED: 'friendship_ring_tapped',
+  DETAIL_VIEWED: 'friendship_detail_viewed',
+} as const;
+
+export type FriendshipEventName = typeof FriendshipEvents[keyof typeof FriendshipEvents];
+
+/**
  * Moderation events (Phase 2.0). Required for App Store / Play Store UGC
  * compliance — the funnel data lets us measure how often players use these
  * tools and tune the UX so they're easy to reach without being noisy.

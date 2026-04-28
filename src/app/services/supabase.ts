@@ -450,6 +450,118 @@ export async function fetchBlockedIds(userId: string): Promise<string[]> {
   return rows.map(r => r.blocked_id);
 }
 
+// ─── friendship-level (Phase 2.1) ─────────────────────────────────────────────
+// One row per mutual-friend pair. Symmetric: both members see the same level.
+// XP is server-authoritative — gift/sticker fire from a postgres trigger;
+// visit/egg_gift go through the public `award_friendship_xp` RPC; breed
+// fires from the breed-completion RPC in Phase 2.2.
+
+export interface FriendshipRow {
+  pair_id: string;
+  player_a: string;
+  player_b: string;
+  level: number;
+  total_xp: number;
+  bonded_decoration_id: string | null;
+  daily_xp_count: number;
+  daily_xp_reset_date: string;
+  created_at: string;
+  last_xp_at: string;
+}
+
+export interface FriendshipXpResult {
+  pair_id: string;
+  level: number;
+  total_xp: number;
+  daily_xp_count: number;
+  leveled_up: boolean;
+  cap_reached: boolean;
+}
+
+/** Friendship-level XP curve. Total XP needed to reach each level (cumulative). */
+export const FRIENDSHIP_LEVEL_THRESHOLDS = [0, 3, 10, 25, 50, 85, 135, 200, 275, 365, 475] as const;
+
+/** Returns the XP needed to advance past the given level (the next threshold). */
+export function xpToNextFriendshipLevel(level: number): number | null {
+  if (level >= 10) return null;
+  return FRIENDSHIP_LEVEL_THRESHOLDS[level + 1];
+}
+
+/** XP within the current level (relative to the current threshold). */
+export function xpWithinFriendshipLevel(totalXp: number, level: number): number {
+  const floor = FRIENDSHIP_LEVEL_THRESHOLDS[level] ?? 0;
+  return Math.max(0, totalXp - floor);
+}
+
+/** XP span between current level and the next (denominator for the ring). */
+export function xpSpanForFriendshipLevel(level: number): number | null {
+  if (level >= 10) return null;
+  return FRIENDSHIP_LEVEL_THRESHOLDS[level + 1] - FRIENDSHIP_LEVEL_THRESHOLDS[level];
+}
+
+/** Fetches all friendships the caller is in. */
+export async function fetchFriendships(userId: string): Promise<FriendshipRow[]> {
+  if (!isSupabaseConfigured) return [];
+  const { data, error } = await supabase
+    .from('friendships')
+    .select('*')
+    .or(`player_a.eq.${userId},player_b.eq.${userId}`);
+  if (error) {
+    console.error('[fetchFriendships]', error);
+    return [];
+  }
+  return (data ?? []) as FriendshipRow[];
+}
+
+/**
+ * Awards XP for client-driven actions: 'visit' or 'egg_gift'. Other actions
+ * (gift/sticker/breed) are fired server-side and reject from this RPC.
+ *
+ * Returns the new state INCLUDING `leveled_up` (true if this call crossed a
+ * level boundary). Caller is responsible for showing the level-up moment.
+ */
+export async function awardFriendshipXp(
+  otherPlayerId: string,
+  action: 'visit' | 'egg_gift',
+): Promise<FriendshipXpResult | null> {
+  if (!isSupabaseConfigured) return null;
+  const { data, error } = await supabase.rpc('award_friendship_xp', {
+    p_other_player: otherPlayerId,
+    p_action: action,
+  });
+  if (error) {
+    console.error('[awardFriendshipXp]', error);
+    return null;
+  }
+  // RPC returns SETOF — get first row.
+  const rows = data as FriendshipXpResult[] | null;
+  if (!rows || rows.length === 0) return null;
+  return rows[0];
+}
+
+/**
+ * Subscribes to friendships changes for any pair the user is in. Fires on
+ * UPDATE (XP/level changes) and INSERT (new mutual friendship established).
+ */
+export function subscribeToFriendships(
+  userId: string,
+  onChange: (row: FriendshipRow) => void,
+) {
+  return supabase
+    .channel(`friendships-${userId}`)
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'friendships', filter: `player_a=eq.${userId}` },
+      (payload) => onChange(payload.new as FriendshipRow),
+    )
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'friendships', filter: `player_b=eq.${userId}` },
+      (payload) => onChange(payload.new as FriendshipRow),
+    )
+    .subscribe();
+}
+
 // ─── under-13 server flag (Phase 2.0c) ────────────────────────────────────────
 
 /**

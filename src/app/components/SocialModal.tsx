@@ -6,11 +6,15 @@ import { motion, AnimatePresence } from 'motion/react';
 import { GameIcon } from './icons';
 import { ALL_ACHIEVEMENTS } from '../data/achievements';
 import { ACHIEVEMENT_CATEGORIES, type AchievementCategory } from '../types/achievements';
-import { fetchPlayerAchievements, fetchFriendSnapshot, FriendSnapshot, isSupabaseConfigured, blockUser } from '../services/supabase';
+import { fetchPlayerAchievements, fetchFriendSnapshot, FriendSnapshot, isSupabaseConfigured, blockUser, awardFriendshipXp } from '../services/supabase';
 import { AquariumBackground } from './AquariumBackground';
 import { SpineAxolotl } from './SpineAxolotl';
 import { ReportUserModal } from './ReportUserModal';
-import { track, SocialEvents, ModerationEvents } from '../utils/telemetry';
+import { FriendshipRing } from './FriendshipRing';
+import { FriendshipDetailPanel } from './FriendshipDetailPanel';
+import { LevelUpCelebration } from './LevelUpCelebration';
+import { useFriendships } from '../hooks/useFriendships';
+import { track, SocialEvents, ModerationEvents, FriendshipEvents } from '../utils/telemetry';
 import { STICKERS } from '../data/stickers';
 import { recordFriendVisit, recordFriendGift, getAllFriendStats, FriendStats } from '../utils/friendStats';
 
@@ -187,9 +191,11 @@ interface SocialModalProps {
   onSendSticker?: (friendId: string, stickerId: string) => Promise<string | null>;
   onVisitJimmy: () => void;
   lineage: Axolotl[];
+  /** Authenticated user id — needed for the friendships hook and XP awarding. Hidden when null (guest). */
+  userId?: string | null;
 }
 
-export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend, onRemoveFriend, onBreed: _onBreed, onGiftFriend, onPokeFriend, onSendSticker, onVisitJimmy, lineage, isUnder13 = false }: SocialModalProps) {
+export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend, onRemoveFriend, onBreed: _onBreed, onGiftFriend, onPokeFriend, onSendSticker, onVisitJimmy, lineage, isUnder13 = false, userId = null }: SocialModalProps) {
   const [addFriendInput, setAddFriendInput] = useState('');
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<'friends' | 'lineage'>('friends');
@@ -216,6 +222,19 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
   const [showVisitOverflow, setShowVisitOverflow] = useState(false);
   // Report flow state — when set, ReportUserModal is rendered for that friend.
   const [reportingFriend, setReportingFriend] = useState<Friend | null>(null);
+  // Friendship-level UI state (Phase 2.1).
+  const [detailPanelFriend, setDetailPanelFriend] = useState<Friend | null>(null);
+  const [levelUpInfo, setLevelUpInfo] = useState<{ friend: Friend; newLevel: number } | null>(null);
+
+  // Friendship data + realtime subscription. Level-up callback fires the
+  // celebration; the hook itself handles fetch + subscribe + apply-result.
+  const { getFriendship, applyXpResult } = useFriendships({
+    userId,
+    onLevelUp: (friendId, newLevel) => {
+      const friend = friends.find(f => f.id === friendId);
+      if (friend) setLevelUpInfo({ friend, newLevel });
+    },
+  });
   // Snapshot of localStorage friend-stats. Refreshed whenever the modal mounts
   // or a friend interaction fires; rendered as small "visited 4× / gifted 2×"
   // pills on the expanded friend card.
@@ -234,7 +253,9 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Fetch friend's appearance snapshot when visiting their aquarium
+  // Fetch friend's appearance snapshot when visiting their aquarium, and
+  // award friendship XP for the visit. Skip XP for Jimmy & Chubs (preset NPC,
+  // not a real account) and when not authenticated.
   useEffect(() => {
     if (!visitingFriend) {
       setVisitSnapshot(null);
@@ -249,7 +270,29 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
     }).catch(() => {
       setVisitSnapshotLoading(false);
     });
-  }, [visitingFriend]);
+
+    // Award visit XP. Fire-and-forget — UI doesn't wait for this.
+    if (userId && visitingFriend.id !== JIMMY_CHUBS_ID && isSupabaseConfigured) {
+      const visitedFriend = visitingFriend; // capture for closure
+      awardFriendshipXp(visitedFriend.id, 'visit').then(result => {
+        if (!result) return;
+        track(FriendshipEvents.XP_AWARDED, {
+          action: 'visit',
+          new_level: result.level,
+          cap_reached: result.cap_reached,
+        });
+        applyXpResult(visitedFriend.id, {
+          level: result.level,
+          total_xp: result.total_xp,
+          daily_xp_count: result.daily_xp_count,
+        });
+        if (result.leveled_up) {
+          track(FriendshipEvents.LEVELED_UP, { new_level: result.level, source: 'visit' });
+          setLevelUpInfo({ friend: visitedFriend, newLevel: result.level });
+        }
+      });
+    }
+  }, [visitingFriend, userId, applyXpResult]);
 
   // Fetch real achievements from Supabase when viewing a friend's achievements
   useEffect(() => {
@@ -624,6 +667,26 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
                                       <span className="text-emerald-500 text-[10px] font-semibold">Online</span>
                                     </div>
                                   </div>
+
+                                  {/* Friendship ring — tappable, opens detail panel.
+                                      Only visible once a mutual friendship row exists
+                                      (i.e., the OTHER side has also added back). */}
+                                  {(() => {
+                                    const f = getFriendship(friend.id);
+                                    if (!f) return null;
+                                    return (
+                                      <div
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          track(FriendshipEvents.RING_TAPPED, { level: f.level });
+                                          setDetailPanelFriend(friend);
+                                        }}
+                                        className="cursor-pointer"
+                                      >
+                                        <FriendshipRing level={f.level} totalXp={f.total_xp} size={32} strokeWidth={3} />
+                                      </div>
+                                    );
+                                  })()}
 
                                   {/* Chevron pill */}
                                   <div
@@ -1982,6 +2045,44 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
           }}
         />
       )}
+
+      {/* Friendship detail panel — bottom sheet showing level + unlocks. */}
+      <AnimatePresence>
+        {detailPanelFriend && (() => {
+          const f = getFriendship(detailPanelFriend.id);
+          if (!f) return null;
+          const today = new Date().toISOString().slice(0, 10);
+          const capReachedToday = f.daily_xp_reset_date === today && f.daily_xp_count >= 5;
+          track(FriendshipEvents.DETAIL_VIEWED, { level: f.level });
+          return (
+            <FriendshipDetailPanel
+              friendName={detailPanelFriend.name}
+              level={f.level}
+              totalXp={f.total_xp}
+              capReachedToday={capReachedToday}
+              onClose={() => setDetailPanelFriend(null)}
+            />
+          );
+        })()}
+      </AnimatePresence>
+
+      {/* Level-up celebration — full-screen confetti when friendship crosses
+          a level boundary. Auto-dismisses after ~3.2s. */}
+      <AnimatePresence>
+        {levelUpInfo && (() => {
+          const f = getFriendship(levelUpInfo.friend.id);
+          // Use the live total_xp if available so the ring shows current state.
+          const liveTotalXp = f?.total_xp ?? 0;
+          return (
+            <LevelUpCelebration
+              friendName={levelUpInfo.friend.name}
+              newLevel={levelUpInfo.newLevel}
+              totalXp={liveTotalXp}
+              onDismiss={() => setLevelUpInfo(null)}
+            />
+          );
+        })()}
+      </AnimatePresence>
     </div>
   );
 }

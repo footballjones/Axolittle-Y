@@ -322,6 +322,7 @@ function ModalManagerInner({
           }}
           lineage={lineage}
           isUnder13={isUnder13}
+          userId={user?.id ?? null}
         />
       )}
 
