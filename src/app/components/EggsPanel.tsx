@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ChevronDown, X, Lock, Flame, Sparkles, Gem, Egg as EggIcon, Droplets, Zap, Waves, AlertTriangle, Lightbulb, Check, Clock, Package, Gift, Trash2 } from 'lucide-react';
 import { Egg, Axolotl } from '../types/game';
@@ -136,6 +136,17 @@ export function EggsPanel({
   const [eggToHatch, setEggToHatch] = useState<Egg | null>(null);
   const [showFirstConfirm, setShowFirstConfirm] = useState(false);
   const [showSecondConfirm, setShowSecondConfirm] = useState(false);
+  // Inline two-step confirm for egg discard. window.confirm() is silently
+  // ignored by iOS WKWebView, so we use a swap-the-tile pattern: tap Discard
+  // once to arm; tap Cancel to back out, or "Yes" to commit.
+  const [discardArmedEggId, setDiscardArmedEggId] = useState<string | null>(null);
+  // Disarm whenever the user closes the detail panel or switches eggs, so
+  // a stale armed state doesn't auto-trigger on the next opened egg.
+  useEffect(() => {
+    if (!selectedEgg || (discardArmedEggId && selectedEgg.egg.id !== discardArmedEggId)) {
+      setDiscardArmedEggId(null);
+    }
+  }, [selectedEgg, discardArmedEggId]);
 
   // Convert incubator egg to display format
   const incubatorDisplayEgg = useMemo(() => {
@@ -700,30 +711,64 @@ export function EggsPanel({
                     </span>
                   </motion.button>
 
-                  {/* Discard */}
-                  <motion.button
-                    onClick={() => {
-                      if (onDiscard && !isLastEggWithoutAxolotl) {
-                        onDiscard(selectedEgg.egg.id);
-                        setSelectedEgg(null);
+                  {/* Discard — inline two-step confirm. First tap arms the
+                      tile (swap to Cancel | Yes); second tap commits. */}
+                  {discardArmedEggId === selectedEgg.egg.id ? (
+                    <div className="grid grid-cols-2 gap-1.5">
+                      <motion.button
+                        onClick={() => setDiscardArmedEggId(null)}
+                        className="flex flex-col items-center justify-center gap-1 py-4 rounded-2xl"
+                        style={{
+                          background: 'linear-gradient(135deg, rgba(226,232,240,0.85) 0%, rgba(203,213,225,0.7) 100%)',
+                          border: '1px solid rgba(148,163,184,0.45)',
+                        }}
+                        whileTap={{ scale: 0.92 }}
+                      >
+                        <X className="w-5 h-5 text-slate-600" strokeWidth={2.5} />
+                        <span className="text-[10px] font-black tracking-wider uppercase text-slate-700">Cancel</span>
+                      </motion.button>
+                      <motion.button
+                        onClick={() => {
+                          if (onDiscard) onDiscard(selectedEgg.egg.id);
+                          setDiscardArmedEggId(null);
+                          setSelectedEgg(null);
+                        }}
+                        className="flex flex-col items-center justify-center gap-1 py-4 rounded-2xl"
+                        style={{
+                          background: 'linear-gradient(135deg, #ef4444, #dc2626)',
+                          border: '1px solid rgba(220,38,38,0.6)',
+                          boxShadow: '0 6px 16px -4px rgba(239,68,68,0.45)',
+                        }}
+                        whileTap={{ scale: 0.92 }}
+                      >
+                        <Trash2 className="w-5 h-5 text-white" strokeWidth={2.5} />
+                        <span className="text-[10px] font-black tracking-wider uppercase text-white">Yes</span>
+                      </motion.button>
+                    </div>
+                  ) : (
+                    <motion.button
+                      onClick={() => {
+                        if (onDiscard && !isLastEggWithoutAxolotl) {
+                          setDiscardArmedEggId(selectedEgg.egg.id);
+                        }
+                      }}
+                      className="group relative flex flex-col items-center justify-center gap-1.5 py-4 rounded-2xl overflow-hidden"
+                      style={
+                        isLastEggWithoutAxolotl
+                          ? { background: 'linear-gradient(135deg, rgba(226,232,240,0.75) 0%, rgba(203,213,225,0.6) 100%)', border: '1px solid rgba(148,163,184,0.35)' }
+                          : { background: 'linear-gradient(135deg, rgba(254,202,202,0.65) 0%, rgba(252,165,165,0.5) 100%)', border: '1px solid rgba(248,113,113,0.3)' }
                       }
-                    }}
-                    className="group relative flex flex-col items-center justify-center gap-1.5 py-4 rounded-2xl overflow-hidden"
-                    style={
-                      isLastEggWithoutAxolotl
-                        ? { background: 'linear-gradient(135deg, rgba(226,232,240,0.75) 0%, rgba(203,213,225,0.6) 100%)', border: '1px solid rgba(148,163,184,0.35)' }
-                        : { background: 'linear-gradient(135deg, rgba(254,202,202,0.65) 0%, rgba(252,165,165,0.5) 100%)', border: '1px solid rgba(248,113,113,0.3)' }
-                    }
-                    whileTap={{ scale: 0.92 }}
-                    disabled={!onDiscard || isLastEggWithoutAxolotl}
-                  >
-                    <div className="absolute inset-0 opacity-0 group-active:opacity-100 transition-opacity rounded-2xl" style={{ background: 'rgba(255,255,255,0.35)' }} />
-                    {isLastEggWithoutAxolotl ? <Lock className="w-7 h-7 text-slate-400" /> : <Trash2 className="w-7 h-7 text-red-400" />}
-                    <span className={`text-[10px] font-black tracking-wider uppercase ${isLastEggWithoutAxolotl ? 'text-slate-400' : 'text-red-500'}`}>Discard</span>
-                    <span className={`text-[9px] ${isLastEggWithoutAxolotl ? 'text-slate-400' : 'text-red-300'}`}>
-                      {isLastEggWithoutAxolotl ? 'Hatch first' : 'Cannot undo'}
-                    </span>
-                  </motion.button>
+                      whileTap={{ scale: 0.92 }}
+                      disabled={!onDiscard || isLastEggWithoutAxolotl}
+                    >
+                      <div className="absolute inset-0 opacity-0 group-active:opacity-100 transition-opacity rounded-2xl" style={{ background: 'rgba(255,255,255,0.35)' }} />
+                      {isLastEggWithoutAxolotl ? <Lock className="w-7 h-7 text-slate-400" /> : <Trash2 className="w-7 h-7 text-red-400" />}
+                      <span className={`text-[10px] font-black tracking-wider uppercase ${isLastEggWithoutAxolotl ? 'text-slate-400' : 'text-red-500'}`}>Discard</span>
+                      <span className={`text-[9px] ${isLastEggWithoutAxolotl ? 'text-slate-400' : 'text-red-300'}`}>
+                        {isLastEggWithoutAxolotl ? 'Hatch first' : 'Cannot undo'}
+                      </span>
+                    </motion.button>
+                  )}
                 </div>
               </div>
             </motion.div>
