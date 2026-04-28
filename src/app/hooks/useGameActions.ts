@@ -432,15 +432,31 @@ export function useGameActions({
       return 'Sign in to add real friends.';
     }
 
-    // Look up the code in the profiles table
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('id, username, axolotl_name, generation, stage')
-      .eq('friend_code', normalizedCode)
-      .maybeSingle();
+    // Look up the code in the profiles table. Retry once after a short delay
+    // if the first attempt finds no row — handles the race where the OTHER
+    // player has just generated their friend code but their profile-publish
+    // upsert hasn't landed yet (e.g., both players relaunching simultaneously
+    // and one player typing the code within the 1-2s window before the
+    // partner's first cloud sync writes their profile row). Without this,
+    // mutual manual adds can silently fail on whichever side typed first.
+    const lookupProfile = async () => {
+      return supabase
+        .from('profiles')
+        .select('id, username, axolotl_name, generation, stage')
+        .eq('friend_code', normalizedCode)
+        .maybeSingle();
+    };
+
+    let { data, error } = await lookupProfile();
+    if (!error && !data) {
+      // No row yet — wait briefly for the partner's profile to land.
+      await new Promise(r => setTimeout(r, 1500));
+      ({ data, error } = await lookupProfile());
+    }
 
     if (error || !data) {
-      return "That code doesn't match any player — check it and try again!";
+      track(SocialEvents.ADD_FRIEND_FAILED, { reason: 'profile_lookup_miss' });
+      return "We couldn't find that player. They might need to open their game first — try again in a moment.";
     }
 
     if (data.id === userId) {
@@ -476,6 +492,12 @@ export function useGameActions({
       lastSync: Date.now(),
     };
 
+    // Snapshot what we need from gameState BEFORE the setState updater so we
+    // can fire the friend_add notification as a proper async side-effect
+    // (not from inside a setState callback, which is incorrect React).
+    const senderFriendCode = gameState?.friendCode ?? null;
+    const senderAxolotlName = gameState?.axolotl?.name ?? 'Someone';
+
     let didAdd = false;
     let priorRealFriendCount = 0;
     setGameState(prev => {
@@ -493,15 +515,6 @@ export function useGameActions({
         time: 'now',
         read: false,
       }]);
-      // Notify the added player so they can add back
-      if (userId && prev.friendCode) {
-        sendFriendAddNotification(
-          userId,
-          data.id,
-          prev.axolotl?.name ?? 'Someone',
-          prev.friendCode,
-        ).catch(console.error);
-      }
       return withAchievements({ ...prev, friends: [...prev.friends, realFriend] });
     });
 
@@ -509,6 +522,30 @@ export function useGameActions({
       track(SocialEvents.ADD_FRIEND_SUCCEEDED, { generation: realFriend.generation, stage: realFriend.stage });
       if (priorRealFriendCount === 0) {
         trackOnce(SocialEvents.FIRST_FRIEND_ADDED, {});
+      }
+
+      // Notify the added player so they can add back. CRITICAL for the
+      // friendship-level system (Phase 2.1): the mutual-detection trigger
+      // fires on this insert and creates the friendship row when both sides
+      // have sent friend_add to each other. If this insert fails silently,
+      // the partner never sees a friend-add notification AND the friendship
+      // never activates even after they add back. We log telemetry on
+      // failure so we can detect it in production.
+      if (userId && senderFriendCode) {
+        const result = await sendFriendAddNotification(
+          userId,
+          data.id,
+          senderAxolotlName,
+          senderFriendCode,
+        );
+        if (!result.ok) {
+          track(SocialEvents.ADD_FRIEND_FAILED, { reason: 'friend_add_insert_failed' });
+        }
+      } else if (!senderFriendCode) {
+        // Local state had no friend code — friendship-level activation will
+        // be impossible until our own profile is published. Log so we can
+        // tell if this happens in the wild.
+        track(SocialEvents.ADD_FRIEND_FAILED, { reason: 'sender_friend_code_missing' });
       }
     }
 

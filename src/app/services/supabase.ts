@@ -89,21 +89,31 @@ export async function sendSticker(
 }
 
 /**
- * Notifies a user that they were added as a friend.
- * Sends a `friend_add` row so the recipient can add back.
- * Fire-and-forget — failures are non-critical.
+ * Notifies a user that they were added as a friend by inserting a
+ * `friend_add` row. The mutual-detection trigger (Phase 2.1) reads these
+ * to know when both sides have added each other and creates the friendship
+ * row at level 2 with the welcome bonus.
+ *
+ * Returns `{ ok: true }` on success or `{ ok: false, error }` on failure.
+ * Callers should treat failure as observable (log telemetry, surface to
+ * user) rather than silent — without this row, the friendship-level system
+ * never activates for the pair.
  */
 export async function sendFriendAddNotification(
   senderId: string,
   recipientId: string,
   senderName: string,
   senderFriendCode: string,
-): Promise<void> {
-  if (!isSupabaseConfigured) return;
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  if (!isSupabaseConfigured) return { ok: false, error: 'not_configured' };
   const { error } = await supabase
     .from('friend_notifications')
     .insert({ sender_id: senderId, recipient_id: recipientId, sender_name: senderName, type: 'friend_add', coins: 0, opals: 0, friend_code: senderFriendCode, applied: false });
-  if (error) console.error('[sendFriendAddNotification]', error);
+  if (error) {
+    console.error('[sendFriendAddNotification]', error);
+    return { ok: false, error: error.message };
+  }
+  return { ok: true };
 }
 
 /** Fetches all unapplied friend_notifications for a user, oldest-first. */
