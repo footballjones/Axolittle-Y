@@ -80,23 +80,33 @@ export function useCloudSync({
         { onConflict: 'player_id' },
       );
 
-      // Publish discoverable profile so other players can find this user by friend code.
-      if (!error && state.axolotl && state.friendCode) {
+      // Publish discoverable profile so other players can find this user by
+      // friend code. Gate on friendCode ONLY — not on axolotl existence —
+      // because the friend code is what other players type to add this user,
+      // and they need to find it the moment it's generated. Otherwise users
+      // mid-onboarding (have a friend code, no axolotl yet) appear in the UI
+      // but cannot be looked up: handleAddFriend's profile lookup returns
+      // "doesn't match any player" because friend_code is NULL on the server.
+      // Decoupled from `error` (game_states upsert outcome) so a transient
+      // game-state sync failure doesn't prevent profile publication.
+      if (state.friendCode) {
+        const profileRow: Record<string, unknown> = {
+          id: syncUserId,
+          friend_code: state.friendCode,
+          username: authUsername ?? state.axolotl?.name ?? null,
+        };
+        if (state.axolotl) {
+          profileRow.axolotl_name    = state.axolotl.name;
+          profileRow.generation      = state.axolotl.generation;
+          profileRow.stage           = state.axolotl.stage;
+          profileRow.axolotl_color   = state.axolotl.color;
+          profileRow.axolotl_pattern = state.axolotl.pattern;
+          profileRow.axolotl_rarity  = state.axolotl.rarity ?? 'Common';
+          profileRow.bg_color        = state.customization.background;
+          profileRow.decorations     = state.customization.decorations;
+        }
         const { error: profileError } = await supabase.from('profiles').upsert(
-          {
-            id: syncUserId,
-            username: authUsername ?? state.axolotl.name,
-            friend_code: state.friendCode,
-            axolotl_name: state.axolotl.name,
-            generation: state.axolotl.generation,
-            stage: state.axolotl.stage,
-            // Appearance — lets friends see your real axolotl when they visit
-            axolotl_color: state.axolotl.color,
-            axolotl_pattern: state.axolotl.pattern,
-            axolotl_rarity: state.axolotl.rarity ?? 'Common',
-            bg_color: state.customization.background,
-            decorations: state.customization.decorations,
-          },
+          profileRow,
           { onConflict: 'id' },
         );
 

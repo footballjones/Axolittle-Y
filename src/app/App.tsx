@@ -154,6 +154,23 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, isUnder13]);
 
+  // ── Eager profile publish on first auth (bug fix) ─────────────────────────
+  // Recovers users whose 30s debounced sync never fired (e.g., they signed
+  // up, generated a friend code, briefly used social, then closed the app
+  // before the debounce timer + tab-hide flush could fire). Without this,
+  // their profile.friend_code stays NULL forever, and other players typing
+  // their code get "doesn't match any player." Force a one-shot sync as
+  // soon as we have userId + friendCode in state.
+  useEffect(() => {
+    if (!user?.id || !isSupabaseConfigured || isUnder13) return;
+    if (!gameState?.friendCode) return;
+    const dedupeKey = `profile_published_${user.id}_${gameState.friendCode}`;
+    if (localStorage.getItem(dedupeKey)) return;
+    forcePush(gameState);
+    localStorage.setItem(dedupeKey, '1');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, gameState?.friendCode, isUnder13]);
+
   // ── Sync under-13 flag to server profile (Phase 2.0c) ─────────────────────
   // Server-side authority for COPPA-gated features (breeding, friend requests,
   // future flows). Runs once per (user, ageGateValue) pair. Idempotent —
