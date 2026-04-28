@@ -125,6 +125,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // password-recovery link. The session is valid only for changing the
       // password — we route to ResetPasswordScreen until they do.
       if (event === 'PASSWORD_RECOVERY') setIsRecovering(true);
+      // Once a real account is in play, the user is no longer a guest. Without
+      // this, the in-game sign-in overlay stays open after signup because its
+      // auto-close effect requires !isGuest.
+      if (event === 'SIGNED_IN') {
+        localStorage.removeItem(GUEST_KEY);
+        setIsGuest(false);
+      }
       // Sign-out clears any leftover recovery flag.
       if (event === 'SIGNED_OUT') setIsRecovering(false);
     });

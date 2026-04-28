@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from '../context/AuthContext';
 import { ForgotPasswordModal } from './ForgotPasswordModal';
@@ -52,6 +52,11 @@ export function LoginScreen({ onClose }: LoginScreenProps = {}) {
   const [oauthLoading, setOauthLoading] = useState<'google' | 'apple' | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showForgot, setShowForgot] = useState(false);
+  // Synchronous guard against double-tap. setLoading(true) doesn't propagate
+  // before a fast second tap fires, so the disabled prop on the button isn't
+  // enough — without this, the second tap creates the account and the third
+  // hits "user already exists" and surfaces a misleading error.
+  const submittingRef = useRef(false);
 
   const resetForm = (nextView: View) => {
     setUsername('');
@@ -62,6 +67,7 @@ export function LoginScreen({ onClose }: LoginScreenProps = {}) {
   };
 
   const handleSignIn = async () => {
+    if (submittingRef.current) return;
     if (!isValidUsername(username.trim())) {
       setError('Username must be 3–20 characters: letters, numbers or underscores only.');
       return;
@@ -70,16 +76,20 @@ export function LoginScreen({ onClose }: LoginScreenProps = {}) {
       setError('Password must be at least 8 characters and include a letter and a number.');
       return;
     }
+    submittingRef.current = true;
     setLoading(true);
     setError(null);
-    const { error } = await signIn(username.trim(), password);
-    setLoading(false);
-    if (error) {
-      setError(error);
+    try {
+      const { error } = await signIn(username.trim(), password);
+      if (error) setError(error);
+    } finally {
+      submittingRef.current = false;
+      setLoading(false);
     }
   };
 
   const handleSignUp = async () => {
+    if (submittingRef.current) return;
     if (!isValidUsername(username.trim())) {
       setError('Username must be 3–20 characters: letters, numbers or underscores only.');
       return;
@@ -88,16 +98,19 @@ export function LoginScreen({ onClose }: LoginScreenProps = {}) {
       setError('Password must be at least 8 characters and include a letter and a number.');
       return;
     }
+    submittingRef.current = true;
     setLoading(true);
     setError(null);
-    const { error } = await signUp(
-      username.trim(),
-      password,
-      recoveryEmail.trim() || undefined,
-    );
-    setLoading(false);
-    if (error) {
-      setError(error);
+    try {
+      const { error } = await signUp(
+        username.trim(),
+        password,
+        recoveryEmail.trim() || undefined,
+      );
+      if (error) setError(error);
+    } finally {
+      submittingRef.current = false;
+      setLoading(false);
     }
   };
 
