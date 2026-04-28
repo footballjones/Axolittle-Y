@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { motion } from 'motion/react';
 import { SpineAxolotl } from './SpineAxolotl';
+import { isNameBanned } from '../utils/contentModeration';
+import { track } from '../utils/telemetry';
 
 interface Props {
   onComplete: (name: string) => void;
@@ -8,10 +10,17 @@ interface Props {
 
 export function NamingScreen({ onComplete }: Props) {
   const [name, setName] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = () => {
     const trimmed = name.trim();
     if (!trimmed) return;
+    if (isNameBanned(trimmed)) {
+      setError('Pick a different name — try something fun!');
+      track('axolotl_name_blocked_client', { length: trimmed.length });
+      return;
+    }
+    setError(null);
     onComplete(trimmed);
   };
 
@@ -85,17 +94,21 @@ export function NamingScreen({ onComplete }: Props) {
         <input
           type="text"
           value={name}
-          onChange={e => setName(e.target.value)}
+          onChange={e => { setName(e.target.value); if (error) setError(null); }}
           placeholder="Enter a name..."
           maxLength={20}
-          className="w-full rounded-xl px-4 py-3.5 text-white placeholder-white/30 focus:outline-none mb-4"
+          className="w-full rounded-xl px-4 py-3.5 text-white placeholder-white/30 focus:outline-none mb-2"
           style={{
             background: 'rgba(255,255,255,0.08)',
-            border: '1.5px solid rgba(167,139,250,0.35)',
+            border: error ? '1.5px solid rgba(248,113,113,0.6)' : '1.5px solid rgba(167,139,250,0.35)',
           }}
           onKeyDown={e => e.key === 'Enter' && handleSubmit()}
           autoFocus
         />
+        {error && (
+          <p className="text-rose-300/90 text-[12px] text-center mb-3 font-medium" role="alert">{error}</p>
+        )}
+        {!error && <div className="mb-2" />}
         <motion.button
           onClick={handleSubmit}
           disabled={!name.trim()}

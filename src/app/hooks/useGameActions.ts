@@ -17,6 +17,7 @@ import { GameNotification } from '../data/notifications';
 import { GameResult } from '../minigames/types';
 import { checkAchievements, ALL_ACHIEVEMENTS } from '../data/achievements';
 import { supabase, isSupabaseConfigured, pushAchievements, sendFriendAddNotification } from '../services/supabase';
+import { track, trackOnce, SocialEvents } from '../utils/telemetry';
 
 interface UseGameActionsProps {
   gameState: GameState | null;
@@ -456,10 +457,15 @@ export function useGameActions({
       lastSync: Date.now(),
     };
 
+    let didAdd = false;
+    let priorRealFriendCount = 0;
     setGameState(prev => {
       if (!prev) return prev;
       // Race-condition guard: check again inside the updater
       if (prev.friends.some(f => f.friendCode === normalizedCode)) return prev;
+      didAdd = true;
+      // Real friends = anyone with a friendCode (excludes Jimmy & Chubs preset).
+      priorRealFriendCount = prev.friends.filter(f => !!f.friendCode).length;
       setNotifications(n => [...n, {
         id: `notif-${Date.now()}`,
         type: 'friend',
@@ -479,6 +485,13 @@ export function useGameActions({
       }
       return withAchievements({ ...prev, friends: [...prev.friends, realFriend] });
     });
+
+    if (didAdd) {
+      track(SocialEvents.ADD_FRIEND_SUCCEEDED, { generation: realFriend.generation, stage: realFriend.stage });
+      if (priorRealFriendCount === 0) {
+        trackOnce(SocialEvents.FIRST_FRIEND_ADDED, {});
+      }
+    }
 
     return null; // success
   }, [gameState, userId, setGameState, setNotifications]);

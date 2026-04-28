@@ -195,3 +195,126 @@ export function subscribeToFriendNotifications(
     )
     .subscribe();
 }
+
+// ─── friend_requests helpers ──────────────────────────────────────────────────
+// Generic two-party handshake infra. `request_type` distinguishes friend vs.
+// breed vs. decoration_trade so future flows reuse the same table and RPCs.
+
+export type FriendRequestType = 'friend' | 'breed' | 'decoration_trade';
+export type FriendRequestStatus = 'pending' | 'accepted' | 'declined' | 'cancelled';
+
+export interface FriendRequestRow {
+  id: string;
+  sender_id: string;
+  recipient_id: string;
+  request_type: FriendRequestType;
+  payload: Record<string, unknown> | null;
+  status: FriendRequestStatus;
+  created_at: string;
+  responded_at: string | null;
+}
+
+export type SendRequestResult =
+  | { ok: true; id: string }
+  | { ok: false; reason: 'unauthenticated' | 'self_request' | 'duplicate' | 'invalid_type' | 'not_configured' | 'unknown'; message?: string };
+
+/**
+ * Creates a pending friend_request row from the caller to the recipient.
+ * Errors are translated from PG codes raised in send_friend_request().
+ */
+export async function sendFriendRequest(
+  recipientId: string,
+  requestType: FriendRequestType,
+  payload: Record<string, unknown> | null = null,
+): Promise<SendRequestResult> {
+  if (!isSupabaseConfigured) return { ok: false, reason: 'not_configured' };
+
+  const { data, error } = await supabase.rpc('send_friend_request', {
+    p_recipient_id: recipientId,
+    p_request_type: requestType,
+    p_payload: payload,
+  });
+
+  if (error) {
+    if (error.code === '42501') return { ok: false, reason: 'unauthenticated', message: error.message };
+    if (error.code === 'P0001') return { ok: false, reason: 'self_request', message: error.message };
+    if (error.code === 'P0002') return { ok: false, reason: 'duplicate', message: error.message };
+    if (error.code === '22023') return { ok: false, reason: 'invalid_type', message: error.message };
+    console.error('[sendFriendRequest]', error);
+    return { ok: false, reason: 'unknown', message: error.message };
+  }
+  return { ok: true, id: data as string };
+}
+
+export type RespondResult =
+  | { ok: true; status: 'accepted' | 'declined' }
+  | { ok: false; reason: 'unauthenticated' | 'not_found' | 'already_responded' | 'not_recipient' | 'not_configured' | 'unknown'; message?: string };
+
+/** Recipient accepts or declines a pending request. */
+export async function respondToFriendRequest(
+  requestId: string,
+  accept: boolean,
+): Promise<RespondResult> {
+  if (!isSupabaseConfigured) return { ok: false, reason: 'not_configured' };
+
+  const { data, error } = await supabase.rpc('respond_to_friend_request', {
+    p_request_id: requestId,
+    p_accept: accept,
+  });
+
+  if (error) {
+    if (error.code === '42501') {
+      return { ok: false, reason: error.message?.includes('Not your request') ? 'not_recipient' : 'unauthenticated', message: error.message };
+    }
+    if (error.code === 'P0001') return { ok: false, reason: 'not_found', message: error.message };
+    if (error.code === 'P0002') return { ok: false, reason: 'already_responded', message: error.message };
+    console.error('[respondToFriendRequest]', error);
+    return { ok: false, reason: 'unknown', message: error.message };
+  }
+  return { ok: true, status: data as 'accepted' | 'declined' };
+}
+
+/** Sender withdraws a pending request. */
+export async function cancelFriendRequest(requestId: string): Promise<{ ok: boolean; message?: string }> {
+  if (!isSupabaseConfigured) return { ok: false, message: 'not configured' };
+  const { error } = await supabase.rpc('cancel_friend_request', { p_request_id: requestId });
+  if (error) {
+    console.error('[cancelFriendRequest]', error);
+    return { ok: false, message: error.message };
+  }
+  return { ok: true };
+}
+
+/** Pending requests where the user is sender OR recipient. */
+export async function fetchPendingFriendRequests(userId: string): Promise<FriendRequestRow[]> {
+  if (!isSupabaseConfigured) return [];
+  const { data, error } = await supabase
+    .from('friend_requests')
+    .select('*')
+    .or(`sender_id.eq.${userId},recipient_id.eq.${userId}`)
+    .eq('status', 'pending')
+    .order('created_at', { ascending: false });
+  if (error) {
+    console.error('[fetchPendingFriendRequests]', error);
+    return [];
+  }
+  return (data ?? []) as FriendRequestRow[];
+}
+
+/**
+ * Subscribes to new friend_requests rows where the user is the recipient.
+ * Use for showing toast / unread count when an incoming request arrives.
+ */
+export function subscribeToFriendRequests(
+  userId: string,
+  onNew: (row: FriendRequestRow) => void,
+) {
+  return supabase
+    .channel(`friend-requests-${userId}`)
+    .on(
+      'postgres_changes',
+      { event: 'INSERT', schema: 'public', table: 'friend_requests', filter: `recipient_id=eq.${userId}` },
+      (payload) => onNew(payload.new as FriendRequestRow),
+    )
+    .subscribe();
+}

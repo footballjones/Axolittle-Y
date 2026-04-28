@@ -9,6 +9,7 @@ import { ACHIEVEMENT_CATEGORIES, type AchievementCategory } from '../types/achie
 import { fetchPlayerAchievements, fetchFriendSnapshot, FriendSnapshot, isSupabaseConfigured } from '../services/supabase';
 import { AquariumBackground } from './AquariumBackground';
 import { SpineAxolotl } from './SpineAxolotl';
+import { track, SocialEvents } from '../utils/telemetry';
 
 interface GiftResult {
   coins: number;
@@ -197,6 +198,12 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
     return () => clearInterval(id);
   }, []);
 
+  // Modal-open telemetry — emits once per mount.
+  useEffect(() => {
+    track(SocialEvents.FRIEND_CODE_VIEWED, { friend_count: friends.length, under_13: isUnder13 });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Fetch friend's appearance snapshot when visiting their aquarium
   useEffect(() => {
     if (!visitingFriend) {
@@ -261,6 +268,7 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
   const copyCode = () => {
     navigator.clipboard.writeText(myCode);
     setCopied(true);
+    track(SocialEvents.FRIEND_CODE_COPIED, {});
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -268,14 +276,18 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
     if (!addFriendInput.trim() || addFriendLoading) return;
     setAddFriendLoading(true);
     setAddFriendError(null);
+    track(SocialEvents.ADD_FRIEND_ATTEMPTED, { input_length: addFriendInput.trim().length });
     const error = await onAddFriend(addFriendInput.trim());
     setAddFriendLoading(false);
     if (error) {
       setAddFriendError(error);
+      track(SocialEvents.ADD_FRIEND_FAILED, { reason: error.slice(0, 40) });
     } else {
       setAddFriendInput('');
       setAddFriendError(null);
       setShowAddFriendModal(false);
+      // Success telemetry is emitted by the handler in useGameActions so we
+      // capture both code-add and any future paths consistently.
     }
   };
 
@@ -389,7 +401,7 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
                       </div>
                       {!isUnder13 && (
                         <motion.button
-                          onClick={() => setShowAddFriendModal(true)}
+                          onClick={() => { setShowAddFriendModal(true); track(SocialEvents.ADD_FRIEND_OPENED, {}); }}
                           className="rounded-full p-1.5 active:scale-90 flex-shrink-0"
                           style={{
                             background: 'linear-gradient(135deg, rgba(167,139,250,0.5), rgba(139,92,246,0.4))',
@@ -600,7 +612,11 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
                                       {/* Action tiles — row 1: Visit + Stats + Achievements */}
                                       <div className="grid grid-cols-3 gap-2 mb-2">
                                         <motion.button
-                                          onClick={(e) => { e.stopPropagation(); setVisitingFriend(friend); }}
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setVisitingFriend(friend);
+                                            track(SocialEvents.FRIEND_VISITED, { stage: friend.stage, generation: friend.generation });
+                                          }}
                                           className="flex flex-col items-center justify-center gap-1 py-3 rounded-xl"
                                           style={{
                                             background: 'linear-gradient(135deg, rgba(14,165,233,0.18), rgba(6,182,212,0.14))',
@@ -653,6 +669,7 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
                                                 recordCooldown(`poke_${friend.id}`);
                                                 setJustPoked(prev => { const next = new Set(prev); next.add(friend.id); return next; });
                                                 onPokeFriend(friend.id);
+                                                track(SocialEvents.POKE_SENT, {});
                                                 setTimeout(() => {
                                                   setJustPoked(prev => { const next = new Set(prev); next.delete(friend.id); return next; });
                                                   setTick(t => t + 1);
@@ -714,6 +731,7 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
                                               const gift = rollGift();
                                               onGiftFriend(friend.id, gift.coins, gift.opals);
                                               incrementGiftCount();
+                                              track(SocialEvents.GIFT_SENT, { coins: gift.coins, opals: gift.opals });
                                               setJustGifted(prev => ({ ...prev, [friend.id]: gift }));
                                               setTimeout(() => {
                                                 setJustGifted(prev => {

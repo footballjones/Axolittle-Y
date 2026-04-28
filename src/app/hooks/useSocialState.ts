@@ -7,6 +7,7 @@ import {
   markNotificationApplied,
   subscribeToFriendNotifications,
 } from '../services/supabase';
+import { track, SocialEvents } from '../utils/telemetry';
 
 interface UseSocialStateOptions {
   userId: string | null;
@@ -71,6 +72,7 @@ export function useSocialState({ userId, onApplyGiftReward }: UseSocialStateOpti
 
     if (row.type === 'gift' && (row.coins > 0 || row.opals > 0)) {
       onApplyGiftReward(row.coins, row.opals);
+      track(SocialEvents.GIFT_RECEIVED, { coins: row.coins, opals: row.opals });
     }
 
     if (row.type === 'poke') {
