@@ -51,6 +51,30 @@ export const SocialEvents = {
   FRIEND_REQUEST_DECLINED: 'friend_request_declined',
 } as const;
 
+/**
+ * Moderation events (Phase 2.0). Required for App Store / Play Store UGC
+ * compliance — the funnel data lets us measure how often players use these
+ * tools and tune the UX so they're easy to reach without being noisy.
+ */
+export const ModerationEvents = {
+  // Report flow
+  REPORT_OPENED: 'report_opened',
+  REPORT_SUBMITTED: 'report_submitted',
+  REPORT_FAILED: 'report_failed',
+
+  // Block flow
+  USER_BLOCKED: 'user_blocked',
+  USER_UNBLOCKED: 'user_unblocked',
+
+  // Server-side name moderation outcomes
+  AXOLOTL_NAME_REJECTED_SERVER: 'axolotl_name_rejected_server',
+
+  // Under-13 sync
+  UNDER13_FLAG_SET: 'under13_flag_set',
+} as const;
+
+export type ModerationEventName = typeof ModerationEvents[keyof typeof ModerationEvents];
+
 export type SocialEventName = typeof SocialEvents[keyof typeof SocialEvents];
 
 export function track(event: string, props: EventProps = {}): void {

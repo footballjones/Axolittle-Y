@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { X, Volume2, VolumeX, Bell, BellOff, Trash2, LogOut, LogIn, User, Shield, Mail } from 'lucide-react';
+import { X, Volume2, VolumeX, Bell, BellOff, Trash2, LogOut, LogIn, User, Shield, Mail, ShieldOff, ChevronRight } from 'lucide-react';
 import { motion } from 'motion/react';
+import { BlockedUsersScreen } from './BlockedUsersScreen';
 
 interface SettingsModalProps {
   onClose: () => void;
@@ -20,6 +21,8 @@ interface SettingsModalProps {
    * 5.1.1(v) for any app that allows account creation.
    */
   onDeleteAccount?: () => Promise<{ error: string | null }>;
+  /** Authenticated user id — needed to render the Blocked Players screen. Hidden when null. */
+  userId?: string | null;
 }
 
 // Move ToggleSwitch outside component to prevent recreation on every render
@@ -51,6 +54,7 @@ export function SettingsModal({
   onSignOut,
   onSignIn,
   onDeleteAccount,
+  userId,
 }: SettingsModalProps) {
   const [soundEnabled, setSoundEnabled] = useState(initialSoundEnabled);
   const [musicEnabled, setMusicEnabled] = useState(initialMusicEnabled);
@@ -58,6 +62,7 @@ export function SettingsModal({
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [showDeleteAcctConfirm, setShowDeleteAcctConfirm] = useState(false);
   const [deletingAcct, setDeletingAcct] = useState(false);
+  const [showBlockedUsers, setShowBlockedUsers] = useState(false);
   const [deleteAcctError, setDeleteAcctError] = useState<string | null>(null);
   const isSignedIn = !isGuest && !!username;
 
@@ -352,10 +357,22 @@ export function SettingsModal({
               </div>
             </div>
 
-            {/* Legal Section */}
+            {/* Safety Section — Blocked Players, Privacy, Support */}
             <div>
-              <h3 className="text-white/50 text-xs font-semibold uppercase tracking-wider mb-2">Legal</h3>
+              <h3 className="text-white/50 text-xs font-semibold uppercase tracking-wider mb-2">Safety &amp; Legal</h3>
               <div className="space-y-1">
+                {userId && !isUnder13 && (
+                  <button
+                    onClick={() => setShowBlockedUsers(true)}
+                    className="w-full flex items-center justify-between bg-white/5 hover:bg-white/10 rounded-xl px-4 py-3 border border-white/5 transition-colors text-left"
+                  >
+                    <div className="flex items-center gap-3">
+                      <ShieldOff className="w-4 h-4 text-rose-300" />
+                      <span className="text-white text-sm">Blocked Players</span>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-white/30" />
+                  </button>
+                )}
                 <a
                   href="https://www.uomalabs.com/axolittle/privacy"
                   target="_blank"
@@ -380,6 +397,11 @@ export function SettingsModal({
                 </a>
               </div>
             </div>
+
+            {/* Blocked Users Screen — full-screen overlay rendered on top of Settings */}
+            {showBlockedUsers && userId && (
+              <BlockedUsersScreen userId={userId} onClose={() => setShowBlockedUsers(false)} />
+            )}
 
             {/* Version info */}
             <div className="text-center pt-2">

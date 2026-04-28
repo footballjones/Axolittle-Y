@@ -1,15 +1,16 @@
 import { useState, useEffect, useRef } from 'react';
-import { X, Users, Copy, Check, ChevronDown, Heart, Waves, Plus, Leaf, Sparkles, ChevronRight, Gift, Trash2, BarChart2, Egg, Crown, Sprout, Dumbbell, Droplets, Clock, Fish, Trophy, Lock, ArrowLeft, Loader2, Zap, Brain, Wind, Shield } from 'lucide-react';
+import { X, Users, Copy, Check, ChevronDown, Heart, Waves, Plus, Leaf, Sparkles, ChevronRight, Gift, Trash2, BarChart2, Egg, Crown, Sprout, Dumbbell, Droplets, Clock, Fish, Trophy, Lock, ArrowLeft, Loader2, Zap, Brain, Wind, Shield, MoreVertical, Flag, ShieldOff } from 'lucide-react';
 import { Axolotl, Friend } from '../types/game';
 import { calculateLevel } from '../utils/gameLogic';
 import { motion, AnimatePresence } from 'motion/react';
 import { GameIcon } from './icons';
 import { ALL_ACHIEVEMENTS } from '../data/achievements';
 import { ACHIEVEMENT_CATEGORIES, type AchievementCategory } from '../types/achievements';
-import { fetchPlayerAchievements, fetchFriendSnapshot, FriendSnapshot, isSupabaseConfigured } from '../services/supabase';
+import { fetchPlayerAchievements, fetchFriendSnapshot, FriendSnapshot, isSupabaseConfigured, blockUser } from '../services/supabase';
 import { AquariumBackground } from './AquariumBackground';
 import { SpineAxolotl } from './SpineAxolotl';
-import { track, SocialEvents } from '../utils/telemetry';
+import { ReportUserModal } from './ReportUserModal';
+import { track, SocialEvents, ModerationEvents } from '../utils/telemetry';
 import { STICKERS } from '../data/stickers';
 import { recordFriendVisit, recordFriendGift, getAllFriendStats, FriendStats } from '../utils/friendStats';
 
@@ -211,6 +212,10 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
   // visit. Cleared when leaving the visit overlay. Prevents accidental
   // double-taps; there is no real cooldown (stickers are designed to be light).
   const [justSentStickers, setJustSentStickers] = useState<Set<string>>(new Set());
+  // Visit-overlay overflow menu (Report / Block actions). Closed by default.
+  const [showVisitOverflow, setShowVisitOverflow] = useState(false);
+  // Report flow state — when set, ReportUserModal is rendered for that friend.
+  const [reportingFriend, setReportingFriend] = useState<Friend | null>(null);
   // Snapshot of localStorage friend-stats. Refreshed whenever the modal mounts
   // or a friend interaction fires; rendered as small "visited 4× / gifted 2×"
   // pills on the expanded friend card.
@@ -1191,6 +1196,71 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
                   Gen {visitingFriend.generation}
                 </span>
               </div>
+
+              {/* Overflow menu — Report / Block. App Store Guideline 1.2 requires
+                  a moderation affordance reachable from any UGC surface. */}
+              {!isUnder13 && visitingFriend.id !== JIMMY_CHUBS_ID && (
+                <div className="relative flex-shrink-0 ml-1">
+                  <motion.button
+                    onClick={() => setShowVisitOverflow(prev => !prev)}
+                    whileTap={{ scale: 0.9 }}
+                    className="flex items-center justify-center w-9 h-9 rounded-full"
+                    style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)' }}
+                    aria-label="More options"
+                  >
+                    <MoreVertical className="w-4 h-4 text-white/70" strokeWidth={2.5} />
+                  </motion.button>
+
+                  <AnimatePresence>
+                    {showVisitOverflow && (
+                      <>
+                        {/* Click-outside backdrop */}
+                        <div className="fixed inset-0 z-[5]" onClick={() => setShowVisitOverflow(false)} />
+                        <motion.div
+                          initial={{ opacity: 0, y: -6, scale: 0.95 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: -6, scale: 0.95 }}
+                          transition={{ duration: 0.15 }}
+                          className="absolute right-0 top-full mt-1 z-10 w-44 rounded-xl overflow-hidden"
+                          style={{
+                            background: 'rgba(15,32,53,0.97)',
+                            border: '1px solid rgba(255,255,255,0.12)',
+                            boxShadow: '0 12px 28px -6px rgba(0,0,0,0.5)',
+                          }}
+                        >
+                          <button
+                            onClick={() => {
+                              setShowVisitOverflow(false);
+                              setReportingFriend(visitingFriend);
+                              track(ModerationEvents.REPORT_OPENED, { context: 'visit' });
+                            }}
+                            className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-left active:bg-white/10"
+                          >
+                            <Flag className="w-4 h-4 text-amber-400" strokeWidth={2.5} />
+                            <span className="text-white text-[12px] font-bold">Report player</span>
+                          </button>
+                          <div className="h-px bg-white/8" />
+                          <button
+                            onClick={async () => {
+                              setShowVisitOverflow(false);
+                              const result = await blockUser(visitingFriend.id);
+                              if (result.ok) {
+                                track(ModerationEvents.USER_BLOCKED, { context: 'visit' });
+                                onRemoveFriend(visitingFriend.id);
+                                setVisitingFriend(null);
+                              }
+                            }}
+                            className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-left active:bg-white/10"
+                          >
+                            <ShieldOff className="w-4 h-4 text-rose-400" strokeWidth={2.5} />
+                            <span className="text-white text-[12px] font-bold">Block player</span>
+                          </button>
+                        </motion.div>
+                      </>
+                    )}
+                  </AnimatePresence>
+                </div>
+              )}
             </div>
 
             {/* Aquarium body — horizontally scrollable */}
@@ -1894,6 +1964,24 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Report flow — rendered above all other overlays so it stacks correctly. */}
+      {reportingFriend && (
+        <ReportUserModal
+          reportedUserId={reportingFriend.id}
+          reportedDisplayName={reportingFriend.name}
+          context="visit"
+          contextMetadata={{ axolotl_name: reportingFriend.axolotlName }}
+          onClose={() => setReportingFriend(null)}
+          onBlocked={() => {
+            // Block from inside the report flow → drop them locally and close
+            // any open visit. Server-side block was already done by the modal.
+            const blockedId = reportingFriend.id;
+            onRemoveFriend(blockedId);
+            if (visitingFriend?.id === blockedId) setVisitingFriend(null);
+          }}
+        />
+      )}
     </div>
   );
 }

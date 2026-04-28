@@ -391,6 +391,7 @@ function ModalManagerInner({
             setGameState(prev => prev ? { ...prev, soundEnabled: enabled } : null);
           }}
           username={user?.user_metadata?.username ?? user?.email?.split('@')[0] ?? null}
+          userId={user?.id ?? null}
           isGuest={isGuest || !user}
           isUnder13={isUnder13}
           onSignOut={async () => {

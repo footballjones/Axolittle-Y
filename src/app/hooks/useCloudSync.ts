@@ -108,6 +108,28 @@ export function useCloudSync({
         ) {
           onFriendCodeCollision?.();
         }
+
+        // Phase 2.0: server rejected the axolotl name via the hard-reject
+        // moderation trigger (errcode 23514). The client-side filter in
+        // NamingScreen catches the obvious cases up front; this branch is the
+        // backstop for tampered clients or denylist additions made after the
+        // axolotl was hatched. We log + emit telemetry but don't block the
+        // game-state sync — the player keeps their local name; only their
+        // public profile row stays unwritten until they pick a clean name.
+        if (
+          profileError &&
+          profileError.code === '23514' &&
+          profileError.message?.toLowerCase().includes('axolotl_name')
+        ) {
+          console.warn('[CloudSync] Profile not published — axolotl name failed server moderation.');
+          // Telemetry import is light; we inline-emit instead of importing to
+          // avoid adding a hook dependency just for this rare branch.
+          try {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (window as any)._axoNameRejectedAt = Date.now();
+            console.info('[telemetry] axolotl_name_rejected_server', {});
+          } catch { /* noop */ }
+        }
       }
 
       return !error;

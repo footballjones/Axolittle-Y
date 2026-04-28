@@ -447,6 +447,25 @@ export function useGameActions({
       return "That's your own code — share it with a friend instead!";
     }
 
+    // Reject if either side has the other blocked. We check both directions:
+    //   • You blocked them → they shouldn't be re-addable.
+    //   • They blocked you → you shouldn't be able to add them. Surfaced as
+    //     a generic "code doesn't match" so the blocker isn't tipped off.
+    const { data: blockRows } = await supabase
+      .from('user_blocks')
+      .select('blocker_id, blocked_id')
+      .or(`and(blocker_id.eq.${userId},blocked_id.eq.${data.id}),and(blocker_id.eq.${data.id},blocked_id.eq.${userId})`)
+      .limit(1);
+    if (blockRows && blockRows.length > 0) {
+      // Determine direction so we give the right copy.
+      const youBlockedThem = blockRows.some(r => r.blocker_id === userId);
+      if (youBlockedThem) {
+        return "You blocked this player. Unblock them in Settings first.";
+      }
+      // They blocked us — opaque message, don't reveal.
+      return "That code doesn't match any player — check it and try again!";
+    }
+
     const realFriend: Friend = {
       id: data.id,
       friendCode: normalizedCode,

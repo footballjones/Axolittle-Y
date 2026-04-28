@@ -343,3 +343,126 @@ export function subscribeToFriendRequests(
     )
     .subscribe();
 }
+
+// ─── moderation helpers (Phase 2.0) ───────────────────────────────────────────
+// Report queue and user blocks. Required by Apple Guideline 1.2 / Google Play
+// UGC policy for any feature that exposes user-generated content. The Phase
+// 2.0 migration suite defines the server-side schema + RPCs; everything here
+// is the client surface.
+
+export type ReportReason = 'inappropriate_name' | 'harassment' | 'other';
+export type ReportContext = 'visit' | 'breed_request' | 'gift' | 'sticker' | 'friend_card' | 'other';
+
+export type SubmitReportResult =
+  | { ok: true; id: string }
+  | { ok: false; reason: 'unauthenticated' | 'self_report' | 'duplicate' | 'invalid' | 'not_configured' | 'unknown'; message?: string };
+
+/**
+ * Submits a report. Server enforces 1-per-(reporter,reported,reason) per 24h.
+ */
+export async function submitReport(
+  reportedId: string,
+  reason: ReportReason,
+  context: ReportContext | null = null,
+  contextMetadata: Record<string, unknown> | null = null,
+  notes: string | null = null,
+): Promise<SubmitReportResult> {
+  if (!isSupabaseConfigured) return { ok: false, reason: 'not_configured' };
+
+  const { data, error } = await supabase.rpc('submit_report', {
+    p_reported_id: reportedId,
+    p_reason: reason,
+    p_context: context,
+    p_context_metadata: contextMetadata,
+    p_notes: notes,
+  });
+
+  if (error) {
+    if (error.code === '42501') return { ok: false, reason: 'unauthenticated', message: error.message };
+    if (error.code === 'P0001') return { ok: false, reason: 'self_report', message: error.message };
+    if (error.code === 'P0002') return { ok: false, reason: 'duplicate', message: error.message };
+    if (error.code === '22023') return { ok: false, reason: 'invalid', message: error.message };
+    console.error('[submitReport]', error);
+    return { ok: false, reason: 'unknown', message: error.message };
+  }
+  return { ok: true, id: data as string };
+}
+
+/** Idempotent — re-blocking is fine. */
+export async function blockUser(targetId: string): Promise<{ ok: boolean; message?: string }> {
+  if (!isSupabaseConfigured) return { ok: false, message: 'not configured' };
+  const { error } = await supabase.rpc('block_user', { p_target_id: targetId });
+  if (error) {
+    console.error('[blockUser]', error);
+    return { ok: false, message: error.message };
+  }
+  return { ok: true };
+}
+
+/** Idempotent — no error if not currently blocked. */
+export async function unblockUser(targetId: string): Promise<{ ok: boolean; message?: string }> {
+  if (!isSupabaseConfigured) return { ok: false, message: 'not configured' };
+  const { error } = await supabase.rpc('unblock_user', { p_target_id: targetId });
+  if (error) {
+    console.error('[unblockUser]', error);
+    return { ok: false, message: error.message };
+  }
+  return { ok: true };
+}
+
+export interface BlockedUserRow {
+  blocked_id: string;
+  created_at: string;
+}
+
+/** Returns the list of users this caller has blocked. */
+export async function fetchBlockedUsers(userId: string): Promise<BlockedUserRow[]> {
+  if (!isSupabaseConfigured) return [];
+  const { data, error } = await supabase
+    .from('user_blocks')
+    .select('blocked_id, created_at')
+    .eq('blocker_id', userId)
+    .order('created_at', { ascending: false });
+  if (error) {
+    console.error('[fetchBlockedUsers]', error);
+    return [];
+  }
+  return (data ?? []) as BlockedUserRow[];
+}
+
+/**
+ * Convenience: returns just the IDs of users who block-related the caller in
+ * either direction (blocks made by them, OR blocks made against them).
+ * Used to filter out blocked users from friend lookups and visit snapshots.
+ *
+ * Note: a player can only see blocks where they are the blocker (RLS), so
+ * this returns IDs of users they have blocked. Symmetric enforcement (you
+ * also can't see THEM if they block you) requires either: (a) a separate
+ * "blocked_by_me" check the server runs, or (b) accepting that the symmetric
+ * filter only kicks in for actions that go through server RPCs (which can
+ * see both sides). For v1 we do (b) — friend list and visit show stale data
+ * if the OTHER party blocks you, but you can't take any action on them
+ * because the server-side RPCs reject. Fully symmetric client-side filter
+ * is a follow-up.
+ */
+export async function fetchBlockedIds(userId: string): Promise<string[]> {
+  const rows = await fetchBlockedUsers(userId);
+  return rows.map(r => r.blocked_id);
+}
+
+// ─── under-13 server flag (Phase 2.0c) ────────────────────────────────────────
+
+/**
+ * Persists the user's under-13 flag to their profile. Called once after the
+ * age gate completes so the server has authoritative truth (not just
+ * localStorage). Returns the value that was set on success, null on failure.
+ */
+export async function setUnder13Flag(value: boolean): Promise<boolean | null> {
+  if (!isSupabaseConfigured) return null;
+  const { data, error } = await supabase.rpc('set_under_13_flag', { p_value: value });
+  if (error) {
+    console.error('[setUnder13Flag]', error);
+    return null;
+  }
+  return data as boolean;
+}

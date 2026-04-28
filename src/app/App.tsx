@@ -24,7 +24,8 @@ import { useAquariumMusic, useContextMusic } from './hooks/useAquariumMusic';
 import { getTodayDateString } from './utils/dailySystem';
 import { useAuth } from './context/AuthContext';
 import { useCloudSync, SyncStatus } from './hooks/useCloudSync';
-import { sendFriendAction, sendSticker, isSupabaseConfigured, fetchPlayerAchievements, pushAchievements } from './services/supabase';
+import { sendFriendAction, sendSticker, isSupabaseConfigured, fetchPlayerAchievements, pushAchievements, setUnder13Flag } from './services/supabase';
+import { track, ModerationEvents } from './utils/telemetry';
 import { LoginScreen } from './components/LoginScreen';
 import { AgeGateScreen, loadAgeGate } from './components/AgeGateScreen';
 import { ParentGate } from './components/ParentGate';
@@ -152,6 +153,25 @@ export default function App() {
     syncAchievements();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, isUnder13]);
+
+  // ── Sync under-13 flag to server profile (Phase 2.0c) ─────────────────────
+  // Server-side authority for COPPA-gated features (breeding, friend requests,
+  // future flows). Runs once per (user, ageGateValue) pair. Idempotent —
+  // re-running with the same value is a no-op upsert.
+  // Uses localStorage to dedupe across reloads so we don't write on every
+  // mount; the server is the truth, but the network call only fires when the
+  // value would actually change.
+  useEffect(() => {
+    if (!user?.id || !isSupabaseConfigured || !ageGateCompleted) return;
+    const dedupeKey = `under13_synced_${user.id}_${isUnder13}`;
+    if (localStorage.getItem(dedupeKey)) return;
+    setUnder13Flag(isUnder13).then(result => {
+      if (result !== null) {
+        localStorage.setItem(dedupeKey, '1');
+        track(ModerationEvents.UNDER13_FLAG_SET, { value: isUnder13 });
+      }
+    });
+  }, [user?.id, isUnder13, ageGateCompleted]);
 
   // Auto-close the in-game auth overlay once the user successfully signs in
   useEffect(() => {
