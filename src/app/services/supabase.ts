@@ -28,11 +28,12 @@ export interface FriendNotificationRow {
   id: string;
   sender_id: string;
   recipient_id: string;
-  type: 'gift' | 'poke' | 'friend_add';
+  type: 'gift' | 'poke' | 'friend_add' | 'sticker';
   coins: number;
   opals: number;
   sender_name: string;
   friend_code?: string | null;
+  sticker_id?: string | null;
   applied: boolean;
   created_at: string;
 }
@@ -58,6 +59,30 @@ export async function sendFriendAction(
   if (error) {
     if (error.code === '42501' || error.code === 'PGRST301') return 'cooldown';
     console.error('[sendFriendAction]', error);
+    return error.message;
+  }
+  return null;
+}
+
+/**
+ * Sends a sticker to a friend during a visit. Stickers are preset and have no
+ * cooldown (different from pokes — see SOCIAL_COOLDOWN_MS in SocialModal).
+ * Returns null on success or a short error string for the caller to show.
+ */
+export async function sendSticker(
+  senderId: string,
+  recipientId: string,
+  senderName: string,
+  stickerId: string,
+): Promise<string | null> {
+  if (!isSupabaseConfigured) return 'Not signed in';
+
+  const { error } = await supabase
+    .from('friend_notifications')
+    .insert({ sender_id: senderId, recipient_id: recipientId, sender_name: senderName, type: 'sticker', sticker_id: stickerId, coins: 0, opals: 0, applied: false });
+
+  if (error) {
+    console.error('[sendSticker]', error);
     return error.message;
   }
   return null;

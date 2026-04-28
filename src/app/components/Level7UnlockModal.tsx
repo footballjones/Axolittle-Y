@@ -1,8 +1,14 @@
 import { motion } from 'motion/react';
-import { Sparkles, Code, Layers, Brain } from 'lucide-react';
+import { Sparkles, Code, Layers, Brain, Users } from 'lucide-react';
 
 interface Level7UnlockModalProps {
   onClose: () => void;
+  /** When provided, the modal shows a secondary "Open Social" CTA that opens the
+   *  Social modal directly. Used at level 7 to surface friend-add at the same
+   *  moment the player unlocks new mini-games — they're already in "I just
+   *  unlocked stuff" mode, so it's the right moment to introduce the social
+   *  loop. Hidden for under-13 (the host should not pass the prop). */
+  onOpenSocial?: () => void;
 }
 
 const SPARKLE_COLORS_L7 = ['#60a5fa','#a78bfa','#34d399','#f472b6','#fbbf24','#fb923c'];
@@ -18,7 +24,7 @@ const SPARKLES_BURST = [
   { angle: 320, dist: 118 },
 ];
 
-export function Level7UnlockModal({ onClose }: Level7UnlockModalProps) {
+export function Level7UnlockModal({ onClose, onOpenSocial }: Level7UnlockModalProps) {
   return (
     <div className="fixed inset-0 z-[10001] flex items-center justify-center p-4">
       {/* Backdrop */}
@@ -168,23 +174,79 @@ export function Level7UnlockModal({ onClose }: Level7UnlockModalProps) {
             </p>
           </motion.div>
 
-          {/* CTA */}
-          <motion.button
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.85 }}
-            onClick={onClose}
-            className="relative w-full py-4 rounded-2xl font-black text-white text-base overflow-hidden shadow-lg"
-            whileTap={{ scale: 0.97 }}
-            style={{ background: 'linear-gradient(110deg, #6366f1 0%, #0ea5e9 100%)' }}
-          >
+          {/* Social unlock card — only shown when onOpenSocial is wired
+              (over-13 path). Same shape as the games card so the visual
+              hierarchy reads as "two new things just unlocked". */}
+          {onOpenSocial && (
             <motion.div
-              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent"
-              animate={{ x: ['-100%', '200%'] }}
-              transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 1, ease: 'easeInOut' }}
-            />
-            <span className="relative z-10">Let's Play!</span>
-          </motion.button>
+              className="rounded-2xl overflow-hidden border-2 border-pink-200 shadow-md"
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.8 }}
+            >
+              <div className="bg-gradient-to-r from-pink-500 to-violet-500 px-4 py-2.5 flex items-center gap-2">
+                <Users className="w-4 h-4 text-white flex-shrink-0" />
+                <p className="text-white font-black text-sm">Add a Friend!</p>
+              </div>
+              <div className="bg-pink-50/70 px-4 py-3 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-white border border-pink-200 flex items-center justify-center flex-shrink-0">
+                  <Users className="w-5 h-5 text-pink-500" strokeWidth={2} />
+                </div>
+                <p className="text-slate-700 text-[11.5px] leading-snug">
+                  Share your code, then visit each other's aquariums to send <span className="font-bold">gifts</span> and leave <span className="font-bold">stickers</span>.
+                </p>
+              </div>
+            </motion.div>
+          )}
+
+          {/* CTAs — when onOpenSocial is wired, show two side-by-side buttons
+              so "open social" gets equal weight to "let's play". */}
+          {onOpenSocial ? (
+            <motion.div
+              className="grid grid-cols-2 gap-2"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.9 }}
+            >
+              <motion.button
+                onClick={() => { onOpenSocial(); onClose(); }}
+                className="relative py-3.5 rounded-2xl font-black text-pink-700 text-sm overflow-hidden shadow-sm bg-white border-2 border-pink-200"
+                whileTap={{ scale: 0.97 }}
+              >
+                Add a Friend
+              </motion.button>
+              <motion.button
+                onClick={onClose}
+                className="relative py-3.5 rounded-2xl font-black text-white text-sm overflow-hidden shadow-lg"
+                whileTap={{ scale: 0.97 }}
+                style={{ background: 'linear-gradient(110deg, #6366f1 0%, #0ea5e9 100%)' }}
+              >
+                <motion.div
+                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent"
+                  animate={{ x: ['-100%', '200%'] }}
+                  transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 1, ease: 'easeInOut' }}
+                />
+                <span className="relative z-10">Let's Play!</span>
+              </motion.button>
+            </motion.div>
+          ) : (
+            <motion.button
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.85 }}
+              onClick={onClose}
+              className="relative w-full py-4 rounded-2xl font-black text-white text-base overflow-hidden shadow-lg"
+              whileTap={{ scale: 0.97 }}
+              style={{ background: 'linear-gradient(110deg, #6366f1 0%, #0ea5e9 100%)' }}
+            >
+              <motion.div
+                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent"
+                animate={{ x: ['-100%', '200%'] }}
+                transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 1, ease: 'easeInOut' }}
+              />
+              <span className="relative z-10">Let's Play!</span>
+            </motion.button>
+          )}
         </div>
       </motion.div>
     </div>

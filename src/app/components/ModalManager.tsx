@@ -140,6 +140,7 @@ export interface ModalManagerProps {
   onBreed: (friendId: string) => void;
   onGiftFriend: (friendId: string, coins: number, opals: number) => void;
   onPokeFriend: (friendId: string) => void;
+  onSendSticker?: (friendId: string, stickerId: string) => Promise<string | null>;
   onRebirth: () => void;
   onHatchEgg: (eggId: string, name: string) => void;
   onMoveToIncubator: (eggId: string) => void;
@@ -232,6 +233,7 @@ function ModalManagerInner({
   onBreed,
   onGiftFriend,
   onPokeFriend,
+  onSendSticker,
   onRebirth,
   onMiniGameEnd,
   onMiniGameApplyReward,
@@ -313,6 +315,7 @@ function ModalManagerInner({
           onBreed={onBreed}
           onGiftFriend={onGiftFriend}
           onPokeFriend={onPokeFriend}
+          onSendSticker={onSendSticker}
           onVisitJimmy={() => {
             setActiveModal(null);
             setShowJimmyAquarium(true);
@@ -517,6 +520,11 @@ function ModalManagerInner({
             onClose={() => {
               setShowLevel7Unlock(false);
               setGameState(s => s ? { ...s, level7UnlockSeen: true } : s);
+            }}
+            onOpenSocial={isUnder13 ? undefined : () => {
+              setShowLevel7Unlock(false);
+              setGameState(s => s ? { ...s, level7UnlockSeen: true } : s);
+              setActiveModal('social');
             }}
           />
         )}

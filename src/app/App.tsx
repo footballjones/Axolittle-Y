@@ -24,7 +24,7 @@ import { useAquariumMusic, useContextMusic } from './hooks/useAquariumMusic';
 import { getTodayDateString } from './utils/dailySystem';
 import { useAuth } from './context/AuthContext';
 import { useCloudSync, SyncStatus } from './hooks/useCloudSync';
-import { sendFriendAction, isSupabaseConfigured, fetchPlayerAchievements, pushAchievements } from './services/supabase';
+import { sendFriendAction, sendSticker, isSupabaseConfigured, fetchPlayerAchievements, pushAchievements } from './services/supabase';
 import { LoginScreen } from './components/LoginScreen';
 import { AgeGateScreen, loadAgeGate } from './components/AgeGateScreen';
 import { ParentGate } from './components/ParentGate';
@@ -320,6 +320,15 @@ export default function App() {
     if (!user?.id || !isSupabaseConfigured) return;
     const senderName = gameState?.axolotl?.name ?? 'A friend';
     await sendFriendAction(user.id, friendId, senderName, 'poke', 0, 0);
+  }, [user, gameState?.axolotl?.name]);
+
+  // Sends a reaction sticker (Release 1.2). No cooldown — visit-debounced in
+  // the SocialModal UI. Returns null on success; on failure returns a short
+  // error string so the caller can roll back its UI state.
+  const handleSendSticker = useCallback(async (friendId: string, stickerId: string): Promise<string | null> => {
+    if (!user?.id || !isSupabaseConfigured) return 'Not signed in';
+    const senderName = gameState?.axolotl?.name ?? 'A friend';
+    return sendSticker(user.id, friendId, senderName, stickerId);
   }, [user, gameState?.axolotl?.name]);
 
   // ── Aquarium centering (registered by GameScreen, consumed by ModalManager) ──
@@ -776,6 +785,7 @@ export default function App() {
         onBreed={handleBreed}
         onGiftFriend={handleGiftFriend}
         onPokeFriend={handlePokeFriend}
+        onSendSticker={handleSendSticker}
         onRebirth={handleRebirth}
         onHatchEgg={handleHatchEgg}
         onMoveToIncubator={handleMoveToIncubator}

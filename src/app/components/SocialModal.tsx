@@ -10,6 +10,8 @@ import { fetchPlayerAchievements, fetchFriendSnapshot, FriendSnapshot, isSupabas
 import { AquariumBackground } from './AquariumBackground';
 import { SpineAxolotl } from './SpineAxolotl';
 import { track, SocialEvents } from '../utils/telemetry';
+import { STICKERS } from '../data/stickers';
+import { recordFriendVisit, recordFriendGift, getAllFriendStats, FriendStats } from '../utils/friendStats';
 
 interface GiftResult {
   coins: number;
@@ -21,6 +23,19 @@ function rollGift(): GiftResult {
   if (r < 0.75) return { coins: 15, opals: 0 };
   if (r < 0.95) return { coins: 40, opals: 0 };
   return { coins: 0, opals: 3 };
+}
+
+/**
+ * Live-formats Add-Friend input to the canonical friend-code shape (3 chars,
+ * dash, up to 5 chars). Strips non-alphanumeric, uppercases, and inserts the
+ * dash at position 3 automatically. Caps the result at 9 visible chars
+ * (3-5 + dash). Designed so a kid pasting a code with or without the dash
+ * always gets the same valid result.
+ */
+function formatFriendCodeInput(raw: string): string {
+  const cleaned = raw.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8);
+  if (cleaned.length <= 3) return cleaned;
+  return `${cleaned.slice(0, 3)}-${cleaned.slice(3)}`;
 }
 
 // ── 18-hour poke cooldown helpers (localStorage-backed) ──────────────────────
@@ -168,11 +183,12 @@ interface SocialModalProps {
   isUnder13?: boolean;
   onGiftFriend: (friendId: string, coins: number, opals: number) => void;
   onPokeFriend: (friendId: string) => void;
+  onSendSticker?: (friendId: string, stickerId: string) => Promise<string | null>;
   onVisitJimmy: () => void;
   lineage: Axolotl[];
 }
 
-export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend, onRemoveFriend, onBreed: _onBreed, onGiftFriend, onPokeFriend, onVisitJimmy, lineage, isUnder13 = false }: SocialModalProps) {
+export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend, onRemoveFriend, onBreed: _onBreed, onGiftFriend, onPokeFriend, onSendSticker, onVisitJimmy, lineage, isUnder13 = false }: SocialModalProps) {
   const [addFriendInput, setAddFriendInput] = useState('');
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<'friends' | 'lineage'>('friends');
@@ -191,6 +207,15 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
   // Short-lived visual feedback states (2–2.5s after action)
   const [justPoked, setJustPoked] = useState<Set<string>>(new Set());
   const [justGifted, setJustGifted] = useState<Record<string, GiftResult>>({});
+  // Per-visit sticker debounce: which sticker IDs were just tapped during this
+  // visit. Cleared when leaving the visit overlay. Prevents accidental
+  // double-taps; there is no real cooldown (stickers are designed to be light).
+  const [justSentStickers, setJustSentStickers] = useState<Set<string>>(new Set());
+  // Snapshot of localStorage friend-stats. Refreshed whenever the modal mounts
+  // or a friend interaction fires; rendered as small "visited 4× / gifted 2×"
+  // pills on the expanded friend card.
+  const [friendStatsSnapshot, setFriendStatsSnapshot] = useState<Record<string, FriendStats>>(() => getAllFriendStats());
+  const refreshFriendStats = () => setFriendStatsSnapshot(getAllFriendStats());
   // Tick so cooldown timers refresh every minute
   const [, setTick] = useState(0);
   useEffect(() => {
@@ -208,6 +233,7 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
   useEffect(() => {
     if (!visitingFriend) {
       setVisitSnapshot(null);
+      setJustSentStickers(new Set());
       return;
     }
     setVisitSnapshot(null);
@@ -265,10 +291,34 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
 
   const myCode = friendCode;
 
-  const copyCode = () => {
-    navigator.clipboard.writeText(myCode);
-    setCopied(true);
+  // Tries the native Share Sheet first (iOS/Android can hand off to Messages,
+  // AirDrop, etc.); falls back to clipboard when navigator.share is missing or
+  // the user dismisses the sheet. Always shows the green "copied" affordance
+  // when the fallback runs so the user gets feedback regardless of path.
+  const copyCode = async () => {
     track(SocialEvents.FRIEND_CODE_COPIED, {});
+    const shareText = `Add me on Axolittle! My friend code is ${myCode}`;
+    const canShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function';
+    if (canShare) {
+      try {
+        await navigator.share({ title: 'Axolittle friend code', text: shareText });
+        track(SocialEvents.FRIEND_CODE_SHARE_SUCCEEDED, {});
+        return;
+      } catch (err) {
+        // AbortError = user dismissed the sheet — silently fall through to copy.
+        const isAbort = err instanceof Error && err.name === 'AbortError';
+        if (isAbort) {
+          track(SocialEvents.FRIEND_CODE_SHARE_DISMISSED, {});
+          return;
+        }
+        // Other errors (permission denied, unsupported) — fall through to copy fallback.
+        track(SocialEvents.FRIEND_CODE_SHARE_FALLBACK_COPY, { reason: 'share_threw' });
+      }
+    } else {
+      track(SocialEvents.FRIEND_CODE_SHARE_FALLBACK_COPY, { reason: 'no_share_api' });
+    }
+    try { await navigator.clipboard.writeText(myCode); } catch { /* clipboard unavailable */ }
+    setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -603,11 +653,39 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
 
                                     {/* Friend details */}
                                     <div className="px-3.5 py-2.5">
-                                      <div className="flex items-center gap-2 mb-3">
+                                      <div className="flex items-center gap-2 mb-2 flex-wrap">
                                         <span className="text-[10px] text-violet-500/70 font-medium capitalize">
                                           {friend.axolotlName} · Gen {friend.generation} · {friend.stage}
                                         </span>
                                       </div>
+                                      {(() => {
+                                        const stats = friendStatsSnapshot[friend.id];
+                                        const visits = stats?.visits ?? 0;
+                                        const gifts  = stats?.giftsSent ?? 0;
+                                        if (visits === 0 && gifts === 0) return null;
+                                        return (
+                                          <div className="flex items-center gap-1.5 mb-3">
+                                            {visits > 0 && (
+                                              <span
+                                                className="inline-flex items-center gap-1 text-[9px] font-bold text-sky-700 px-2 py-0.5 rounded-full"
+                                                style={{ background: 'rgba(186,230,253,0.4)', border: '1px solid rgba(56,189,248,0.3)' }}
+                                              >
+                                                <Waves className="w-2.5 h-2.5" strokeWidth={2.5} />
+                                                Visited {visits}{visits === 1 ? '' : '×'}
+                                              </span>
+                                            )}
+                                            {gifts > 0 && (
+                                              <span
+                                                className="inline-flex items-center gap-1 text-[9px] font-bold text-violet-700 px-2 py-0.5 rounded-full"
+                                                style={{ background: 'rgba(216,180,254,0.4)', border: '1px solid rgba(139,92,246,0.3)' }}
+                                              >
+                                                <Gift className="w-2.5 h-2.5" strokeWidth={2.5} />
+                                                Gifted {gifts}{gifts === 1 ? '' : '×'}
+                                              </span>
+                                            )}
+                                          </div>
+                                        );
+                                      })()}
 
                                       {/* Action tiles — row 1: Visit + Stats + Achievements */}
                                       <div className="grid grid-cols-3 gap-2 mb-2">
@@ -615,6 +693,8 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
                                           onClick={(e) => {
                                             e.stopPropagation();
                                             setVisitingFriend(friend);
+                                            recordFriendVisit(friend.id);
+                                            refreshFriendStats();
                                             track(SocialEvents.FRIEND_VISITED, { stage: friend.stage, generation: friend.generation });
                                           }}
                                           className="flex flex-col items-center justify-center gap-1 py-3 rounded-xl"
@@ -731,6 +811,8 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
                                               const gift = rollGift();
                                               onGiftFriend(friend.id, gift.coins, gift.opals);
                                               incrementGiftCount();
+                                              recordFriendGift(friend.id);
+                                              refreshFriendStats();
                                               track(SocialEvents.GIFT_SENT, { coins: gift.coins, opals: gift.opals });
                                               setJustGifted(prev => ({ ...prev, [friend.id]: gift }));
                                               setTimeout(() => {
@@ -1166,7 +1248,7 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
                     />
 
                     {/* Swipe hint */}
-                    <div className="absolute bottom-4 left-0 right-0 flex justify-center pointer-events-none" style={{ zIndex: 20 }}>
+                    <div className="absolute bottom-20 left-0 right-0 flex justify-center pointer-events-none" style={{ zIndex: 20 }}>
                       <span
                         className="text-[10px] text-cyan-200/50 font-medium px-3 py-1 rounded-full"
                         style={{ background: 'rgba(4,20,40,0.6)' }}
@@ -1178,6 +1260,62 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
                 )}
               </div>
             </div>
+
+            {/* Sticker bar — fixed footer of the visit overlay. Only shown when
+                the host wired onSendSticker. Tapping a sticker fires it once
+                per visit (debounce by id, no real cooldown). */}
+            {onSendSticker && (
+              <div
+                className="flex-shrink-0 px-3 z-10"
+                style={{
+                  background: 'rgba(4,20,40,0.92)',
+                  borderTop: '1px solid rgba(56,189,248,0.18)',
+                  paddingTop: '0.6rem',
+                  paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))',
+                }}
+              >
+                <div className="flex items-center justify-between gap-2 mb-1.5 px-1">
+                  <span className="text-[10px] font-black tracking-widest uppercase text-cyan-300/80">Leave a sticker</span>
+                  <span className="text-[9px] text-cyan-300/40">tap once · no take-backs</span>
+                </div>
+                <div className="flex gap-1.5 justify-between">
+                  {STICKERS.map((s) => {
+                    const sent = justSentStickers.has(s.id);
+                    return (
+                      <motion.button
+                        key={s.id}
+                        onClick={async () => {
+                          if (sent || !visitingFriend) return;
+                          setJustSentStickers(prev => { const n = new Set(prev); n.add(s.id); return n; });
+                          track(SocialEvents.STICKER_SENT, { sticker_id: s.id });
+                          const err = await onSendSticker(visitingFriend.id, s.id);
+                          if (err) {
+                            // Roll back on failure so user can retry
+                            setJustSentStickers(prev => { const n = new Set(prev); n.delete(s.id); return n; });
+                          }
+                        }}
+                        whileTap={sent ? {} : { scale: 0.85 }}
+                        className="flex-1 flex flex-col items-center justify-center gap-0.5 py-2 rounded-xl"
+                        style={{
+                          background: sent
+                            ? 'linear-gradient(135deg, rgba(74,222,128,0.35), rgba(34,197,94,0.25))'
+                            : 'linear-gradient(135deg, rgba(56,189,248,0.18), rgba(99,102,241,0.14))',
+                          border: sent
+                            ? '1px solid rgba(74,222,128,0.5)'
+                            : '1px solid rgba(56,189,248,0.3)',
+                          opacity: sent ? 0.7 : 1,
+                        }}
+                        aria-label={`Send ${s.label} sticker`}
+                        disabled={sent}
+                      >
+                        <span className="text-xl leading-none" aria-hidden>{s.emoji}</span>
+                        <span className="text-[8px] font-bold tracking-wide uppercase text-cyan-100/85 leading-tight">{sent ? 'Sent' : s.label}</span>
+                      </motion.button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
@@ -1710,9 +1848,14 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
                   <input
                     type="text"
                     value={addFriendInput}
-                    onChange={e => { setAddFriendInput(e.target.value.toUpperCase()); setAddFriendError(null); }}
-                    placeholder="Enter friend code…"
-                    className="flex-1 min-w-0 rounded-xl px-3 py-2.5 text-sky-800 text-sm placeholder-sky-300/70 focus:outline-none focus:ring-2 focus:ring-sky-300/50 transition-all"
+                    onChange={e => { setAddFriendInput(formatFriendCodeInput(e.target.value)); setAddFriendError(null); }}
+                    placeholder="ABC-DEFGH"
+                    inputMode="text"
+                    autoCapitalize="characters"
+                    autoCorrect="off"
+                    spellCheck={false}
+                    maxLength={9}
+                    className="flex-1 min-w-0 rounded-xl px-3 py-2.5 text-sky-800 text-sm placeholder-sky-300/70 focus:outline-none focus:ring-2 focus:ring-sky-300/50 transition-all font-mono tracking-widest"
                     style={{ background: 'rgba(224,242,254,0.8)', border: '1px solid rgba(186,230,253,0.6)' }}
                     autoFocus
                     onKeyDown={(e) => {
@@ -1721,22 +1864,27 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
                       }
                     }}
                   />
-                  <motion.button
-                    onClick={handleAddFriend}
-                    disabled={!friendCode.trim() || addFriendLoading}
-                    className="rounded-xl px-4 py-2.5 text-xs font-black tracking-wide shrink-0"
-                    style={{
-                      background: friendCode.trim() && !addFriendLoading
-                        ? 'linear-gradient(135deg, #38bdf8, #0ea5e9)'
-                        : 'rgba(186,230,253,0.4)',
-                      color: friendCode.trim() && !addFriendLoading ? '#fff' : 'rgba(14,165,233,0.4)',
-                      border: '1px solid rgba(56,189,248,0.35)',
-                      boxShadow: friendCode.trim() && !addFriendLoading ? '0 4px 12px -2px rgba(14,165,233,0.3)' : 'none',
-                    }}
-                    whileTap={friendCode.trim() && !addFriendLoading ? { scale: 0.92 } : {}}
-                  >
-                    {addFriendLoading ? 'Checking…' : 'Add'}
-                  </motion.button>
+                  {(() => {
+                    const ready = addFriendInput.trim().length > 0 && !addFriendLoading;
+                    return (
+                      <motion.button
+                        onClick={handleAddFriend}
+                        disabled={!ready}
+                        className="rounded-xl px-4 py-2.5 text-xs font-black tracking-wide shrink-0"
+                        style={{
+                          background: ready
+                            ? 'linear-gradient(135deg, #38bdf8, #0ea5e9)'
+                            : 'rgba(186,230,253,0.4)',
+                          color: ready ? '#fff' : 'rgba(14,165,233,0.4)',
+                          border: '1px solid rgba(56,189,248,0.35)',
+                          boxShadow: ready ? '0 4px 12px -2px rgba(14,165,233,0.3)' : 'none',
+                        }}
+                        whileTap={ready ? { scale: 0.92 } : {}}
+                      >
+                        {addFriendLoading ? 'Checking…' : 'Add'}
+                      </motion.button>
+                    );
+                  })()}
                 </div>
                 {addFriendError && (
                   <p className="text-xs text-red-400 font-medium mt-2 px-1">{addFriendError}</p>

@@ -8,6 +8,7 @@ import {
   subscribeToFriendNotifications,
 } from '../services/supabase';
 import { track, SocialEvents } from '../utils/telemetry';
+import { getSticker, STICKER_FALLBACK } from '../data/stickers';
 
 interface UseSocialStateOptions {
   userId: string | null;
@@ -47,6 +48,19 @@ function rowToNotification(row: FriendNotificationRow): GameNotification {
       metadata: { friendCode: row.friend_code ?? undefined },
     };
   }
+  if (row.type === 'sticker') {
+    const def = getSticker(row.sticker_id);
+    const emoji = def?.emoji ?? STICKER_FALLBACK;
+    const verb = def?.message ?? 'left a sticker on your aquarium!';
+    return {
+      id: row.id,
+      type: 'gift', // reuse 'gift' bucket for styling — a sticker is a positive social ping
+      icon: 'Heart',
+      message: `${emoji} ${row.sender_name} ${verb}`,
+      time: 'Just now',
+      read: false,
+    };
+  }
   return {
     id: row.id,
     type: 'poke',
@@ -77,6 +91,10 @@ export function useSocialState({ userId, onApplyGiftReward }: UseSocialStateOpti
 
     if (row.type === 'poke') {
       setHasPendingPokes(true);
+    }
+
+    if (row.type === 'sticker') {
+      track(SocialEvents.STICKER_RECEIVED, { sticker_id: row.sticker_id ?? 'unknown' });
     }
 
     await markNotificationApplied(row.id);

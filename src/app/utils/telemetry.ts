@@ -35,6 +35,15 @@ export const SocialEvents = {
   GIFT_RECEIVED: 'gift_received',
   POKE_SENT: 'poke_sent',
 
+  // Reaction stickers (Release 1.2)
+  STICKER_SENT: 'sticker_sent',
+  STICKER_RECEIVED: 'sticker_received',
+
+  // Friend code share (Release 1.2)
+  FRIEND_CODE_SHARE_SUCCEEDED: 'friend_code_share_succeeded',
+  FRIEND_CODE_SHARE_DISMISSED: 'friend_code_share_dismissed',
+  FRIEND_CODE_SHARE_FALLBACK_COPY: 'friend_code_share_fallback_copy',
+
   // Friend requests (new infra)
   FRIEND_REQUEST_SENT: 'friend_request_sent',
   FRIEND_REQUEST_RECEIVED: 'friend_request_received',
