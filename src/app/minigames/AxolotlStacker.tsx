@@ -13,6 +13,7 @@ import { Layers, Target, AlertTriangle, Star, Trophy, Gamepad2, Rocket } from 'l
 import { CoinIcon, OpalIcon } from '../components/icons';
 import stackerBg from '../../assets/Axolotl stacker.png';
 import { useGameSFX } from '../hooks/useGameSFX';
+import { EndScreenFooter } from './components/EndScreenFooter';
 
 const CANVAS_W = 360;
 const CANVAS_H = 640;
@@ -21,6 +22,10 @@ const BLOCK_HEIGHT = 28;
 const INITIAL_WIDTH = 120;
 const SWING_SPEED_BASE = 2.5;
 const TOWER_DROP_THRESHOLD = 10; // After 10 blocks, start moving tower down
+// "Perfect" tolerance — total overhang in pixels at which we award perfect.
+// 4px feels generous enough that skill is recognized, tight enough that
+// "perfect" isn't every drop. Worth tuning during playtest.
+const PERFECT_TOLERANCE = 4;
 
 interface StackBlock {
   x: number;
@@ -125,6 +130,15 @@ export function AxolotlStacker({ onEnd, onDeductEnergy, onApplyReward, energy, s
     score: number;
     towerOffset: number;
     fallingPieces: Array<{ x: number; width: number; y: number; vy: number; color: string; alpha: number }>;
+    // ── Perfect-drop combo state ──────────────────────────────────────────────
+    perfectStreak: number;          // current consecutive perfects (0 = no streak)
+    longestPerfectStreak: number;   // best streak in this run (for end-screen coaching)
+    perfectDrops: number;           // total perfects in this run
+    totalDrops: number;             // total drops attempted (for ratio in coaching)
+    // Floating "PERFECT" text spawned on streak ≥ 2
+    floatingTexts: Array<{ x: number; y: number; text: string; life: number; color: string }>;
+    // Particle burst on each perfect drop (pulled to size 0 on game over)
+    particles: Array<{ x: number; y: number; vx: number; vy: number; size: number; color: string; alpha: number }>;
     onGameEnd: (() => void) | null;
   }>({
     isPlaying: false,
@@ -134,6 +148,12 @@ export function AxolotlStacker({ onEnd, onDeductEnergy, onApplyReward, energy, s
     score: 0,
     towerOffset: 0,
     fallingPieces: [],
+    perfectStreak: 0,
+    longestPerfectStreak: 0,
+    perfectDrops: 0,
+    totalDrops: 0,
+    floatingTexts: [],
+    particles: [],
     onGameEnd: null,
   });
 
@@ -190,13 +210,53 @@ export function AxolotlStacker({ onEnd, onDeductEnergy, onApplyReward, energy, s
       drawTile(ctx, game.current.x, game.current.y, game.current.width, BLOCK_HEIGHT - 2, color);
     }
 
-    // Height display
+    // Particle burst (perfect drops) — drawn before HUD so HUD is always visible above
+    for (const p of game.particles) {
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, p.alpha);
+      ctx.fillStyle = p.color;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    // Floating "PERFECT" text — rises above the placed block, scales up as it fades
+    for (const ft of game.floatingTexts) {
+      const scale = 1 + (1 - ft.life) * 0.5;
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, ft.life);
+      ctx.translate(ft.x, ft.y);
+      ctx.scale(scale, scale);
+      ctx.font = 'bold 14px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      // Shadow for legibility on any background
+      ctx.fillStyle = 'rgba(0,0,0,0.7)';
+      ctx.fillText(ft.text, 1, 1);
+      // Body — gold glow with the block's color underneath
+      ctx.fillStyle = '#FFD600';
+      ctx.fillText(ft.text, 0, 0);
+      ctx.restore();
+    }
+
+    // Height display (top-right)
     ctx.fillStyle = 'rgba(0,0,0,0.55)';
     ctx.font = 'bold 13px sans-serif';
     ctx.textAlign = 'right';
     ctx.fillText(`Height: ${game.score}`, CANVAS_W - 10, 24);
     ctx.fillStyle = 'rgba(255,255,255,0.9)';
     ctx.fillText(`Height: ${game.score}`, CANVAS_W - 11, 23);
+
+    // Streak counter (top-left) — hidden when streak < 2 to keep HUD calm
+    if (game.perfectStreak >= 2) {
+      ctx.font = 'bold 13px sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillStyle = 'rgba(0,0,0,0.55)';
+      ctx.fillText(`Perfect ×${game.perfectStreak}`, 11, 24);
+      ctx.fillStyle = '#FFD600';
+      ctx.fillText(`Perfect ×${game.perfectStreak}`, 10, 23);
+    }
   }, []);
 
   const gameLoop = useCallback(() => {
@@ -223,6 +283,23 @@ export function AxolotlStacker({ onEnd, onDeductEnergy, onApplyReward, energy, s
       fp.alpha -= 0.02;
     }
     game.fallingPieces = game.fallingPieces.filter(fp => fp.alpha > 0 && fp.y < CANVAS_H + 40);
+
+    // Update perfect-drop particles — outward fan with gravity
+    for (const p of game.particles) {
+      p.vy += 0.18;       // gravity
+      p.vx *= 0.985;      // slight air drag so they don't shoot off-screen
+      p.x += p.vx;
+      p.y += p.vy;
+      p.alpha -= 0.025;
+    }
+    game.particles = game.particles.filter(p => p.alpha > 0);
+
+    // Update floating "PERFECT" text — rises and fades, scales slightly larger
+    for (const ft of game.floatingTexts) {
+      ft.y -= 1.2;
+      ft.life -= 0.018;
+    }
+    game.floatingTexts = game.floatingTexts.filter(ft => ft.life > 0);
 
     // Move tower down after threshold
     if (game.score >= TOWER_DROP_THRESHOLD) {
@@ -266,9 +343,14 @@ export function AxolotlStacker({ onEnd, onDeductEnergy, onApplyReward, energy, s
     const overlapRight = Math.min(cRight, topRight);
     const overlapWidth = overlapRight - overlapLeft;
 
+    // Track every drop attempt (used for end-screen coaching ratios)
+    game.totalDrops += 1;
+
     // End game on complete miss
     if (overlapWidth <= 0) {
       sfx.play('miss');
+      // Streak breaks on game over too — but no need to update anything since
+      // the run is over.
       if (game.onGameEnd) game.onGameEnd();
       return;
     }
@@ -286,11 +368,51 @@ export function AxolotlStacker({ onEnd, onDeductEnergy, onApplyReward, energy, s
 
     // "Perfect" if overhang is small relative to the previous block; otherwise "good"
     const overhang = leftCutW + rightCutW;
-    const perfect = overhang <= 4;
+    const perfect = overhang <= PERFECT_TOLERANCE;
+
     if (perfect) {
-      // Pitch climbs slightly with height — every clean stack feels like progression
-      sfx.play('drop_perfect', { pitch: 1 + Math.min(0.5, game.score * 0.04) });
+      game.perfectStreak += 1;
+      game.perfectDrops += 1;
+      if (game.perfectStreak > game.longestPerfectStreak) {
+        game.longestPerfectStreak = game.perfectStreak;
+      }
+      // Pitch climbs with streak — early perfects feel different from late combos
+      sfx.play('drop_perfect', { pitch: 1 + Math.min(0.6, game.perfectStreak * 0.08) });
+
+      // Visual juice — only fire on streak ≥ 2 so the first perfect feels
+      // like "good" and the second feels like "you're locked in"
+      if (game.perfectStreak >= 2) {
+        const blockColor = COLORS[game.score % COLORS.length];
+        // "PERFECT" / "PERFECT ×3" floating text above the placed block
+        const label = game.perfectStreak >= 3 ? `PERFECT ×${game.perfectStreak}` : 'PERFECT';
+        game.floatingTexts.push({
+          x: overlapLeft + overlapWidth / 2,
+          y: c.y - 6,
+          text: label,
+          life: 1,
+          color: blockColor,
+        });
+        // Particle burst — outward fan, gravity pulls them down
+        const burstX = overlapLeft + overlapWidth / 2;
+        const burstY = c.y;
+        const burstCount = Math.min(20, 10 + game.perfectStreak * 2);
+        for (let i = 0; i < burstCount; i++) {
+          const angle = (Math.PI * (i / burstCount)) - Math.PI; // upper hemisphere
+          const speed = 1.5 + Math.random() * 2.5;
+          game.particles.push({
+            x: burstX,
+            y: burstY,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed - 1,
+            size: 2 + Math.random() * 4,
+            color: blockColor,
+            alpha: 1,
+          });
+        }
+      }
     } else {
+      // Streak break — quietly reset. No SFX or visual; absent counter is the cue.
+      game.perfectStreak = 0;
       sfx.play('drop_good');
       if (overhang > 0) sfx.play('slice');
     }
@@ -352,6 +474,12 @@ export function AxolotlStacker({ onEnd, onDeductEnergy, onApplyReward, energy, s
     game.score = 0;
     game.towerOffset = 0;
     game.fallingPieces = [];
+    game.particles = [];
+    game.floatingTexts = [];
+    game.perfectStreak = 0;
+    game.longestPerfectStreak = 0;
+    game.perfectDrops = 0;
+    game.totalDrops = 0;
     game.stack = [{
       x: CANVAS_W / 2 - INITIAL_WIDTH / 2,
       width: INITIAL_WIDTH,
@@ -523,10 +651,24 @@ export function AxolotlStacker({ onEnd, onDeductEnergy, onApplyReward, energy, s
                       <p className="text-purple-800 text-center mb-2 text-2xl font-bold">
                         Stack height: {score}
                       </p>
-                      <p className="text-purple-600 text-center mb-4 text-sm font-medium">
-                        {score >= 20 ? 'Exceptional performance!' : score >= 10 ? 'Good job!' : 'Keep practicing!'}
-                      </p>
-                      
+
+                      {/* Tier delta + coaching — replaces the old static message.
+                          Pulls perfect-drop context for sharper coaching ("3 of your last 5 stacks were perfect"). */}
+                      <div className="mb-4">
+                        <EndScreenFooter
+                          gameId="axolotl-stacker"
+                          score={score}
+                          tier={(finalRewards?.tier as 'normal' | 'good' | 'exceptional') || 'normal'}
+                          context={{
+                            longestPerfectStreak: gameRef.current.longestPerfectStreak,
+                            perfectDrops: gameRef.current.perfectDrops,
+                            totalDrops: gameRef.current.totalDrops,
+                          }}
+                          energyReduced={!hadEnergyAtStart}
+                          tone="light"
+                        />
+                      </div>
+
                       {hadEnergyAtStart && finalRewards && (finalRewards.xp > 0 || finalRewards.coins > 0) ? (
                         <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-4 mb-4 border-2 border-purple-200">
                           <p className="text-purple-700 font-bold text-lg mb-2">Rewards:</p>

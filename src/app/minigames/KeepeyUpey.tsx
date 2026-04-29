@@ -15,6 +15,8 @@ import { Zap, Target, Star, Trophy, Gamepad2, Rocket } from 'lucide-react';
 import { CoinIcon, OpalIcon } from '../components/icons';
 import { useSpineRenderer } from '../components/SpineAxolotl';
 import { useGameSFX } from '../hooks/useGameSFX';
+import { CrashFlash } from './components/CrashFlash';
+import { EndScreenFooter } from './components/EndScreenFooter';
 
 const CANVAS_W = 360;
 const CANVAS_H = 640;
@@ -46,6 +48,9 @@ export function KeepeyUpey({ onEnd, onDeductEnergy, onApplyReward, energy, sound
   const [isPaused, setIsPaused] = useState(false);
   const [showOverlay, setShowOverlay] = useState(true);
   const [gameEnded, setGameEnded] = useState(false);
+  // Death sequence: flash plays first, then end overlay reveals — avoids the
+  // freeze→overlay jump that previously read like a crash bug.
+  const [showCrashFlash, setShowCrashFlash] = useState(false);
   const [hadEnergyAtStart, setHadEnergyAtStart] = useState(false); // Track if energy was available when game started
   const [finalRewards, setFinalRewards] = useState<{ tier: string; xp: number; coins: number; opals?: number } | null>(null);
   const cumulativeRef = useRef({ xp: 0, hadAnyEnergy: false });
@@ -106,8 +111,9 @@ export function KeepeyUpey({ onEnd, onDeductEnergy, onApplyReward, energy, sound
 
   const bounce = useCallback(() => {
     if (!isPlayingRef.current || isPausedRef.current) return;
-    // Bounce gets weaker over time — harder to stay up
-    const force = Math.min(-3, BOUNCE_FORCE_BASE + scoreRef.current * BOUNCE_WEAKEN);
+    // Bounce gets weaker over time — harder to stay up.
+    // Floor at -4 (not -3) so late-game still rewards skill instead of becoming "watch yourself die".
+    const force = Math.min(-4, BOUNCE_FORCE_BASE + scoreRef.current * BOUNCE_WEAKEN);
     gameStateRef.current.axo.vy = force;
     // Spawn decorative bubble
     gameStateRef.current.bubbles.push({
@@ -148,6 +154,8 @@ export function KeepeyUpey({ onEnd, onDeductEnergy, onApplyReward, energy, sound
     setIsPlaying(false);
     setGameEnded(true);
     sfx.play('crash');
+    // Show the impact flash; overlay reveals via CrashFlash's onDone callback.
+    setShowCrashFlash(true);
     // Only calculate and show rewards if energy was available at start
     if (hadEnergyAtStart) {
       const rewards = calculateRewards('keepey-upey', scoreRef.current);
@@ -160,12 +168,12 @@ export function KeepeyUpey({ onEnd, onDeductEnergy, onApplyReward, energy, sound
         coins: rewards.coins,
         opals: rewards.opals,
       });
-      // Tier flourish ~400ms after crash so they don't pile up
+      // Tier flourish ~600ms after crash so it lands as the overlay appears
       setTimeout(() => {
         if (rewards.tier === 'exceptional') sfx.play('tier_exceptional');
         else if (rewards.tier === 'good') sfx.play('tier_good');
         else sfx.play('lose');
-      }, 400);
+      }, 600);
     } else {
       // No rewards if no energy
       setFinalRewards({
@@ -174,9 +182,9 @@ export function KeepeyUpey({ onEnd, onDeductEnergy, onApplyReward, energy, sound
         coins: 0,
         opals: undefined,
       });
-      setTimeout(() => sfx.play('lose'), 400);
+      setTimeout(() => sfx.play('lose'), 600);
     }
-    setShowOverlay(true);
+    // showOverlay deferred — set by CrashFlash onDone (see render below)
   }, [hadEnergyAtStart, sfx, onApplyReward]);
 
   const draw = useCallback((ctx: CanvasRenderingContext2D) => {
@@ -357,6 +365,7 @@ export function KeepeyUpey({ onEnd, onDeductEnergy, onApplyReward, energy, sound
     isPausedRef.current = false;
     setShowOverlay(false);
     setGameEnded(false);
+    setShowCrashFlash(false);
     setFinalRewards(null);
     setIsPlaying(true);
     setIsPaused(false);
@@ -479,13 +488,21 @@ export function KeepeyUpey({ onEnd, onDeductEnergy, onApplyReward, energy, sound
                       <h2 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-indigo-600 mb-4">
                         Game Over!
                       </h2>
-                      <p className="text-purple-800 text-center mb-2 text-2xl font-bold">
+                      <p className="text-purple-800 text-center mb-3 text-2xl font-bold">
                         Survived: {score} seconds
                       </p>
-                      <p className="text-purple-600 text-center mb-4 text-sm font-medium">
-                        {score >= 30 ? 'Exceptional performance!' : score >= 15 ? 'Good job!' : 'Keep practicing!'}
-                      </p>
-                      
+
+                      {/* Tier delta + coaching — replaces the old static message */}
+                      <div className="mb-4">
+                        <EndScreenFooter
+                          gameId="keepey-upey"
+                          score={score}
+                          tier={(finalRewards?.tier as 'normal' | 'good' | 'exceptional') || 'normal'}
+                          energyReduced={!hadEnergyAtStart}
+                          tone="light"
+                        />
+                      </div>
+
                       {/* Rewards display - only show if energy was used */}
                       {hadEnergyAtStart && finalRewards && (finalRewards.xp > 0 || finalRewards.coins > 0) ? (
                         <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-4 mb-4 border-2 border-purple-200">
@@ -613,6 +630,17 @@ export function KeepeyUpey({ onEnd, onDeductEnergy, onApplyReward, energy, sound
             pointerEvents: 'none',
           }}
         />
+
+        {/* Crash flash — plays on death, then reveals the end overlay */}
+        {showCrashFlash && (
+          <CrashFlash
+            intensity="hard"
+            onDone={() => {
+              setShowCrashFlash(false);
+              setShowOverlay(true);
+            }}
+          />
+        )}
 
         {/* Tap instruction overlay (first 3 seconds) */}
         {isPlaying && score < 3 && (
