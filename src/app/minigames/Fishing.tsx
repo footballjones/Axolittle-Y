@@ -6,13 +6,15 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { GameWrapper } from './GameWrapper';
 import { MiniGameProps } from './types';
 import { calculateRewards } from './config';
 import { Fish, AlertTriangle, Trophy, Handshake, Star, Rocket, Target } from 'lucide-react';
 import { CoinIcon, OpalIcon } from '../components/icons';
 import { useGameSFX } from '../hooks/useGameSFX';
+import { CrashFlash } from './components/CrashFlash';
+import { EndScreenFooter } from './components/EndScreenFooter';
 
 const CANVAS_W = 360;
 const CANVAS_H = 640;
@@ -83,6 +85,14 @@ function pickFishType(): FishTypeName {
 
 export function Fishing({ onEnd, onDeductEnergy, onApplyReward, energy, strength = 0, speed = 0, soundEnabled = true }: MiniGameProps) {
   const sfx = useGameSFX(soundEnabled);
+  // Catch stats — used for end-screen coaching context
+  const [fishCaught, setFishCaught] = useState(0);
+  const [heaviestFishWeight, setHeaviestFishWeight] = useState(0);
+  // Escape feedback — soft flash + "It got away!" overlay so the silent
+  // escape mechanic finally teaches the player what happened
+  const [showEscapeFlash, setShowEscapeFlash] = useState(false);
+  const [showEscapeText, setShowEscapeText] = useState(false);
+  const escapeTextTimeoutRef = useRef<number | null>(null);
   const [playerScore, setPlayerScore] = useState(0);
   const [botScore, setBotScore] = useState(0);
   const [timeLeft, setTimeLeft] = useState(GAME_DURATION);
@@ -187,6 +197,15 @@ export function Fishing({ onEnd, onDeductEnergy, onApplyReward, energy, strength
   const addEscape = useCallback((x: number, y: number) => {
     gameStateRef.current.escapeEffects.push({ x, y, life: 1 });
     sfx.play('escaped');
+    // Loud feedback — soft orange flash + "It got away!" text. The original
+    // implementation only spawned a small "~" particle, so the player never
+    // learned the escape mechanic existed.
+    setShowEscapeFlash(true);
+    setShowEscapeText(true);
+    if (escapeTextTimeoutRef.current) window.clearTimeout(escapeTextTimeoutRef.current);
+    escapeTextTimeoutRef.current = window.setTimeout(() => {
+      setShowEscapeText(false);
+    }, 900);
   }, [sfx]);
 
   const botTryCatch = useCallback((now: number) => {
@@ -306,9 +325,12 @@ export function Fishing({ onEnd, onDeductEnergy, onApplyReward, energy, strength
         }
         if (state.playerLineY <= WATERLINE_Y) {
           if (playerHooked) {
-            setPlayerScore(prev => prev + playerHooked.type.weight);
+            const weight = playerHooked.type.weight;
+            setPlayerScore(prev => prev + weight);
+            setFishCaught(prev => prev + 1);
+            setHeaviestFishWeight(prev => Math.max(prev, weight));
             // Pitch lifts with fish weight so heavier catches feel weightier
-            const pitch = 1 + Math.min(0.5, playerHooked.type.weight * 0.05);
+            const pitch = 1 + Math.min(0.5, weight * 0.05);
             sfx.play('caught', { pitch });
             removeFish(playerHooked);
             state.playerHooked = null;
@@ -662,6 +684,10 @@ export function Fishing({ onEnd, onDeductEnergy, onApplyReward, energy, strength
     setFinalRewards(null);
     setIsPlaying(true);
     setIsPaused(false);
+    setFishCaught(0);
+    setHeaviestFishWeight(0);
+    setShowEscapeFlash(false);
+    setShowEscapeText(false);
     sfx.play('start');
   }, [reset, energy, onDeductEnergy, sfx]);
 
@@ -800,12 +826,21 @@ export function Fishing({ onEnd, onDeductEnergy, onApplyReward, energy, strength
                       <h2 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-600 mb-4">
                         {playerScore > botScore ? 'You Win!' : playerScore === botScore ? "It's a Tie!" : 'Bot Wins!'}
                       </h2>
-                      <p className="text-blue-800 text-center mb-2 text-2xl font-bold">
+                      <p className="text-blue-800 text-center mb-3 text-2xl font-bold">
                         You: {playerScore}kg · Bot: {botScore}kg
                       </p>
-                      <p className="text-blue-600 text-center mb-4 text-sm font-medium">
-                        {playerScore > botScore ? 'Great fishing!' : playerScore === botScore ? 'So close!' : 'Keep practicing!'}
-                      </p>
+
+                      {/* Tier delta + coaching with catch context */}
+                      <div className="mb-4">
+                        <EndScreenFooter
+                          gameId="fishing"
+                          score={playerScore}
+                          tier={(finalRewards?.tier as 'normal' | 'good' | 'exceptional') || 'normal'}
+                          context={{ fishCaught, heaviestFishWeight }}
+                          energyReduced={!hadEnergyAtStart}
+                          tone="light"
+                        />
+                      </div>
                       
                       {/* Rewards display - only show if energy was used */}
                       {hadEnergyAtStart && finalRewards && (finalRewards.xp > 0 || finalRewards.coins > 0) ? (
@@ -899,7 +934,7 @@ export function Fishing({ onEnd, onDeductEnergy, onApplyReward, energy, strength
           ref={canvasRef}
           width={CANVAS_W}
           height={CANVAS_H}
-          style={{ 
+          style={{
             touchAction: 'none',
             display: 'block',
             width: '100%',
@@ -908,6 +943,31 @@ export function Fishing({ onEnd, onDeductEnergy, onApplyReward, energy, strength
             padding: 0,
           }}
         />
+
+        {/* Escape feedback — soft orange flash + "It got away!" overlay text.
+            Replaces the silent escape mechanic the previous implementation had. */}
+        {showEscapeFlash && (
+          <CrashFlash
+            intensity="soft"
+            onDone={() => setShowEscapeFlash(false)}
+          />
+        )}
+        <AnimatePresence>
+          {showEscapeText && (
+            <motion.div
+              key="escape-text"
+              initial={{ opacity: 0, y: 20, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -10, scale: 0.95 }}
+              transition={{ duration: 0.25 }}
+              className="absolute inset-x-0 top-1/3 flex justify-center pointer-events-none z-30"
+            >
+              <div className="bg-orange-600/90 backdrop-blur-sm text-white font-bold px-5 py-2 rounded-full border-2 border-orange-400 shadow-xl text-sm">
+                It got away!
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </GameWrapper>
   );

@@ -13,6 +13,8 @@ import { calculateRewards } from './config';
 import { Zap, AlertTriangle, Gamepad2, Trophy, Star, Rocket } from 'lucide-react';
 import { CoinIcon, OpalIcon } from '../components/icons';
 import { useGameSFX } from '../hooks/useGameSFX';
+import { CrashFlash } from './components/CrashFlash';
+import { EndScreenFooter } from './components/EndScreenFooter';
 
 const CANVAS_W = 360;
 const CANVAS_H = 640;
@@ -114,6 +116,9 @@ export function BiteTag({ onEnd, onDeductEnergy, onApplyReward, energy, speed = 
   // Track refs to avoid double-firing once-per-event SFX from the game loop
   const dashReadyRef = useRef(true);
   const hazardActiveRef = useRef(false);
+  // Crash flash on the player's elimination (3rd bite). Renders inside the
+  // game viewport so the moment lands before the end overlay.
+  const [showCrashFlash, setShowCrashFlash] = useState(false);
   const [timeLeft, setTimeLeft] = useState(MATCH_DURATION);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
@@ -364,6 +369,7 @@ export function BiteTag({ onEnd, onDeductEnergy, onApplyReward, energy, speed = 
         target.isIt = false;
         if (target === gameStateRef.current.player) {
           sfx.play('eliminated');
+          setShowCrashFlash(true);
         }
         // Pass "It" to a random alive non-eliminated player
         const remaining = getAlive();
@@ -1070,6 +1076,7 @@ export function BiteTag({ onEnd, onDeductEnergy, onApplyReward, energy, speed = 
     setFinalRewards(null);
     setIsPlaying(true);
     setIsPaused(false);
+    setShowCrashFlash(false);
     dashReadyRef.current = true;
     hazardActiveRef.current = false;
     sfx.play('start');
@@ -1308,13 +1315,22 @@ export function BiteTag({ onEnd, onDeductEnergy, onApplyReward, energy, speed = 
                       <h2 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-green-600 to-emerald-600 mb-4">
                         {isWinner ? 'You Win!' : 'Game Over!'}
                       </h2>
-                      <p className="text-green-800 text-center mb-2 text-xl font-bold">
+                      <p className="text-green-800 text-center mb-3 text-xl font-bold">
                         Your bites: {gameStateRef.current.player?.bites || 0} / 3
                       </p>
-                      <p className="text-green-600 text-center mb-4 text-sm font-medium">
-                        {isWinner ? 'Last one standing!' : 'Better luck next time!'}
-                      </p>
-                      
+
+                      {/* Tier delta + coaching with bite-count context */}
+                      <div className="mb-4">
+                        <EndScreenFooter
+                          gameId="bite-tag"
+                          score={finalScore}
+                          tier={(finalRewards?.tier as 'normal' | 'good' | 'exceptional') || 'normal'}
+                          context={{ bitesTaken: gameStateRef.current.player?.bites || 0 }}
+                          energyReduced={!hadEnergyAtStart}
+                          tone="light"
+                        />
+                      </div>
+
                       {/* Rewards display - only show if energy was used */}
                       {hadEnergyAtStart && finalRewards && (finalRewards.xp > 0 || finalRewards.coins > 0) ? (
                         <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-4 mb-4 border-2 border-green-200">
@@ -1407,7 +1423,7 @@ export function BiteTag({ onEnd, onDeductEnergy, onApplyReward, energy, speed = 
           ref={canvasRef}
           width={CANVAS_W}
           height={CANVAS_H}
-          style={{ 
+          style={{
             touchAction: 'none',
             display: 'block',
             width: '100%',
@@ -1416,6 +1432,15 @@ export function BiteTag({ onEnd, onDeductEnergy, onApplyReward, energy, speed = 
             padding: 0,
           }}
         />
+
+        {/* Crash flash on player elimination — fires once when the 3rd bite
+            lands on the human player. Auto-clears via onDone. */}
+        {showCrashFlash && (
+          <CrashFlash
+            intensity="hard"
+            onDone={() => setShowCrashFlash(false)}
+          />
+        )}
       </div>
     </GameWrapper>
   );

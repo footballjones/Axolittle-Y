@@ -7,7 +7,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import React from 'react';
-import { motion } from 'motion/react';
+import { motion, useAnimation } from 'motion/react';
 import { GameWrapper } from './GameWrapper';
 import { MiniGameProps } from './types';
 import { calculateRewards } from './config';
@@ -144,6 +144,9 @@ function generateQuestion(questionCount: number): Question {
 export function MathRush({ onEnd, onDeductEnergy, onApplyReward, energy, soundEnabled = true }: MiniGameProps) {
   const sfx = useGameSFX(soundEnabled);
   const lastTickSecRef = useRef<number>(-1);
+  // Brief screen shake on wrong answer — quick visceral feedback that
+  // doesn't disrupt the rapid-fire question flow.
+  const shakeControls = useAnimation();
   const [score, setScore] = useState(0);
   const [questionCount, setQuestionCount] = useState(0); // 1-based count of questions asked
   const [isPlaying, setIsPlaying] = useState(false); // Start with false, show overlay first
@@ -290,6 +293,11 @@ export function MathRush({ onEnd, onDeductEnergy, onApplyReward, energy, soundEn
       const remaining = livesRemaining - 1;
       setLivesRemaining(remaining);
       sfx.play('wrong');
+      // Brief screen shake — 200ms — adds visceral weight without slowing the run
+      shakeControls.start({
+        x: [0, -6, 6, -4, 4, 0],
+        transition: { duration: 0.2, ease: 'easeOut' },
+      });
       if (remaining > 0) {
         setFeedback({ text: 'Oops! Keep going.', type: 'wrong' });
         setTimeout(() => {
@@ -302,7 +310,7 @@ export function MathRush({ onEnd, onDeductEnergy, onApplyReward, energy, soundEn
         }, 800);
       }
     }
-  }, [currentQuestion, selectedAnswer, waitingForNext, loadNewQuestion, questionCount, isPlaying, endGame, sfx, score, livesRemaining]);
+  }, [currentQuestion, selectedAnswer, waitingForNext, loadNewQuestion, questionCount, isPlaying, endGame, sfx, score, livesRemaining, shakeControls]);
 
   // Handle timer running out
   useEffect(() => {
@@ -586,13 +594,15 @@ export function MathRush({ onEnd, onDeductEnergy, onApplyReward, energy, soundEn
           );
         })()}
 
-        {/* Question */}
+        {/* Question — outer wrapper handles wrong-answer shake; inner card
+            keeps its existing mount-in entrance animation. */}
         {isPlaying && currentQuestion && (
+          <motion.div animate={shakeControls} className="w-full max-w-md mb-6">
           <motion.div
             key={currentQuestion.question}
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className="bg-white/90 backdrop-blur-sm rounded-3xl p-8 mb-6 shadow-2xl border-4 border-purple-300 max-w-md w-full"
+            className="bg-white/90 backdrop-blur-sm rounded-3xl p-8 shadow-2xl border-4 border-purple-300 w-full"
           >
             <div className="text-center mb-6">
               <div className="flex justify-center mb-4">{currentQuestion.themeIcon}</div>
@@ -646,6 +656,7 @@ export function MathRush({ onEnd, onDeductEnergy, onApplyReward, energy, soundEn
                 );
               })}
             </div>
+          </motion.div>
           </motion.div>
         )}
 

@@ -5,7 +5,7 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { motion } from 'motion/react';
+import { motion, useAnimation } from 'motion/react';
 import { GameWrapper } from './GameWrapper';
 import { MiniGameProps } from './types';
 import { calculateRewards } from './config';
@@ -104,6 +104,9 @@ function drawTile(
 
 export function AxolotlStacker({ onEnd, onDeductEnergy, onApplyReward, energy, soundEnabled = true }: MiniGameProps) {
   const sfx = useGameSFX(soundEnabled);
+  // Tower-shake on miss — gives the fail moment physical weight.
+  // Uses motion's animation controls so the canvas inside doesn't remount.
+  const towerShakeControls = useAnimation();
   const [score, setScore] = useState(0);
   const [showOverlay, setShowOverlay] = useState(true);
   const [gameEnded, setGameEnded] = useState(false);
@@ -349,6 +352,12 @@ export function AxolotlStacker({ onEnd, onDeductEnergy, onApplyReward, energy, s
     // End game on complete miss
     if (overlapWidth <= 0) {
       sfx.play('miss');
+      // Tower shake — short, weighty, sells the fail moment physically.
+      // Doesn't block endGame; runs in parallel with overlay reveal.
+      towerShakeControls.start({
+        x: [0, -8, 8, -6, 6, -4, 4, 0],
+        transition: { duration: 0.4, ease: 'easeOut' },
+      });
       // Streak breaks on game over too — but no need to update anything since
       // the run is over.
       if (game.onGameEnd) game.onGameEnd();
@@ -429,7 +438,7 @@ export function AxolotlStacker({ onEnd, onDeductEnergy, onApplyReward, energy, s
 
     // Spawn next block
     spawnBlock(game.score);
-  }, [spawnBlock, sfx]);
+  }, [spawnBlock, sfx, towerShakeControls]);
 
   const endGame = useCallback(() => {
     const game = gameRef.current;
@@ -742,19 +751,26 @@ export function AxolotlStacker({ onEnd, onDeductEnergy, onApplyReward, energy, s
           </motion.div>
         )}
 
-        <canvas
-          ref={canvasRef}
-          width={CANVAS_W}
-          height={CANVAS_H}
-          style={{
-            touchAction: 'none',
-            display: 'block',
-            width: '100%',
-            height: '100%',
-            margin: 0,
-            padding: 0,
-          }}
-        />
+        {/* Tower shake wrapper — runs the miss-shake animation without
+            remounting the canvas (would otherwise destroy game state). */}
+        <motion.div
+          animate={towerShakeControls}
+          style={{ width: '100%', height: '100%', display: 'flex' }}
+        >
+          <canvas
+            ref={canvasRef}
+            width={CANVAS_W}
+            height={CANVAS_H}
+            style={{
+              touchAction: 'none',
+              display: 'block',
+              width: '100%',
+              height: '100%',
+              margin: 0,
+              padding: 0,
+            }}
+          />
+        </motion.div>
       </div>
     </GameWrapper>
   );
