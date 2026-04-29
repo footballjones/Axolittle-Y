@@ -19,6 +19,12 @@ export interface MiniGameProps {
   speed?: number; // Axolotl speed stat (0-100)
   stamina?: number; // Axolotl stamina stat (0-100)
   soundEnabled?: boolean; // Whether sound effects should play (default true)
+  /**
+   * Reward multiplier applied to coins when the player starts a game without
+   * energy. XP is always 0 when no energy. Default 0.25 (25% coins).
+   * Use applyEnergyMultiplier() from rewardHelpers.ts to apply consistently.
+   */
+  noEnergyMultiplier?: number;
 }
 
 export interface GameRewardTier {
