@@ -12,8 +12,10 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { GameState } from '../types/game';
+import type { TutorialLockMode } from '../config/tutorialSteps';
 import { calculateLevel, generateAxolotl } from '../utils/gameLogic';
 import { getInitialGameState } from '../utils/storage';
+import { trackOnce, OnboardingEvents } from '../utils/telemetry';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -57,19 +59,11 @@ export interface UseOnboardingReturn {
   setShowShrimpInfoModal: (v: boolean) => void;
   shrimpTutorialShopPhase: 'info' | 'buy' | false;
   setShrimpTutorialShopPhase: (v: 'info' | 'buy' | false) => void;
-  showMenuTutorial: boolean;
-  setShowMenuTutorial: (v: boolean) => void;
-  /** True when conditions are met and we should prompt the player to start the menu tour. */
-  showMenuTutorialPrompt: boolean;
-  /** Call this when the player taps "Start Tour" on the prompt. */
-  handleStartMenuTutorial: () => void;
-  showMenuTutorialComplete: boolean;
-  setShowMenuTutorialComplete: (v: boolean) => void;
   showRebirthReady: boolean;
   setShowRebirthReady: (v: boolean) => void;
 
   // ── Derived lock state (consumed by aquarium render + ActionButtons) ───────
-  tutorialLockMode: 'swipe' | 'feed' | 'watch' | 'stat' | 'play' | 'clean' | 'water' | null;
+  tutorialLockMode: TutorialLockMode | null;
   lockedActionButtons: Set<string>;
 }
 
@@ -81,7 +75,7 @@ export function useOnboarding({
   currentScreen,
   activeModal,
   playMode,
-  cleaningMode,
+  cleaningMode: _cleaningMode,
 }: UseOnboardingOptions): UseOnboardingReturn {
 
   // ── Hatching / naming ──────────────────────────────────────────────────────
@@ -92,7 +86,9 @@ export function useOnboarding({
     setGameState(prev => {
       const base = prev || getInitialGameState();
       const axolotl = generateAxolotl(name);
-      const finalAxolotl = base.waterTutorialSeen === false
+      // Reduce water quality for new players so the water-change tutorial is relevant.
+      const isNewGame = base.onboardingProgress !== undefined && base.onboardingProgress !== 'complete';
+      const finalAxolotl = isNewGame
         ? { ...axolotl, stats: { ...axolotl.stats, waterQuality: 70 } }
         : axolotl;
       return { ...base, axolotl: finalAxolotl };
@@ -104,6 +100,7 @@ export function useOnboarding({
       if (!prev?.axolotl) return prev;
       return { ...prev, axolotl: { ...prev.axolotl, name } };
     });
+    trackOnce(OnboardingEvents.NAMING_COMPLETE);
   }, [setGameState]);
 
   // ── Tutorial pacing ────────────────────────────────────────────────────────
@@ -126,9 +123,6 @@ export function useOnboarding({
   const [showShrimpTutorialIntro, setShowShrimpTutorialIntro] = useState(false);
   const [showShrimpInfoModal, setShowShrimpInfoModal] = useState(false);
   const [shrimpTutorialShopPhase, setShrimpTutorialShopPhase] = useState<'info' | 'buy' | false>(false);
-  const [showMenuTutorial, setShowMenuTutorial] = useState(false);
-  const [showMenuTutorialPrompt, setShowMenuTutorialPrompt] = useState(false);
-  const [showMenuTutorialComplete, setShowMenuTutorialComplete] = useState(false);
   const [showRebirthReady, setShowRebirthReady] = useState(false);
   const shrimpTutorialTriggeredRef = useRef(false);
   const rebirthReadyTriggeredRef = useRef(false);
@@ -142,25 +136,25 @@ export function useOnboarding({
   useEffect(() => {
     if (
       gameState?.axolotl?.stage === 'sprout' &&
-      !gameState.juvenileUnlockSeen &&
+      !gameState.seenMilestones?.includes('juvenile_unlock') &&
       !showJuvenileUnlock
     ) {
       setShowJuvenileUnlock(true);
     }
-  }, [gameState?.axolotl?.stage, gameState?.juvenileUnlockSeen, showJuvenileUnlock]);
+  }, [gameState?.axolotl?.stage, gameState?.seenMilestones, showJuvenileUnlock]);
 
   useEffect(() => {
     const lvl = gameState?.axolotl ? calculateLevel(gameState.axolotl.experience) : 0;
-    if (lvl >= 7 && !gameState?.level7UnlockSeen && !showLevel7Unlock) {
+    if (lvl >= 7 && !gameState?.seenMilestones?.includes('level7_unlock') && !showLevel7Unlock) {
       setShowLevel7Unlock(true);
     }
-  }, [gameState?.axolotl?.experience, gameState?.level7UnlockSeen, showLevel7Unlock]);
+  }, [gameState?.axolotl?.experience, gameState?.seenMilestones, showLevel7Unlock]);
 
   useEffect(() => {
     const lvl = gameState?.axolotl ? calculateLevel(gameState.axolotl.experience) : 0;
     if (
       lvl >= 12 &&
-      !gameState?.shrimpTutorialSeen &&
+      !gameState?.seenMilestones?.includes('shrimp_tutorial') &&
       !shrimpTutorialTriggeredRef.current &&
       currentScreen === 'home' &&
       !activeModal
@@ -168,7 +162,7 @@ export function useOnboarding({
       shrimpTutorialTriggeredRef.current = true;
       setShowShrimpTutorialIntro(true);
     }
-  }, [gameState?.axolotl?.experience, gameState?.shrimpTutorialSeen, currentScreen, activeModal, setGameState]);
+  }, [gameState?.axolotl?.experience, gameState?.seenMilestones, currentScreen, activeModal]);
 
   // Level 30 rebirth ready popup
   useEffect(() => {
@@ -176,7 +170,7 @@ export function useOnboarding({
     if (
       lvl >= 30 &&
       gameState?.axolotl?.stage === 'elder' &&
-      !gameState?.rebirthReadySeen &&
+      !gameState?.seenMilestones?.includes('rebirth_ready') &&
       !rebirthReadyTriggeredRef.current &&
       currentScreen === 'home' &&
       !activeModal
@@ -184,90 +178,48 @@ export function useOnboarding({
       rebirthReadyTriggeredRef.current = true;
       setShowRebirthReady(true);
     }
-  }, [gameState?.axolotl?.experience, gameState?.axolotl?.stage, gameState?.rebirthReadySeen, currentScreen, activeModal]);
+  }, [gameState?.axolotl?.experience, gameState?.axolotl?.stage, gameState?.seenMilestones, currentScreen, activeModal]);
 
-  // ── Effects: tutorial pacing delays ───────────────────────────────────────
+  // ── Effects: tutorial pacing delays (fire on progress transitions) ─────────
 
-  const prevStatTut = useRef(gameState?.statTutorialSeen);
+  const prevProgress = useRef(gameState?.onboardingProgress);
   useEffect(() => {
-    if (gameState?.statTutorialSeen && !prevStatTut.current) delayNextTutorial(1000);
-    prevStatTut.current = gameState?.statTutorialSeen;
-  }, [gameState?.statTutorialSeen, delayNextTutorial]);
+    const prev = prevProgress.current;
+    const curr = gameState?.onboardingProgress;
+    if (prev === curr) return;
+    prevProgress.current = curr;
 
-  const prevPlayTut = useRef(gameState?.playTutorialSeen);
-  useEffect(() => {
-    if (gameState?.playTutorialSeen && !prevPlayTut.current) delayNextTutorial(4000);
-    prevPlayTut.current = gameState?.playTutorialSeen;
-  }, [gameState?.playTutorialSeen, delayNextTutorial]);
-
-  const prevCleanTut = useRef(gameState?.cleanTutorialSeen);
-  useEffect(() => {
-    if (gameState?.cleanTutorialSeen === true && prevCleanTut.current === false) delayNextTutorial(1000);
-    prevCleanTut.current = gameState?.cleanTutorialSeen;
-  }, [gameState?.cleanTutorialSeen, delayNextTutorial]);
-
-  const prevWaterTut = useRef(gameState?.waterTutorialSeen);
-  useEffect(() => {
-    if (gameState?.waterTutorialSeen === true && prevWaterTut.current === false) delayNextTutorial(1000);
-    prevWaterTut.current = gameState?.waterTutorialSeen;
-  }, [gameState?.waterTutorialSeen, delayNextTutorial]);
-
-  // Hide the tutorial overlay as soon as the completion modal is shown
-  // (both flags can become true simultaneously, leaving the overlay's blocking
-  //  strips on top of the "Collect Reward!" button)
-  useEffect(() => {
-    if (showMenuTutorialComplete && showMenuTutorial) {
-      setShowMenuTutorial(false);
+    if (curr === 'play')             delayNextTutorial(1000); // after stat banner tap, brief pause
+    if (curr === 'clean')            delayNextTutorial(4000); // after first play, longer pause
+    if (curr === 'water')            delayNextTutorial(1000); // after first clean
+    if (curr === 'wellbeing_reward') delayNextTutorial(1000); // after first water change
+    if (curr === 'complete') {
+      trackOnce(OnboardingEvents.FIRST_CARE_CYCLE);
     }
-  }, [showMenuTutorialComplete, showMenuTutorial]);
+  }, [gameState?.onboardingProgress, delayNextTutorial]);
 
-  // Menu tutorial: show prompt every time the player is on the home screen
-  // until the tutorial is fully complete. This prevents a broken mid-tutorial
-  // state after app restart or navigating away.
+  // Also delay after the stat milestone is first set (player taps stat banner)
+  const prevMilestones = useRef(gameState?.seenMilestones);
   useEffect(() => {
+    const prev = prevMilestones.current;
+    const curr = gameState?.seenMilestones;
+    if (prev === curr) return;
+    prevMilestones.current = curr;
     if (
-      gameState?.wellbeingCompleteSeen === true &&
-      !gameState?.menuTutorialSeen &&
-      gameState?.tutorialStep === 'done' &&
-      !showMenuTutorial &&
-      !showMenuTutorialComplete &&
-      tutorialAllowed &&
-      currentScreen === 'home'
+      curr?.includes('stat_tutorial') &&
+      !prev?.includes('stat_tutorial')
     ) {
-      const t = setTimeout(() => setShowMenuTutorialPrompt(true), 800);
-      return () => clearTimeout(t);
+      delayNextTutorial(1000);
     }
-    // Hide prompt when conditions are no longer met (e.g. navigated away)
-    if (currentScreen !== 'home') {
-      setShowMenuTutorialPrompt(false);
-    }
-  }, [
-    gameState?.wellbeingCompleteSeen,
-    gameState?.menuTutorialSeen,
-    gameState?.tutorialStep,
-    tutorialAllowed,
-    currentScreen,
-    showMenuTutorial,
-    showMenuTutorialComplete,
-  ]);
-
-  // Reset the active tutorial overlay if the player navigates away from home
-  // mid-tutorial. The prompt will re-appear when they return to home.
-  useEffect(() => {
-    if (showMenuTutorial && currentScreen !== 'home') {
-      setShowMenuTutorial(false);
-    }
-  }, [currentScreen, showMenuTutorial]);
+  }, [gameState?.seenMilestones, delayNextTutorial]);
 
   // ── Effects: mini-game tutorial phase ─────────────────────────────────────
 
   useEffect(() => {
     if (currentScreen !== 'games') { setMgTutPhase(null); return; }
     if (
-      gameState?.miniGameTutorialSeen ||
-      !gameState?.waterTutorialSeen ||
-      !gameState?.wellbeingCompleteSeen ||
-      !gameState?.menuTutorialSeen
+      gameState?.seenMilestones?.includes('mini_game_tutorial') ||
+      gameState?.onboardingProgress !== 'complete'
     ) return;
     setMgTutPhase(isGameLocked ? 'unlock' : 'keepey');
   // isGameLocked intentionally excluded — handled by the effect below
@@ -280,23 +232,37 @@ export function useOnboarding({
 
   useEffect(() => {
     if (mgTutPhase === 'keepey') {
-      setGameState(s => s && !s.miniGameTutorialSeen ? { ...s, miniGameTutorialSeen: true } : s);
+      setGameState(s => {
+        if (!s || s.seenMilestones?.includes('mini_game_tutorial')) return s;
+        return { ...s, seenMilestones: [...(s.seenMilestones ?? []), 'mini_game_tutorial'] };
+      });
     }
   }, [mgTutPhase, setGameState]);
 
   // ── Derived: tutorial lock ─────────────────────────────────────────────────
 
-  const tutorialLockMode = ((): UseOnboardingReturn['tutorialLockMode'] => {
+  const tutorialLockMode = ((): TutorialLockMode | null => {
     if (!tutorialAllowed || currentScreen !== 'home') return null;
-    const step = gameState?.tutorialStep;
-    if (step === 'swipe') return 'swipe';
-    if (step === 'feed') return 'feed';
-    if (step === 'eat') return 'watch';
-    if (step !== 'done') return null;
-    if ((gameState?.pendingStatPoints ?? 0) > 0 && !gameState?.statTutorialSeen && !activeModal) return 'stat';
-    if (gameState?.statTutorialSeen && !gameState?.playTutorialSeen && (gameState?.pendingStatPoints ?? 0) === 0 && !activeModal && !playMode) return 'play';
-    if (gameState?.cleanTutorialSeen === false && gameState?.playTutorialSeen === true && !activeModal && !playMode) return 'clean';
-    if (gameState?.cleanTutorialSeen === true && gameState?.waterTutorialSeen === false && !activeModal && !playMode && !cleaningMode) return 'water';
+    const progress = gameState?.onboardingProgress;
+    const milestones = gameState?.seenMilestones ?? [];
+
+    if (progress === 'swipe') return 'swipe';
+    if (progress === 'feed')  return 'feed';
+    if (progress === 'eat')   return 'watch';
+    if (progress === 'clean') return 'clean';
+    if (progress === 'water') return 'water';
+
+    if (progress === 'play') {
+      // Stat tutorial fires first if the player has unspent stat points
+      if ((gameState?.pendingStatPoints ?? 0) > 0 && !milestones.includes('stat_tutorial') && !activeModal)
+        return 'stat';
+      // Once stat is done (or there were never points), gate play
+      if (
+        (milestones.includes('stat_tutorial') || (gameState?.pendingStatPoints ?? 0) === 0) &&
+        !activeModal && !playMode
+      ) return 'play';
+    }
+
     return null;
   })();
 
@@ -312,11 +278,6 @@ export function useOnboarding({
   } else if (tutorialLockMode === 'water') {
     ['Feed', 'Playtime', 'Clean'].forEach(b => lockedActionButtons.add(b));
   }
-
-  const handleStartMenuTutorial = useCallback(() => {
-    setShowMenuTutorialPrompt(false);
-    setShowMenuTutorial(true);
-  }, []);
 
   return {
     showHatchingIntro,
@@ -341,12 +302,6 @@ export function useOnboarding({
     setShowShrimpInfoModal,
     shrimpTutorialShopPhase,
     setShrimpTutorialShopPhase,
-    showMenuTutorial,
-    setShowMenuTutorial,
-    showMenuTutorialPrompt,
-    handleStartMenuTutorial,
-    showMenuTutorialComplete,
-    setShowMenuTutorialComplete,
     showRebirthReady,
     setShowRebirthReady,
     tutorialLockMode,

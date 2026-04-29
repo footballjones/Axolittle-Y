@@ -117,7 +117,7 @@ export function ShrimpTutorialIntroModal({ onOpenShop }: ShrimpTutorialIntroProp
             animate={{ opacity: 1 }}
             transition={{ delay: 0.6 }}
           >
-            Your tank is ready for some tiny helpers
+            Tiny helpers for your tank!
           </motion.p>
         </div>
 
@@ -132,7 +132,7 @@ export function ShrimpTutorialIntroModal({ onOpenShop }: ShrimpTutorialIntroProp
           >
             <ShoppingCart className="w-5 h-5 text-sky-500 flex-shrink-0 mt-0.5" strokeWidth={2} />
             <p className="text-sky-800 text-[11.5px] leading-snug">
-              Head to the <span className="font-bold">Wellbeing</span> tab in the Shop and grab a <span className="font-bold">Small Colony</span> to get started.
+              Open the Shop. Grab a <span className="font-bold">Small Colony</span> to get started!
             </p>
           </motion.div>
 
@@ -235,7 +235,7 @@ export function ShrimpInfoModal({ onClose }: ShrimpInfoModalProps) {
           >
             <p className="text-teal-900 font-black text-sm">What do they do?</p>
             <p className="text-teal-800 text-[12px] leading-relaxed">
-              Ghost Shrimp munch on algae and leftover food, acting as a natural cleaning crew. The more you have in the tank, the slower your <span className="font-bold">Cleanliness</span> stat drops — meaning less scrubbing for you.
+              Ghost Shrimp <span className="font-bold">eat the gunk</span> in your tank! The more shrimp you have, the cleaner it stays.
             </p>
           </motion.div>
 
@@ -248,7 +248,7 @@ export function ShrimpInfoModal({ onClose }: ShrimpInfoModalProps) {
           >
             <RefreshCw className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" strokeWidth={2.5} />
             <p className="text-amber-800 text-[11.5px] leading-snug">
-              <span className="font-bold">They don't last forever.</span> Your axolotl eats them over time, so check back in the Shop to restock when they run low.
+              <span className="font-bold">They don't last forever!</span> Your axolotl snacks on them. Restock from the Shop when they run low.
             </p>
           </motion.div>
 

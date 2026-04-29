@@ -1,5 +1,8 @@
 export type LifeStage = 'hatchling' | 'sprout' | 'guardian' | 'elder';
 
+import type { OnboardingProgress, MilestoneId } from '../config/tutorialSteps';
+export type { OnboardingProgress, MilestoneId };
+
 export interface AxolotlStats {
   hunger: number; // 0-100
   happiness: number; // 0-100
@@ -124,14 +127,11 @@ export interface GameState {
   totalEggsHatched?: number;       // Cumulative eggs hatched
   uniqueGamesPlayed?: string[];    // Game IDs ever played (for all-rounder achievement)
   recessiveExpressed?: boolean;    // Ephemeral: set true in handleHatchEgg when recessive genes expressed
-  // ── Tutorial ────────────────────────────────────────────────────────────────
-  // undefined = existing save (skip tutorial). 'feed'→'eat'→'done' on new games.
-  tutorialStep?: 'swipe' | 'feed' | 'eat' | 'done';
-  // undefined = existing save (skip). false = new game, not yet seen. true = completed.
-  cleanTutorialSeen?: boolean;
-  juvenileUnlockSeen?: boolean; // True once the Sprout stage unlock modal has been shown
-  level7UnlockSeen?: boolean;   // True once the Level 7 games unlock modal has been shown
-  shrimpTutorialSeen?: boolean; // True once the Level 12 ghost shrimp tutorial has been shown
+  // ── Tutorial / onboarding ────────────────────────────────────────────────
+  // undefined = existing save (skip tutorial). New games start at 'swipe'.
+  onboardingProgress?: OnboardingProgress;
+  // One-time milestone flags (unlock modals, stat allocation, etc.)
+  seenMilestones?: MilestoneId[];
   // ── Jimmy & Chubs ────────────────────────────────────────────────────────────
   lastJimmyGift?: number; // Unix-ms timestamp of last gift received from Jimmy & Chubs
   // ── Audio Settings ────────────────────────────────────────────────────────────
@@ -143,17 +143,13 @@ export interface GameState {
   feedXpToday?: number;  // Total XP earned from feeding today (resets daily, max 2)
   feedXpDate?: string;   // YYYY-MM-DD when feedXpToday was last reset
   firstFeedXpGranted?: boolean; // True after the first-ever eat grants a full level-up XP
-  // ── Stat tutorial ────────────────────────────────────────────────────────
-  statTutorialSeen?: boolean;        // True once the player taps the stat assignment banner
-  playTutorialSeen?: boolean;        // True once the player enters play mode for the first time
-  waterTutorialSeen?: boolean;       // True once the player completes their first water change
-  miniGameTutorialSeen?: boolean;    // True once the player navigates to the mini games screen
-  wellbeingIntroSeen?: boolean;      // false = show intro modal before wellbeing tutorials begin
-  wellbeingCompleteSeen?: boolean;   // false = show completion modal + 5 opal reward after water tutorial
-  menuTutorialSeen?: boolean;        // false = show menu walkthrough tutorial after wellbeing
-  rebirthReadySeen?: boolean;        // true once the level-30 rebirth ready popup has been shown
   // ── Daily Bonus ────────────────────────────────────────────────────────────
   lastMissForgivenDate?: string;     // YYYY-MM-DD of last forgiven missed day (1 free miss per 7 days)
+  // ── Mini-game personal bests ─────────────────────────────────────────────
+  // Best score the player has ever earned in each game, keyed by gameId
+  // ('keepey-upey', 'axolotl-stacker', etc.). Updated by ModalManager
+  // whenever a game ends with a higher score than the existing best.
+  personalBests?: Record<string, number>;
 }
 
 export interface Friend {

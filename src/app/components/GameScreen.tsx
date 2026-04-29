@@ -79,7 +79,6 @@ export interface GameScreenProps {
   swipeTutDoneRef: React.MutableRefObject<boolean>;
   mgTutPhase: 'unlock' | 'keepey' | null;
   setMgTutPhase: (v: 'unlock' | 'keepey' | null) => void;
-  showMenuTutorial: boolean;
   setHatchingNurseryEggId: (v: string | null) => void;
 
   // ── Social ─────────────────────────────────────────────────────────────
@@ -102,9 +101,6 @@ export interface GameScreenProps {
 
   // ── Modal triggers ─────────────────────────────────────────────────────
   setShowWaterChangeModal: (v: boolean) => void;
-
-  // ── Ref callback — lets App build handleCenterAquarium for ModalManager ──
-  onRegisterCenterAquarium: (fn: () => void) => void;
 
   // ── Game action handlers ───────────────────────────────────────────────
   handleFeed: () => void;
@@ -176,7 +172,6 @@ function GameScreenInner({
   swipeTutDoneRef,
   mgTutPhase,
   setMgTutPhase,
-  showMenuTutorial: _showMenuTutorial,
   setHatchingNurseryEggId,
   notifications,
   setNotifications,
@@ -191,7 +186,6 @@ function GameScreenInner({
   cleaningMode,
   setCleaningMode,
   setShowWaterChangeModal,
-  onRegisterCenterAquarium,
   handleFeed,
   handleEatFood,
   handlePlayTap,
@@ -231,21 +225,6 @@ function GameScreenInner({
 
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const aquariumScrollRef = useRef<HTMLDivElement>(null);
-
-  // ── Aquarium centering ─────────────────────────────────────────────────
-  const handleCenterAquarium = useCallback(() => {
-    const el = aquariumScrollRef.current;
-    if (el) {
-      isCenteringScroll.current = true;
-      el.scrollLeft = (el.scrollWidth - el.clientWidth) / 2;
-      requestAnimationFrame(() => { isCenteringScroll.current = false; });
-    }
-  }, []);
-
-  // Register the centering function with App so ModalManager can use it
-  useEffect(() => {
-    onRegisterCenterAquarium(handleCenterAquarium);
-  }, [handleCenterAquarium, onRegisterCenterAquarium]);
 
   // Center aquarium scroll on first load
   useEffect(() => {
@@ -312,7 +291,8 @@ function GameScreenInner({
     // poop so the poop-cleaning tutorial triggers right after play mode exits.
     setGameState(s => {
       if (!s) return s;
-      if (s.playTutorialSeen) return s;
+      if (s.onboardingProgress !== 'play') return s;
+      // Spawn a tutorial poop so the clean tutorial triggers right after play mode exits.
       const tutorialPoop = {
         id: `poop-tutorial-${Date.now()}`,
         x: 50,
@@ -320,7 +300,7 @@ function GameScreenInner({
       };
       return {
         ...s,
-        playTutorialSeen: true,
+        onboardingProgress: 'clean' as const,
         poopItems: [...(s.poopItems ?? []), tutorialPoop],
         axolotl: s.axolotl ? {
           ...s.axolotl,
@@ -496,10 +476,8 @@ function GameScreenInner({
                 </AnimatePresence>
                 {/* Home, Mini Games, Shop buttons - evenly spaced */}
                 <div className="flex justify-center items-center mt-1">
-                  {/* Lock nav buttons both during normal tutorial lock modes AND while the
-                      menu tutorial is pending/active. The hamburger button is intentionally
-                      left unlocked so the player can open the menu during the menu tutorial. */}
-                  <div className={`flex items-center gap-6 w-3/4 ${(tutorialLockMode !== null || _showMenuTutorial || (gameState.wellbeingCompleteSeen === true && !gameState.menuTutorialSeen && gameState.tutorialStep === 'done')) ? 'pointer-events-none opacity-30' : ''}`}>
+                  {/* Lock nav buttons during active tutorial steps. */}
+                  <div className={`flex items-center gap-6 w-3/4 ${tutorialLockMode !== null ? 'pointer-events-none opacity-30' : ''}`}>
                   <motion.button
                     onClick={() => { setCurrentScreen('home'); setShowHamburgerMenu(false); }}
                     className="relative bg-transparent border border-white/30 rounded-xl active:bg-white/[0.08] transition-all flex-1"
@@ -635,7 +613,14 @@ function GameScreenInner({
                       transition={{ duration: 0.3, ease: 'easeOut' }}
                     >
                       <motion.button
-                        onClick={() => { setActiveModal('stats'); setShowHamburgerMenu(false); setGameState(s => s ? { ...s, statTutorialSeen: true } : s); }}
+                        onClick={() => {
+                          setActiveModal('stats');
+                          setShowHamburgerMenu(false);
+                          setGameState(s => {
+                            if (!s || s.seenMilestones?.includes('stat_tutorial')) return s;
+                            return { ...s, seenMilestones: [...(s.seenMilestones ?? []), 'stat_tutorial'] };
+                          });
+                        }}
                         whileTap={{ scale: 0.95 }}
                         animate={{ boxShadow: ['0 4px 18px rgba(245,158,11,0.45)', '0 4px 28px rgba(245,158,11,0.75)', '0 4px 18px rgba(245,158,11,0.45)'] }}
                         transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
@@ -708,7 +693,7 @@ function GameScreenInner({
                   onReleaseAxolotl={handleReleaseAxolotl}
                   onClaimAchievement={handleClaimAchievement}
                   onAddFriend={handleAddFriend}
-                  isTutorialActive={_showMenuTutorial}
+                  isTutorialActive={false}
                   isUnder13={isUnder13}
                 />
               )}
@@ -733,12 +718,15 @@ function GameScreenInner({
                         hasInitiallyScrolled.current = true;
                         setShowScrollHint(false);
                       }
-                      // Swipe tutorial: advance to feed step after 1 s
-                      if (gameState?.tutorialStep === 'swipe' && !swipeTutDoneRef.current) {
+                      // Swipe tutorial: advance straight to feed after 1 s.
+                      // Sprint 2 collapsed the 'wellbeing_intro' modal step.
+                      if (gameState?.onboardingProgress === 'swipe' && !swipeTutDoneRef.current) {
                         swipeTutDoneRef.current = true;
                         setTimeout(() => {
                           setGameState(s =>
-                            s?.tutorialStep === 'swipe' ? { ...s, tutorialStep: 'feed' } : s
+                            s?.onboardingProgress === 'swipe'
+                              ? { ...s, onboardingProgress: 'feed' as const }
+                              : s
                           );
                         }, 1000);
                       }
@@ -774,7 +762,7 @@ function GameScreenInner({
                         <FoodDisplay
                           key={food.id}
                           food={food}
-                          tutorialActive={gameState.tutorialStep === 'eat'}
+                          tutorialActive={gameState.onboardingProgress === 'eat'}
                         />
                       ))}
                       {/* Poop Items */}
@@ -914,7 +902,7 @@ function GameScreenInner({
                   </AnimatePresence>
 
                   {/* ── Swipe tutorial — very first prompt for brand-new players ── */}
-                  {gameState.tutorialStep === 'swipe' && (
+                  {gameState.onboardingProgress === 'swipe' && (
                     <motion.div
                       className="absolute inset-0 pointer-events-none"
                       style={{ zIndex: 15 }}
@@ -939,11 +927,8 @@ function GameScreenInner({
                             maxWidth: 240,
                           }}
                         >
-                          <p className="text-slate-800 text-[13px] font-bold leading-snug">
-                            Welcome to your aquarium!
-                          </p>
-                          <p className="text-slate-500 text-[11.5px] leading-snug mt-0.5">
-                            Swipe <span className="text-cyan-600 font-bold">left &amp; right</span> to explore your whole tank
+                          <p className="text-cyan-600 text-[16px] font-black leading-none">
+                            Swipe to explore!
                           </p>
                         </div>
                         <div
@@ -959,15 +944,15 @@ function GameScreenInner({
                   )}
 
                   {/* Tutorial overlay — rendered inside the aquarium relative container */}
-                  {gameState.wellbeingIntroSeen === true && (gameState.tutorialStep === 'feed' || gameState.tutorialStep === 'eat') && (
+                  {(gameState.onboardingProgress === 'feed' || gameState.onboardingProgress === 'eat') && (
                     <FeedingTutorial
-                      step={gameState.tutorialStep}
+                      step={gameState.onboardingProgress}
                       axolotlName={axolotl.name}
                     />
                   )}
 
                   {/* Stat assignment tutorial — shown after first level-up */}
-                  {(gameState.pendingStatPoints ?? 0) > 0 && !gameState.statTutorialSeen && gameState.tutorialStep === 'done' && !activeModal && tutorialAllowed && (
+                  {(gameState.pendingStatPoints ?? 0) > 0 && !gameState.seenMilestones?.includes('stat_tutorial') && gameState.onboardingProgress === 'play' && !activeModal && tutorialAllowed && (
                     <motion.div
                       className="absolute inset-0 pointer-events-none"
                       style={{ zIndex: 45 }}
@@ -976,7 +961,7 @@ function GameScreenInner({
                       exit={{ opacity: 0 }}
                       transition={{ duration: 0.4 }}
                     >
-                      <div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.45)' }} />
+                      <div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.2)' }} />
                       <motion.div
                         className="absolute top-[25%] left-0 right-0 flex flex-col items-center gap-1 px-4"
                         initial={{ opacity: 0, y: 10 }}
@@ -991,56 +976,29 @@ function GameScreenInner({
                             borderBottom: '9px solid rgba(255,255,255,0.97)',
                           }}
                         />
-                        <div
+                        <motion.div
                           className="rounded-2xl px-5 py-3 shadow-2xl text-center"
                           style={{
                             background: 'rgba(255,255,255,0.97)',
                             border: '2.5px solid rgba(245,158,11,0.75)',
                             boxShadow: '0 8px 32px rgba(245,158,11,0.4)',
-                            maxWidth: 250,
                           }}
+                          animate={{ scale: [1, 1.04, 1] }}
+                          transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
                         >
-                          <p className="text-slate-800 text-[13px] font-bold leading-snug">
+                          <p className="text-amber-600 text-[16px] font-black leading-none">
                             You leveled up!
                           </p>
-                          <p className="text-slate-500 text-[11.5px] leading-snug mt-0.5">
-                            Tap the glowing button above to assign your stat point!
+                          <p className="text-slate-600 text-[11px] font-semibold mt-1">
+                            Tap above to assign your point!
                           </p>
-
-                          <div className="my-2.5 h-px bg-slate-100" />
-
-                          <p className="text-slate-700 text-[12px] font-bold leading-snug mb-1">
-                            Why do stats matter?
-                          </p>
-                          <p className="text-slate-500 text-[11px] leading-snug">
-                            The stronger your axolotl, the better chance you get a{' '}
-                            <span className="text-cyan-600 font-bold">Rare</span>,{' '}
-                            <span className="text-fuchsia-600 font-bold">Epic</span>, or even{' '}
-                            <span className="text-amber-500 font-bold">Legendary</span> egg when you rebirth!
-                          </p>
-
-                          <div className="mt-2 flex items-center justify-center gap-1">
-                            {['Common','Rare','Epic','Legendary','Mythic'].map((r, i) => (
-                              <div
-                                key={i}
-                                className="text-[8.5px] font-bold px-1 py-0.5 rounded-md leading-none"
-                                style={{
-                                  background: ['rgba(148,163,184,0.15)','rgba(34,211,238,0.12)','rgba(168,85,247,0.12)','rgba(251,191,36,0.15)','rgba(239,68,68,0.12)'][i],
-                                  color: ['#94a3b8','#06b6d4','#a855f7','#d97706','#ef4444'][i],
-                                  border: `1px solid ${['rgba(148,163,184,0.3)','rgba(34,211,238,0.3)','rgba(168,85,247,0.3)','rgba(251,191,36,0.3)','rgba(239,68,68,0.3)'][i]}`,
-                                }}
-                              >
-                                {r}
-                              </div>
-                            ))}
-                          </div>
-                        </div>
+                        </motion.div>
                       </motion.div>
                     </motion.div>
                   )}
 
                   {/* Play tutorial — shown after stat tutorial is completed */}
-                  {gameState.statTutorialSeen && !gameState.playTutorialSeen && (gameState.pendingStatPoints ?? 0) === 0 && gameState.tutorialStep === 'done' && !activeModal && !playMode && tutorialAllowed && (
+                  {gameState.seenMilestones?.includes('stat_tutorial') && gameState.onboardingProgress === 'play' && (gameState.pendingStatPoints ?? 0) === 0 && !activeModal && !playMode && tutorialAllowed && (
                     <motion.div
                       className="absolute inset-0 pointer-events-none"
                       style={{ zIndex: 45 }}
@@ -1049,7 +1007,7 @@ function GameScreenInner({
                       exit={{ opacity: 0 }}
                       transition={{ duration: 0.4 }}
                     >
-                      <div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.45)' }} />
+                      <div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.2)' }} />
                       <motion.div
                         className="absolute bottom-[82px] flex flex-col items-center gap-1"
                         style={{ left: '37.5%' }}
@@ -1057,22 +1015,20 @@ function GameScreenInner({
                         animate={{ opacity: 1, y: 0, x: '-50%' }}
                         transition={{ delay: 0.3, duration: 0.4 }}
                       >
-                        <div
-                          className="rounded-2xl px-5 py-3 shadow-2xl text-center"
+                        <motion.div
+                          className="rounded-2xl px-5 py-2.5 shadow-2xl text-center"
                           style={{
                             background: 'rgba(255,255,255,0.97)',
                             border: '2.5px solid rgba(139,92,246,0.75)',
                             boxShadow: '0 8px 32px rgba(139,92,246,0.4)',
-                            maxWidth: 200,
                           }}
+                          animate={{ scale: [1, 1.04, 1] }}
+                          transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
                         >
-                          <p className="text-slate-800 text-[13px] font-bold leading-snug">
-                            Now go play!
+                          <p className="text-violet-600 text-[16px] font-black leading-none">
+                            Tap Playtime!
                           </p>
-                          <p className="text-slate-500 text-[11.5px] leading-snug mt-0.5">
-                            Tap <span className="text-violet-600 font-bold">Playtime</span> to boost happiness
-                          </p>
-                        </div>
+                        </motion.div>
                         <div
                           className="w-0 h-0"
                           style={{
@@ -1086,7 +1042,7 @@ function GameScreenInner({
                   )}
 
                   {/* Mini game tutorial — shown after wellbeing completion reward is collected */}
-                  {gameState.playTutorialSeen && gameState.cleanTutorialSeen === true && gameState.waterTutorialSeen === true && gameState.wellbeingCompleteSeen === true && gameState.menuTutorialSeen === true && !gameState.miniGameTutorialSeen && gameState.tutorialStep === 'done' && !activeModal && !playMode && tutorialAllowed && (
+                  {gameState.onboardingProgress === 'complete' && !gameState.seenMilestones?.includes('mini_game_tutorial') && !activeModal && !playMode && tutorialAllowed && (
                     <motion.div
                       className="absolute inset-0 pointer-events-none"
                       style={{ zIndex: 45 }}
@@ -1095,7 +1051,7 @@ function GameScreenInner({
                       exit={{ opacity: 0 }}
                       transition={{ duration: 0.4 }}
                     >
-                      <div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.45)' }} />
+                      <div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.2)' }} />
                       <motion.div
                         className="absolute top-[18%] left-0 right-0 flex flex-col items-center gap-1 px-4"
                         initial={{ opacity: 0, y: 10 }}
@@ -1110,22 +1066,20 @@ function GameScreenInner({
                             borderBottom: '9px solid rgba(255,255,255,0.97)',
                           }}
                         />
-                        <div
-                          className="rounded-2xl px-5 py-3 shadow-2xl text-center"
+                        <motion.div
+                          className="rounded-2xl px-5 py-2.5 shadow-2xl text-center"
                           style={{
                             background: 'rgba(255,255,255,0.97)',
                             border: '2.5px solid rgba(99,102,241,0.75)',
                             boxShadow: '0 8px 32px rgba(99,102,241,0.4)',
-                            maxWidth: 220,
                           }}
+                          animate={{ scale: [1, 1.04, 1] }}
+                          transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
                         >
-                          <p className="text-slate-800 text-[13px] font-bold leading-snug">
-                            Play a mini game!
+                          <p className="text-indigo-600 text-[16px] font-black leading-none">
+                            Tap to play a game!
                           </p>
-                          <p className="text-slate-500 text-[11.5px] leading-snug mt-0.5">
-                            Tap the controller above to earn XP and coins
-                          </p>
-                        </div>
+                        </motion.div>
                       </motion.div>
                     </motion.div>
                   )}
@@ -1133,8 +1087,7 @@ function GameScreenInner({
                   {/* ── First-time poop cleaning tutorial ── */}
                   {(() => {
                     const showCleanTutorial =
-                      gameState.cleanTutorialSeen === false &&
-                      gameState.playTutorialSeen === true &&
+                      gameState.onboardingProgress === 'clean' &&
                       (gameState.poopItems?.length ?? 0) > 0 &&
                       !playMode &&
                       tutorialAllowed;
@@ -1152,7 +1105,7 @@ function GameScreenInner({
                           >
                             <div
                               className="absolute inset-0"
-                              style={{ background: 'rgba(0,0,0,0.42)' }}
+                              style={{ background: 'rgba(0,0,0,0.2)' }}
                             />
                             <motion.div
                               className="absolute bottom-[72px] flex flex-col items-center gap-0.5"
@@ -1161,19 +1114,23 @@ function GameScreenInner({
                               animate={{ opacity: 1, y: 0, x: '-50%' }}
                               transition={{ delay: 0.3, duration: 0.4 }}
                             >
-                              <div
-                                className="rounded-2xl px-5 py-3 shadow-2xl text-center max-w-[230px]"
+                              <motion.div
+                                className="rounded-2xl px-5 py-2.5 shadow-2xl text-center"
                                 style={{
                                   background: 'rgba(255,255,255,0.97)',
                                   border: '2.5px solid rgba(251,191,36,0.75)',
                                   boxShadow: '0 8px 32px rgba(251,191,36,0.4)',
                                 }}
+                                animate={{ scale: [1, 1.04, 1] }}
+                                transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
                               >
-                                <p className="text-slate-800 text-[13px] font-bold leading-snug">
-                                  Yikes, there's poop!<br />
-                                  Tap <span className="text-rose-500">Clean</span> to start
+                                <p className="text-rose-500 text-[16px] font-black leading-none">
+                                  Yikes, poop!
                                 </p>
-                              </div>
+                                <p className="text-slate-600 text-[11px] font-semibold mt-1">
+                                  Tap Clean.
+                                </p>
+                              </motion.div>
                               <div
                                 className="w-0 h-0"
                                 style={{
@@ -1190,9 +1147,7 @@ function GameScreenInner({
                   })()}
 
                   {/* ── Water quality tutorial — shown after poop is cleaned ── */}
-                  {gameState.cleanTutorialSeen === true &&
-                    gameState.waterTutorialSeen === false &&
-                    gameState.tutorialStep === 'done' &&
+                  {gameState.onboardingProgress === 'water' &&
                     !activeModal && !playMode && !cleaningMode && tutorialAllowed && (
                     <motion.div
                       className="absolute inset-0 pointer-events-none"
@@ -1202,7 +1157,7 @@ function GameScreenInner({
                       exit={{ opacity: 0 }}
                       transition={{ duration: 0.4 }}
                     >
-                      <div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.45)' }} />
+                      <div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.2)' }} />
                       <motion.div
                         className="absolute bottom-[82px] flex flex-col items-center gap-0.5"
                         style={{ left: '87.5%' }}
@@ -1210,21 +1165,23 @@ function GameScreenInner({
                         animate={{ opacity: 1, y: 0, x: '-50%' }}
                         transition={{ delay: 0.3, duration: 0.4 }}
                       >
-                        <div
-                          className="rounded-2xl px-4 py-3 shadow-2xl text-center max-w-[210px]"
+                        <motion.div
+                          className="rounded-2xl px-4 py-2.5 shadow-2xl text-center"
                           style={{
                             background: 'rgba(255,255,255,0.97)',
                             border: '2.5px solid rgba(99,102,241,0.75)',
                             boxShadow: '0 8px 32px rgba(99,102,241,0.4)',
                           }}
+                          animate={{ scale: [1, 1.04, 1] }}
+                          transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
                         >
-                          <p className="text-slate-800 text-[13px] font-bold leading-snug">
-                            Water quality is low!
+                          <p className="text-indigo-600 text-[16px] font-black leading-none">
+                            Water's low!
                           </p>
-                          <p className="text-slate-500 text-[11.5px] leading-snug mt-0.5">
-                            Tap <span className="text-indigo-600 font-bold">Water Quality</span> to do a water change
+                          <p className="text-slate-600 text-[11px] font-semibold mt-1">
+                            Tap Water Quality.
                           </p>
-                        </div>
+                        </motion.div>
                         <div
                           className="w-0 h-0"
                           style={{
@@ -1240,25 +1197,19 @@ function GameScreenInner({
                   {/* Floating Action Buttons — lifted above tutorial overlays when needed */}
                   {(() => {
                     const cleanTutActive =
-                      gameState.cleanTutorialSeen === false &&
-                      gameState.playTutorialSeen === true &&
+                      gameState.onboardingProgress === 'clean' &&
                       (gameState.poopItems?.length ?? 0) > 0 &&
-                      !playMode &&
-                      !cleaningMode &&
-                      tutorialAllowed;
+                      !playMode && !cleaningMode && tutorialAllowed;
                     const waterTutActive =
-                      gameState.cleanTutorialSeen === true &&
-                      gameState.waterTutorialSeen === false &&
-                      gameState.tutorialStep === 'done' &&
+                      gameState.onboardingProgress === 'water' &&
                       !activeModal && !playMode && !cleaningMode && tutorialAllowed;
                     const playTutActive =
-                      gameState.statTutorialSeen === true &&
-                      !gameState.playTutorialSeen &&
+                      !!gameState.seenMilestones?.includes('stat_tutorial') &&
+                      gameState.onboardingProgress === 'play' &&
                       (gameState.pendingStatPoints ?? 0) === 0 &&
-                      gameState.tutorialStep === 'done' &&
                       !activeModal && !playMode;
                     const needsLift =
-                      gameState.tutorialStep === 'feed' || cleanTutActive || playTutActive || waterTutActive;
+                      gameState.onboardingProgress === 'feed' || cleanTutActive || playTutActive || waterTutActive;
                     return (
                       <div
                         className={`absolute bottom-0 left-0 right-0 pb-[max(0.75rem,env(safe-area-inset-bottom))] ${
@@ -1276,7 +1227,7 @@ function GameScreenInner({
                             canRebirth={showRebirthButton}
                             isHungerFull={axolotl.stats.hunger >= 100}
                             stats={axolotl.stats}
-                            tutorialFeedActive={gameState.tutorialStep === 'feed'}
+                            tutorialFeedActive={gameState.onboardingProgress === 'feed'}
                             cleaningMode={cleaningMode}
                             cleanTutorialActive={cleanTutActive}
                             playMode={playMode}
@@ -1319,7 +1270,10 @@ function GameScreenInner({
                       // Always mark the mini-game tutorial as seen when entering any game.
                       // This prevents the tutorial from looping if the user enters a game
                       // before the mgTutPhase effect has had a chance to fire.
-                      setGameState(s => s && !s.miniGameTutorialSeen ? { ...s, miniGameTutorialSeen: true } : s);
+                      setGameState(s => {
+                        if (!s || s.seenMilestones?.includes('mini_game_tutorial')) return s;
+                        return { ...s, seenMilestones: [...(s.seenMilestones ?? []), 'mini_game_tutorial'] };
+                      });
 
                       setGameState(prev => {
                         if (!prev) return prev;

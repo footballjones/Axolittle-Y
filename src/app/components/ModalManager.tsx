@@ -13,7 +13,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { GameState, Axolotl, Friend, SecondaryStats } from '../types/game';
 import { GameResult } from '../minigames/types';
 import { generatePermanentFriendCode } from '../utils/storage';
-import { canSpinToday, canClaimDailyLogin } from '../utils/dailySystem';
+import { canSpinToday } from '../utils/dailySystem';
 
 // Modals
 import { WaterChangeModal } from './WaterChangeModal';
@@ -26,11 +26,7 @@ import { SettingsModal } from './SettingsModal';
 import { LoginScreen } from './LoginScreen';
 import { ParentGate } from './ParentGate';
 import { SyncConflictModal } from './SyncConflictModal';
-import { WellbeingIntroModal } from './WellbeingIntroModal';
 import { WellbeingCompleteModal } from './WellbeingCompleteModal';
-import { MenuTutorialOverlay } from './MenuTutorialOverlay';
-import { MenuTutorialPrompt } from './MenuTutorialPrompt';
-import { MenuTutorialCompleteModal } from './MenuTutorialCompleteModal';
 import { JuvenileUnlockModal } from './JuvenileUnlockModal';
 import { Level7UnlockModal } from './Level7UnlockModal';
 import { ShrimpTutorialIntroModal, ShrimpInfoModal } from './ShrimpTutorialModal';
@@ -69,9 +65,6 @@ export interface ModalManagerProps {
   signOut: () => Promise<void>;
   deleteAccount: () => Promise<{ error: string | null }>;
 
-  // Aquarium scroll centering (used by WellbeingIntroModal)
-  onCenterAquarium: () => void;
-
   // ── Modal visibility state ───────────────────────────────────────────────
   activeModal: 'shop' | 'social' | 'rebirth' | 'stats' | 'settings' | null;
   setActiveModal: (modal: 'shop' | 'social' | 'rebirth' | 'stats' | 'settings' | null) => void;
@@ -89,11 +82,6 @@ export interface ModalManagerProps {
   setShowShrimpInfoModal: (v: boolean) => void;
   shrimpTutorialShopPhase: 'info' | 'buy' | false;
   setShrimpTutorialShopPhase: (v: 'info' | 'buy' | false) => void;
-  showMenuTutorial: boolean;
-  showMenuTutorialPrompt: boolean;
-  onStartMenuTutorial: () => void;
-  showMenuTutorialComplete: boolean;
-  setShowMenuTutorialComplete: (v: boolean) => void;
   showRebirthReady: boolean;
   setShowRebirthReady: (v: boolean) => void;
   conflictSaves: { local: GameState; cloud: GameState } | null;
@@ -105,16 +93,12 @@ export interface ModalManagerProps {
   setShowSpinWheel: (v: boolean) => void;
   showDailyLogin: boolean;
   setShowDailyLogin: (v: boolean) => void;
-  showHamburgerMenu: boolean;
   setShowHamburgerMenu: (v: boolean) => void;
   shopSection: 'coins' | 'opals' | 'wellbeing' | null;
   setShopSection: (v: 'coins' | 'opals' | 'wellbeing' | null) => void;
   activeGame: string | null;
   levelUpInfo: { level: number } | null;
   setLevelUpInfo: (v: { level: number } | null) => void;
-
-  // Tutorial helpers
-  delayNextTutorial: (ms: number) => void;
 
   // ── Game action handlers ─────────────────────────────────────────────────
   onWaterChange: () => void;
@@ -177,7 +161,6 @@ function ModalManagerInner({
   isUnder13 = false,
   signOut,
   deleteAccount,
-  onCenterAquarium,
   activeModal,
   setActiveModal,
   showWaterChangeModal,
@@ -194,11 +177,6 @@ function ModalManagerInner({
   setShowShrimpInfoModal,
   shrimpTutorialShopPhase,
   setShrimpTutorialShopPhase,
-  showMenuTutorial,
-  showMenuTutorialPrompt,
-  onStartMenuTutorial,
-  showMenuTutorialComplete,
-  setShowMenuTutorialComplete,
   showRebirthReady,
   setShowRebirthReady,
   conflictSaves,
@@ -210,14 +188,12 @@ function ModalManagerInner({
   setShowSpinWheel,
   showDailyLogin,
   setShowDailyLogin,
-  showHamburgerMenu: _showHamburgerMenu,
   setShowHamburgerMenu,
   shopSection,
   setShopSection,
   activeGame,
   levelUpInfo,
   setLevelUpInfo,
-  delayNextTutorial,
   onWaterChange,
   onBuyCoins,
   onBuyFilter,
@@ -239,8 +215,8 @@ function ModalManagerInner({
   onMiniGameApplyReward,
   onDeductEnergy,
   onClaimAchievement: _onClaimAchievement,
-  onUnlockGames,
-  onRefillEnergy,
+  onUnlockGames: _onUnlockGames,
+  onRefillEnergy: _onRefillEnergy,
   onSpinWheel,
   onDailyLoginClaim,
 }: ModalManagerProps) {
@@ -251,6 +227,24 @@ function ModalManagerInner({
   useEffect(() => {
     if (!showAuthOverlay) setParentGatePassed(false);
   }, [showAuthOverlay]);
+
+  // Record per-game personal best before delegating to the parent's
+  // game-end handler. activeGame is still the just-finished game's ID at
+  // this point — the parent's handler clears it afterward.
+  const recordPBAndEnd = (result: GameResult) => {
+    if (activeGame) {
+      setGameState((s) => {
+        if (!s) return s;
+        const existing = s.personalBests?.[activeGame] ?? 0;
+        if (result.score <= existing) return s;
+        return {
+          ...s,
+          personalBests: { ...(s.personalBests ?? {}), [activeGame]: result.score },
+        };
+      });
+    }
+    onMiniGameEnd(result);
+  };
 
   return (
     <>
@@ -438,66 +432,17 @@ function ModalManagerInner({
         />
       )}
 
-      {/* Wellbeing intro modal */}
-      <AnimatePresence>
-        {gameState?.wellbeingIntroSeen === false &&
-          gameState?.tutorialStep === 'feed' &&
-          gameState?.axolotl && (
-          <WellbeingIntroModal
-            axolotlName={gameState.axolotl.name}
-            onStart={() => {
-              onCenterAquarium();
-              setGameState(s => s ? { ...s, wellbeingIntroSeen: true } : s);
-            }}
-          />
-        )}
-      </AnimatePresence>
-
       {/* Wellbeing completion modal — grants 5 opals */}
       <AnimatePresence>
-        {gameState?.waterTutorialSeen === true &&
-          gameState?.wellbeingCompleteSeen === false &&
+        {gameState?.onboardingProgress === 'wellbeing_reward' &&
           gameState?.axolotl && (
           <WellbeingCompleteModal
             axolotlName={gameState.axolotl.name}
             onCollect={() =>
               setGameState(s =>
-                s ? { ...s, wellbeingCompleteSeen: true, opals: (s.opals ?? 0) + 5 } : s
+                s ? { ...s, onboardingProgress: 'complete', opals: (s.opals ?? 0) + 5 } : s
               )
             }
-          />
-        )}
-      </AnimatePresence>
-
-      {/* Menu tutorial prompt — shown on aquarium whenever tour is pending */}
-      <AnimatePresence>
-        {showMenuTutorialPrompt && !showMenuTutorial && (
-          <MenuTutorialPrompt onStart={onStartMenuTutorial} />
-        )}
-      </AnimatePresence>
-
-      {/* Menu tutorial overlay */}
-      {showMenuTutorial && (
-        <MenuTutorialOverlay
-          menuOpen={_showHamburgerMenu}
-          onOpenMenu={() => setShowHamburgerMenu(true)}
-          onComplete={() => {
-            setShowMenuTutorialComplete(true);
-          }}
-        />
-      )}
-
-      {/* Menu tutorial completion modal — grants 10 opals */}
-      <AnimatePresence>
-        {showMenuTutorialComplete && (
-          <MenuTutorialCompleteModal
-            onCollect={() => {
-              setShowMenuTutorialComplete(false);
-              setGameState(s =>
-                s ? { ...s, menuTutorialSeen: true, opals: (s.opals ?? 0) + 10 } : s
-              );
-              delayNextTutorial(1500);
-            }}
           />
         )}
       </AnimatePresence>
@@ -509,7 +454,7 @@ function ModalManagerInner({
             axolotlName={gameState.axolotl.name}
             onClose={() => {
               setShowJuvenileUnlock(false);
-              setGameState(s => s ? { ...s, juvenileUnlockSeen: true } : s);
+              setGameState(s => s ? { ...s, seenMilestones: [...(s.seenMilestones ?? []), 'juvenile_unlock'] } : s);
             }}
           />
         )}
@@ -521,11 +466,11 @@ function ModalManagerInner({
           <Level7UnlockModal
             onClose={() => {
               setShowLevel7Unlock(false);
-              setGameState(s => s ? { ...s, level7UnlockSeen: true } : s);
+              setGameState(s => s ? { ...s, seenMilestones: [...(s.seenMilestones ?? []), 'level7_unlock'] } : s);
             }}
             onOpenSocial={isUnder13 ? undefined : () => {
               setShowLevel7Unlock(false);
-              setGameState(s => s ? { ...s, level7UnlockSeen: true } : s);
+              setGameState(s => s ? { ...s, seenMilestones: [...(s.seenMilestones ?? []), 'level7_unlock'] } : s);
               setActiveModal('social');
             }}
           />
@@ -552,7 +497,7 @@ function ModalManagerInner({
           <ShrimpInfoModal
             onClose={() => {
               setShowShrimpInfoModal(false);
-              setGameState(s => s ? { ...s, shrimpTutorialSeen: true } : s);
+              setGameState(s => s ? { ...s, seenMilestones: [...(s.seenMilestones ?? []), 'shrimp_tutorial'] } : s);
             }}
           />
         )}
@@ -578,78 +523,94 @@ function ModalManagerInner({
       <AnimatePresence>
         {activeGame === 'keepey-upey' && (
           <KeepeyUpey
-            onEnd={onMiniGameEnd}
+            onEnd={recordPBAndEnd}
             onDeductEnergy={onDeductEnergy}
             onApplyReward={onMiniGameApplyReward}
             energy={gameState.energy}
             soundEnabled={gameState.soundEnabled !== false}
+            noEnergyMultiplier={0.25}
+            personalBest={gameState.personalBests?.[activeGame] ?? 0}
           />
         )}
         {activeGame === 'math-rush' && (
           <MathRush
-            onEnd={onMiniGameEnd}
+            onEnd={recordPBAndEnd}
             onDeductEnergy={onDeductEnergy}
             onApplyReward={onMiniGameApplyReward}
             energy={gameState.energy}
             soundEnabled={gameState.soundEnabled !== false}
+            noEnergyMultiplier={0.25}
+            personalBest={gameState.personalBests?.[activeGame] ?? 0}
           />
         )}
         {activeGame === 'axolotl-stacker' && (
           <AxolotlStacker
-            onEnd={onMiniGameEnd}
+            onEnd={recordPBAndEnd}
             onDeductEnergy={onDeductEnergy}
             onApplyReward={onMiniGameApplyReward}
             energy={gameState.energy}
             soundEnabled={gameState.soundEnabled !== false}
+            noEnergyMultiplier={0.25}
+            personalBest={gameState.personalBests?.[activeGame] ?? 0}
           />
         )}
         {activeGame === 'coral-code' && (
           <CoralCode
-            onEnd={onMiniGameEnd}
+            onEnd={recordPBAndEnd}
             onDeductEnergy={onDeductEnergy}
             onApplyReward={onMiniGameApplyReward}
             energy={gameState.energy}
             soundEnabled={gameState.soundEnabled !== false}
+            noEnergyMultiplier={0.25}
+            personalBest={gameState.personalBests?.[activeGame] ?? 0}
           />
         )}
         {activeGame === 'fishing' && (
           <Fishing
-            onEnd={onMiniGameEnd}
+            onEnd={recordPBAndEnd}
             onDeductEnergy={onDeductEnergy}
             onApplyReward={onMiniGameApplyReward}
             energy={gameState.energy}
             strength={gameState.axolotl?.secondaryStats?.strength || 0}
             speed={gameState.axolotl?.secondaryStats?.speed || 0}
             soundEnabled={gameState.soundEnabled !== false}
+            noEnergyMultiplier={0.25}
+            personalBest={gameState.personalBests?.[activeGame] ?? 0}
           />
         )}
         {activeGame === 'bite-tag' && (
           <BiteTag
-            onEnd={onMiniGameEnd}
+            onEnd={recordPBAndEnd}
             onDeductEnergy={onDeductEnergy}
             onApplyReward={onMiniGameApplyReward}
             energy={gameState.energy}
             speed={gameState.axolotl?.secondaryStats?.speed || 0}
             stamina={gameState.axolotl?.secondaryStats?.stamina || 0}
             soundEnabled={gameState.soundEnabled !== false}
+            noEnergyMultiplier={0.25}
+            personalBest={gameState.personalBests?.[activeGame] ?? 0}
           />
         )}
         {activeGame === 'tide-tiles' && (
           <TideTiles
-            onEnd={onMiniGameEnd}
+            onEnd={recordPBAndEnd}
             onDeductEnergy={onDeductEnergy}
             onApplyReward={onMiniGameApplyReward}
             energy={gameState.energy}
             soundEnabled={gameState.soundEnabled !== false}
+            noEnergyMultiplier={0.25}
+            personalBest={gameState.personalBests?.[activeGame] ?? 0}
           />
         )}
         {activeGame === 'bubble-line-up' && (
           <BubbleLineUp
-            onEnd={onMiniGameEnd}
+            onEnd={recordPBAndEnd}
             onDeductEnergy={onDeductEnergy}
             onApplyReward={onMiniGameApplyReward}
             energy={gameState.energy}
             soundEnabled={gameState.soundEnabled !== false}
+            noEnergyMultiplier={0.25}
+            personalBest={gameState.personalBests?.[activeGame] ?? 0}
           />
         )}
       </AnimatePresence>
@@ -690,7 +651,7 @@ function ModalManagerInner({
           <RebirthReadyModal
             onClose={() => {
               setShowRebirthReady(false);
-              setGameState(s => s ? { ...s, rebirthReadySeen: true } : s);
+              setGameState(s => s ? { ...s, seenMilestones: [...(s.seenMilestones ?? []), 'rebirth_ready'] } : s);
             }}
           />
         )}
@@ -728,14 +689,10 @@ function modalManagerPropsAreEqual(
   if (prev.showShrimpTutorialIntro  !== next.showShrimpTutorialIntro)  return false;
   if (prev.showShrimpInfoModal      !== next.showShrimpInfoModal)      return false;
   if (prev.shrimpTutorialShopPhase  !== next.shrimpTutorialShopPhase)  return false;
-  if (prev.showMenuTutorial         !== next.showMenuTutorial)         return false;
-  if (prev.showMenuTutorialPrompt   !== next.showMenuTutorialPrompt)   return false;
-  if (prev.showMenuTutorialComplete !== next.showMenuTutorialComplete) return false;
   if (prev.showRebirthReady  !== next.showRebirthReady)  return false;
   if (prev.showAuthOverlay   !== next.showAuthOverlay)   return false;
   if (prev.showSpinWheel     !== next.showSpinWheel)     return false;
   if (prev.showDailyLogin    !== next.showDailyLogin)    return false;
-  if (prev.showHamburgerMenu !== next.showHamburgerMenu) return false;
   if (prev.shopSection       !== next.shopSection)       return false;
   if (prev.friends           !== next.friends)           return false;
   if (prev.lineage           !== next.lineage)           return false;
@@ -776,10 +733,9 @@ function modalManagerPropsAreEqual(
     if (pg.pendingStatPoints    !== ng.pendingStatPoints)    return false;
     // Eggs (Hamburger sub-panels)
     if (pg.nurseryEggs          !== ng.nurseryEggs)          return false;
-    // Wellbeing tutorial modals
-    if (pg.wellbeingIntroSeen   !== ng.wellbeingIntroSeen)   return false;
-    if (pg.waterTutorialSeen    !== ng.waterTutorialSeen)    return false;
-    if (pg.wellbeingCompleteSeen !== ng.wellbeingCompleteSeen) return false;
+    // Onboarding / tutorial
+    if (pg.onboardingProgress !== ng.onboardingProgress) return false;
+    if (pg.seenMilestones     !== ng.seenMilestones)     return false;
     // Mini-game energy — only relevant when a game is actually running
     if (prev.activeGame !== null && pg.energy !== ng.energy) return false;
   }

@@ -89,7 +89,7 @@ export function NamingScreen({ onComplete }: Props) {
       >
         <h2 className="text-white font-black text-2xl text-center mb-1">What's their name?</h2>
         <p className="text-violet-300/75 text-sm text-center mb-5">
-          Give your new axolotl a name!
+          Your new friend is waiting for a name.
         </p>
         <input
           type="text"

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { GameState, SecondaryStats } from './types/game';
 import {
   canRebirth,
@@ -25,7 +25,7 @@ import { getTodayDateString } from './utils/dailySystem';
 import { useAuth } from './context/AuthContext';
 import { useCloudSync, SyncStatus } from './hooks/useCloudSync';
 import { sendFriendAction, sendSticker, isSupabaseConfigured, fetchPlayerAchievements, pushAchievements, setUnder13Flag } from './services/supabase';
-import { track, ModerationEvents } from './utils/telemetry';
+import { track, trackOnce, ModerationEvents, OnboardingEvents } from './utils/telemetry';
 import { LoginScreen } from './components/LoginScreen';
 import { AgeGateScreen, loadAgeGate } from './components/AgeGateScreen';
 import { ParentGate } from './components/ParentGate';
@@ -236,7 +236,6 @@ export default function App() {
     handleStart,
     handleNameAxolotl,
     tutorialAllowed,
-    delayNextTutorial,
     swipeTutDoneRef,
     mgTutPhase,
     setMgTutPhase,
@@ -250,11 +249,6 @@ export default function App() {
     setShowShrimpInfoModal,
     shrimpTutorialShopPhase,
     setShrimpTutorialShopPhase,
-    showMenuTutorial,
-    showMenuTutorialPrompt,
-    handleStartMenuTutorial,
-    showMenuTutorialComplete,
-    setShowMenuTutorialComplete,
     showRebirthReady,
     setShowRebirthReady,
     tutorialLockMode,
@@ -377,15 +371,6 @@ export default function App() {
     return sendSticker(user.id, friendId, senderName, stickerId);
   }, [user, gameState?.axolotl?.name]);
 
-  // ── Aquarium centering (registered by GameScreen, consumed by ModalManager) ──
-  const centerAquariumRef = useRef<(() => void) | null>(null);
-  const handleRegisterCenterAquarium = useCallback((fn: () => void) => {
-    centerAquariumRef.current = fn;
-  }, []);
-  const handleCenterAquarium = useCallback(() => {
-    centerAquariumRef.current?.();
-  }, []);
-
   // Deducts 1 energy when a mini-game attempt begins.
   const handleDeductEnergy = useCallback(() => {
     setGameState(prev => {
@@ -479,10 +464,13 @@ export default function App() {
 
       // Check for daily login bonus on app open.
       const today = getTodayDateString();
-      if (loaded.lastLoginDate !== today && loaded.menuTutorialSeen !== false) {
-        timers.push(setTimeout(() => {
-          setShowDailyLogin(true);
-        }, 1000));
+      if (loaded.onboardingProgress === 'complete') {
+        trackOnce(OnboardingEvents.SESSION_RETURN);
+        if (loaded.lastLoginDate !== today) {
+          timers.push(setTimeout(() => {
+            setShowDailyLogin(true);
+          }, 1000));
+        }
       }
     } else {
       setGameState(getInitialGameState());
@@ -709,7 +697,6 @@ export default function App() {
         swipeTutDoneRef={swipeTutDoneRef}
         mgTutPhase={mgTutPhase}
         setMgTutPhase={setMgTutPhase}
-        showMenuTutorial={showMenuTutorial}
         setHatchingNurseryEggId={setHatchingNurseryEggId}
         notifications={notifications}
         setNotifications={setNotifications}
@@ -724,7 +711,6 @@ export default function App() {
         cleaningMode={cleaningMode}
         setCleaningMode={setCleaningMode}
         setShowWaterChangeModal={setShowWaterChangeModal}
-        onRegisterCenterAquarium={handleRegisterCenterAquarium}
         handleFeed={handleFeed}
         handleEatFood={handleEatFood}
         handlePlayTap={handlePlayTap}
@@ -763,7 +749,6 @@ export default function App() {
         isUnder13={isUnder13}
         signOut={signOut}
         deleteAccount={deleteAccount}
-        onCenterAquarium={handleCenterAquarium}
         activeModal={activeModal}
         setActiveModal={setActiveModal}
         showWaterChangeModal={showWaterChangeModal}
@@ -780,23 +765,6 @@ export default function App() {
         setShowShrimpInfoModal={setShowShrimpInfoModal}
         shrimpTutorialShopPhase={shrimpTutorialShopPhase}
         setShrimpTutorialShopPhase={setShrimpTutorialShopPhase}
-        showMenuTutorial={showMenuTutorial}
-        showMenuTutorialPrompt={showMenuTutorialPrompt}
-        onStartMenuTutorial={() => {
-          // Close everything and return to the aquarium before starting the tour
-          // so the overlay always begins from a clean home-screen state.
-          setActiveModal(null);
-          setShowHamburgerMenu(false);
-          setCurrentScreen('home');
-          setShowNotifPanel(false);
-          setShowInventoryPanel(false);
-          setShowEggsPanel(false);
-          setShowAchievementsPanel(false);
-          setShowHowToPlayPanel(false);
-          handleStartMenuTutorial();
-        }}
-        showMenuTutorialComplete={showMenuTutorialComplete}
-        setShowMenuTutorialComplete={setShowMenuTutorialComplete}
         showRebirthReady={showRebirthReady}
         setShowRebirthReady={setShowRebirthReady}
         conflictSaves={conflictSaves}
@@ -808,14 +776,12 @@ export default function App() {
         setShowSpinWheel={setShowSpinWheel}
         showDailyLogin={showDailyLogin}
         setShowDailyLogin={setShowDailyLogin}
-        showHamburgerMenu={showHamburgerMenu}
         setShowHamburgerMenu={setShowHamburgerMenu}
         shopSection={shopSection}
         setShopSection={setShopSection}
         activeGame={activeGame}
         levelUpInfo={levelUpInfo}
         setLevelUpInfo={setLevelUpInfo}
-        delayNextTutorial={delayNextTutorial}
         onWaterChange={handleWaterChange}
         onBuyCoins={handleBuyCoins}
         onBuyFilter={handleBuyFilter}

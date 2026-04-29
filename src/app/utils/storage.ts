@@ -1,4 +1,5 @@
 import { GameState, Friend } from '../types/game';
+import type { OnboardingProgress, MilestoneId } from '../config/tutorialSteps';
 import { GAME_CONFIG } from '../config/game';
 import { calculateLevel } from './gameLogic';
 
@@ -16,7 +17,7 @@ export const JIMMY_CHUBS_FRIEND: Friend = {
 
 const STORAGE_KEY = 'axolotl-game-state';
 const STORAGE_VERSION_KEY = 'axolotl-storage-version';
-const CURRENT_STORAGE_VERSION = 2;
+const CURRENT_STORAGE_VERSION = 4;
 
 interface StoredState {
   version?: number;
@@ -120,15 +121,75 @@ function migrateV1toV2(state: StoredState): StoredState {
   return state;
 }
 
+// ── V3: collapse 13 tutorial booleans into onboardingProgress + seenMilestones ─
+
+function deriveProgressFromLegacy(s: StoredState): OnboardingProgress {
+  const step = s.tutorialStep as string | undefined;
+  if (!step) return 'complete'; // undefined = old save, all tutorials done
+  if (step === 'swipe') return 'swipe';
+  // Sprint 2 removed the 'wellbeing_intro' state — old saves at that point go straight to 'feed'.
+  if (step === 'feed') return 'feed';
+  if (step === 'eat') return 'eat';
+  // step === 'done' — derive from wellbeing flags
+  if (!s.statTutorialSeen || !s.playTutorialSeen) return 'play';
+  if (s.cleanTutorialSeen === false) return 'clean';
+  if (s.waterTutorialSeen === false) return 'water';
+  if (s.wellbeingCompleteSeen === false) return 'wellbeing_reward';
+  return 'complete';
+}
+
+function deriveMilestonesFromLegacy(s: StoredState): MilestoneId[] {
+  const out: MilestoneId[] = [];
+  if (s.statTutorialSeen)   out.push('stat_tutorial');
+  if (s.juvenileUnlockSeen) out.push('juvenile_unlock');
+  if (s.level7UnlockSeen)   out.push('level7_unlock');
+  // menuTutorialSeen is intentionally dropped — menu tour removed in Sprint 1.
+  // All players who had completed it are treated as having seen all milestones.
+  if (s.shrimpTutorialSeen) out.push('shrimp_tutorial');
+  if (s.rebirthReadySeen)   out.push('rebirth_ready');
+  if (s.miniGameTutorialSeen) out.push('mini_game_tutorial');
+  return out;
+}
+
+function migrateV2toV3(state: StoredState): StoredState {
+  if (!('onboardingProgress' in state)) {
+    state.onboardingProgress = deriveProgressFromLegacy(state);
+    state.seenMilestones = deriveMilestonesFromLegacy(state);
+  }
+  // If the old save had menuTutorialSeen = false but all other wellbeing done,
+  // we treat onboarding as complete since the menu tour no longer exists.
+  if (
+    state.onboardingProgress === 'complete' ||
+    (state.wellbeingCompleteSeen === true && state.menuTutorialSeen === false)
+  ) {
+    state.onboardingProgress = 'complete';
+  }
+  state.version = 3;
+  return state;
+}
+
+// ── V4: Sprint 2 collapses 'wellbeing_intro' progress state into 'feed' ──────
+function migrateV3toV4(state: StoredState): StoredState {
+  if (state.onboardingProgress === 'wellbeing_intro') {
+    state.onboardingProgress = 'feed';
+  }
+  state.version = 4;
+  return state;
+}
+
 function runMigrations(state: StoredState): StoredState {
   const version = state.version || 1;
-  
+
   if (version < 2) {
     state = migrateV1toV2(state);
   }
-  
-  // Future migrations: if (version < 3) { state = migrateV2toV3(state); }
-  
+  if (version < 3) {
+    state = migrateV2toV3(state);
+  }
+  if (version < 4) {
+    state = migrateV3toV4(state);
+  }
+
   return state;
 }
 
@@ -242,17 +303,12 @@ export function getInitialGameState(): GameState {
     equippedFilter: undefined,
     shrimpCount: 0,
     lastShrimpUpdate: undefined,
-    shrimpTutorialSeen: false,
-    lastEnergyUpdate: Date.now(), // Initialize energy timestamp
+    lastEnergyUpdate: Date.now(),
     lastSpinDate: undefined,
     lastLoginDate: undefined,
     loginStreak: 0,
     lastLoginBonusDate: undefined,
-    tutorialStep: 'swipe',        // First tutorial: prompt the player to swipe and explore
-    cleanTutorialSeen: false,     // Show cleaning tutorial on first poop appearance
-    waterTutorialSeen: false,     // Show water-change tutorial after poop tutorial
-    wellbeingIntroSeen: false,    // Show wellbeing intro modal before feed tutorial
-    wellbeingCompleteSeen: false, // Show completion modal + 5 opal reward after water tutorial
-    menuTutorialSeen: false,     // Show menu walkthrough tutorial after wellbeing
+    onboardingProgress: 'swipe',  // new player starts at swipe tutorial
+    seenMilestones: [],
   };
 }

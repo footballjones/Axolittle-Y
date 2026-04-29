@@ -140,7 +140,8 @@ export function LoginScreen({ onClose }: LoginScreenProps = {}) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           whileTap={{ scale: 0.9 }}
-          className="absolute top-4 left-4 z-10 flex items-center gap-1.5 text-cyan-300/50 hover:text-cyan-300 transition-colors text-sm font-semibold"
+          className="absolute left-4 z-10 flex items-center gap-1.5 text-cyan-300 hover:text-cyan-400 transition-colors text-sm font-semibold"
+          style={{ top: 'max(1rem, env(safe-area-inset-top))' }}
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M19 12H5M12 5l-7 7 7 7"/>

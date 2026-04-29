@@ -82,7 +82,7 @@ export function RebirthReadyModal({ onClose }: RebirthReadyModalProps) {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.6 }}
           >
-            Your axolotl is ready for a new beginning
+            Time for a new beginning!
           </motion.p>
         </div>
 
@@ -101,7 +101,7 @@ export function RebirthReadyModal({ onClose }: RebirthReadyModalProps) {
               <p className="text-violet-900 font-black text-sm">What is Rebirth?</p>
             </div>
             <p className="text-violet-800 text-[12px] leading-relaxed">
-              Your axolotl lays a new egg and starts over — but the next generation can be a <span className="font-bold">higher rarity</span> and inherit stronger stats.
+              Your axolotl lays an egg and starts over. The next one can be <span className="font-bold">even rarer</span> and stronger!
             </p>
           </motion.div>
 
@@ -120,13 +120,13 @@ export function RebirthReadyModal({ onClose }: RebirthReadyModalProps) {
               <div className="flex items-center gap-2">
                 <Star className="w-4 h-4 text-amber-500 flex-shrink-0" />
                 <p className="text-slate-700 text-[12px]">
-                  Every level past 30 adds <span className="font-bold text-amber-600">+1%</span> rarity upgrade chance
+                  Every level past 30 adds <span className="font-bold text-amber-600">+1%</span> upgrade chance
                 </p>
               </div>
               <div className="flex items-center gap-2">
                 <Zap className="w-4 h-4 text-amber-500 flex-shrink-0" />
                 <p className="text-slate-700 text-[12px]">
-                  At <span className="font-bold">level 60</span> you get the maximum <span className="font-bold text-amber-600">+30%</span> bonus
+                  Hit <span className="font-bold">Level 60</span> to max it at <span className="font-bold text-amber-600">+30%</span>!
                 </p>
               </div>
             </div>

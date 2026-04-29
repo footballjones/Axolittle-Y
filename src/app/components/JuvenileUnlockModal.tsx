@@ -140,7 +140,7 @@ export function JuvenileUnlockModal({ axolotlName, onClose }: JuvenileUnlockModa
           >
             <div className="bg-gradient-to-r from-violet-500 to-indigo-500 px-4 py-2.5 flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-white flex-shrink-0" />
-              <p className="text-white font-black text-sm">New Solo Games Unlocked!</p>
+              <p className="text-white font-black text-sm">4 new games for you!</p>
             </div>
             <div className="bg-violet-50 px-4 py-3 grid grid-cols-2 gap-x-3 gap-y-2.5">
               <div className="flex items-center gap-2">
@@ -183,7 +183,7 @@ export function JuvenileUnlockModal({ axolotlName, onClose }: JuvenileUnlockModa
           >
             <Lock className="w-5 h-5 text-slate-400 flex-shrink-0" strokeWidth={2} />
             <p className="text-slate-600 text-[11.5px] leading-snug">
-              <span className="font-bold">Multiplayer games</span> (Fishing & Bite Tag) unlock at <span className="font-bold">Level 10</span> — keep levelling up!
+              Hit <span className="font-bold">Level 10</span> to play <span className="font-bold">Fishing</span> and <span className="font-bold">Bite Tag</span> with friends!
             </p>
           </motion.div>
 
@@ -196,7 +196,7 @@ export function JuvenileUnlockModal({ axolotlName, onClose }: JuvenileUnlockModa
           >
             <Dumbbell className="w-5 h-5 text-violet-500 flex-shrink-0" strokeWidth={2} />
             <p className="text-violet-800 text-[11.5px] leading-snug">
-              <span className="font-bold">Tip:</span> Play games to earn coins and boost your axolotl's stats. Assign stat points to level up faster!
+              <span className="font-bold">Win games</span> to earn coins and grow stronger!
             </p>
           </motion.div>
 

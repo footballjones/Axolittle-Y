@@ -91,6 +91,15 @@ export type ModerationEventName = typeof ModerationEvents[keyof typeof Moderatio
 
 export type SocialEventName = typeof SocialEvents[keyof typeof SocialEvents];
 
+export const OnboardingEvents = {
+  NAMING_COMPLETE:    'onboarding_naming_complete',
+  FIRST_FEED:         'onboarding_first_feed',
+  FIRST_CARE_CYCLE:   'onboarding_first_care_cycle',
+  SESSION_RETURN:     'onboarding_session_return',
+} as const;
+
+export type OnboardingEventName = typeof OnboardingEvents[keyof typeof OnboardingEvents];
+
 export function track(event: string, props: EventProps = {}): void {
   // Production builds strip console.* via the vite esbuild drop, so this is a
   // dev-only signal until a real analytics sink is wired up.

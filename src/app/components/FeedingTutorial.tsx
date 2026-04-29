@@ -5,7 +5,7 @@ interface FeedingTutorialProps {
   axolotlName: string;
 }
 
-export function FeedingTutorial({ step, axolotlName }: FeedingTutorialProps) {
+export function FeedingTutorial({ step, axolotlName: _axolotlName }: FeedingTutorialProps) {
   return (
     <AnimatePresence mode="wait">
       {step === 'feed' && (
@@ -37,45 +37,27 @@ export function FeedingTutorial({ step, axolotlName }: FeedingTutorialProps) {
             transition={{ duration: 1.1, repeat: Infinity, ease: 'easeInOut' }}
           />
 
-          {/* Bubble + arrow + hand pinned near Feed button */}
+          {/* Single-word bubble pinned near Feed button */}
           <motion.div
             className="absolute bottom-[82px] left-1 flex flex-col items-start gap-1"
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3, duration: 0.4 }}
           >
-            {/* Step badge */}
-            <div
-              className="ml-3 px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wide"
-              style={{
-                background: 'rgba(52,211,153,0.2)',
-                border: '1px solid rgba(52,211,153,0.55)',
-                color: '#6ee7b7',
-              }}
-            >
-              Step 1 of 2
-            </div>
-
-            {/* Speech bubble */}
-            <div
-              className="rounded-2xl px-4 py-3 shadow-2xl"
+            <motion.div
+              className="rounded-2xl px-5 py-2.5 shadow-2xl ml-2"
               style={{
                 background: 'rgba(255,255,255,0.97)',
                 border: '2.5px solid rgba(52,211,153,0.75)',
                 boxShadow: '0 8px 36px rgba(52,211,153,0.4)',
-                maxWidth: 200,
               }}
+              animate={{ scale: [1, 1.04, 1] }}
+              transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
             >
-              <p className="text-slate-800 text-[13px] font-bold leading-snug">
-                {axolotlName} is hungry!
+              <p className="text-emerald-600 text-[18px] font-black leading-none">
+                Hungry!
               </p>
-              <p className="text-slate-500 text-[11.5px] leading-snug mt-0.5">
-                Tap <span className="text-emerald-600 font-bold">Feed</span> to drop a worm
-              </p>
-              <p className="text-amber-600 text-[11px] font-bold mt-1">
-                Costs 10 coins per feed
-              </p>
-            </div>
+            </motion.div>
 
             {/* Caret pointing down-left toward Feed button */}
             <div
@@ -110,42 +92,27 @@ export function FeedingTutorial({ step, axolotlName }: FeedingTutorialProps) {
             }}
           />
 
-          {/* Bubble pinned to bottom, above the action buttons */}
+          {/* Single-line bubble pinned to bottom */}
           <motion.div
             className="absolute bottom-[82px] left-0 right-0 flex flex-col items-center gap-1 px-4"
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.25, duration: 0.4 }}
           >
-            {/* Step badge */}
-            <div
-              className="px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wide"
-              style={{
-                background: 'rgba(239,68,68,0.18)',
-                border: '1px solid rgba(239,68,68,0.5)',
-                color: '#fca5a5',
-              }}
-            >
-              Step 2 of 2
-            </div>
-
-            {/* Speech bubble */}
-            <div
-              className="rounded-2xl px-5 py-3 shadow-2xl text-center"
+            <motion.div
+              className="rounded-2xl px-5 py-2.5 shadow-2xl text-center"
               style={{
                 background: 'rgba(255,255,255,0.97)',
                 border: '2.5px solid rgba(239,68,68,0.65)',
                 boxShadow: '0 8px 32px rgba(239,68,68,0.3)',
-                maxWidth: 230,
               }}
+              animate={{ scale: [1, 1.04, 1] }}
+              transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
             >
-              <p className="text-slate-800 text-[13px] font-bold leading-snug">
-                Now tap the worm!
+              <p className="text-rose-500 text-[18px] font-black leading-none">
+                Tap the worm!
               </p>
-              <p className="text-slate-500 text-[11.5px] leading-snug mt-0.5">
-                Tap near it to guide {axolotlName} over to eat
-              </p>
-            </div>
+            </motion.div>
           </motion.div>
         </motion.div>
       )}

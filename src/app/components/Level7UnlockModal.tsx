@@ -117,7 +117,7 @@ export function Level7UnlockModal({ onClose, onOpenSocial }: Level7UnlockModalPr
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
           >
-            More Games Await!
+            Two more games!
           </motion.h2>
           <motion.p
             className="relative text-white/80 text-sm mt-1"
@@ -125,7 +125,7 @@ export function Level7UnlockModal({ onClose, onOpenSocial }: Level7UnlockModalPr
             animate={{ opacity: 1 }}
             transition={{ delay: 0.6 }}
           >
-            Keep leveling up to unlock more
+            Keep playing to unlock more
           </motion.p>
         </div>
 
@@ -170,7 +170,7 @@ export function Level7UnlockModal({ onClose, onOpenSocial }: Level7UnlockModalPr
           >
             <Brain className="w-5 h-5 text-sky-500 flex-shrink-0" strokeWidth={2} />
             <p className="text-sky-800 text-[11.5px] leading-snug">
-              <span className="font-bold">Tip:</span> Coral Code boosts Intellect, Axolotl Stacker boosts Speed. Play both to grow well-rounded stats!
+              <span className="font-bold">Coral Code</span> grows your brain. <span className="font-bold">Axolotl Stacker</span> grows your speed. Play both!
             </p>
           </motion.div>
 
@@ -193,7 +193,7 @@ export function Level7UnlockModal({ onClose, onOpenSocial }: Level7UnlockModalPr
                   <Users className="w-5 h-5 text-pink-500" strokeWidth={2} />
                 </div>
                 <p className="text-slate-700 text-[11.5px] leading-snug">
-                  Share your code, then visit each other's aquariums to send <span className="font-bold">gifts</span> and leave <span className="font-bold">stickers</span>.
+                  Send your code to a friend. Visit their tank, send <span className="font-bold">gifts</span>, leave <span className="font-bold">stickers</span>!
                 </p>
               </div>
             </motion.div>

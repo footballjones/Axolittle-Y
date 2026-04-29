@@ -75,11 +75,11 @@ export function WellbeingCompleteModal({ axolotlName, onCollect }: WellbeingComp
         {/* Body */}
         <div className="px-6 py-5 text-center">
           <p className="text-emerald-100/80 text-[12px] leading-relaxed">
-            You've learned how to <span className="text-white font-bold">feed</span>,{' '}
+            You learned to <span className="text-white font-bold">feed</span>,{' '}
             <span className="text-white font-bold">play</span>,{' '}
             <span className="text-white font-bold">clean</span>, and{' '}
             <span className="text-white font-bold">change the water</span>.{' '}
-            A healthy axolotl is a happy axolotl!
+            {axolotlName} is so happy!
           </p>
 
           {/* Reward card */}

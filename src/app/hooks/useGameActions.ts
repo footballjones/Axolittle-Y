@@ -104,7 +104,7 @@ export function useGameActions({
 
       const newFood: FoodItem = {
         id: foodId,
-        x: prev.tutorialStep === 'feed' ? 50 : randomFoodX,
+        x: prev.onboardingProgress === 'feed' ? 50 : randomFoodX,
         y: 0,
         createdAt: now,
       };
@@ -130,7 +130,7 @@ export function useGameActions({
         feedCount: newFeedCount,
         pendingPoops,
         totalFeedsEver: (prev.totalFeedsEver ?? 0) + 1,
-        tutorialStep: prev.tutorialStep === 'feed' ? 'eat' : prev.tutorialStep,
+        onboardingProgress: prev.onboardingProgress === 'feed' ? 'eat' : prev.onboardingProgress,
       };
       return withAchievements(next);
     });
@@ -200,8 +200,8 @@ export function useGameActions({
         feedXpDate,
         firstFeedXpGranted,
         pendingStatPoints: (prev.pendingStatPoints ?? 0) + levelsGained,
-        // Advance tutorial: 'eat' → 'done' when first food is eaten
-        tutorialStep: prev.tutorialStep === 'eat' ? 'done' : prev.tutorialStep,
+        // Advance tutorial: 'eat' → 'play' when first food is eaten
+        onboardingProgress: prev.onboardingProgress === 'eat' ? 'play' : prev.onboardingProgress,
       };
     });
   }, []);
@@ -246,8 +246,8 @@ export function useGameActions({
         cleanlinessLowSince: newCleanliness >= 50 ? undefined : prev.cleanlinessLowSince,
         cleanlinessVeryLowSince: newCleanliness >= 10 ? undefined : prev.cleanlinessVeryLowSince,
         totalCleansEver: (prev.totalCleansEver ?? 0) + 1,
-        // Mark cleaning tutorial as seen on first ever poop cleaned
-        cleanTutorialSeen: prev.cleanTutorialSeen === false ? true : prev.cleanTutorialSeen,
+        // Advance tutorial: 'clean' → 'water' on first poop cleaned
+        onboardingProgress: prev.onboardingProgress === 'clean' ? 'water' : prev.onboardingProgress,
       };
       return withAchievements(next);
     });
@@ -272,8 +272,8 @@ export function useGameActions({
         axolotl: updated,
         miniGamesLockedUntil: Date.now() + 2 * 60 * 60 * 1000, // lock for 2 hours
         totalWaterChanges: (prev.totalWaterChanges ?? 0) + 1,
-        // Mark water tutorial complete on first ever water change
-        waterTutorialSeen: prev.waterTutorialSeen === false ? true : prev.waterTutorialSeen,
+        // Advance tutorial: 'water' → 'wellbeing_reward' on first water change
+        onboardingProgress: prev.onboardingProgress === 'water' ? 'wellbeing_reward' : prev.onboardingProgress,
       };
       return withAchievements(next);
     });
@@ -703,9 +703,8 @@ export function useGameActions({
         
         const newAxolotl = hatchEgg(prev.incubatorEgg, name);
 
-        // For brand-new players (waterTutorialSeen === false), start water quality
-        // at 70 so the water-change tutorial is immediately relevant.
-        if (prev.waterTutorialSeen === false) {
+        // For brand-new players, start water quality at 70 so the water-change tutorial is relevant.
+        if (prev.onboardingProgress !== undefined && prev.onboardingProgress !== 'complete') {
           newAxolotl.stats = { ...newAxolotl.stats, waterQuality: 70 };
         }
 
