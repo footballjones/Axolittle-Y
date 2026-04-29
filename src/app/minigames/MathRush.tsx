@@ -11,9 +11,39 @@ import { motion } from 'motion/react';
 import { GameWrapper } from './GameWrapper';
 import { MiniGameProps } from './types';
 import { calculateRewards } from './config';
-import { Droplets, Gem, Zap, Star, Trophy, Gamepad2, Rocket, Target } from 'lucide-react';
+import { Droplets, Gem, Zap, Star, Trophy, Gamepad2, Rocket, Target, Heart } from 'lucide-react';
 import { CoinIcon, OpalIcon } from '../components/icons';
 import { useGameSFX } from '../hooks/useGameSFX';
+import { EndScreenFooter } from './components/EndScreenFooter';
+
+/**
+ * Returns the operator family currently in rotation given how many questions
+ * have been ANSWERED so far (= score, since wrong answers end the run unless
+ * easy-mode lives). Used by the persistent legend HUD.
+ *
+ * Bands match generateQuestion's rules:
+ *   Q1–4:   +
+ *   Q5–12:  + −
+ *   Q13–24: + − ×
+ *   Q25–32: + − × ÷
+ *   Q33+:   + − × ÷ √
+ */
+function activeOperators(qCount: number): string {
+  if (qCount < 4) return '+';
+  if (qCount < 12) return '+  −';
+  if (qCount < 24) return '+  −  ×';
+  if (qCount < 32) return '+  −  ×  ÷';
+  return '+  −  ×  ÷  √';
+}
+
+/** Highest operator family the player saw — used for end-screen coaching. */
+function highestOperatorReached(qCount: number): 'addition' | 'subtraction' | 'multiplication' | 'division' | 'sqrt' {
+  if (qCount < 5) return 'addition';
+  if (qCount < 13) return 'subtraction';
+  if (qCount < 25) return 'multiplication';
+  if (qCount < 33) return 'division';
+  return 'sqrt';
+}
 
 const INITIAL_TIMER = 10; // seconds per question
 
@@ -129,12 +159,19 @@ export function MathRush({ onEnd, onDeductEnergy, onApplyReward, energy, soundEn
   const [feedback, setFeedback] = useState<{ text: string; type: 'correct' | 'wrong' | '' }>({ text: '', type: '' });
   const [waitingForNext, setWaitingForNext] = useState(false);
   const timerIntervalRef = useRef<number | null>(null);
+  // Easy mode: toggled in the start overlay. Adds a 2-life buffer so a single
+  // wrong answer doesn't end the run — important for the younger end of the
+  // 8–12 demographic.
+  const [easyMode, setEasyMode] = useState(false);
+  const [livesRemaining, setLivesRemaining] = useState(0);
 
   const getTimerForScore = useCallback((currentScore: number) => {
-    // Timer gets faster: 6000ms - score * 100, minimum 3000ms (converted to seconds)
-    // Slower speed-up: decreases by 0.1s per correct answer instead of 0.2s
-    const timerMs = Math.max(3000, 6000 - currentScore * 100);
-    return timerMs / 1000; // Convert to seconds
+    // Timer decay: 50ms per correct answer, floored at 4s.
+    // Was 100ms decay floored at 3s — too steep for the 8–12 demo. Now 6s → 4s
+    // takes 40 correct answers to reach instead of 30, and the floor leaves
+    // breathing room for accuracy under pressure.
+    const timerMs = Math.max(4000, 6000 - currentScore * 50);
+    return timerMs / 1000;
   }, []);
 
   const loadNewQuestion = useCallback((currentQCount: number) => {
@@ -159,10 +196,11 @@ export function MathRush({ onEnd, onDeductEnergy, onApplyReward, energy, soundEn
     setFinalRewards(null);
     setIsPlaying(true);
     setIsPaused(false);
+    setLivesRemaining(easyMode ? 2 : 1);
     lastTickSecRef.current = -1;
     sfx.play('start');
     loadNewQuestion(0);
-  }, [loadNewQuestion, energy, onDeductEnergy, sfx]);
+  }, [loadNewQuestion, energy, onDeductEnergy, sfx, easyMode]);
 
   // Timer countdown - only when playing and question is loaded
   useEffect(() => {
@@ -248,14 +286,23 @@ export function MathRush({ onEnd, onDeductEnergy, onApplyReward, energy, soundEn
         }
       }, 500);
     } else {
-      // Wrong answer - end game
-      setFeedback({ text: 'Wrong!', type: 'wrong' });
+      // Wrong answer — easy mode burns a life and continues; standard ends the run
+      const remaining = livesRemaining - 1;
+      setLivesRemaining(remaining);
       sfx.play('wrong');
-      setTimeout(() => {
-        endGame();
-      }, 800);
+      if (remaining > 0) {
+        setFeedback({ text: 'Oops! Keep going.', type: 'wrong' });
+        setTimeout(() => {
+          if (isPlaying) loadNewQuestion(questionCount);
+        }, 700);
+      } else {
+        setFeedback({ text: 'Wrong!', type: 'wrong' });
+        setTimeout(() => {
+          endGame();
+        }, 800);
+      }
     }
-  }, [currentQuestion, selectedAnswer, waitingForNext, loadNewQuestion, questionCount, isPlaying, endGame, sfx, score]);
+  }, [currentQuestion, selectedAnswer, waitingForNext, loadNewQuestion, questionCount, isPlaying, endGame, sfx, score, livesRemaining]);
 
   // Handle timer running out
   useEffect(() => {
@@ -330,6 +377,34 @@ export function MathRush({ onEnd, onDeductEnergy, onApplyReward, energy, soundEn
                         </div>
                       </div>
                     </div>
+
+                    {/* Difficulty toggle: Easy (2 lives) vs Standard (1 life) — designed
+                        so younger players self-select forgiveness without singling them out. */}
+                    <div className="bg-white/50 rounded-xl p-1 mb-4 grid grid-cols-2 gap-1">
+                      <button
+                        type="button"
+                        onClick={() => setEasyMode(true)}
+                        className={`flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-semibold transition-colors ${
+                          easyMode
+                            ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow'
+                            : 'text-purple-700 hover:bg-white/40'
+                        }`}
+                      >
+                        <Heart className="w-4 h-4" /> Easy · 2 lives
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setEasyMode(false)}
+                        className={`flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-semibold transition-colors ${
+                          !easyMode
+                            ? 'bg-gradient-to-r from-purple-500 to-indigo-500 text-white shadow'
+                            : 'text-purple-700 hover:bg-white/40'
+                        }`}
+                      >
+                        <Zap className="w-4 h-4" /> Standard · 1 life
+                      </button>
+                    </div>
+
                     <motion.button
                       onClick={startGame}
                       className="w-full bg-gradient-to-r from-purple-500 via-indigo-500 to-purple-600 text-white font-bold py-4 rounded-xl text-lg shadow-lg relative overflow-hidden group"
@@ -356,13 +431,22 @@ export function MathRush({ onEnd, onDeductEnergy, onApplyReward, energy, soundEn
                       <h2 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-indigo-600 mb-4">
                         Game Over!
                       </h2>
-                      <p className="text-purple-800 text-center mb-2 text-2xl font-bold">
+                      <p className="text-purple-800 text-center mb-3 text-2xl font-bold">
                         {score} correct {score === 1 ? 'answer' : 'answers'}
                       </p>
-                      <p className="text-purple-600 text-center mb-4 text-sm font-medium">
-                        {score >= 15 ? 'Exceptional performance!' : score >= 8 ? 'Good job!' : 'Keep practicing!'}
-                      </p>
-                      
+
+                      {/* Tier delta + coaching with operator-aware copy */}
+                      <div className="mb-4">
+                        <EndScreenFooter
+                          gameId="math-rush"
+                          score={score}
+                          tier={(finalRewards?.tier as 'normal' | 'good' | 'exceptional') || 'normal'}
+                          context={{ highestOperator: highestOperatorReached(questionCount) }}
+                          energyReduced={!hadEnergyAtStart}
+                          tone="light"
+                        />
+                      </div>
+
                       {/* Rewards display - only show if energy was used */}
                       {hadEnergyAtStart && finalRewards && (finalRewards.xp > 0 || finalRewards.coins > 0) ? (
                         <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-4 mb-4 border-2 border-purple-200">
@@ -446,6 +530,34 @@ export function MathRush({ onEnd, onDeductEnergy, onApplyReward, energy, soundEn
               </div>
             </motion.div>
           </motion.div>
+        )}
+
+        {/* Operator-legend HUD strip + lives indicator — persistent during play.
+            Shows the operators currently in rotation so the player isn't surprised
+            when × or ÷ first appear. Lives only render in easy mode. */}
+        {isPlaying && currentQuestion && (
+          <div className="w-full max-w-md mb-3 z-10 flex items-center justify-between gap-3">
+            <div className="flex-1 bg-white/50 backdrop-blur-sm rounded-full px-3 py-1.5 border border-white/40 shadow-sm">
+              <p className="text-center text-purple-800 text-xs font-bold tracking-wider">
+                <span className="text-purple-500/70 mr-2">Active:</span>
+                <span className="font-mono">{activeOperators(questionCount)}</span>
+              </p>
+            </div>
+            {easyMode && (
+              <div className="flex items-center gap-0.5 bg-white/50 backdrop-blur-sm rounded-full px-2.5 py-1.5 border border-white/40 shadow-sm">
+                {[0, 1].map(i => (
+                  <Heart
+                    key={i}
+                    className={`w-4 h-4 ${
+                      i < livesRemaining
+                        ? 'text-rose-500 fill-rose-500'
+                        : 'text-rose-200'
+                    }`}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
         )}
 
         {/* Timer bar */}

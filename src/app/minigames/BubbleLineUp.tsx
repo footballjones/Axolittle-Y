@@ -5,6 +5,8 @@ import { MiniGameProps } from './types';
 import { calculateRewards } from './config';
 import { CoinIcon, OpalIcon } from '../components/icons';
 import { useGameSFX } from '../hooks/useGameSFX';
+import { Undo2 } from 'lucide-react';
+import { EndScreenFooter } from './components/EndScreenFooter';
 
 type Color = 'red' | 'blue' | 'green' | 'amber' | 'violet' | 'orange';
 type Pos = [number, number];
@@ -17,7 +19,14 @@ interface Puzzle {
 }
 
 // Time limits by grid size: 2×2=15s 3×3=25s 4×4=40s 5×5=60s 6×6=75s 7×7=90s
-const TIME_LIMIT: Record<number, number> = { 2: 30, 3: 30, 4: 30, 5: 30, 6: 30, 7: 30 };
+// Per-grid-size base timer (seconds). Scaled so each grid size feels appropriate:
+// tiny grids (2×2) need ~20s max; 7×7 spirals need ~75s+. Specific spirals get
+// per-puzzle overrides below at puzzle definition time.
+const TIME_LIMIT: Record<number, number> = { 2: 20, 3: 25, 4: 35, 5: 45, 6: 60, 7: 75 };
+
+// Spiral 7×7 puzzles get an explicit 90s — the largest, hand-crafted final puzzles
+// need extra time per the difficulty design.
+const SPIRAL_TIME_LIMIT = 90;
 
 // ── Verified Flow Free puzzles ────────────────────────────────────────────────
 // Every puzzle is derived from a single Hamiltonian path split into color segments.
@@ -281,7 +290,8 @@ const PUZZLES: Puzzle[] = [
   // P18: 7×7, 6 colors — split 8|8|8|9|8|8
   // R[0,0]→[1,6] B[1,5]→[2,1] G[2,2]→[3,4] A[3,3]→[4,4] V[4,5]→[5,1] O[5,0]→[6,6]
   {
-    size: 7, basePoints: 600, timeLimit: TIME_LIMIT[7],
+    // P18 — 6-color 7×7, dense split. Spiral-tier difficulty → 90s override.
+    size: 7, basePoints: 600, timeLimit: SPIRAL_TIME_LIMIT,
     pairs: [
       { color: 'red',    a: [0, 0], b: [1, 6] },
       { color: 'blue',   a: [1, 5], b: [2, 1] },
@@ -294,7 +304,8 @@ const PUZZLES: Puzzle[] = [
   // P19: 7×7, 6 colors — split 9|7|9|7|9|8
   // R[0,0]→[1,5] B[1,4]→[2,1] G[2,2]→[3,3] A[3,2]→[4,3] V[4,4]→[5,1] O[5,0]→[6,6]
   {
-    size: 7, basePoints: 640, timeLimit: TIME_LIMIT[7],
+    // P19 — same density tier as P18, 90s override.
+    size: 7, basePoints: 640, timeLimit: SPIRAL_TIME_LIMIT,
     pairs: [
       { color: 'red',    a: [0, 0], b: [1, 5] },
       { color: 'blue',   a: [1, 4], b: [2, 1] },
@@ -308,7 +319,8 @@ const PUZZLES: Puzzle[] = [
   // Spiral: [0,0]→col0↓→row6→col6↑→row0-[0,0] inner spiral...
   // R[0,0]→[6,1] B[6,2]→[3,6] G[2,6]→[0,1] A[1,1]→[5,5] V[4,5]→[2,2] O[3,2]→[3,3]
   {
-    size: 7, basePoints: 700, timeLimit: TIME_LIMIT[7],
+    // P20 — clockwise spiral, hardest puzzle in the set. Full 90s.
+    size: 7, basePoints: 700, timeLimit: SPIRAL_TIME_LIMIT,
     pairs: [
       { color: 'red',    a: [0, 0], b: [6, 1] },
       { color: 'blue',   a: [6, 2], b: [3, 6] },
@@ -349,6 +361,9 @@ interface CellInfo {
 
 export function BubbleLineUp({ onEnd, onDeductEnergy, onApplyReward, energy, soundEnabled = true }: MiniGameProps) {
   const sfx = useGameSFX(soundEnabled);
+  // Tracks the most recently completed color so the undo button knows what to remove.
+  // Reset when the puzzle advances or the player starts a new run.
+  const lastCompletedColorRef = useRef<string | null>(null);
   const [puzzleIdx, setPuzzleIdx]           = useState(0);
   const [completedPaths, setCompletedPaths] = useState<Partial<Record<Color, Pos[]>>>({});
   const [drawing, setDrawing]               = useState<{ color: Color; cells: Pos[] } | null>(null);
@@ -483,8 +498,24 @@ export function BubbleLineUp({ onEnd, onDeductEnergy, onApplyReward, energy, sou
     setCompletedPaths({});
     setDrawing(null);
     drawingRef.current = null;
+    lastCompletedColorRef.current = null;
     sfx.play('start');
   }, [energy, onDeductEnergy, sfx]);
+
+  // Undo last completed path — the player's escape valve when a fast iOS
+  // swipe pulls the path through unintended cells. Only the most recent
+  // completion can be undone (single-step). Re-drawing replaces it cleanly.
+  const undoLastPath = useCallback(() => {
+    const color = lastCompletedColorRef.current;
+    if (!color) return;
+    setCompletedPaths(prev => {
+      const next = { ...prev };
+      delete next[color as keyof typeof next];
+      return next;
+    });
+    lastCompletedColorRef.current = null;
+    sfx.play('tap', { pitch: 0.7 });
+  }, [sfx]);
 
   const finishGame = useCallback(() => {
     setPlaying(false);
@@ -543,6 +574,7 @@ export function BubbleLineUp({ onEnd, onDeductEnergy, onApplyReward, energy, sou
       setCompletedPaths({});
       setDrawing(null);
       drawingRef.current = null;
+      lastCompletedColorRef.current = null;
     }, 500);
     return () => window.clearTimeout(t);
   }, [allSolved, playing, puzzle.basePoints, sfx]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -644,6 +676,7 @@ export function BubbleLineUp({ onEnd, onDeductEnergy, onApplyReward, energy, sou
       (first[0] === pair.b[0] && first[1] === pair.b[1] && last[0] === pair.a[0] && last[1] === pair.a[1]);
     if (complete) {
       setCompletedPaths(prev => ({ ...prev, [d.color]: d.cells }));
+      lastCompletedColorRef.current = d.color;
       sfx.play('pair_complete');
     }
     // Partial paths are discarded
@@ -774,6 +807,23 @@ export function BubbleLineUp({ onEnd, onDeductEnergy, onApplyReward, energy, sou
           })()}
         </div>
 
+        {/* Undo last path — visible only when a completed path exists. The
+            player's escape valve when an iOS swipe coalesce dragged the path
+            through unintended cells. Tap to clear the most recent path; re-draw. */}
+        {!gameEnded && lastCompletedColorRef.current && Object.keys(completedPaths).length > 0 && (
+          <div className="flex-shrink-0 flex justify-center mt-2">
+            <button
+              type="button"
+              onClick={undoLastPath}
+              className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/15 active:bg-white/20 text-white/80 text-xs font-semibold border border-white/15 transition-colors"
+              aria-label="Undo last path"
+            >
+              <Undo2 className="w-3.5 h-3.5" />
+              Undo last path
+            </button>
+          </div>
+        )}
+
         {/* Fill-all hint */}
         {!gameEnded && <p className={`flex-shrink-0 text-center text-xs tracking-wide mt-2 transition-colors ${allPaired && !allSolved ? 'text-amber-400 font-semibold animate-pulse' : 'text-white/35'}`}>
           {allPaired && !allSolved ? 'Fill every cell to advance!' : 'Connect dots · fill every cell'}
@@ -799,9 +849,20 @@ export function BubbleLineUp({ onEnd, onDeductEnergy, onApplyReward, energy, sou
               ) : (
                 <>
                   <h3 className="text-2xl font-bold text-center mb-3">Time's Up!</h3>
-                  <div className="bg-white/10 rounded-xl p-3 mb-4 text-center">
+                  <div className="bg-white/10 rounded-xl p-3 mb-3 text-center">
                     <p className="text-white/55 text-sm">Final Score</p>
                     <p className="text-3xl font-black">{score}</p>
+                  </div>
+                  {/* Tier delta + coaching */}
+                  <div className="mb-4">
+                    <EndScreenFooter
+                      gameId="bubble-line-up"
+                      score={score}
+                      tier={(finalRewards?.tier as 'normal' | 'good' | 'exceptional') ?? 'normal'}
+                      context={{ puzzlesCleared: puzzleIdx }}
+                      energyReduced={!hadEnergyAtStart}
+                      tone="dark"
+                    />
                   </div>
                   {finalRewards && (
                     <div className="rounded-xl border border-white/15 bg-white/5 p-3 mb-4 space-y-1 text-sm">
