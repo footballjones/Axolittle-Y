@@ -14,6 +14,7 @@ import { CoinIcon, OpalIcon } from '../components/icons';
 import stackerBg from '../../assets/Axolotl stacker.png';
 import { useGameSFX } from '../hooks/useGameSFX';
 import { EndScreenFooter } from './components/EndScreenFooter';
+import { EnergyEmptyBanner } from './components/EnergyEmptyBanner';
 
 const CANVAS_W = 360;
 const CANVAS_H = 640;
@@ -102,11 +103,13 @@ function drawTile(
   ctx.restore();
 }
 
-export function AxolotlStacker({ onEnd, onDeductEnergy, onApplyReward, energy, soundEnabled = true }: MiniGameProps) {
+export function AxolotlStacker({ onEnd, onDeductEnergy, onApplyReward, energy, soundEnabled = true, personalBest = 0 }: MiniGameProps) {
   const sfx = useGameSFX(soundEnabled);
   // Tower-shake on miss — gives the fail moment physical weight.
   // Uses motion's animation controls so the canvas inside doesn't remount.
   const towerShakeControls = useAnimation();
+  // Stash PB at game start so end-screen comparison stays stable
+  const previousBestRef = useRef(0);
   const [score, setScore] = useState(0);
   const [showOverlay, setShowOverlay] = useState(true);
   const [gameEnded, setGameEnded] = useState(false);
@@ -501,6 +504,7 @@ export function AxolotlStacker({ onEnd, onDeductEnergy, onApplyReward, energy, s
     setFinalRewards(null);
     
     spawnBlock(0);
+    previousBestRef.current = personalBest;
     sfx.play('start');
 
     // Draw initial frame
@@ -637,6 +641,7 @@ export function AxolotlStacker({ onEnd, onDeductEnergy, onApplyReward, energy, s
                         </p>
                       </div>
                     </div>
+                    <EnergyEmptyBanner visible={energy < 1} tone="light" />
                     <motion.button
                       onClick={startGame}
                       className="w-full bg-gradient-to-r from-purple-500 via-indigo-500 to-purple-600 text-white font-bold py-4 rounded-xl text-lg shadow-lg relative overflow-hidden group"
@@ -675,6 +680,7 @@ export function AxolotlStacker({ onEnd, onDeductEnergy, onApplyReward, energy, s
                           }}
                           energyReduced={!hadEnergyAtStart}
                           tone="light"
+                          previousBest={previousBestRef.current}
                         />
                       </div>
 

@@ -15,6 +15,7 @@ import { CoinIcon, OpalIcon } from '../components/icons';
 import { useGameSFX } from '../hooks/useGameSFX';
 import { CrashFlash } from './components/CrashFlash';
 import { EndScreenFooter } from './components/EndScreenFooter';
+import { EnergyEmptyBanner } from './components/EnergyEmptyBanner';
 
 const CANVAS_W = 360;
 const CANVAS_H = 640;
@@ -83,11 +84,13 @@ function pickFishType(): FishTypeName {
   return 'minnow';
 }
 
-export function Fishing({ onEnd, onDeductEnergy, onApplyReward, energy, strength = 0, speed = 0, soundEnabled = true }: MiniGameProps) {
+export function Fishing({ onEnd, onDeductEnergy, onApplyReward, energy, strength = 0, speed = 0, soundEnabled = true, personalBest = 0 }: MiniGameProps) {
   const sfx = useGameSFX(soundEnabled);
   // Catch stats — used for end-screen coaching context
   const [fishCaught, setFishCaught] = useState(0);
   const [heaviestFishWeight, setHeaviestFishWeight] = useState(0);
+  // Stash PB at game start so end-screen comparison stays stable
+  const previousBestRef = useRef(0);
   // Escape feedback — soft flash + "It got away!" overlay so the silent
   // escape mechanic finally teaches the player what happened
   const [showEscapeFlash, setShowEscapeFlash] = useState(false);
@@ -688,8 +691,9 @@ export function Fishing({ onEnd, onDeductEnergy, onApplyReward, energy, strength
     setHeaviestFishWeight(0);
     setShowEscapeFlash(false);
     setShowEscapeText(false);
+    previousBestRef.current = personalBest;
     sfx.play('start');
-  }, [reset, energy, onDeductEnergy, sfx]);
+  }, [reset, energy, onDeductEnergy, sfx, personalBest]);
 
   // Start game loop
   useEffect(() => {
@@ -800,6 +804,7 @@ export function Fishing({ onEnd, onDeductEnergy, onApplyReward, energy, strength
                         </p>
                       </div>
                     </div>
+                    <EnergyEmptyBanner visible={energy < 1} tone="light" />
                     <motion.button
                       onClick={startGame}
                       className="w-full bg-gradient-to-r from-blue-500 via-cyan-500 to-blue-600 text-white font-bold py-4 rounded-xl text-lg shadow-lg relative overflow-hidden group"
@@ -839,6 +844,7 @@ export function Fishing({ onEnd, onDeductEnergy, onApplyReward, energy, strength
                           context={{ fishCaught, heaviestFishWeight }}
                           energyReduced={!hadEnergyAtStart}
                           tone="light"
+                          previousBest={previousBestRef.current}
                         />
                       </div>
                       

@@ -25,6 +25,12 @@ export interface MiniGameProps {
    * Use applyEnergyMultiplier() from rewardHelpers.ts to apply consistently.
    */
   noEnergyMultiplier?: number;
+  /**
+   * Player's current personal best score for this game (0 if never played).
+   * Stash in a ref at game start so the end-screen comparison stays stable
+   * even after the parent updates the PB on game completion.
+   */
+  personalBest?: number;
 }
 
 export interface GameRewardTier {

@@ -14,7 +14,7 @@
  */
 
 import { motion } from 'motion/react';
-import { ChevronRight, Sparkles } from 'lucide-react';
+import { ChevronRight, Sparkles, Crown } from 'lucide-react';
 import {
   getEndScreenLines,
   type GameId,
@@ -40,6 +40,12 @@ interface EndScreenFooterProps {
   energyReduced?: boolean;
   /** Defaults to 'dark'. Switch to 'light' on pastel/bright overlays. */
   tone?: EndScreenTone;
+  /**
+   * Player's previous best for this game. When provided, enables PB-aware
+   * messaging: "New best!" badge if `score > previousBest`, otherwise an
+   * optional "X to beat your best" line in the tier-delta slot.
+   */
+  previousBest?: number;
   className?: string;
 }
 
@@ -47,16 +53,22 @@ const TONE_CLASSES: Record<EndScreenTone, {
   delta: string;
   coaching: string;
   energy: string;
+  newBestBg: string;
+  newBestText: string;
 }> = {
   dark: {
     delta: 'text-amber-300',
     coaching: 'text-white/70',
     energy: 'text-orange-300/80',
+    newBestBg: 'bg-gradient-to-r from-amber-400 to-yellow-300',
+    newBestText: 'text-amber-950',
   },
   light: {
     delta: 'text-amber-600',
     coaching: 'text-slate-700/85',
     energy: 'text-orange-600/85',
+    newBestBg: 'bg-gradient-to-r from-amber-400 to-yellow-300',
+    newBestText: 'text-amber-950',
   },
 };
 
@@ -67,6 +79,7 @@ export function EndScreenFooter({
   context,
   energyReduced = false,
   tone = 'dark',
+  previousBest,
   className = '',
 }: EndScreenFooterProps) {
   const { tierDelta, coaching } = getEndScreenLines({
@@ -77,9 +90,52 @@ export function EndScreenFooter({
   });
   const colors = TONE_CLASSES[tone];
 
+  // PB-aware messaging
+  const hasPB = previousBest !== undefined;
+  const isFirstPlay = hasPB && previousBest === 0;
+  const isNewBest = hasPB && !isFirstPlay && score > (previousBest ?? 0);
+  const isNearPB = hasPB && !isFirstPlay && !isNewBest && score > 0 && previousBest! - score > 0;
+
+  // When near-miss-to-PB is present, prefer that copy over the tier delta —
+  // beating your own record is more motivating than abstract tier progress.
+  const showPBDelta = isNearPB && previousBest! - score <= Math.max(50, previousBest! * 0.25);
+  const pbDeltaLine = showPBDelta
+    ? `${(previousBest! - score).toLocaleString()} to beat your best (${previousBest!.toLocaleString()})`
+    : null;
+
   return (
     <div className={`space-y-2 text-center ${className}`}>
-      {tierDelta && (
+      {/* New best! badge — celebratory pill above everything else */}
+      {isNewBest && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.85 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ type: 'spring', stiffness: 380, damping: 18, delay: 0.05 }}
+          className="flex justify-center"
+        >
+          <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full font-black text-xs uppercase tracking-wider shadow-lg ${colors.newBestBg} ${colors.newBestText}`}>
+            <Crown className="w-3.5 h-3.5" />
+            New Best!
+            <span className="font-bold normal-case tracking-normal">
+              · was {(previousBest ?? 0).toLocaleString()}
+            </span>
+          </div>
+        </motion.div>
+      )}
+
+      {/* Prefer "X to beat your best" when within 25% of PB; else show tier delta */}
+      {pbDeltaLine ? (
+        <motion.p
+          key={pbDeltaLine}
+          initial={{ opacity: 0, y: 4 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15, duration: 0.3 }}
+          className={`text-sm sm:text-base font-semibold flex items-center justify-center gap-1 ${colors.delta}`}
+        >
+          <ChevronRight className="w-4 h-4" />
+          {pbDeltaLine}
+        </motion.p>
+      ) : tierDelta && !isNewBest && (
         <motion.p
           key={tierDelta}
           initial={{ opacity: 0, y: 4 }}

@@ -151,7 +151,16 @@ function coachBubbleLineUp(score: number, tier: Tier, ctx?: GameContext): string
   return 'Long paths first; short pairs squeeze into what\'s left.';
 }
 
-function coachTideTiles(score: number, tier: Tier): string {
+function coachTideTiles(score: number, tier: Tier, ctx?: GameContext): string {
+  // Levels cleared (reuses puzzlesCleared since the shape matches semantically)
+  const levels = ctx?.puzzlesCleared;
+  if (levels === 5) return 'Beat all 5 levels — flawless run.';
+  if (levels === 4) return 'Cleared 4 of 5. The final tile is the toughest — try corner-stacking next time.';
+  if (levels === 3) return 'Cleared 3 of 5 — strong run. Move-limit levels reward setup over speed.';
+  if (levels === 2) return 'Cleared 2 of 5. Build big tiles in one corner so they don\'t scatter.';
+  if (levels === 1) return 'First level cleared. Save your highest tile — never let it block a merge.';
+  if (levels === 0) return 'Plan your first 5 moves before you swipe — direction matters more than speed.';
+  // Fallback when no level context provided
   if (tier === 'exceptional') return 'Big-tile chains — that\'s the trick.';
   if (score < 200) return 'Build merges in one corner so they don\'t scatter.';
   return 'Save your highest tile — never let it block a merge.';
@@ -199,7 +208,7 @@ const COACHES: Record<GameId, (score: number, tier: Tier, ctx?: GameContext) => 
   'keepey-upey': coachKeepeyUpey,
   'axolotl-stacker': coachStacker,
   'bubble-line-up': coachBubbleLineUp,
-  'tide-tiles': (s, t) => coachTideTiles(s, t),
+  'tide-tiles': coachTideTiles,
   'math-rush': coachMathRush,
   'coral-code': coachCoralCode,
   'bite-tag': coachBiteTag,

@@ -15,6 +15,7 @@ import { Droplets, Gem, Zap, Star, Trophy, Gamepad2, Rocket, Target, Heart } fro
 import { CoinIcon, OpalIcon } from '../components/icons';
 import { useGameSFX } from '../hooks/useGameSFX';
 import { EndScreenFooter } from './components/EndScreenFooter';
+import { EnergyEmptyBanner } from './components/EnergyEmptyBanner';
 
 /**
  * Returns the operator family currently in rotation given how many questions
@@ -141,12 +142,14 @@ function generateQuestion(questionCount: number): Question {
   return { question: questionText, answer, options, themeIcon: theme.icon };
 }
 
-export function MathRush({ onEnd, onDeductEnergy, onApplyReward, energy, soundEnabled = true }: MiniGameProps) {
+export function MathRush({ onEnd, onDeductEnergy, onApplyReward, energy, soundEnabled = true, personalBest = 0 }: MiniGameProps) {
   const sfx = useGameSFX(soundEnabled);
   const lastTickSecRef = useRef<number>(-1);
   // Brief screen shake on wrong answer — quick visceral feedback that
   // doesn't disrupt the rapid-fire question flow.
   const shakeControls = useAnimation();
+  // Stash PB at game start so end-screen comparison stays stable
+  const previousBestRef = useRef(0);
   const [score, setScore] = useState(0);
   const [questionCount, setQuestionCount] = useState(0); // 1-based count of questions asked
   const [isPlaying, setIsPlaying] = useState(false); // Start with false, show overlay first
@@ -201,9 +204,10 @@ export function MathRush({ onEnd, onDeductEnergy, onApplyReward, energy, soundEn
     setIsPaused(false);
     setLivesRemaining(easyMode ? 2 : 1);
     lastTickSecRef.current = -1;
+    previousBestRef.current = personalBest;
     sfx.play('start');
     loadNewQuestion(0);
-  }, [loadNewQuestion, energy, onDeductEnergy, sfx, easyMode]);
+  }, [loadNewQuestion, energy, onDeductEnergy, sfx, easyMode, personalBest]);
 
   // Timer countdown - only when playing and question is loaded
   useEffect(() => {
@@ -413,6 +417,7 @@ export function MathRush({ onEnd, onDeductEnergy, onApplyReward, energy, soundEn
                       </button>
                     </div>
 
+                    <EnergyEmptyBanner visible={energy < 1} tone="light" />
                     <motion.button
                       onClick={startGame}
                       className="w-full bg-gradient-to-r from-purple-500 via-indigo-500 to-purple-600 text-white font-bold py-4 rounded-xl text-lg shadow-lg relative overflow-hidden group"
@@ -452,6 +457,7 @@ export function MathRush({ onEnd, onDeductEnergy, onApplyReward, energy, soundEn
                           context={{ highestOperator: highestOperatorReached(questionCount) }}
                           energyReduced={!hadEnergyAtStart}
                           tone="light"
+                          previousBest={previousBestRef.current}
                         />
                       </div>
 

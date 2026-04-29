@@ -15,6 +15,7 @@ import { CoinIcon, OpalIcon } from '../components/icons';
 import { useGameSFX } from '../hooks/useGameSFX';
 import { CrashFlash } from './components/CrashFlash';
 import { EndScreenFooter } from './components/EndScreenFooter';
+import { EnergyEmptyBanner } from './components/EnergyEmptyBanner';
 
 const CANVAS_W = 360;
 const CANVAS_H = 640;
@@ -111,11 +112,13 @@ interface Joystick {
   touchId: number | null;
 }
 
-export function BiteTag({ onEnd, onDeductEnergy, onApplyReward, energy, speed = 0, stamina = 0, soundEnabled = true }: MiniGameProps) {
+export function BiteTag({ onEnd, onDeductEnergy, onApplyReward, energy, speed = 0, stamina = 0, soundEnabled = true, personalBest = 0 }: MiniGameProps) {
   const sfx = useGameSFX(soundEnabled);
   // Track refs to avoid double-firing once-per-event SFX from the game loop
   const dashReadyRef = useRef(true);
   const hazardActiveRef = useRef(false);
+  // Stash PB at game start so end-screen comparison stays stable
+  const previousBestRef = useRef(0);
   // Crash flash on the player's elimination (3rd bite). Renders inside the
   // game viewport so the moment lands before the end overlay.
   const [showCrashFlash, setShowCrashFlash] = useState(false);
@@ -1079,8 +1082,9 @@ export function BiteTag({ onEnd, onDeductEnergy, onApplyReward, energy, speed = 
     setShowCrashFlash(false);
     dashReadyRef.current = true;
     hazardActiveRef.current = false;
+    previousBestRef.current = personalBest;
     sfx.play('start');
-  }, [reset, energy, onDeductEnergy, sfx]);
+  }, [reset, energy, onDeductEnergy, sfx, personalBest]);
 
   // Start game loop
   useEffect(() => {
@@ -1289,6 +1293,7 @@ export function BiteTag({ onEnd, onDeductEnergy, onApplyReward, energy, speed = 
                         </p>
                       </div>
                     </div>
+                    <EnergyEmptyBanner visible={energy < 1} tone="light" />
                     <motion.button
                       onClick={startGame}
                       className="w-full bg-gradient-to-r from-green-500 via-emerald-500 to-green-600 text-white font-bold py-4 rounded-xl text-lg shadow-lg relative overflow-hidden group"
@@ -1328,6 +1333,7 @@ export function BiteTag({ onEnd, onDeductEnergy, onApplyReward, energy, speed = 
                           context={{ bitesTaken: gameStateRef.current.player?.bites || 0 }}
                           energyReduced={!hadEnergyAtStart}
                           tone="light"
+                          previousBest={previousBestRef.current}
                         />
                       </div>
 

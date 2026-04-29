@@ -7,6 +7,7 @@ import { CoinIcon, OpalIcon } from '../components/icons';
 import { useGameSFX } from '../hooks/useGameSFX';
 import { Undo2 } from 'lucide-react';
 import { EndScreenFooter } from './components/EndScreenFooter';
+import { EnergyEmptyBanner } from './components/EnergyEmptyBanner';
 
 type Color = 'red' | 'blue' | 'green' | 'amber' | 'violet' | 'orange';
 type Pos = [number, number];
@@ -359,11 +360,13 @@ interface CellInfo {
   solved: boolean;
 }
 
-export function BubbleLineUp({ onEnd, onDeductEnergy, onApplyReward, energy, soundEnabled = true }: MiniGameProps) {
+export function BubbleLineUp({ onEnd, onDeductEnergy, onApplyReward, energy, soundEnabled = true, personalBest = 0 }: MiniGameProps) {
   const sfx = useGameSFX(soundEnabled);
   // Tracks the most recently completed color so the undo button knows what to remove.
   // Reset when the puzzle advances or the player starts a new run.
   const lastCompletedColorRef = useRef<string | null>(null);
+  // Stash PB at game start so end-screen comparison stays stable
+  const previousBestRef = useRef(0);
   const [puzzleIdx, setPuzzleIdx]           = useState(0);
   const [completedPaths, setCompletedPaths] = useState<Partial<Record<Color, Pos[]>>>({});
   const [drawing, setDrawing]               = useState<{ color: Color; cells: Pos[] } | null>(null);
@@ -499,8 +502,9 @@ export function BubbleLineUp({ onEnd, onDeductEnergy, onApplyReward, energy, sou
     setDrawing(null);
     drawingRef.current = null;
     lastCompletedColorRef.current = null;
+    previousBestRef.current = personalBest;
     sfx.play('start');
-  }, [energy, onDeductEnergy, sfx]);
+  }, [energy, onDeductEnergy, sfx, personalBest]);
 
   // Undo last completed path — the player's escape valve when a fast iOS
   // swipe pulls the path through unintended cells. Only the most recent
@@ -839,9 +843,10 @@ export function BubbleLineUp({ onEnd, onDeductEnergy, onApplyReward, energy, sou
                     <Droplets className="w-12 h-12 text-sky-300" />
                   </div>
                   <h3 className="text-2xl font-bold text-center mb-1">Bubble Line Up</h3>
-                  <p className="text-center text-sm text-white/75 mb-5">
+                  <p className="text-center text-sm text-white/75 mb-4">
                     Draw paths to connect matching colored dots. Fill every cell on the grid to solve the puzzle!
                   </p>
+                  <EnergyEmptyBanner visible={energy < 1} tone="dark" />
                   <button onClick={startGame} className="w-full h-11 rounded-xl bg-sky-500 font-bold">
                     Start Game
                   </button>
@@ -862,6 +867,7 @@ export function BubbleLineUp({ onEnd, onDeductEnergy, onApplyReward, energy, sou
                       context={{ puzzlesCleared: puzzleIdx }}
                       energyReduced={!hadEnergyAtStart}
                       tone="dark"
+                      previousBest={previousBestRef.current}
                     />
                   </div>
                   {finalRewards && (

@@ -1,12 +1,32 @@
+/**
+ * Tide Tiles — 5-level objective run on a 4×4 sliding-tile board.
+ *
+ * Each level has a specific goal (reach a tile value, hit a score, etc.)
+ * with optional move-limit constraints. Beat a level → board resets and
+ * the next level loads. Fail any level → run ends. Score and best-tile
+ * carry across levels so the run feels cumulative.
+ *
+ * Designed to replace the previous "endless 2048" identity with structured
+ * goals that give the player a clear win moment per level.
+ */
+
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { motion } from 'motion/react';
-import { Grid3X3, RotateCcw } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import { Grid3X3, RotateCcw, Target, CheckCircle2, Trophy } from 'lucide-react';
 import { GameWrapper } from './GameWrapper';
 import { MiniGameProps } from './types';
 import { calculateRewards } from './config';
 import { CoinIcon, OpalIcon } from '../components/icons';
 import { useGameSFX } from '../hooks/useGameSFX';
 import { EndScreenFooter } from './components/EndScreenFooter';
+import { EnergyEmptyBanner } from './components/EnergyEmptyBanner';
+import {
+  LEVELS,
+  TOTAL_LEVELS,
+  isObjectiveMet,
+  isObjectiveFailed,
+  getProgress,
+} from './tideTilesLevels';
 
 type Direction = 'up' | 'down' | 'left' | 'right';
 type Board = number[][];
@@ -111,15 +131,45 @@ function tileClass(value: number): string {
   return 'bg-purple-700 text-white';
 }
 
-export function TideTiles({ onEnd, onDeductEnergy, onApplyReward, energy, soundEnabled = true }: MiniGameProps) {
+function highestOnBoard(board: Board): number {
+  let max = 0;
+  for (const row of board) for (const v of row) if (v > max) max = v;
+  return max;
+}
+
+export function TideTiles({ onEnd, onDeductEnergy, onApplyReward, energy, soundEnabled = true, personalBest = 0 }: MiniGameProps) {
   const sfx = useGameSFX(soundEnabled);
+  // Stash PB at game start so end-screen comparison stays stable
+  const previousBestRef = useRef(0);
+
+  // Board state
   const [board, setBoard] = useState<Board>(() => addRandomTile(addRandomTile(emptyBoard())));
+
+  // Cumulative run state — carries across levels
   const [score, setScore] = useState(0);
   const [bestTile, setBestTile] = useState(0);
+
+  // Per-level state — resets when the player advances
+  const [levelIndex, setLevelIndex] = useState(0);
+  const [scoreThisLevel, setScoreThisLevel] = useState(0);
+  const [movesThisLevel, setMovesThisLevel] = useState(0);
+  const [levelsCompleted, setLevelsCompleted] = useState(0);
+
+  // Transient UX state
+  const [showLevelComplete, setShowLevelComplete] = useState(false);
   const [showOverlay, setShowOverlay] = useState(true);
   const [gameEnded, setGameEnded] = useState(false);
   const [hadEnergyAtStart, setHadEnergyAtStart] = useState(false);
   const [finalRewards, setFinalRewards] = useState<{ tier: string; xp: number; coins: number; opals?: number } | null>(null);
+
+  const currentLevel = LEVELS[Math.min(levelIndex, TOTAL_LEVELS - 1)];
+  const progress = getProgress(currentLevel, {
+    highestTile: highestOnBoard(board),
+    scoreThisLevel,
+    movesThisLevel,
+  });
+
+  // ── Run lifecycle ──────────────────────────────────────────────────────────
 
   const restart = useCallback(() => {
     const withEnergy = Math.floor(energy) >= 1;
@@ -128,15 +178,21 @@ export function TideTiles({ onEnd, onDeductEnergy, onApplyReward, energy, soundE
     const seeded = addRandomTile(addRandomTile(emptyBoard()));
     setBoard(seeded);
     setScore(0);
-    setBestTile(2);
+    setBestTile(highestOnBoard(seeded));
+    setLevelIndex(0);
+    setScoreThisLevel(0);
+    setMovesThisLevel(0);
+    setLevelsCompleted(0);
+    setShowLevelComplete(false);
     setShowOverlay(false);
     setGameEnded(false);
     setHadEnergyAtStart(withEnergy);
     setFinalRewards(null);
+    previousBestRef.current = personalBest;
     sfx.play('start');
-  }, [energy, onDeductEnergy, sfx]);
+  }, [energy, onDeductEnergy, sfx, personalBest]);
 
-  const closeWithRewards = useCallback((finalScore: number) => {
+  const endRun = useCallback((finalScore: number) => {
     if (hadEnergyAtStart) {
       const rewards = calculateRewards('tide-tiles', finalScore);
       onApplyReward?.(rewards.coins, rewards.opals);
@@ -154,8 +210,41 @@ export function TideTiles({ onEnd, onDeductEnergy, onApplyReward, energy, soundE
     setGameEnded(true);
   }, [hadEnergyAtStart, onApplyReward, sfx]);
 
+  // ── Level advance ──────────────────────────────────────────────────────────
+
+  /** Called when the player completes the current level's objective. */
+  const advanceLevel = useCallback((nextLevelIdx: number) => {
+    setLevelsCompleted(c => c + 1);
+    setShowLevelComplete(true);
+    sfx.play('win');
+
+    // Brief celebration. If we're moving to a next level, reset the board.
+    // If this was the final level, leave the celebration up — the run-complete
+    // useEffect below will fire endRun and the overlay will cover everything.
+    window.setTimeout(() => {
+      if (nextLevelIdx < TOTAL_LEVELS) {
+        setBoard(addRandomTile(addRandomTile(emptyBoard())));
+        setLevelIndex(nextLevelIdx);
+        setScoreThisLevel(0);
+        setMovesThisLevel(0);
+        setShowLevelComplete(false);
+      }
+    }, 1100);
+  }, [sfx]);
+
+  // Run-complete on beating the final level. Single source of truth for ending
+  // the run — avoids racing with advanceLevel's celebration timer.
+  useEffect(() => {
+    if (levelsCompleted >= TOTAL_LEVELS && !gameEnded) {
+      const t = window.setTimeout(() => endRun(score), 1100);
+      return () => window.clearTimeout(t);
+    }
+  }, [levelsCompleted, gameEnded, endRun, score]);
+
+  // ── Move handling with objective + fail checks ─────────────────────────────
+
   const makeMove = useCallback((direction: Direction) => {
-    if (showOverlay || gameEnded) return;
+    if (showOverlay || gameEnded || showLevelComplete) return;
 
     setBoard(prev => {
       const result = move(prev, direction);
@@ -165,26 +254,51 @@ export function TideTiles({ onEnd, onDeductEnergy, onApplyReward, energy, soundE
       }
 
       const next = addRandomTile(result.board);
-      const nextBest = Math.max(...next.flat());
-      setBestTile(nextBest);
+      const nextHighest = highestOnBoard(next);
       const nextScore = score + result.gain;
+      const nextScoreThisLevel = scoreThisLevel + result.gain;
+      const nextMovesThisLevel = movesThisLevel + 1;
+
+      setBestTile(b => Math.max(b, nextHighest));
       setScore(nextScore);
+      setScoreThisLevel(nextScoreThisLevel);
+      setMovesThisLevel(nextMovesThisLevel);
 
       if (result.gain > 0) {
-        // Pitch climbs with merge value: 4→1, 8→1.1, 16→1.2, ... caps at +0.7
         const steps = Math.max(0, Math.log2(result.gain) - 2);
         sfx.play('merge', { pitch: 1 + Math.min(0.7, steps * 0.1) });
       } else {
         sfx.play('slide');
       }
 
+      const levelState = {
+        highestTile: nextHighest,
+        scoreThisLevel: nextScoreThisLevel,
+        movesThisLevel: nextMovesThisLevel,
+      };
+
+      // Objective met — advance (deferred a frame so React state catches up)
+      if (isObjectiveMet(currentLevel, levelState)) {
+        window.setTimeout(() => advanceLevel(levelIndex + 1), 50);
+        return next;
+      }
+
+      // Move-limit exhausted without meeting objective — run ends
+      if (isObjectiveFailed(currentLevel, levelState)) {
+        window.setTimeout(() => endRun(nextScore), 50);
+        return next;
+      }
+
+      // Board fully blocked — run ends
       if (!hasMoves(next)) {
-        window.setTimeout(() => closeWithRewards(nextScore), 50);
+        window.setTimeout(() => endRun(nextScore), 50);
       }
 
       return next;
     });
-  }, [closeWithRewards, gameEnded, score, showOverlay, sfx]);
+  }, [showOverlay, gameEnded, showLevelComplete, sfx, score, scoreThisLevel, movesThisLevel, currentLevel, levelIndex, advanceLevel, endRun]);
+
+  // ── Input ──────────────────────────────────────────────────────────────────
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -216,29 +330,111 @@ export function TideTiles({ onEnd, onDeductEnergy, onApplyReward, energy, soundE
     }
   }, [makeMove]);
 
+  // ── Render ─────────────────────────────────────────────────────────────────
+
   return (
     <GameWrapper gameName="Tide Tiles" score={score} onEnd={onEnd} energy={energy} gameEnded={gameEnded}>
       <div className="relative w-full h-full flex items-center justify-center p-4 bg-gradient-to-br from-cyan-950 via-indigo-900 to-violet-900">
-        <div className="w-full max-w-sm space-y-4">
-          <div
-            className="grid grid-cols-4 gap-3 bg-black/25 border border-white/15 p-4 rounded-2xl touch-none"
-            onPointerDown={handlePointerDown}
-            onPointerUp={handlePointerUp}
-          >
-            {board.flatMap((row, r) => row.map((value, c) => (
-              <motion.div
-                key={`${r}-${c}-${value}`}
-                layout
-                className={`h-20 rounded-xl flex items-center justify-center text-2xl font-black ${value === 0 ? 'bg-white/10' : tileClass(value)}`}
-              >
-                {value || ''}
-              </motion.div>
-            )))}
+        <div className="w-full max-w-sm space-y-3">
+
+          {/* HUD strip — level + objective + progress (hidden until first run) */}
+          {!showOverlay && (
+            <div className="rounded-2xl bg-black/30 border border-white/10 px-3 py-2.5 text-white">
+              <div className="flex items-center justify-between mb-1.5">
+                <p className="text-[11px] uppercase tracking-wider text-cyan-300/80 font-bold">
+                  Level {levelIndex + 1} / {TOTAL_LEVELS} · {currentLevel.name}
+                </p>
+                <p className="text-[11px] text-white/55">
+                  Score {score.toLocaleString()} · Best {bestTile}
+                </p>
+              </div>
+              <p className="text-sm font-semibold flex items-center gap-1.5 mb-1.5">
+                <Target className="w-3.5 h-3.5 text-amber-300" />
+                {currentLevel.goalText}
+              </p>
+
+              {/* Primary progress bar */}
+              <div className="flex items-center gap-2 mb-1">
+                <div className="flex-1 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                  <motion.div
+                    className="h-full bg-gradient-to-r from-cyan-400 to-emerald-400"
+                    animate={{ width: `${progress.primary * 100}%` }}
+                    transition={{ type: 'spring', stiffness: 220, damping: 26 }}
+                  />
+                </div>
+                <p className="text-[11px] text-white/70 tabular-nums w-20 text-right">
+                  {progress.primaryLabel}
+                </p>
+              </div>
+
+              {/* Move-limit bar (only when constraint exists) */}
+              {progress.constraint && (
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 h-1 bg-white/10 rounded-full overflow-hidden">
+                    <motion.div
+                      className={`h-full ${
+                        progress.constraint.value > 0.8
+                          ? 'bg-rose-400'
+                          : 'bg-amber-300/70'
+                      }`}
+                      animate={{ width: `${progress.constraint.value * 100}%` }}
+                      transition={{ duration: 0.18 }}
+                    />
+                  </div>
+                  <p className="text-[10px] text-white/55 tabular-nums w-20 text-right">
+                    {progress.constraint.label}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Grid */}
+          <div className="relative">
+            <div
+              className="grid grid-cols-4 gap-3 bg-black/25 border border-white/15 p-4 rounded-2xl touch-none"
+              onPointerDown={handlePointerDown}
+              onPointerUp={handlePointerUp}
+            >
+              {board.flatMap((row, r) => row.map((value, c) => (
+                <motion.div
+                  key={`${r}-${c}-${value}`}
+                  layout
+                  // Pop animation on every value change — covers both new
+                  // spawns and merge results (because the key includes value).
+                  initial={value > 0 ? { scale: 0.4, opacity: 0 } : false}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ type: 'spring', stiffness: 520, damping: 24 }}
+                  className={`h-20 rounded-xl flex items-center justify-center text-2xl font-black ${value === 0 ? 'bg-white/10' : tileClass(value)}`}
+                >
+                  {value || ''}
+                </motion.div>
+              )))}
+            </div>
+
+            {/* Level-complete burst overlay — covers the grid for ~1s when objective met */}
+            <AnimatePresence>
+              {showLevelComplete && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ type: 'spring', stiffness: 320, damping: 24 }}
+                  className="absolute inset-0 flex items-center justify-center bg-emerald-500/30 backdrop-blur-sm rounded-2xl pointer-events-none"
+                >
+                  <div className="bg-emerald-500 text-white font-black text-lg px-5 py-3 rounded-xl shadow-2xl flex items-center gap-2 border-2 border-emerald-300">
+                    <CheckCircle2 className="w-6 h-6" />
+                    Level {levelIndex + 1} Complete!
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
-          <div className="text-center text-white/80 text-xs">Swipe to merge</div>
+          <div className="text-center text-white/60 text-xs">Swipe to merge</div>
         </div>
 
+        {/* ── Start / End overlay ── */}
         {showOverlay && (
           <div className="absolute inset-0 bg-black/55 backdrop-blur-sm flex items-center justify-center p-4">
             <div className="bg-slate-950/90 border border-white/20 rounded-3xl p-6 w-full max-w-sm text-white">
@@ -246,29 +442,70 @@ export function TideTiles({ onEnd, onDeductEnergy, onApplyReward, energy, soundE
                 <>
                   <div className="flex justify-center mb-3"><Grid3X3 className="w-12 h-12 text-cyan-300" /></div>
                   <h3 className="text-2xl font-bold text-center mb-2">Tide Tiles</h3>
-                  <p className="text-center text-sm text-white/80 mb-5">Slide all tiles in one direction. Matching values combine into stronger tiles.</p>
+                  <p className="text-center text-sm text-white/80 mb-4">
+                    Slide tiles to merge them. Hit each level's goal in {TOTAL_LEVELS} levels to win the run.
+                  </p>
+                  <div className="bg-white/5 border border-white/10 rounded-xl p-3 mb-5 space-y-1 text-xs text-white/70">
+                    {LEVELS.slice(0, 3).map(l => (
+                      <p key={l.id}>
+                        <span className="text-cyan-300/80 font-semibold">L{l.id}:</span> {l.goalText}
+                      </p>
+                    ))}
+                    <p className="text-white/40">+ 2 more levels</p>
+                  </div>
+                  <EnergyEmptyBanner visible={energy < 1} tone="dark" />
                   <button onClick={restart} className="w-full h-11 rounded-xl bg-cyan-500 font-bold">Start Game</button>
                 </>
               ) : (
                 <>
-                  <h3 className="text-2xl font-bold text-center mb-2">Run Complete</h3>
-                  <div className="grid grid-cols-2 gap-2 mb-3 text-center text-sm">
-                    <div className="bg-white/10 rounded-xl p-2"><p className="text-white/70">Score</p><p className="font-bold text-lg">{score}</p></div>
-                    <div className="bg-white/10 rounded-xl p-2"><p className="text-white/70">Best Tile</p><p className="font-bold text-lg">{bestTile}</p></div>
+                  {/* Big trophy + animated entrance for the run-clear; nothing for partial */}
+                  {levelsCompleted === TOTAL_LEVELS && (
+                    <motion.div
+                      initial={{ scale: 0, rotate: -15 }}
+                      animate={{ scale: 1, rotate: 0 }}
+                      transition={{ type: 'spring', stiffness: 280, damping: 16, delay: 0.1 }}
+                      className="flex justify-center mb-3"
+                    >
+                      <div className="relative">
+                        <Trophy className="w-16 h-16 text-amber-300 drop-shadow-[0_0_18px_rgba(252,211,77,0.6)]" />
+                        <div className="absolute inset-0 rounded-full bg-amber-300/20 blur-xl" />
+                      </div>
+                    </motion.div>
+                  )}
+                  <h3 className="text-2xl font-bold text-center mb-2">
+                    {levelsCompleted === TOTAL_LEVELS ? 'Master of the Tides!' : 'Run Ended'}
+                  </h3>
+                  <p className="text-center text-sm text-white/65 mb-4">
+                    {levelsCompleted === TOTAL_LEVELS
+                      ? 'You conquered the Open Ocean — every level cleared.'
+                      : `You cleared ${levelsCompleted} of ${TOTAL_LEVELS} level${levelsCompleted === 1 ? '' : 's'}.`}
+                  </p>
+                  <div className="grid grid-cols-3 gap-2 mb-3 text-center text-sm">
+                    <div className="bg-white/10 rounded-xl p-2"><p className="text-white/60 text-[11px]">Levels</p><p className="font-bold">{levelsCompleted} / {TOTAL_LEVELS}</p></div>
+                    <div className="bg-white/10 rounded-xl p-2"><p className="text-white/60 text-[11px]">Score</p><p className="font-bold">{score.toLocaleString()}</p></div>
+                    <div className="bg-white/10 rounded-xl p-2"><p className="text-white/60 text-[11px]">Best Tile</p><p className="font-bold">{bestTile}</p></div>
                   </div>
+
                   {/* Tier delta + coaching */}
                   <div className="mb-4">
                     <EndScreenFooter
                       gameId="tide-tiles"
                       score={score}
                       tier={(finalRewards?.tier as 'normal' | 'good' | 'exceptional') || 'normal'}
+                      context={{
+                        // Reuse the puzzlesCleared field as "levels cleared"
+                        // since the coaching shape semantically matches.
+                        puzzlesCleared: levelsCompleted,
+                      }}
                       energyReduced={!hadEnergyAtStart}
                       tone="dark"
+                      previousBest={previousBestRef.current}
                     />
                   </div>
+
                   {finalRewards && (
                     <div className="rounded-xl border border-white/15 bg-white/5 p-3 mb-4 space-y-1 text-sm">
-                      <p className="font-semibold">Tier: {finalRewards.tier}</p>
+                      <p className="font-semibold capitalize">Tier: {finalRewards.tier}</p>
                       <p className="flex items-center gap-1"><CoinIcon size={14} /> Coins: {finalRewards.coins}</p>
                       <p>XP: {finalRewards.xp}</p>
                       {finalRewards.opals ? <p className="flex items-center gap-1"><OpalIcon size={14} /> Opals: {finalRewards.opals}</p> : null}

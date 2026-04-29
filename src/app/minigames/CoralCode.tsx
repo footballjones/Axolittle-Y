@@ -14,6 +14,7 @@ import { CoinIcon, OpalIcon } from '../components/icons';
 import coralCodeBg from '../../assets/coral-code.png';
 import { useGameSFX } from '../hooks/useGameSFX';
 import { EndScreenFooter } from './components/EndScreenFooter';
+import { EnergyEmptyBanner } from './components/EnergyEmptyBanner';
 
 const MAX_GUESSES = 10;
 
@@ -166,8 +167,10 @@ function OceanBubbles() {
 
 // ── Main component ──────────────────────────────────────────────────────────
 
-export function CoralCode({ onEnd, onDeductEnergy, onApplyReward, energy, soundEnabled = true }: MiniGameProps) {
+export function CoralCode({ onEnd, onDeductEnergy, onApplyReward, energy, soundEnabled = true, personalBest = 0 }: MiniGameProps) {
   const sfx = useGameSFX(soundEnabled);
+  // Stash PB at game start so end-screen comparison stays stable
+  const previousBestRef = useRef(0);
   const [difficulty, setDifficulty] = useState<Difficulty | null>(null);
   const [codeLength, setCodeLength] = useState<number>(4);
   const [availableColors, setAvailableColors] = useState<ColorId[]>(ORB_COLORS.slice(0, 5).map(c => c.id));
@@ -208,8 +211,9 @@ export function CoralCode({ onEnd, onDeductEnergy, onApplyReward, energy, soundE
     setWinFlash(false);
     guessIdRef.current = 0;
     guessCountRef.current = 0;
+    previousBestRef.current = personalBest;
     sfx.play('start');
-  }, [energy, onDeductEnergy, sfx]);
+  }, [energy, onDeductEnergy, sfx, personalBest]);
 
   const addColor = useCallback((color: ColorId) => {
     setCurrentGuess(prev => prev.length < codeLength ? [...prev, color] : prev);
@@ -396,6 +400,8 @@ export function CoralCode({ onEnd, onDeductEnergy, onApplyReward, energy, soundE
                       </div>
                     </div>
 
+                    <EnergyEmptyBanner visible={energy < 1} tone="dark" />
+
                     <div className="space-y-2.5">
                       {(['easy', 'normal', 'hard'] as Difficulty[]).map((diff, i) => {
                         const cfg = DIFFICULTY_CONFIG[diff];
@@ -468,6 +474,7 @@ export function CoralCode({ onEnd, onDeductEnergy, onApplyReward, energy, soundE
                           }}
                           energyReduced={!hadEnergyAtStart}
                           tone="dark"
+                          previousBest={previousBestRef.current}
                         />
                       </div>
 

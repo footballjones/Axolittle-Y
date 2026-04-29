@@ -17,6 +17,7 @@ import { useSpineRenderer } from '../components/SpineAxolotl';
 import { useGameSFX } from '../hooks/useGameSFX';
 import { CrashFlash } from './components/CrashFlash';
 import { EndScreenFooter } from './components/EndScreenFooter';
+import { EnergyEmptyBanner } from './components/EnergyEmptyBanner';
 
 const CANVAS_W = 360;
 const CANVAS_H = 640;
@@ -42,7 +43,7 @@ interface Bubble {
   life: number;
 }
 
-export function KeepeyUpey({ onEnd, onDeductEnergy, onApplyReward, energy, soundEnabled = true }: MiniGameProps) {
+export function KeepeyUpey({ onEnd, onDeductEnergy, onApplyReward, energy, soundEnabled = true, personalBest = 0 }: MiniGameProps) {
   const [score, setScore] = useState(0); // Time survived in seconds
   const [isPlaying, setIsPlaying] = useState(false); // Start with false, show overlay first
   const [isPaused, setIsPaused] = useState(false);
@@ -54,6 +55,9 @@ export function KeepeyUpey({ onEnd, onDeductEnergy, onApplyReward, energy, sound
   const [hadEnergyAtStart, setHadEnergyAtStart] = useState(false); // Track if energy was available when game started
   const [finalRewards, setFinalRewards] = useState<{ tier: string; xp: number; coins: number; opals?: number } | null>(null);
   const cumulativeRef = useRef({ xp: 0, hadAnyEnergy: false });
+  // Stash the player's PB at game start so the end-screen comparison stays
+  // stable even after the parent updates the PB on this run's completion.
+  const previousBestRef = useRef(0);
 
   const sfx = useGameSFX(soundEnabled);
 
@@ -369,6 +373,7 @@ export function KeepeyUpey({ onEnd, onDeductEnergy, onApplyReward, energy, sound
     setFinalRewards(null);
     setIsPlaying(true);
     setIsPaused(false);
+    previousBestRef.current = personalBest;
     sfx.play('start');
     gameStateRef.current.startTime = performance.now();
     // Initial draw
@@ -462,6 +467,7 @@ export function KeepeyUpey({ onEnd, onDeductEnergy, onApplyReward, energy, sound
                         </p>
                       </div>
                     </div>
+                    <EnergyEmptyBanner visible={energy < 1} tone="light" />
                     <motion.button
                       onClick={startGame}
                       className="w-full bg-gradient-to-r from-purple-500 via-indigo-500 to-purple-600 text-white font-bold py-4 rounded-xl text-lg shadow-lg relative overflow-hidden group"
@@ -500,6 +506,7 @@ export function KeepeyUpey({ onEnd, onDeductEnergy, onApplyReward, energy, sound
                           tier={(finalRewards?.tier as 'normal' | 'good' | 'exceptional') || 'normal'}
                           energyReduced={!hadEnergyAtStart}
                           tone="light"
+                          previousBest={previousBestRef.current}
                         />
                       </div>
 
