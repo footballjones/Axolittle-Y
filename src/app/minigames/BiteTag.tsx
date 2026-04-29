@@ -12,6 +12,7 @@ import { MiniGameProps } from './types';
 import { calculateRewards } from './config';
 import { Zap, AlertTriangle, Gamepad2, Trophy, Star, Rocket } from 'lucide-react';
 import { CoinIcon, OpalIcon } from '../components/icons';
+import { useGameSFX } from '../hooks/useGameSFX';
 
 const CANVAS_W = 360;
 const CANVAS_H = 640;
@@ -108,7 +109,11 @@ interface Joystick {
   touchId: number | null;
 }
 
-export function BiteTag({ onEnd, onDeductEnergy, onApplyReward, energy, speed = 0, stamina = 0 }: MiniGameProps) {
+export function BiteTag({ onEnd, onDeductEnergy, onApplyReward, energy, speed = 0, stamina = 0, soundEnabled = true }: MiniGameProps) {
+  const sfx = useGameSFX(soundEnabled);
+  // Track refs to avoid double-firing once-per-event SFX from the game loop
+  const dashReadyRef = useRef(true);
+  const hazardActiveRef = useRef(false);
   const [timeLeft, setTimeLeft] = useState(MATCH_DURATION);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
@@ -234,6 +239,11 @@ export function BiteTag({ onEnd, onDeductEnergy, onApplyReward, energy, speed = 
     entity.dashEndTime = now + DASH_DURATION;
     entity.invulnUntil = Math.max(entity.invulnUntil, now + DASH_INVULN_MS);
     entity.dashCooldown = now + entity.dashCdMs;
+    // Player-only dash sound + cooldown tracking
+    if (entity === gameStateRef.current.player) {
+      sfx.play('dash');
+      dashReadyRef.current = false;
+    }
     entity.dashDirX = entity.facingX;
     entity.dashDirY = entity.facingY;
     const len = Math.sqrt(entity.dashDirX ** 2 + entity.dashDirY ** 2);
@@ -243,7 +253,7 @@ export function BiteTag({ onEnd, onDeductEnergy, onApplyReward, energy, speed = 
     } else {
       entity.dashDirY = -1;
     }
-  }, []);
+  }, [sfx]);
 
   const applyPos = useCallback((entity: Entity) => {
     let nx = entity.x + entity.vx;
@@ -342,10 +352,19 @@ export function BiteTag({ onEnd, onDeductEnergy, onApplyReward, energy, speed = 
       target.lastTagger = tagger;
       target.cannotTargetTaggerUntil = now + 3000;
 
+      // Audio: louder bite when the player is involved
+      const playerInvolved =
+        target === gameStateRef.current.player ||
+        previousIt === gameStateRef.current.player;
+      sfx.play('tag', { volume: playerInvolved ? 1 : 0.5 });
+
       // Check elimination
       if (target.bites >= MAX_BITES) {
         target.eliminated = true;
         target.isIt = false;
+        if (target === gameStateRef.current.player) {
+          sfx.play('eliminated');
+        }
         // Pass "It" to a random alive non-eliminated player
         const remaining = getAlive();
         if (remaining.length > 1) {
@@ -358,7 +377,7 @@ export function BiteTag({ onEnd, onDeductEnergy, onApplyReward, energy, speed = 
 
       break; // Only one tag per frame
     }
-  }, [getAlive]);
+  }, [getAlive, sfx]);
 
   const updateHazard = useCallback(() => {
     if (timeLeft > HAZARD_START_TIME) {
@@ -691,8 +710,9 @@ export function BiteTag({ onEnd, onDeductEnergy, onApplyReward, energy, speed = 
         opals: undefined,
       });
     }
+    setTimeout(() => sfx.play(won ? 'win' : 'lose'), 250);
     setShowOverlay(true);
-  }, [getAlive, timeLeft, hadEnergyAtStart, onApplyReward]);
+  }, [getAlive, timeLeft, hadEnergyAtStart, onApplyReward, sfx]);
 
   const drawAxo = useCallback((ctx: CanvasRenderingContext2D, e: Entity, bodyCol: string, gillCol: string, now: number) => {
     // Eliminated — draw as faded ghost
@@ -981,6 +1001,22 @@ export function BiteTag({ onEnd, onDeductEnergy, onApplyReward, energy, speed = 
     const elapsed = (now - state.matchStart) / 1000;
     const remaining = Math.max(0, MATCH_DURATION - elapsed);
     setTimeLeft(remaining);
+
+    // Hazard warning fires once when the danger zone first appears
+    if (!hazardActiveRef.current && remaining <= HAZARD_START_TIME && remaining > 0) {
+      hazardActiveRef.current = true;
+      sfx.play('hazard_warn');
+    }
+
+    // Player dash-ready ping fires once when cooldown expires
+    if (state.player && !state.player.eliminated) {
+      const ready = now >= state.player.dashCooldown;
+      if (ready && !dashReadyRef.current) {
+        dashReadyRef.current = true;
+        sfx.play('dash_ready');
+      }
+    }
+
     if (remaining <= 0) {
       endGame();
       return;
@@ -1022,7 +1058,7 @@ export function BiteTag({ onEnd, onDeductEnergy, onApplyReward, energy, speed = 
     draw(ctx, now);
 
     animationFrameRef.current = requestAnimationFrame(gameLoop);
-  }, [isPlaying, isPaused, getAlive, getJoystickInput, getKeyboardInput, updateMovement, updateBotAI, checkTag, updateHazard, draw, endGame]);
+  }, [isPlaying, isPaused, getAlive, getJoystickInput, getKeyboardInput, updateMovement, updateBotAI, checkTag, updateHazard, draw, endGame, sfx]);
 
   const startGame = useCallback(() => {
     const hadEnergy = Math.floor(energy) >= 1;
@@ -1034,7 +1070,10 @@ export function BiteTag({ onEnd, onDeductEnergy, onApplyReward, energy, speed = 
     setFinalRewards(null);
     setIsPlaying(true);
     setIsPaused(false);
-  }, [reset, energy, onDeductEnergy]);
+    dashReadyRef.current = true;
+    hazardActiveRef.current = false;
+    sfx.play('start');
+  }, [reset, energy, onDeductEnergy, sfx]);
 
   // Start game loop
   useEffect(() => {

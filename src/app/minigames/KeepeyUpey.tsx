@@ -14,6 +14,7 @@ import keepeyBg from '../../assets/keepey-bg.png';
 import { Zap, Target, Star, Trophy, Gamepad2, Rocket } from 'lucide-react';
 import { CoinIcon, OpalIcon } from '../components/icons';
 import { useSpineRenderer } from '../components/SpineAxolotl';
+import { useGameSFX } from '../hooks/useGameSFX';
 
 const CANVAS_W = 360;
 const CANVAS_H = 640;
@@ -49,16 +50,7 @@ export function KeepeyUpey({ onEnd, onDeductEnergy, onApplyReward, energy, sound
   const [finalRewards, setFinalRewards] = useState<{ tier: string; xp: number; coins: number; opals?: number } | null>(null);
   const cumulativeRef = useRef({ xp: 0, hadAnyEnergy: false });
 
-  const bounceSfxRef = useRef<HTMLAudioElement | null>(null);
-
-  // Pre-load the bounce sound once
-  useEffect(() => {
-    const audio = new Audio(`${import.meta.env.BASE_URL}sounds/Axolittle Keepey Upey.mp3`);
-    audio.preload = 'auto';
-    audio.volume = 0.6;
-    bounceSfxRef.current = audio;
-    return () => { audio.src = ''; };
-  }, []);
+  const sfx = useGameSFX(soundEnabled);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationFrameRef = useRef<number | null>(null);
@@ -124,12 +116,10 @@ export function KeepeyUpey({ onEnd, onDeductEnergy, onApplyReward, energy, sound
       size: 4 + Math.random() * 6,
       life: 1,
     });
-    // Play bounce sound effect
-    if (soundEnabled && bounceSfxRef.current) {
-      bounceSfxRef.current.currentTime = 0;
-      bounceSfxRef.current.play().catch(() => {});
-    }
-  }, [soundEnabled]);
+    // Pitch rises slightly with score so it doesn't feel monotonous
+    const pitch = 1 + Math.min(0.4, scoreRef.current * 0.005);
+    sfx.play('bounce', { pitch });
+  }, [sfx]);
 
   const spawnObstacle = useCallback(() => {
     const score = scoreRef.current;
@@ -157,6 +147,7 @@ export function KeepeyUpey({ onEnd, onDeductEnergy, onApplyReward, energy, sound
     isPlayingRef.current = false;
     setIsPlaying(false);
     setGameEnded(true);
+    sfx.play('crash');
     // Only calculate and show rewards if energy was available at start
     if (hadEnergyAtStart) {
       const rewards = calculateRewards('keepey-upey', scoreRef.current);
@@ -169,6 +160,12 @@ export function KeepeyUpey({ onEnd, onDeductEnergy, onApplyReward, energy, sound
         coins: rewards.coins,
         opals: rewards.opals,
       });
+      // Tier flourish ~400ms after crash so they don't pile up
+      setTimeout(() => {
+        if (rewards.tier === 'exceptional') sfx.play('tier_exceptional');
+        else if (rewards.tier === 'good') sfx.play('tier_good');
+        else sfx.play('lose');
+      }, 400);
     } else {
       // No rewards if no energy
       setFinalRewards({
@@ -177,9 +174,10 @@ export function KeepeyUpey({ onEnd, onDeductEnergy, onApplyReward, energy, sound
         coins: 0,
         opals: undefined,
       });
+      setTimeout(() => sfx.play('lose'), 400);
     }
     setShowOverlay(true);
-  }, [hadEnergyAtStart]);
+  }, [hadEnergyAtStart, sfx, onApplyReward]);
 
   const draw = useCallback((ctx: CanvasRenderingContext2D) => {
     const { axo, obstacles, bubbles } = gameStateRef.current;
@@ -362,6 +360,7 @@ export function KeepeyUpey({ onEnd, onDeductEnergy, onApplyReward, energy, sound
     setFinalRewards(null);
     setIsPlaying(true);
     setIsPaused(false);
+    sfx.play('start');
     gameStateRef.current.startTime = performance.now();
     // Initial draw
     const canvas = canvasRef.current;
@@ -371,7 +370,7 @@ export function KeepeyUpey({ onEnd, onDeductEnergy, onApplyReward, energy, sound
         draw(ctx);
       }
     }
-  }, [reset, draw, energy, onDeductEnergy]);
+  }, [reset, draw, energy, onDeductEnergy, sfx]);
 
   // Warm-up draw while the overlay is visible so WKWebView JIT-compiles the
   // canvas draw paths before the user hits Play — eliminates the 1-2 s stutter.

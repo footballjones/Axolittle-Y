@@ -12,6 +12,7 @@ import { MiniGameProps } from './types';
 import { calculateRewards } from './config';
 import { Fish, AlertTriangle, Trophy, Handshake, Star, Rocket, Target } from 'lucide-react';
 import { CoinIcon, OpalIcon } from '../components/icons';
+import { useGameSFX } from '../hooks/useGameSFX';
 
 const CANVAS_W = 360;
 const CANVAS_H = 640;
@@ -80,7 +81,8 @@ function pickFishType(): FishTypeName {
   return 'minnow';
 }
 
-export function Fishing({ onEnd, onDeductEnergy, onApplyReward, energy, strength = 0, speed = 0 }: MiniGameProps) {
+export function Fishing({ onEnd, onDeductEnergy, onApplyReward, energy, strength = 0, speed = 0, soundEnabled = true }: MiniGameProps) {
+  const sfx = useGameSFX(soundEnabled);
   const [playerScore, setPlayerScore] = useState(0);
   const [botScore, setBotScore] = useState(0);
   const [timeLeft, setTimeLeft] = useState(GAME_DURATION);
@@ -184,7 +186,8 @@ export function Fishing({ onEnd, onDeductEnergy, onApplyReward, energy, strength
 
   const addEscape = useCallback((x: number, y: number) => {
     gameStateRef.current.escapeEffects.push({ x, y, life: 1 });
-  }, []);
+    sfx.play('escaped');
+  }, [sfx]);
 
   const botTryCatch = useCallback((now: number) => {
     const { fish, botLineY } = gameStateRef.current;
@@ -216,7 +219,10 @@ export function Fishing({ onEnd, onDeductEnergy, onApplyReward, energy, strength
     switch (playerState) {
       case 'IDLE':
         state.playerLineY = BOAT_Y;
-        if (isHolding) state.playerState = 'CASTING';
+        if (isHolding) {
+          state.playerState = 'CASTING';
+          sfx.play('cast');
+        }
         break;
 
       case 'CASTING':
@@ -244,6 +250,7 @@ export function Fishing({ onEnd, onDeductEnergy, onApplyReward, energy, strength
             state.playerHooked = f;
             state.playerState = 'HOOKED';
             state.playerHookTime = now;
+            sfx.play('hooked');
             break;
           }
         }
@@ -292,6 +299,7 @@ export function Fishing({ onEnd, onDeductEnergy, onApplyReward, energy, strength
               }
               f.caught = true;
               state.playerHooked = f;
+              sfx.play('hooked');
               break;
             }
           }
@@ -299,6 +307,9 @@ export function Fishing({ onEnd, onDeductEnergy, onApplyReward, energy, strength
         if (state.playerLineY <= WATERLINE_Y) {
           if (playerHooked) {
             setPlayerScore(prev => prev + playerHooked.type.weight);
+            // Pitch lifts with fish weight so heavier catches feel weightier
+            const pitch = 1 + Math.min(0.5, playerHooked.type.weight * 0.05);
+            sfx.play('caught', { pitch });
             removeFish(playerHooked);
             state.playerHooked = null;
           }
@@ -306,7 +317,7 @@ export function Fishing({ onEnd, onDeductEnergy, onApplyReward, energy, strength
         }
         break;
     }
-  }, [isHolding, strength, addEscape, removeFish]);
+  }, [isHolding, strength, addEscape, removeFish, sfx]);
 
   const updateBot = useCallback((now: number) => {
     const state = gameStateRef.current;
@@ -363,11 +374,14 @@ export function Fishing({ onEnd, onDeductEnergy, onApplyReward, energy, strength
   const endGame = useCallback(() => {
     setIsPlaying(false);
     setGameEnded(true);
-    
+
+    const won = playerScore > botScore;
+    const tied = playerScore === botScore;
+
     // Only calculate and show rewards if energy was available at start
     if (hadEnergyAtStart) {
       const rewards = calculateRewards('fishing', playerScore);
-      const earnedXp = playerScore > botScore ? rewards.xp : 0;
+      const earnedXp = won ? rewards.xp : 0;
       cumulativeRef.current.xp += earnedXp;
       cumulativeRef.current.hadAnyEnergy = true;
       onApplyReward?.(rewards.coins, rewards.opals);
@@ -385,8 +399,9 @@ export function Fishing({ onEnd, onDeductEnergy, onApplyReward, energy, strength
         opals: undefined,
       });
     }
+    setTimeout(() => sfx.play(won ? 'win' : tied ? 'tier_good' : 'lose'), 250);
     setShowOverlay(true);
-  }, [playerScore, botScore, hadEnergyAtStart, onApplyReward]);
+  }, [playerScore, botScore, hadEnergyAtStart, onApplyReward, sfx]);
 
   const draw = useCallback((ctx: CanvasRenderingContext2D, now: number) => {
     const { playerState, playerLineY, playerHooked, playerHookTime, botState: _botState, botLineY, botHooked, fish, escapeEffects } = gameStateRef.current;
@@ -647,7 +662,8 @@ export function Fishing({ onEnd, onDeductEnergy, onApplyReward, energy, strength
     setFinalRewards(null);
     setIsPlaying(true);
     setIsPaused(false);
-  }, [reset, energy, onDeductEnergy]);
+    sfx.play('start');
+  }, [reset, energy, onDeductEnergy, sfx]);
 
   // Start game loop
   useEffect(() => {

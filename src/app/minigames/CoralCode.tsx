@@ -12,6 +12,7 @@ import { calculateRewards } from './config';
 import { Egg as EggIcon, Fish, Waves, Trophy, Star, Gamepad2, Rocket, Zap } from 'lucide-react';
 import { CoinIcon, OpalIcon } from '../components/icons';
 import coralCodeBg from '../../assets/coral-code.png';
+import { useGameSFX } from '../hooks/useGameSFX';
 
 const MAX_GUESSES = 10;
 
@@ -164,7 +165,8 @@ function OceanBubbles() {
 
 // ── Main component ──────────────────────────────────────────────────────────
 
-export function CoralCode({ onEnd, onDeductEnergy, onApplyReward, energy }: MiniGameProps) {
+export function CoralCode({ onEnd, onDeductEnergy, onApplyReward, energy, soundEnabled = true }: MiniGameProps) {
+  const sfx = useGameSFX(soundEnabled);
   const [difficulty, setDifficulty] = useState<Difficulty | null>(null);
   const [codeLength, setCodeLength] = useState<number>(4);
   const [availableColors, setAvailableColors] = useState<ColorId[]>(ORB_COLORS.slice(0, 5).map(c => c.id));
@@ -205,21 +207,24 @@ export function CoralCode({ onEnd, onDeductEnergy, onApplyReward, energy }: Mini
     setWinFlash(false);
     guessIdRef.current = 0;
     guessCountRef.current = 0;
-  }, [energy, onDeductEnergy]);
+    sfx.play('start');
+  }, [energy, onDeductEnergy, sfx]);
+
+  const addColor = useCallback((color: ColorId) => {
+    setCurrentGuess(prev => prev.length < codeLength ? [...prev, color] : prev);
+    sfx.play('peg_pick');
+  }, [codeLength, sfx]);
+
+  const removeColor = useCallback((index: number) => {
+    setCurrentGuess(prev => prev.filter((_, i) => i !== index));
+    sfx.play('tap', { pitch: 0.7 });
+  }, [sfx]);
 
   useEffect(() => {
     if (guessesContainerRef.current && guesses.length > 0) {
       guessesContainerRef.current.scrollTop = guessesContainerRef.current.scrollHeight;
     }
   }, [guesses.length]);
-
-  const addColor = useCallback((color: ColorId) => {
-    setCurrentGuess(prev => prev.length < codeLength ? [...prev, color] : prev);
-  }, [codeLength]);
-
-  const removeColor = useCallback((index: number) => {
-    setCurrentGuess(prev => prev.filter((_, i) => i !== index));
-  }, []);
 
   const submitGuess = useCallback(() => {
     if (currentGuess.length !== codeLength || !isPlaying || isPaused || hasEnded) return;
@@ -235,6 +240,19 @@ export function CoralCode({ onEnd, onDeductEnergy, onApplyReward, energy }: Mini
 
     setGuesses(prev => [...prev, newGuess]);
     setCurrentGuess([]);
+
+    sfx.play('submit');
+    // Reveal pegs sequentially with rising pitch for matches
+    if (!won && !lost) {
+      const totalPegs = feedback.correct + feedback.wrongPosition;
+      for (let i = 0; i < totalPegs; i++) {
+        const isCorrect = i < feedback.correct;
+        setTimeout(
+          () => sfx.play('feedback_reveal', { pitch: isCorrect ? 1.3 : 1 }),
+          200 + i * 100,
+        );
+      }
+    }
 
     if (won || lost) {
       const score = won ? MAX_GUESSES - newCount : 0;
@@ -255,9 +273,19 @@ export function CoralCode({ onEnd, onDeductEnergy, onApplyReward, energy }: Mini
         onApplyReward?.(rewards.coins, rewards.opals);
       }
       setFinalRewards({ tier: rewards.tier, xp: rewards.xp, coins: rewards.coins, opals: rewards.opals });
+      // Play resolution sound shortly after submit chime
+      setTimeout(() => {
+        if (won) {
+          if (rewards.tier === 'exceptional') sfx.play('tier_exceptional');
+          else if (rewards.tier === 'good') sfx.play('tier_good');
+          else sfx.play('win');
+        } else {
+          sfx.play('lose');
+        }
+      }, 350);
       setTimeout(() => setShowOverlay(true), won ? 800 : 300);
     }
-  }, [currentGuess, secretCode, codeLength, isPlaying, isPaused, hasEnded, hadEnergyAtStart, onApplyReward, difficulty]);
+  }, [currentGuess, secretCode, codeLength, isPlaying, isPaused, hasEnded, hadEnergyAtStart, onApplyReward, difficulty, sfx]);
 
   return (
     <GameWrapper

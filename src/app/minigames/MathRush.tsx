@@ -13,6 +13,7 @@ import { MiniGameProps } from './types';
 import { calculateRewards } from './config';
 import { Droplets, Gem, Zap, Star, Trophy, Gamepad2, Rocket, Target } from 'lucide-react';
 import { CoinIcon, OpalIcon } from '../components/icons';
+import { useGameSFX } from '../hooks/useGameSFX';
 
 const INITIAL_TIMER = 10; // seconds per question
 
@@ -110,7 +111,9 @@ function generateQuestion(questionCount: number): Question {
   return { question: questionText, answer, options, themeIcon: theme.icon };
 }
 
-export function MathRush({ onEnd, onDeductEnergy, onApplyReward, energy }: MiniGameProps) {
+export function MathRush({ onEnd, onDeductEnergy, onApplyReward, energy, soundEnabled = true }: MiniGameProps) {
+  const sfx = useGameSFX(soundEnabled);
+  const lastTickSecRef = useRef<number>(-1);
   const [score, setScore] = useState(0);
   const [questionCount, setQuestionCount] = useState(0); // 1-based count of questions asked
   const [isPlaying, setIsPlaying] = useState(false); // Start with false, show overlay first
@@ -156,8 +159,10 @@ export function MathRush({ onEnd, onDeductEnergy, onApplyReward, energy }: MiniG
     setFinalRewards(null);
     setIsPlaying(true);
     setIsPaused(false);
+    lastTickSecRef.current = -1;
+    sfx.play('start');
     loadNewQuestion(0);
-  }, [loadNewQuestion, energy, onDeductEnergy]);
+  }, [loadNewQuestion, energy, onDeductEnergy, sfx]);
 
   // Timer countdown - only when playing and question is loaded
   useEffect(() => {
@@ -173,7 +178,14 @@ export function MathRush({ onEnd, onDeductEnergy, onApplyReward, energy }: MiniG
           }, 800);
           return 0;
         }
-        return prev - 0.1;
+        const next = prev - 0.1;
+        // One quiet tick per whole second remaining when ≤2s left
+        const flooredSec = Math.ceil(next);
+        if (next <= 2 && flooredSec !== lastTickSecRef.current && flooredSec > 0) {
+          lastTickSecRef.current = flooredSec;
+          sfx.play('tick');
+        }
+        return next;
       });
     }, 100);
 
@@ -183,7 +195,7 @@ export function MathRush({ onEnd, onDeductEnergy, onApplyReward, energy }: MiniG
         timerIntervalRef.current = null;
       }
     };
-  }, [isPlaying, isPaused, currentQuestion, waitingForNext]);
+  }, [isPlaying, isPaused, currentQuestion, waitingForNext, sfx]);
 
   const endGame = useCallback(() => {
     setIsPlaying(false);
@@ -200,6 +212,11 @@ export function MathRush({ onEnd, onDeductEnergy, onApplyReward, energy }: MiniG
         coins: rewards.coins,
         opals: rewards.opals,
       });
+      setTimeout(() => {
+        if (rewards.tier === 'exceptional') sfx.play('tier_exceptional');
+        else if (rewards.tier === 'good') sfx.play('tier_good');
+        else sfx.play('lose');
+      }, 350);
     } else {
       // No rewards if no energy
       setFinalRewards({
@@ -208,9 +225,10 @@ export function MathRush({ onEnd, onDeductEnergy, onApplyReward, energy }: MiniG
         coins: 0,
         opals: undefined,
       });
+      setTimeout(() => sfx.play('lose'), 350);
     }
     setShowOverlay(true);
-  }, [score, hadEnergyAtStart]);
+  }, [score, hadEnergyAtStart, sfx, onApplyReward]);
 
   const handleAnswer = useCallback((answer: number) => {
     if (!currentQuestion || selectedAnswer !== null || waitingForNext) return;
@@ -222,6 +240,8 @@ export function MathRush({ onEnd, onDeductEnergy, onApplyReward, energy }: MiniG
       // Correct!
       setFeedback({ text: 'Correct!', type: 'correct' });
       setScore(prev => prev + 1);
+      // Pitch climbs slightly with score so the run feels like a building combo
+      sfx.play('correct', { pitch: 1 + Math.min(0.5, score * 0.03) });
       setTimeout(() => {
         if (isPlaying) { // Only load next if still playing
           loadNewQuestion(questionCount);
@@ -230,11 +250,12 @@ export function MathRush({ onEnd, onDeductEnergy, onApplyReward, energy }: MiniG
     } else {
       // Wrong answer - end game
       setFeedback({ text: 'Wrong!', type: 'wrong' });
+      sfx.play('wrong');
       setTimeout(() => {
         endGame();
       }, 800);
     }
-  }, [currentQuestion, selectedAnswer, waitingForNext, loadNewQuestion, questionCount, isPlaying, endGame]);
+  }, [currentQuestion, selectedAnswer, waitingForNext, loadNewQuestion, questionCount, isPlaying, endGame, sfx, score]);
 
   // Handle timer running out
   useEffect(() => {

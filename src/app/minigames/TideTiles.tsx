@@ -5,6 +5,7 @@ import { GameWrapper } from './GameWrapper';
 import { MiniGameProps } from './types';
 import { calculateRewards } from './config';
 import { CoinIcon, OpalIcon } from '../components/icons';
+import { useGameSFX } from '../hooks/useGameSFX';
 
 type Direction = 'up' | 'down' | 'left' | 'right';
 type Board = number[][];
@@ -109,7 +110,8 @@ function tileClass(value: number): string {
   return 'bg-purple-700 text-white';
 }
 
-export function TideTiles({ onEnd, onDeductEnergy, onApplyReward, energy }: MiniGameProps) {
+export function TideTiles({ onEnd, onDeductEnergy, onApplyReward, energy, soundEnabled = true }: MiniGameProps) {
+  const sfx = useGameSFX(soundEnabled);
   const [board, setBoard] = useState<Board>(() => addRandomTile(addRandomTile(emptyBoard())));
   const [score, setScore] = useState(0);
   const [bestTile, setBestTile] = useState(0);
@@ -130,26 +132,36 @@ export function TideTiles({ onEnd, onDeductEnergy, onApplyReward, energy }: Mini
     setGameEnded(false);
     setHadEnergyAtStart(withEnergy);
     setFinalRewards(null);
-  }, [energy, onDeductEnergy]);
+    sfx.play('start');
+  }, [energy, onDeductEnergy, sfx]);
 
   const closeWithRewards = useCallback((finalScore: number) => {
     if (hadEnergyAtStart) {
       const rewards = calculateRewards('tide-tiles', finalScore);
       onApplyReward?.(rewards.coins, rewards.opals);
       setFinalRewards(rewards);
+      setTimeout(() => {
+        if (rewards.tier === 'exceptional') sfx.play('tier_exceptional');
+        else if (rewards.tier === 'good') sfx.play('tier_good');
+        else sfx.play('lose');
+      }, 250);
     } else {
       setFinalRewards({ tier: 'normal', xp: 0, coins: 0 });
+      setTimeout(() => sfx.play('lose'), 250);
     }
     setShowOverlay(true);
     setGameEnded(true);
-  }, [hadEnergyAtStart, onApplyReward]);
+  }, [hadEnergyAtStart, onApplyReward, sfx]);
 
   const makeMove = useCallback((direction: Direction) => {
     if (showOverlay || gameEnded) return;
 
     setBoard(prev => {
       const result = move(prev, direction);
-      if (!result.moved) return prev;
+      if (!result.moved) {
+        sfx.play('no_move');
+        return prev;
+      }
 
       const next = addRandomTile(result.board);
       const nextBest = Math.max(...next.flat());
@@ -157,13 +169,21 @@ export function TideTiles({ onEnd, onDeductEnergy, onApplyReward, energy }: Mini
       const nextScore = score + result.gain;
       setScore(nextScore);
 
+      if (result.gain > 0) {
+        // Pitch climbs with merge value: 4→1, 8→1.1, 16→1.2, ... caps at +0.7
+        const steps = Math.max(0, Math.log2(result.gain) - 2);
+        sfx.play('merge', { pitch: 1 + Math.min(0.7, steps * 0.1) });
+      } else {
+        sfx.play('slide');
+      }
+
       if (!hasMoves(next)) {
         window.setTimeout(() => closeWithRewards(nextScore), 50);
       }
 
       return next;
     });
-  }, [closeWithRewards, gameEnded, score, showOverlay]);
+  }, [closeWithRewards, gameEnded, score, showOverlay, sfx]);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {

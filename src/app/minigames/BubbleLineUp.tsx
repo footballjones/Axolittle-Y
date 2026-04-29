@@ -4,6 +4,7 @@ import { GameWrapper } from './GameWrapper';
 import { MiniGameProps } from './types';
 import { calculateRewards } from './config';
 import { CoinIcon, OpalIcon } from '../components/icons';
+import { useGameSFX } from '../hooks/useGameSFX';
 
 type Color = 'red' | 'blue' | 'green' | 'amber' | 'violet' | 'orange';
 type Pos = [number, number];
@@ -346,7 +347,8 @@ interface CellInfo {
   solved: boolean;
 }
 
-export function BubbleLineUp({ onEnd, onDeductEnergy, onApplyReward, energy }: MiniGameProps) {
+export function BubbleLineUp({ onEnd, onDeductEnergy, onApplyReward, energy, soundEnabled = true }: MiniGameProps) {
+  const sfx = useGameSFX(soundEnabled);
   const [puzzleIdx, setPuzzleIdx]           = useState(0);
   const [completedPaths, setCompletedPaths] = useState<Partial<Record<Color, Pos[]>>>({});
   const [drawing, setDrawing]               = useState<{ color: Color; cells: Pos[] } | null>(null);
@@ -481,7 +483,8 @@ export function BubbleLineUp({ onEnd, onDeductEnergy, onApplyReward, energy }: M
     setCompletedPaths({});
     setDrawing(null);
     drawingRef.current = null;
-  }, [energy, onDeductEnergy]);
+    sfx.play('start');
+  }, [energy, onDeductEnergy, sfx]);
 
   const finishGame = useCallback(() => {
     setPlaying(false);
@@ -492,10 +495,16 @@ export function BubbleLineUp({ onEnd, onDeductEnergy, onApplyReward, energy }: M
       const r = calculateRewards('bubble-line-up', fs);
       onApplyReward?.(r.coins, r.opals);
       setFinalRewards(r);
+      setTimeout(() => {
+        if (r.tier === 'exceptional') sfx.play('tier_exceptional');
+        else if (r.tier === 'good') sfx.play('tier_good');
+        else sfx.play('lose');
+      }, 300);
     } else {
       setFinalRewards({ tier: 'normal', xp: 0, coins: 0 });
+      setTimeout(() => sfx.play('lose'), 300);
     }
-  }, [hadEnergyAtStart, onApplyReward]);
+  }, [hadEnergyAtStart, onApplyReward, sfx]);
 
   // Per-puzzle timer — resets whenever puzzleIdx changes
   useEffect(() => {
@@ -505,13 +514,17 @@ export function BubbleLineUp({ onEnd, onDeductEnergy, onApplyReward, energy }: M
     const id = window.setInterval(() => {
       timeLeftRef.current -= 1;
       setTimeLeft(timeLeftRef.current);
+      // Heartbeat tick during the final 5 seconds
+      if (timeLeftRef.current > 0 && timeLeftRef.current <= 5) {
+        sfx.play('time_low');
+      }
       if (timeLeftRef.current <= 0) {
         window.clearInterval(id);
         finishGame();
       }
     }, 1000);
     return () => window.clearInterval(id);
-  }, [playing, finishGame, puzzleIdx]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [playing, finishGame, puzzleIdx, sfx]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Advance puzzle when all cells filled — timeLeft read via ref so this effect
   // only fires on allSolved/playing changes, not every second tick
@@ -522,6 +535,7 @@ export function BubbleLineUp({ onEnd, onDeductEnergy, onApplyReward, energy }: M
     const timeBonus = timeLeftRef.current * 2; // 2 pts per second remaining
     scoreRef.current += puzzle.basePoints + timeBonus;
     setScore(scoreRef.current);
+    sfx.play('win');
 
     const t = window.setTimeout(() => {
       advancedRef.current = false;
@@ -531,7 +545,7 @@ export function BubbleLineUp({ onEnd, onDeductEnergy, onApplyReward, energy }: M
       drawingRef.current = null;
     }, 500);
     return () => window.clearTimeout(t);
-  }, [allSolved, playing, puzzle.basePoints]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [allSolved, playing, puzzle.basePoints, sfx]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Pointer handling ─────────────────────────────────────────────────────────
 
@@ -611,8 +625,10 @@ export function BubbleLineUp({ onEnd, onDeductEnergy, onApplyReward, energy }: M
       const nd = { ...d, cells: newCells };
       drawingRef.current = nd;
       setDrawing(nd);
+      // Soft pitched tick on each new cell — pitch nudges up with path length
+      sfx.play('path_step', { pitch: 1 + Math.min(0.5, newCells.length * 0.04) });
     }
-  }, [playing, getCellAt, dotMap]);
+  }, [playing, getCellAt, dotMap, sfx]);
 
   const handlePointerUp = useCallback(() => {
     const d = drawingRef.current;
@@ -626,9 +642,12 @@ export function BubbleLineUp({ onEnd, onDeductEnergy, onApplyReward, energy }: M
     const complete =
       (first[0] === pair.a[0] && first[1] === pair.a[1] && last[0] === pair.b[0] && last[1] === pair.b[1]) ||
       (first[0] === pair.b[0] && first[1] === pair.b[1] && last[0] === pair.a[0] && last[1] === pair.a[1]);
-    if (complete) setCompletedPaths(prev => ({ ...prev, [d.color]: d.cells }));
+    if (complete) {
+      setCompletedPaths(prev => ({ ...prev, [d.color]: d.cells }));
+      sfx.play('pair_complete');
+    }
     // Partial paths are discarded
-  }, [puzzle.pairs]);
+  }, [puzzle.pairs, sfx]);
 
   // ── Render helpers ───────────────────────────────────────────────────────────
 

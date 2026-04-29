@@ -12,6 +12,7 @@ import { calculateRewards } from './config';
 import { Layers, Target, AlertTriangle, Star, Trophy, Gamepad2, Rocket } from 'lucide-react';
 import { CoinIcon, OpalIcon } from '../components/icons';
 import stackerBg from '../../assets/Axolotl stacker.png';
+import { useGameSFX } from '../hooks/useGameSFX';
 
 const CANVAS_W = 360;
 const CANVAS_H = 640;
@@ -96,7 +97,8 @@ function drawTile(
   ctx.restore();
 }
 
-export function AxolotlStacker({ onEnd, onDeductEnergy, onApplyReward, energy }: MiniGameProps) {
+export function AxolotlStacker({ onEnd, onDeductEnergy, onApplyReward, energy, soundEnabled = true }: MiniGameProps) {
+  const sfx = useGameSFX(soundEnabled);
   const [score, setScore] = useState(0);
   const [showOverlay, setShowOverlay] = useState(true);
   const [gameEnded, setGameEnded] = useState(false);
@@ -266,6 +268,7 @@ export function AxolotlStacker({ onEnd, onDeductEnergy, onApplyReward, energy }:
 
     // End game on complete miss
     if (overlapWidth <= 0) {
+      sfx.play('miss');
       if (game.onGameEnd) game.onGameEnd();
       return;
     }
@@ -281,6 +284,17 @@ export function AxolotlStacker({ onEnd, onDeductEnergy, onApplyReward, energy }:
       game.fallingPieces.push({ x: overlapRight, width: rightCutW, y: c.y, vy: 0, color: cutColor, alpha: 1 });
     }
 
+    // "Perfect" if overhang is small relative to the previous block; otherwise "good"
+    const overhang = leftCutW + rightCutW;
+    const perfect = overhang <= 4;
+    if (perfect) {
+      // Pitch climbs slightly with height — every clean stack feels like progression
+      sfx.play('drop_perfect', { pitch: 1 + Math.min(0.5, game.score * 0.04) });
+    } else {
+      sfx.play('drop_good');
+      if (overhang > 0) sfx.play('slice');
+    }
+
     // Place overlapping portion
     game.stack.push({
       x: overlapLeft,
@@ -293,13 +307,13 @@ export function AxolotlStacker({ onEnd, onDeductEnergy, onApplyReward, energy }:
 
     // Spawn next block
     spawnBlock(game.score);
-  }, [spawnBlock]);
+  }, [spawnBlock, sfx]);
 
   const endGame = useCallback(() => {
     const game = gameRef.current;
     game.isPlaying = false;
     setGameEnded(true);
-    
+
     if (hadEnergyAtStart) {
       const rewards = calculateRewards('axolotl-stacker', game.score);
       cumulativeRef.current.xp += rewards.xp;
@@ -311,6 +325,11 @@ export function AxolotlStacker({ onEnd, onDeductEnergy, onApplyReward, energy }:
         coins: rewards.coins,
         opals: rewards.opals,
       });
+      setTimeout(() => {
+        if (rewards.tier === 'exceptional') sfx.play('tier_exceptional');
+        else if (rewards.tier === 'good') sfx.play('tier_good');
+        else sfx.play('lose');
+      }, 350);
     } else {
       setFinalRewards({
         tier: 'normal',
@@ -318,9 +337,10 @@ export function AxolotlStacker({ onEnd, onDeductEnergy, onApplyReward, energy }:
         coins: 0,
         opals: undefined,
       });
+      setTimeout(() => sfx.play('lose'), 350);
     }
     setShowOverlay(true);
-  }, [hadEnergyAtStart]);
+  }, [hadEnergyAtStart, sfx, onApplyReward]);
 
   const startGame = useCallback(() => {
     const hadEnergy = Math.floor(energy) >= 1;
@@ -344,19 +364,20 @@ export function AxolotlStacker({ onEnd, onDeductEnergy, onApplyReward, energy }:
     setFinalRewards(null);
     
     spawnBlock(0);
-    
+    sfx.play('start');
+
     // Draw initial frame
     const ctx = ctxRef.current;
     if (ctx) {
       ctx.clearRect(0, 0, CANVAS_W, CANVAS_H);
       draw(ctx);
     }
-    
+
     // Start game loop
     if (ctx && !animationFrameRef.current) {
       animationFrameRef.current = requestAnimationFrame(gameLoop);
     }
-  }, [energy, onDeductEnergy, spawnBlock, draw, gameLoop]);
+  }, [energy, onDeductEnergy, spawnBlock, draw, gameLoop, sfx]);
 
   // Initialize canvas + warm-up draw while the overlay is visible so WKWebView
   // JIT-compiles the canvas draw paths before the user hits Play.
