@@ -6,6 +6,7 @@ import { MiniGameProps } from './types';
 import { calculateRewards } from './config';
 import { CoinIcon, OpalIcon } from '../components/icons';
 import { useGameSFX } from '../hooks/useGameSFX';
+import { EndScreenFooter } from './components/EndScreenFooter';
 
 type Direction = 'up' | 'down' | 'left' | 'right';
 type Board = number[][];
@@ -251,9 +252,19 @@ export function TideTiles({ onEnd, onDeductEnergy, onApplyReward, energy, soundE
               ) : (
                 <>
                   <h3 className="text-2xl font-bold text-center mb-2">Run Complete</h3>
-                  <div className="grid grid-cols-2 gap-2 mb-4 text-center text-sm">
+                  <div className="grid grid-cols-2 gap-2 mb-3 text-center text-sm">
                     <div className="bg-white/10 rounded-xl p-2"><p className="text-white/70">Score</p><p className="font-bold text-lg">{score}</p></div>
                     <div className="bg-white/10 rounded-xl p-2"><p className="text-white/70">Best Tile</p><p className="font-bold text-lg">{bestTile}</p></div>
+                  </div>
+                  {/* Tier delta + coaching */}
+                  <div className="mb-4">
+                    <EndScreenFooter
+                      gameId="tide-tiles"
+                      score={score}
+                      tier={(finalRewards?.tier as 'normal' | 'good' | 'exceptional') || 'normal'}
+                      energyReduced={!hadEnergyAtStart}
+                      tone="dark"
+                    />
                   </div>
                   {finalRewards && (
                     <div className="rounded-xl border border-white/15 bg-white/5 p-3 mb-4 space-y-1 text-sm">

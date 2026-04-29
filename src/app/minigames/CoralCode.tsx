@@ -4,7 +4,7 @@
  * Score = 10 - guesses used (higher is better)
  */
 
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { GameWrapper } from './GameWrapper';
 import { MiniGameProps } from './types';
@@ -13,6 +13,7 @@ import { Egg as EggIcon, Fish, Waves, Trophy, Star, Gamepad2, Rocket, Zap } from
 import { CoinIcon, OpalIcon } from '../components/icons';
 import coralCodeBg from '../../assets/coral-code.png';
 import { useGameSFX } from '../hooks/useGameSFX';
+import { EndScreenFooter } from './components/EndScreenFooter';
 
 const MAX_GUESSES = 10;
 
@@ -220,11 +221,7 @@ export function CoralCode({ onEnd, onDeductEnergy, onApplyReward, energy, soundE
     sfx.play('tap', { pitch: 0.7 });
   }, [sfx]);
 
-  useEffect(() => {
-    if (guessesContainerRef.current && guesses.length > 0) {
-      guessesContainerRef.current.scrollTop = guessesContainerRef.current.scrollHeight;
-    }
-  }, [guesses.length]);
+  // Auto-scroll removed — guess history is now an always-visible 10-row grid.
 
   const submitGuess = useCallback(() => {
     if (currentGuess.length !== codeLength || !isPlaying || isPaused || hasEnded) return;
@@ -264,8 +261,20 @@ export function CoralCode({ onEnd, onDeductEnergy, onApplyReward, energy, soundE
       const rawRewards = hadEnergyAtStart
         ? calculateRewards('coral-code', score)
         : { tier: 'normal', xp: 0, coins: 0, opals: undefined };
+      // Easy mode: flat reduction rather than the old hard XP cap of 2.
+      // The cap was undocumented and felt punitive when a player solved on
+      // their first guess. A multiplier scales smoothly with skill while
+      // still rewarding harder difficulties more.
+      //   easy:   xp × 0.5, coins × 0.7, opals stripped
+      //   normal: full rewards
+      //   hard:   full rewards
       const rewards = difficulty === 'easy'
-        ? { ...rawRewards, xp: Math.min(rawRewards.xp, 2) }
+        ? {
+            ...rawRewards,
+            xp: Math.max(0, Math.round(rawRewards.xp * 0.5)),
+            coins: Math.max(0, Math.round(rawRewards.coins * 0.7)),
+            opals: undefined,
+          }
         : rawRewards;
       if (hadEnergyAtStart) {
         cumulativeRef.current.xp += rewards.xp;
@@ -442,9 +451,25 @@ export function CoralCode({ onEnd, onDeductEnergy, onApplyReward, energy, soundE
                       >
                         {finalScore > 0 ? 'Code Cracked!' : 'Out of Guesses!'}
                       </h2>
-                      <p className="text-white/50 text-xs mb-1">
-                        {(finalScore > 0 && (MAX_GUESSES - finalScore) === 1) ? '1st guess — brilliant!' : finalScore >= 8 ? 'Brilliant codebreaker!' : finalScore >= 5 ? 'Great solving!' : finalScore > 0 ? 'Nice try!' : 'Keep practicing!'}
-                      </p>
+                      {/* Tier delta + coaching with deduction context */}
+                      <div className="mb-2">
+                        <EndScreenFooter
+                          gameId="coral-code"
+                          score={finalScore}
+                          tier={(finalRewards?.tier as 'normal' | 'good' | 'exceptional') || 'normal'}
+                          context={{
+                            guessesUsed: guesses.length,
+                            // Best exact-match peak across the run — telling the player how
+                            // close they got even if they ran out of guesses.
+                            exactMatches: guesses.reduce(
+                              (max, g) => Math.max(max, g.feedback.correct),
+                              0,
+                            ),
+                          }}
+                          energyReduced={!hadEnergyAtStart}
+                          tone="dark"
+                        />
+                      </div>
 
                       {/* Secret code reveal on loss */}
                       {finalScore === 0 && (
@@ -485,6 +510,11 @@ export function CoralCode({ onEnd, onDeductEnergy, onApplyReward, energy, soundE
                           <span className="inline-flex items-center gap-1"><CoinIcon size={14} /> +{finalRewards.coins}</span>
                           {finalRewards.opals && <span className="inline-flex items-center gap-1"><OpalIcon size={14} /> +{finalRewards.opals}</span>}
                         </div>
+                        {difficulty === 'easy' && (
+                          <p className="text-emerald-200/60 text-[10px] mt-2">
+                            Easy mode: rewards reduced (½ XP, 70% coins)
+                          </p>
+                        )}
                       </div>
                     ) : hadEnergyAtStart ? null : (
                       <div className="rounded-2xl p-3 mb-4 text-center" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)' }}>
@@ -545,57 +575,70 @@ export function CoralCode({ onEnd, onDeductEnergy, onApplyReward, energy, soundE
               </div>
             </div>
 
-            {/* Guess history */}
-            <div ref={guessesContainerRef} className="flex-1 overflow-y-auto space-y-1.5 pr-0.5">
-              <AnimatePresence initial={false}>
-                {guesses.map((guess, index) => {
-                  const isLatest = index === guesses.length - 1;
+            {/* Guess history — always-visible 10-row grid (no scroll).
+                Mastermind's core loop is "remember + deduce" — paginating that
+                hurts the puzzle. Tighter rows + placeholder slots keep the
+                whole game state visible on phones. */}
+            <div ref={guessesContainerRef} className="flex-1 flex flex-col gap-1 pr-0.5 min-h-0">
+              {Array.from({ length: MAX_GUESSES }).map((_, slotIdx) => {
+                const guess = guesses[slotIdx];
+                const isLatest = slotIdx === guesses.length - 1;
+                if (!guess) {
+                  // Placeholder slot — subtle, keeps layout stable so the
+                  // player sees how many guesses remain at a glance
                   return (
-                    <motion.div
-                      key={guess.id}
-                      initial={{ opacity: 0, x: -16, scale: 0.97 }}
-                      animate={{ opacity: 1, x: 0, scale: 1 }}
-                      transition={{ type: 'spring', stiffness: 400, damping: 28 }}
-                      className="flex items-center gap-2 px-3 py-2.5 rounded-2xl"
+                    <div
+                      key={`empty-${slotIdx}`}
+                      className="flex-1 flex items-center gap-2 px-2.5 rounded-xl"
                       style={{
-                        background: isLatest
-                          ? 'rgba(69,207,255,0.12)'
-                          : 'rgba(255,255,255,0.05)',
-                        border: isLatest
-                          ? '1.5px solid rgba(69,207,255,0.35)'
-                          : '1px solid rgba(255,255,255,0.07)',
+                        background: 'rgba(255,255,255,0.02)',
+                        border: '1px dashed rgba(255,255,255,0.06)',
+                        minHeight: 28,
                       }}
                     >
-                      {/* Guess number */}
-                      <span className="text-white/25 text-xs w-4 text-right flex-shrink-0">{index + 1}</span>
-
-                      {/* Color orbs */}
-                      <div className="flex gap-1.5 flex-1">
-                        {guess.colors.map((c, i) => (
-                          <motion.div
-                            key={i}
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            transition={{ delay: i * 0.04 }}
-                          >
-                            <Orb id={c} size={28} glow={isLatest} />
-                          </motion.div>
-                        ))}
-                      </div>
-
-                      {/* Feedback pegs */}
-                      <FeedbackPegs correct={guess.feedback.correct} wrongPosition={guess.feedback.wrongPosition} total={codeLength} />
-                    </motion.div>
+                      <span className="text-white/15 text-[10px] w-4 text-right flex-shrink-0">{slotIdx + 1}</span>
+                    </div>
                   );
-                })}
-              </AnimatePresence>
+                }
+                return (
+                  <motion.div
+                    key={guess.id}
+                    initial={{ opacity: 0, x: -12, scale: 0.97 }}
+                    animate={{ opacity: 1, x: 0, scale: 1 }}
+                    transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+                    className="flex-1 flex items-center gap-2 px-2.5 rounded-xl"
+                    style={{
+                      background: isLatest
+                        ? 'rgba(69,207,255,0.12)'
+                        : 'rgba(255,255,255,0.05)',
+                      border: isLatest
+                        ? '1.5px solid rgba(69,207,255,0.35)'
+                        : '1px solid rgba(255,255,255,0.07)',
+                      minHeight: 28,
+                    }}
+                  >
+                    {/* Guess number */}
+                    <span className="text-white/30 text-[10px] w-4 text-right flex-shrink-0">{slotIdx + 1}</span>
 
-              {/* Empty rows hint */}
-              {guesses.length === 0 && (
-                <div className="flex items-center justify-center h-16">
-                  <p className="text-white/20 text-xs">Your guesses will appear here</p>
-                </div>
-              )}
+                    {/* Color orbs — slimmed to 22px so all 10 rows fit on phones */}
+                    <div className="flex gap-1 flex-1">
+                      {guess.colors.map((c, i) => (
+                        <motion.div
+                          key={i}
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          transition={{ delay: i * 0.03 }}
+                        >
+                          <Orb id={c} size={22} glow={isLatest} />
+                        </motion.div>
+                      ))}
+                    </div>
+
+                    {/* Feedback pegs */}
+                    <FeedbackPegs correct={guess.feedback.correct} wrongPosition={guess.feedback.wrongPosition} total={codeLength} />
+                  </motion.div>
+                );
+              })}
             </div>
 
             {/* ── Input area ── */}
