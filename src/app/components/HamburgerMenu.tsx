@@ -569,7 +569,7 @@ export function HamburgerMenu({
               exit={{ opacity: 0, y: '100%' }}
               transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
               className="absolute inset-0 flex flex-col rounded-3xl overflow-hidden"
-              style={{ background: 'linear-gradient(160deg, #1e1b4b 0%, #312e81 40%, #4c1d95 100%)' }}
+              style={{ background: 'linear-gradient(160deg, #1e1b4b 0%, #312e81 40%, #4c1d95 100%)', zIndex: 10 }}
             >
               {/* Panel header */}
               <div className="flex items-center justify-between px-5 pt-5 pb-3 flex-shrink-0">

@@ -158,6 +158,7 @@ export interface Friend {
   name: string;
   axolotlName: string;
   stage: LifeStage;
+  level?: number; // Axolotl level — populated from profiles.axolotl_level
   generation: number;
   lastSync: number;
   achievements?: string[]; // Achievement IDs earned by this friend

@@ -143,12 +143,8 @@ export function useOnboarding({
     }
   }, [gameState?.axolotl?.stage, gameState?.seenMilestones, showJuvenileUnlock]);
 
-  useEffect(() => {
-    const lvl = gameState?.axolotl ? calculateLevel(gameState.axolotl.experience) : 0;
-    if (lvl >= 7 && !gameState?.seenMilestones?.includes('level7_unlock') && !showLevel7Unlock) {
-      setShowLevel7Unlock(true);
-    }
-  }, [gameState?.axolotl?.experience, gameState?.seenMilestones, showLevel7Unlock]);
+  // Level 7 unlock modal removed — social (friends) is always available and the
+  // life-stage modal already conveys the same milestone info.
 
   useEffect(() => {
     const lvl = gameState?.axolotl ? calculateLevel(gameState.axolotl.experience) : 0;

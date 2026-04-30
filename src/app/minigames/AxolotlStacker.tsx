@@ -166,8 +166,8 @@ export function AxolotlStacker({ onEnd, onDeductEnergy, onApplyReward, energy, s
   const spawnBlock = useCallback((currentScore: number) => {
     const game = gameRef.current;
     const top = game.stack[game.stack.length - 1];
-    const speed = SWING_SPEED_BASE + currentScore * 0.15;
-    const width = Math.max(20, top.width - (currentScore > 5 ? 2 : 0));
+    const speed = SWING_SPEED_BASE + currentScore * 0.08;
+    const width = Math.max(20, top.width - (currentScore > 10 ? 1 : 0));
     
     game.current = {
       x: 0,

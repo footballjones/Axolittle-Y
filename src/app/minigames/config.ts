@@ -54,7 +54,7 @@ export const GAME_REWARDS: Record<string, GameRewards> = {
  */
 export const SCORE_THRESHOLDS: Record<string, { good: number; exceptional: number }> = {
   'keepey-upey': { good: 15, exceptional: 60 }, // seconds survived
-  'axolotl-stacker': { good: 6, exceptional: 20 }, // stack height
+  'axolotl-stacker': { good: 6, exceptional: 15 }, // stack height
   'math-rush': { good: 7, exceptional: 25 }, // correct answers
   'coral-code': { good: 5, exceptional: 7 }, // guesses remaining (10 - guesses used)
   'tide-tiles': { good: 350, exceptional: 900 }, // merged-value score

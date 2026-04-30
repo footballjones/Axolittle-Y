@@ -66,7 +66,7 @@ export function AchievementCenter({ gameState, onClaim, highlightId }: Achieveme
   const progressPercent = (unlockedCount / totalCount) * 100;
 
   return (
-    <div className="pt-32 px-4 sm:px-6 pb-32 space-y-5 min-h-full">
+    <div className="pt-4 px-4 sm:px-6 pb-32 space-y-5 min-h-full">
       {/* Header card */}
       <motion.div
         initial={{ opacity: 0, y: -12 }}

@@ -129,6 +129,31 @@ export default function App() {
         prev ? { ...prev, friendCode: generatePermanentFriendCode() } : prev,
       );
     },
+    onFriendsRefreshed: (updates) => {
+      setGameState(prev => {
+        if (!prev?.friends?.length) return prev;
+        const updateMap = new Map(updates.map(u => [u.id, u]));
+        const updatedFriends = prev.friends.map(f => {
+          const u = updateMap.get(f.id);
+          if (!u) return f;
+          if (
+            f.axolotlName === u.axolotlName &&
+            f.generation === u.generation &&
+            f.stage === u.stage &&
+            f.level === u.level
+          ) return f;
+          return {
+            ...f,
+            axolotlName: u.axolotlName,
+            generation: u.generation,
+            stage: u.stage as typeof f.stage,
+            level: u.level,
+          };
+        });
+        if (updatedFriends.every((f, i) => f === prev.friends[i])) return prev;
+        return { ...prev, friends: updatedFriends };
+      });
+    },
   });
 
   // ── Startup achievement sync ───────────────────────────────────────────────

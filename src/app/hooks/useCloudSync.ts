@@ -2,6 +2,7 @@ import { useEffect, useRef, useCallback } from 'react';
 import { supabase, isSupabaseConfigured } from '../services/supabase';
 import { GameState } from '../types/game';
 import { getLocalUpdatedAt } from '../utils/storage';
+import { calculateLevel } from '../utils/gameLogic';
 
 export type SyncStatus = 'idle' | 'syncing' | 'synced' | 'error' | 'offline' | 'guest';
 
@@ -27,6 +28,12 @@ interface UseCloudSyncOptions {
   onStatusChange: (status: SyncStatus) => void;
   /** Called when this player's friend code collides with another user's in the DB. */
   onFriendCodeCollision?: () => void;
+  /**
+   * Called after a successful push with fresh profile data for all stored
+   * friends (name, generation, stage, level). Allows the host to keep friend
+   * cards up-to-date without requiring a remove-and-re-add cycle.
+   */
+  onFriendsRefreshed?: (updates: Array<{ id: string; axolotlName: string; generation: number; stage: string; level: number }>) => void;
 }
 
 /**
@@ -48,6 +55,7 @@ export function useCloudSync({
   onConflict,
   onStatusChange,
   onFriendCodeCollision,
+  onFriendsRefreshed,
 }: UseCloudSyncOptions) {
   // Treat under-13 devices as not-signed-in for sync purposes. A signed-in
   // parent on a child's device can still play, but their gameplay stays local.
@@ -99,6 +107,7 @@ export function useCloudSync({
           profileRow.axolotl_name    = state.axolotl.name;
           profileRow.generation      = state.axolotl.generation;
           profileRow.stage           = state.axolotl.stage;
+          profileRow.axolotl_level   = calculateLevel(state.axolotl.experience);
           profileRow.axolotl_color   = state.axolotl.color;
           profileRow.axolotl_pattern = state.axolotl.pattern;
           profileRow.axolotl_rarity  = state.axolotl.rarity ?? 'Common';
@@ -142,8 +151,38 @@ export function useCloudSync({
         }
       }
 
+      // Batch-refresh stage + level for all stored friends so cards stay
+      // current without requiring a remove-and-re-add cycle.
+      const friends = latestStateRef.current?.friends ?? [];
+      const friendIds = friends.map(f => f.id).filter(Boolean);
+      if (!error && friendIds.length > 0 && onFriendsRefreshed) {
+        supabase
+          .from('profiles')
+          .select('id, axolotl_name, generation, stage, axolotl_level')
+          .in('id', friendIds)
+          .then(({ data: profileRows }) => {
+            if (profileRows && profileRows.length > 0) {
+              const updates = profileRows
+                .filter(r => r.axolotl_name && r.stage && r.axolotl_level != null)
+                .map(r => ({
+                  id: r.id as string,
+                  axolotlName: r.axolotl_name as string,
+                  generation: (r.generation as number) ?? 1,
+                  stage: r.stage as string,
+                  level: r.axolotl_level as number,
+                }));
+              if (updates.length > 0) onFriendsRefreshed(updates);
+            }
+          });
+      }
+
       return !error;
     },
+    // onFriendsRefreshed is intentionally excluded from deps — it's a stable
+    // callback ref in practice and including it would restart the debounce on
+    // every render. latestStateRef gives us the current friends list without
+    // creating a dep on gameState itself.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [syncUserId, authUsername, onFriendCodeCollision],
   );
 

@@ -442,7 +442,7 @@ export function useGameActions({
     const lookupProfile = async () => {
       return supabase
         .from('profiles')
-        .select('id, username, axolotl_name, generation, stage')
+        .select('id, username, axolotl_name, generation, stage, axolotl_level')
         .eq('friend_code', normalizedCode)
         .maybeSingle();
     };
@@ -488,6 +488,7 @@ export function useGameActions({
       name: data.username ?? data.axolotl_name ?? normalizedCode,
       axolotlName: data.axolotl_name ?? 'Mystery Axo',
       stage: (data.stage as Friend['stage']) ?? 'guardian',
+      level: data.axolotl_level ?? undefined,
       generation: data.generation ?? 1,
       lastSync: Date.now(),
     };
@@ -911,13 +912,9 @@ export function useGameActions({
       const newCoins = prev.coins + result.coins;
       const newOpals = result.opals ? (prev.opals || 0) + result.opals : prev.opals;
 
-      // Playing mini games makes the axolotl hungry - reduce hunger by 15 points
-      const newHunger = Math.max(0, prev.axolotl.stats.hunger - 15);
-
       const updatedAxolotl = {
         ...prev.axolotl,
         experience: newXP,
-        stats: { ...prev.axolotl.stats, hunger: newHunger },
       };
       const { axolotl: evolvedAxolotl } = checkEvolution(updatedAxolotl);
       const resolvedNewLevel = calculateLevel(evolvedAxolotl.experience);

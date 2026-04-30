@@ -726,7 +726,7 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
                                     <div className="px-3.5 py-2.5">
                                       <div className="flex items-center gap-2 mb-2 flex-wrap">
                                         <span className="text-[10px] text-violet-500/70 font-medium capitalize">
-                                          {friend.axolotlName} · Gen {friend.generation} · {friend.stage}
+                                          {friend.axolotlName} · Gen {friend.generation} · {friend.stage}{friend.level != null ? ` · Lv ${friend.level}` : ''}
                                         </span>
                                       </div>
                                       {(() => {
@@ -1087,9 +1087,9 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
                       <div
                         className="w-14 h-14 rounded-2xl border-2 flex items-center justify-center text-2xl shadow-lg shrink-0"
                         style={{
-                          backgroundColor: axolotl.color + '55',
-                          borderColor: axolotl.color + 'aa',
-                          boxShadow: `0 4px 16px ${axolotl.color}44`,
+                          backgroundColor: 'rgba(167,139,250,0.15)',
+                          borderColor: 'rgba(167,139,250,0.45)',
+                          boxShadow: '0 4px 16px rgba(139,92,246,0.2)',
                         }}
                       >
                         <Droplets className="w-7 h-7 text-teal-500" strokeWidth={2} />
@@ -1176,11 +1176,9 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
                               size={28}
                               animation="Idle"
                               facingLeft={false}
-                              style={{ filter: `drop-shadow(0 2px 6px ${axolotl.color}55)` }}
+                              style={{ filter: 'drop-shadow(0 2px 6px rgba(139,92,246,0.33))' }}
                             />
                           </div>
-                          {/* Color swatch */}
-                          <div className="w-5 h-1.5 rounded-full" style={{ background: axolotl.color }} />
                           {/* Name */}
                           <span className="text-[10px] font-black text-center leading-tight truncate w-full text-center" style={{ color: rc.text }}>
                             {axolotl.name}
@@ -1238,11 +1236,9 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
                               size={28}
                               animation="Idle"
                               facingLeft={false}
-                              style={{ filter: `drop-shadow(0 2px 6px ${ancestor.color}55) grayscale(0.15)` }}
+                              style={{ filter: 'drop-shadow(0 2px 6px rgba(139,92,246,0.33)) grayscale(0.15)' }}
                             />
                           </div>
-                          {/* Color swatch */}
-                          <div className="w-5 h-1.5 rounded-full" style={{ background: ancestor.color }} />
                           {/* Name */}
                           <span className="text-[10px] font-black text-center leading-tight truncate w-full text-center" style={{ color: rc.text }}>
                             {ancestor.name}
@@ -1590,13 +1586,21 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
                   </div>
                   <div>
                     <div className="text-violet-900 font-black text-sm">{viewingStatsFriend.axolotlName}</div>
-                    <div className="flex items-center gap-1.5 mt-0.5">
+                    <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
                       <span
                         className="text-[9px] font-black text-violet-500 px-2 py-0.5 rounded-full capitalize"
                         style={{ background: 'rgba(237,233,254,0.8)', border: '1px solid rgba(196,181,253,0.4)' }}
                       >
                         {viewingStatsFriend.stage}
                       </span>
+                      {viewingStatsFriend.level != null && (
+                        <span
+                          className="text-[9px] font-black text-sky-600 px-2 py-0.5 rounded-full"
+                          style={{ background: 'rgba(224,242,254,0.9)', border: '1px solid rgba(125,211,252,0.5)' }}
+                        >
+                          Lv {viewingStatsFriend.level}
+                        </span>
+                      )}
                       <span
                         className="text-[9px] font-black text-indigo-500 px-2 py-0.5 rounded-full"
                         style={{ background: 'rgba(238,242,255,0.8)', border: '1px solid rgba(165,180,252,0.4)' }}
@@ -1926,29 +1930,19 @@ export function SocialModal({ onClose, axolotl, friendCode, friends, onAddFriend
 
                 {/* Body */}
                 <div className="px-5 py-4 space-y-3">
-                  {/* Level + color row */}
-                  <div className="grid grid-cols-2 gap-2">
-                    <div
-                      className="rounded-2xl px-3 py-2.5 flex flex-col gap-0.5"
-                      style={{ background: 'rgba(255,255,255,0.65)', border: `1px solid ${rc.border}` }}
-                    >
+                  {/* Level row */}
+                  <div
+                    className="rounded-2xl px-3 py-2.5 flex items-center justify-between"
+                    style={{ background: 'rgba(255,255,255,0.65)', border: `1px solid ${rc.border}` }}
+                  >
+                    <div className="flex flex-col gap-0.5">
                       <span className="text-[9px] font-black tracking-widest uppercase opacity-60" style={{ color: rc.text }}>Max Level Reached</span>
                       <span className="text-2xl font-black leading-tight" style={{ color: rc.text }}>{level}</span>
                       <span className="text-[9px] font-semibold opacity-50" style={{ color: rc.text }}>of 60</span>
                     </div>
-                    <div
-                      className="rounded-2xl px-3 py-2.5 flex flex-col gap-1"
-                      style={{ background: 'rgba(255,255,255,0.65)', border: `1px solid ${rc.border}` }}
-                    >
-                      <span className="text-[9px] font-black tracking-widest uppercase opacity-60" style={{ color: rc.text }}>Colour</span>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <div className="w-6 h-6 rounded-lg border-2 border-white/60 shadow-sm" style={{ background: ax.color }} />
-                        <span className="text-[10px] font-bold capitalize opacity-70" style={{ color: rc.text }}>{ax.pattern}</span>
-                      </div>
-                      <span className="text-[9px] font-semibold opacity-50" style={{ color: rc.text }}>
-                        {ageDays > 0 ? `${ageDays}d` : ''} {ageHours}h old
-                      </span>
-                    </div>
+                    <span className="text-[9px] font-semibold opacity-50" style={{ color: rc.text }}>
+                      {ageDays > 0 ? `${ageDays}d` : ''} {ageHours}h old
+                    </span>
                   </div>
 
                   {/* Secondary stats */}

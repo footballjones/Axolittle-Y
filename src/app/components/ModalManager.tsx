@@ -460,22 +460,7 @@ function ModalManagerInner({
         )}
       </AnimatePresence>
 
-      {/* Level 7 games unlock modal */}
-      <AnimatePresence>
-        {showLevel7Unlock && (
-          <Level7UnlockModal
-            onClose={() => {
-              setShowLevel7Unlock(false);
-              setGameState(s => s ? { ...s, seenMilestones: [...(s.seenMilestones ?? []), 'level7_unlock'] } : s);
-            }}
-            onOpenSocial={isUnder13 ? undefined : () => {
-              setShowLevel7Unlock(false);
-              setGameState(s => s ? { ...s, seenMilestones: [...(s.seenMilestones ?? []), 'level7_unlock'] } : s);
-              setActiveModal('social');
-            }}
-          />
-        )}
-      </AnimatePresence>
+      {/* Level 7 unlock modal removed */}
 
       {/* Level 11 — Ghost Shrimp tutorial intro (grants 10 opals) */}
       <AnimatePresence>
